@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAU Monthly Workflow - Alan Ranger Tools</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2e;
+      --text: #e2e8f0;
+      --text-muted: #9ca3af;
+      --brand: #f59e0b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #374151;
+      --blue: #3b82f6;
+      --step-bg: rgba(245, 158, 11, 0.05);
+      --step-border: rgba(245, 158, 11, 0.2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    .header { 
+      text-align: center; 
+      margin-bottom: 40px; 
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    .header h1 { 
+      font-size: 2.5rem; 
+      margin-bottom: 8px; 
+      color: var(--brand);
+    }
+    .header p { 
+      color: var(--text-muted); 
+      font-size: 1.1rem;
+    }
+
+    .workflow-intro {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+
+    .workflow-intro h2 {
+      color: var(--brand);
+      margin-bottom: 12px;
+      font-size: 1.5rem;
+    }
+
+    .workflow-intro ul {
+      margin-left: 20px;
+      color: var(--text-muted);
+    }
+
+    .workflow-intro li {
+      margin-bottom: 8px;
+    }
+
+    .step {
+      background: var(--step-bg);
+      border: 2px solid var(--step-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .step-number {
+      position: absolute;
+      top: -15px;
+      left: 24px;
+      background: var(--brand);
+      color: #000;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.2rem;
+      border: 3px solid var(--bg);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      margin-top: 10px;
+    }
+
+    .step-icon {
+      font-size: 2rem;
+    }
+
+    .step-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .step-description {
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+
+    .step-details {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .step-details h3 {
+      color: var(--brand);
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .step-details ul {
+      margin-left: 20px;
+      color: var(--text-muted);
+    }
+
+    .step-details li {
+      margin-bottom: 8px;
+    }
+
+    .step-details code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      color: var(--brand);
+    }
+
+    .dependency-note {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 4px solid var(--blue);
+      padding: 12px 16px;
+      margin-top: 16px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .dependency-note strong {
+      color: var(--blue);
+    }
+
+    .tool-link {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: var(--brand);
+      color: #000;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .tool-link:hover {
+      background: #d97706;
+      transform: translateY(-2px);
+    }
+
+    .warning-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 2px solid var(--warning);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .warning-box strong {
+      color: var(--warning);
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2rem;
+      }
+      .step {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔄 BAU Monthly Workflow</h1>
+      <p>Step-by-step guide for monthly updates and data synchronization</p>
+    </div>
+
+    <div class="workflow-intro">
+      <h2>📋 Overview</h2>
+      <p style="margin-bottom: 16px; color: var(--text);">
+        This workflow ensures all systems stay synchronized when making monthly updates. The order matters because:
+      </p>
+      <ul>
+        <li><strong>Schema Tools</strong> must generate schemas <strong>before</strong> Chat AI Bot ingestion (Chat Bot needs the schemas)</li>
+        <li><strong>Schema deployment</strong> must happen before Squarespace can fetch updated schemas</li>
+        <li><strong>AI GEO Audit</strong> monitors changes after everything is live</li>
+      </ul>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-header">
+        <span class="step-icon">📝</span>
+        <div class="step-title">Update Source Data</div>
+      </div>
+      <div class="step-description">
+        Update the raw CSV files in <code>alan-shared-resources/csv/</code> with your monthly changes.
+      </div>
+      <div class="step-details">
+        <h3>What to Update:</h3>
+        <ul>
+          <li><strong>Events/Workshops:</strong> Reschedule expired events in <code>03-photographic-workshops-near-me.csv</code> or <code>05-photo-workshops-uk-landscape.csv</code></li>
+          <li><strong>Blog Posts:</strong> Add new posts or update existing ones in <code>01-blog-posts.csv</code> (including meta titles/descriptions from GEO Audit optimization tasks)</li>
+          <li><strong>Lessons/Courses:</strong> Update <code>02-beginners-photography-lessons.csv</code> or <code>04-photography-services-courses-mentoring.csv</code></li>
+          <li><strong>Landing Pages:</strong> Update <code>08-landing-and-service-pages.csv</code> if needed</li>
+          <li><strong>Products:</strong> Update <code>raw-01-products-sqsp-export.csv</code> if product data changed</li>
+          <li><strong>Reviews:</strong> New reviews (Trustpilot/Google) will be added organically - check <code>raw-03a-trustpilot-reviews-historical.csv</code> and <code>raw-03b-google-reviews.csv</code></li>
+        </ul>
+        <div class="dependency-note">
+          <strong>⚠️ Important:</strong> Never edit files in <code>csv processed/</code> - those are auto-generated. Only edit raw files in <code>csv/</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-header">
+        <span class="step-icon">🧹</span>
+        <div class="step-title">Process & Clean Data (If Needed)</div>
+      </div>
+      <div class="step-description">
+        Run data processing tools to clean, match, and merge data. This creates files in <code>csv processed/</code>.
+      </div>
+      <div class="step-details">
+        <h3>Processing Tasks:</h3>
+        <ul>
+          <li><strong>Product Cleaning:</strong> Process raw product CSV → <code>csv processed/02-products-cleaned.xlsx</code></li>
+          <li><strong>Review Matching:</strong> Match Trustpilot + Google reviews → <code>csv processed/03-combined-product-reviews.csv</code></li>
+          <li><strong>Event-Product Mapping:</strong> Generate mappings → <code>csv processed/event-product-mappings-*.csv</code></li>
+        </ul>
+        <div class="dependency-note">
+          <strong>Note:</strong> Only run if you've updated products or reviews. Blog/event updates may not require this step.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-header">
+        <span class="step-icon">🏷️</span>
+        <div class="step-title">Generate Schemas (Schema Tools)</div>
+      </div>
+      <div class="step-description">
+        Use Schema Tools to generate JSON-LD schemas from your updated CSV data. This must happen <strong>before</strong> Chat AI Bot ingestion.
+      </div>
+      <div class="step-details">
+        <h3>Schema Generation Order:</h3>
+        <ul>
+          <li><strong>Blog Schema:</strong> Generate from <code>01-blog-posts.csv</code> → <code>outputs/schema/blog/blog-schema.json</code></li>
+          <li><strong>Workshop Schema:</strong> Generate from workshop CSVs → <code>outputs/schema/workshops/workshops-schema.json</code></li>
+          <li><strong>Lessons Schema:</strong> Generate from lessons CSVs → <code>outputs/schema/lessons/lessons-schema.json</code></li>
+          <li><strong>Product Schema:</strong> Generate from <code>csv processed/02-products-cleaned.xlsx</code> → <code>outputs/schema/products/*.json</code></li>
+          <li><strong>Landing Pages:</strong> Generate if updated → <code>outputs/schema/</code></li>
+        </ul>
+        <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
+        <div class="warning-box">
+          <strong>⚠️ Critical:</strong> Schema generation must complete before Step 4. Chat AI Bot ingestion reads from <code>outputs/schema/</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-header">
+        <span class="step-icon">📦</span>
+        <div class="step-title">Deploy Schemas to Production</div>
+      </div>
+      <div class="step-description">
+        Copy generated schemas from <code>alan-shared-resources/outputs/schema/</code> to the <code>alanranger-schema</code> GitHub repo for Squarespace to fetch.
+      </div>
+      <div class="step-details">
+        <h3>Deployment Steps:</h3>
+        <ul>
+          <li>Copy schema JSON files to <code>alanranger-schema</code> repository</li>
+          <li>Commit and push to GitHub</li>
+          <li>Schemas become available at <code>https://schema.alanranger.com/*.json</code></li>
+          <li>Squarespace pages reference these via <code>&lt;script src="..."&gt;</code> tags</li>
+        </ul>
+        <div class="dependency-note">
+          <strong>Note:</strong> This step ensures Squarespace can fetch the latest schemas. The Chat AI Bot will also use these schemas in the next step.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-header">
+        <span class="step-icon">🤖</span>
+        <div class="step-title">Ingest Data into Chat AI Bot</div>
+      </div>
+      <div class="step-description">
+        Run the Chat AI Bot ingestion pipeline. This reads from processed CSVs AND the generated schemas from Step 3.
+      </div>
+      <div class="step-details">
+        <h3>Ingestion Process:</h3>
+        <ul>
+          <li>Reads from <code>csv processed/</code> (cleaned product data, reviews, mappings)</li>
+          <li>Reads from <code>outputs/schema/</code> (JSON-LD schemas generated in Step 3)</li>
+          <li>Reads from <code>csv/06-site-urls.csv</code> (site structure)</li>
+          <li>Ingests into Supabase tables for AI responses</li>
+          <li>Creates embeddings for semantic search</li>
+        </ul>
+        <a href="https://alanranger-modules.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
+        <div class="warning-box">
+          <strong>⚠️ Critical:</strong> This step requires schemas from Step 3 to be complete. The ingestion reads both CSV data AND schema files.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step">
+      <div class="step-number">6</div>
+      <div class="step-header">
+        <span class="step-icon">📊</span>
+        <div class="step-title">Monitor with AI GEO Audit</div>
+      </div>
+      <div class="step-description">
+        After all updates are live, use AI GEO Audit to monitor performance changes, track rankings, and analyze SEO metrics.
+      </div>
+      <div class="step-details">
+        <h3>Monitoring Tasks:</h3>
+        <ul>
+          <li>Check GSC metrics for new/updated pages</li>
+          <li>Track rankings via DataForSEO API</li>
+          <li>Monitor pillar scores and entity recognition</li>
+          <li>Analyze SERP behavior changes</li>
+          <li>Review performance metrics for blog posts updated with new meta titles/descriptions</li>
+        </ul>
+        <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" class="tool-link">Open AI GEO Audit Dashboard →</a>
+        <div class="dependency-note">
+          <strong>Note:</strong> This is a monitoring step. Run this after all changes are deployed and live on the website.
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="workflow-intro" style="margin-top: 40px;">
+      <h2>✅ Workflow Summary</h2>
+      <p style="margin-bottom: 16px; color: var(--text);">
+        The correct order ensures data flows properly through the system:
+      </p>
+      <ol style="margin-left: 20px; color: var(--text-muted);">
+        <li><strong>Update source CSVs</strong> → Single source of truth</li>
+        <li><strong>Process data</strong> → Clean and match (if needed)</li>
+        <li><strong>Generate schemas</strong> → Schema Tools creates JSON-LD</li>
+        <li><strong>Deploy schemas</strong> → Make available for Squarespace</li>
+        <li><strong>Ingest to Chat Bot</strong> → Uses processed CSVs + schemas</li>
+        <li><strong>Monitor performance</strong> → AI GEO Audit tracks changes</li>
+      </ol>
+      <div class="warning-box" style="margin-top: 20px;">
+        <strong>Key Insight:</strong> Schema generation (Step 3) must happen before Chat AI Bot ingestion (Step 5) because the ingestion process reads from <code>outputs/schema/</code> to enrich the AI's knowledge base.
+      </div>
+    </div>
+  </div>
+</body>
+</html>
