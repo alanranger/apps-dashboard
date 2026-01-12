@@ -25,7 +25,7 @@
       padding: 20px;
     }
 
-    .container { max-width: 900px; margin: 0 auto; }
+    .container { max-width: 1400px; margin: 0 auto; }
     
     .header { 
       text-align: center; 
@@ -124,6 +124,7 @@
       padding: 10px;
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
+      vertical-align: top;
     }
 
     .file-table code {
@@ -133,6 +134,22 @@
       font-family: 'Courier New', monospace;
       color: var(--brand);
       font-size: 0.85em;
+    }
+
+    .file-table a {
+      color: var(--blue);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .file-table a:hover {
+      text-decoration: underline;
+    }
+
+    .file-table .notes {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
     }
 
     .tool-link {
@@ -217,32 +234,46 @@
           <tr>
             <th>Export From Squarespace</th>
             <th>Update This File</th>
+            <th>Squarespace URL Link</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Events/Workshops</td>
             <td><code>03-photographic-workshops-near-me.csv</code><br><code>05-photo-workshops-uk-landscape.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
           <tr>
             <td>Lessons/Courses</td>
             <td><code>02-beginners-photography-lessons.csv</code><br><code>04-photography-services-courses-mentoring.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
           <tr>
             <td>Products (all types)</td>
             <td><code>raw-01-products-sqsp-export.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
           <tr>
             <td>Blog Posts</td>
             <td><code>01-blog-posts.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
           <tr>
             <td>Landing Pages</td>
             <td><code>08-landing-and-service-pages.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
           <tr>
             <td>Site URLs</td>
             <td><code>06-site-urls.csv</code></td>
+            <td><a href="#" target="_blank">[Add Squarespace URL]</a></td>
+            <td class="notes">[Add notes about where to find this data in Squarespace]</td>
           </tr>
         </tbody>
       </table>
