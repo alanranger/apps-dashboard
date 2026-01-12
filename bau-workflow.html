@@ -234,38 +234,24 @@
         Export data from Squarespace and other sources, then update the raw CSV files in <code>alan-shared-resources/csv/</code>.
       </div>
       <div class="step-details">
-        <h3>Data Sources & Update Process:</h3>
+        <h3>Step 1A: Export from Squarespace</h3>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">First, export fresh data from Squarespace for the following content types:</p>
         
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📅 Events (Reschedule Expired Events):</h4>
         <div class="warning-box" style="margin-bottom: 16px;">
-          <strong>⚠️ Important:</strong> Events are composite entities made up of workshops, courses, AND products. When rescheduling events, you must update <strong>ALL related CSV files</strong>.
+          <strong>⚠️ Important:</strong> Events are composite entities made up of workshops, courses, AND products. When rescheduling events, you must export and update <strong>ALL related CSV files</strong>.
         </div>
         <ul>
-          <li><strong>Source:</strong> Squarespace → Export events, workshops, courses, and products</li>
-          <li><strong>Files to Update (5 total):</strong>
+          <li><strong>Export from Squarespace:</strong>
             <ul style="margin-top: 8px; margin-left: 20px;">
-              <li><strong>Workshop CSVs (2 files):</strong>
-                <ul style="margin-top: 4px; margin-left: 20px;">
-                  <li><code>03-photographic-workshops-near-me.csv</code></li>
-                  <li><code>05-photo-workshops-uk-landscape.csv</code></li>
-                </ul>
-              </li>
-              <li><strong>Course/Lesson CSVs (2 files):</strong>
-                <ul style="margin-top: 4px; margin-left: 20px;">
-                  <li><code>02-beginners-photography-lessons.csv</code></li>
-                  <li><code>04-photography-services-courses-mentoring.csv</code></li>
-                </ul>
-              </li>
-              <li><strong>Product CSV (1 file):</strong>
-                <ul style="margin-top: 4px; margin-left: 20px;">
-                  <li><code>raw-01-products-sqsp-export.csv</code></li>
-                </ul>
-              </li>
+              <li>Events/Workshops → Update <code>03-photographic-workshops-near-me.csv</code> and <code>05-photo-workshops-uk-landscape.csv</code></li>
+              <li>Lessons/Courses → Update <code>02-beginners-photography-lessons.csv</code> and <code>04-photography-services-courses-mentoring.csv</code></li>
+              <li>Products → Update <code>raw-01-products-sqsp-export.csv</code></li>
             </ul>
           </li>
-          <li><strong>Note:</strong> <code>07-product-schema-with-review-ratings.csv</code> is <strong>auto-generated</strong> (contains JSON-LD schema) - do not edit manually. It will be regenerated in Step 3 (Schema Generation).</li>
           <li><strong>Action:</strong> 
             <ul style="margin-top: 8px; margin-left: 20px;">
+              <li>Export fresh data from Squarespace for events, workshops, courses, and products</li>
               <li>Update dates for expired events across all 5 CSV files (2 workshops + 2 courses + 1 product)</li>
               <li>Add new event dates to workshop, course, and product CSVs</li>
               <li>Ensure consistency across all related files</li>
@@ -275,10 +261,10 @@
 
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📝 Blog Posts (Add New or Update Existing):</h4>
         <ul>
-          <li><strong>Source:</strong> Squarespace → Export blog posts</li>
-          <li><strong>File to Update:</strong> <code>01-blog-posts.csv</code></li>
+          <li><strong>Export from Squarespace:</strong> Blog posts → Update <code>01-blog-posts.csv</code></li>
           <li><strong>Action:</strong> 
             <ul style="margin-top: 8px; margin-left: 20px;">
+              <li>Export fresh blog posts from Squarespace</li>
               <li>Add new blog posts</li>
               <li>Update existing posts with new content</li>
               <li>Update meta titles/descriptions (from AI GEO Audit optimization tasks)</li>
@@ -288,32 +274,40 @@
 
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📄 Landing Pages:</h4>
         <ul>
-          <li><strong>Source:</strong> Squarespace → Export landing/service pages</li>
-          <li><strong>File to Update:</strong> <code>08-landing-and-service-pages.csv</code></li>
-          <li><strong>Action:</strong> Update landing page content or add new pages</li>
+          <li><strong>Export from Squarespace:</strong> Landing/service pages → Update <code>08-landing-and-service-pages.csv</code></li>
+          <li><strong>Action:</strong> Export and update landing page content or add new pages</li>
         </ul>
 
-        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">⭐ Reviews (Organic Updates):</h4>
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🔗 Site Structure:</h4>
         <ul>
-          <li><strong>Source:</strong> Google Reviews (organically added week-to-week)</li>
+          <li><strong>Export from Squarespace:</strong> Site URLs/structure → Update <code>06-site-urls.csv</code></li>
+          <li><strong>Action:</strong> Export and update if site structure changed (new pages, removed pages)</li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">⭐ Reviews (Organic Updates - Not from Squarespace):</h4>
+        <ul>
+          <li><strong>Source:</strong> Google Reviews (organically added week-to-week) - manually check and add</li>
           <li><strong>File to Check:</strong> <code>raw-03b-google-reviews.csv</code></li>
           <li><strong>Action:</strong> Check for new reviews, add if needed (reviews come in organically)</li>
           <li><strong>Note:</strong> <code>raw-03a-trustpilot-reviews-historical.csv</code> is historical/one-off - do not update</li>
         </ul>
 
-        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🔗 Site Structure:</h4>
+        <h3 style="color: var(--brand); margin-top: 32px; margin-bottom: 12px;">Step 1B: Files to NEVER Edit (Auto-Generated)</h3>
+        <div class="warning-box" style="margin-bottom: 16px;">
+          <strong>⚠️ DO NOT EDIT THESE FILES:</strong> The following files are auto-generated and will be overwritten in later steps. Editing them manually will cause data loss.
+        </div>
         <ul>
-          <li><strong>Source:</strong> Squarespace → Export site URLs/structure</li>
-          <li><strong>File to Update:</strong> <code>06-site-urls.csv</code></li>
-          <li><strong>Action:</strong> Update if site structure changed (new pages, removed pages)</li>
+          <li><code>07-product-schema-with-review-ratings.csv</code> - Auto-generated in Step 3 (Schema Generation). Contains JSON-LD schema, not raw data.</li>
+          <li><strong>All files in <code>csv processed/</code> directory</strong> - These are auto-generated in Step 2 (Data Processing).</li>
+          <li><strong>All files in <code>outputs/schema/</code> directory</strong> - These are auto-generated in Step 3 (Schema Generation).</li>
         </ul>
 
         <div class="warning-box" style="margin-top: 20px;">
           <strong>⚠️ Critical Rules:</strong>
           <ul style="margin-top: 8px; margin-left: 20px;">
-            <li>Never edit files in <code>csv processed/</code> - those are auto-generated</li>
-            <li>Only edit raw files in <code>csv/</code> directory</li>
-            <li>Export fresh data from Squarespace before updating CSVs</li>
+            <li><strong>Only edit raw CSV files</strong> that you export from Squarespace (files in <code>csv/</code> directory)</li>
+            <li><strong>Never edit auto-generated files</strong> - they will be regenerated in Steps 2 and 3</li>
+            <li>Always export fresh data from Squarespace before updating CSVs</li>
             <li>Keep file naming conventions (lowercase, hyphens, numbered prefixes)</li>
           </ul>
         </div>
