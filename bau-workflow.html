@@ -236,16 +236,41 @@
       <div class="step-details">
         <h3>Data Sources & Update Process:</h3>
         
-        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📅 Events/Workshops (Reschedule Expired Events):</h4>
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📅 Events (Reschedule Expired Events):</h4>
+        <div class="warning-box" style="margin-bottom: 16px;">
+          <strong>⚠️ Important:</strong> Events are composite entities made up of workshops, courses, AND products. When rescheduling events, you must update <strong>ALL related CSV files</strong>.
+        </div>
         <ul>
-          <li><strong>Source:</strong> Squarespace → Export events/workshops</li>
-          <li><strong>Files to Update:</strong> 
+          <li><strong>Source:</strong> Squarespace → Export events, workshops, courses, and products</li>
+          <li><strong>Files to Update (6 total):</strong>
             <ul style="margin-top: 8px; margin-left: 20px;">
-              <li><code>03-photographic-workshops-near-me.csv</code></li>
-              <li><code>05-photo-workshops-uk-landscape.csv</code></li>
+              <li><strong>Workshop CSVs (2 files):</strong>
+                <ul style="margin-top: 4px; margin-left: 20px;">
+                  <li><code>03-photographic-workshops-near-me.csv</code></li>
+                  <li><code>05-photo-workshops-uk-landscape.csv</code></li>
+                </ul>
+              </li>
+              <li><strong>Course/Lesson CSVs (2 files):</strong>
+                <ul style="margin-top: 4px; margin-left: 20px;">
+                  <li><code>02-beginners-photography-lessons.csv</code></li>
+                  <li><code>04-photography-services-courses-mentoring.csv</code></li>
+                </ul>
+              </li>
+              <li><strong>Product CSVs (2 files):</strong>
+                <ul style="margin-top: 4px; margin-left: 20px;">
+                  <li><code>raw-01-products-sqsp-export.csv</code></li>
+                  <li><code>07-product-schema-with-review-ratings.csv</code></li>
+                </ul>
+              </li>
             </ul>
           </li>
-          <li><strong>Action:</strong> Update dates for expired workshops, add new workshop dates</li>
+          <li><strong>Action:</strong> 
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li>Update dates for expired events across all 6 CSV files</li>
+              <li>Add new event dates to workshop, course, and product CSVs</li>
+              <li>Ensure consistency across all related files</li>
+            </ul>
+          </li>
         </ul>
 
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📝 Blog Posts (Add New or Update Existing):</h4>
@@ -261,30 +286,11 @@
           </li>
         </ul>
 
-        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🎓 Lessons/Courses:</h4>
-        <ul>
-          <li><strong>Source:</strong> Squarespace → Export lessons/courses</li>
-          <li><strong>Files to Update:</strong>
-            <ul style="margin-top: 8px; margin-left: 20px;">
-              <li><code>02-beginners-photography-lessons.csv</code></li>
-              <li><code>04-photography-services-courses-mentoring.csv</code></li>
-            </ul>
-          </li>
-          <li><strong>Action:</strong> Update course content, dates, or add new courses</li>
-        </ul>
-
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📄 Landing Pages:</h4>
         <ul>
           <li><strong>Source:</strong> Squarespace → Export landing/service pages</li>
           <li><strong>File to Update:</strong> <code>08-landing-and-service-pages.csv</code></li>
           <li><strong>Action:</strong> Update landing page content or add new pages</li>
-        </ul>
-
-        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🛍️ Products:</h4>
-        <ul>
-          <li><strong>Source:</strong> Squarespace → Export products</li>
-          <li><strong>File to Update:</strong> <code>raw-01-products-sqsp-export.csv</code></li>
-          <li><strong>Action:</strong> Update product data, prices, descriptions (only if products changed)</li>
         </ul>
 
         <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">⭐ Reviews (Organic Updates):</h4>
