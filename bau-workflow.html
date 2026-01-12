@@ -228,23 +228,88 @@
       <div class="step-number">1</div>
       <div class="step-header">
         <span class="step-icon">📝</span>
-        <div class="step-title">Update Source Data</div>
+        <div class="step-title">Create/Update Source CSV Files in Shared Resources</div>
       </div>
       <div class="step-description">
-        Update the raw CSV files in <code>alan-shared-resources/csv/</code> with your monthly changes.
+        Export data from Squarespace and other sources, then update the raw CSV files in <code>alan-shared-resources/csv/</code>.
       </div>
       <div class="step-details">
-        <h3>What to Update:</h3>
+        <h3>Data Sources & Update Process:</h3>
+        
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📅 Events/Workshops (Reschedule Expired Events):</h4>
         <ul>
-          <li><strong>Events/Workshops:</strong> Reschedule expired events in <code>03-photographic-workshops-near-me.csv</code> or <code>05-photo-workshops-uk-landscape.csv</code></li>
-          <li><strong>Blog Posts:</strong> Add new posts or update existing ones in <code>01-blog-posts.csv</code> (including meta titles/descriptions from GEO Audit optimization tasks)</li>
-          <li><strong>Lessons/Courses:</strong> Update <code>02-beginners-photography-lessons.csv</code> or <code>04-photography-services-courses-mentoring.csv</code></li>
-          <li><strong>Landing Pages:</strong> Update <code>08-landing-and-service-pages.csv</code> if needed</li>
-          <li><strong>Products:</strong> Update <code>raw-01-products-sqsp-export.csv</code> if product data changed</li>
-          <li><strong>Reviews:</strong> New reviews (Trustpilot/Google) will be added organically - check <code>raw-03a-trustpilot-reviews-historical.csv</code> and <code>raw-03b-google-reviews.csv</code></li>
+          <li><strong>Source:</strong> Squarespace → Export events/workshops</li>
+          <li><strong>Files to Update:</strong> 
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li><code>03-photographic-workshops-near-me.csv</code></li>
+              <li><code>05-photo-workshops-uk-landscape.csv</code></li>
+            </ul>
+          </li>
+          <li><strong>Action:</strong> Update dates for expired workshops, add new workshop dates</li>
         </ul>
-        <div class="dependency-note">
-          <strong>⚠️ Important:</strong> Never edit files in <code>csv processed/</code> - those are auto-generated. Only edit raw files in <code>csv/</code>.
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📝 Blog Posts (Add New or Update Existing):</h4>
+        <ul>
+          <li><strong>Source:</strong> Squarespace → Export blog posts</li>
+          <li><strong>File to Update:</strong> <code>01-blog-posts.csv</code></li>
+          <li><strong>Action:</strong> 
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li>Add new blog posts</li>
+              <li>Update existing posts with new content</li>
+              <li>Update meta titles/descriptions (from AI GEO Audit optimization tasks)</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🎓 Lessons/Courses:</h4>
+        <ul>
+          <li><strong>Source:</strong> Squarespace → Export lessons/courses</li>
+          <li><strong>Files to Update:</strong>
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li><code>02-beginners-photography-lessons.csv</code></li>
+              <li><code>04-photography-services-courses-mentoring.csv</code></li>
+            </ul>
+          </li>
+          <li><strong>Action:</strong> Update course content, dates, or add new courses</li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">📄 Landing Pages:</h4>
+        <ul>
+          <li><strong>Source:</strong> Squarespace → Export landing/service pages</li>
+          <li><strong>File to Update:</strong> <code>08-landing-and-service-pages.csv</code></li>
+          <li><strong>Action:</strong> Update landing page content or add new pages</li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🛍️ Products:</h4>
+        <ul>
+          <li><strong>Source:</strong> Squarespace → Export products</li>
+          <li><strong>File to Update:</strong> <code>raw-01-products-sqsp-export.csv</code></li>
+          <li><strong>Action:</strong> Update product data, prices, descriptions (only if products changed)</li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">⭐ Reviews (Organic Updates):</h4>
+        <ul>
+          <li><strong>Source:</strong> Google Reviews (organically added week-to-week)</li>
+          <li><strong>File to Check:</strong> <code>raw-03b-google-reviews.csv</code></li>
+          <li><strong>Action:</strong> Check for new reviews, add if needed (reviews come in organically)</li>
+          <li><strong>Note:</strong> <code>raw-03a-trustpilot-reviews-historical.csv</code> is historical/one-off - do not update</li>
+        </ul>
+
+        <h4 style="color: var(--brand); margin-top: 16px; margin-bottom: 8px;">🔗 Site Structure:</h4>
+        <ul>
+          <li><strong>Source:</strong> Squarespace → Export site URLs/structure</li>
+          <li><strong>File to Update:</strong> <code>06-site-urls.csv</code></li>
+          <li><strong>Action:</strong> Update if site structure changed (new pages, removed pages)</li>
+        </ul>
+
+        <div class="warning-box" style="margin-top: 20px;">
+          <strong>⚠️ Critical Rules:</strong>
+          <ul style="margin-top: 8px; margin-left: 20px;">
+            <li>Never edit files in <code>csv processed/</code> - those are auto-generated</li>
+            <li>Only edit raw files in <code>csv/</code> directory</li>
+            <li>Export fresh data from Squarespace before updating CSVs</li>
+            <li>Keep file naming conventions (lowercase, hyphens, numbered prefixes)</li>
+          </ul>
         </div>
       </div>
     </div>
