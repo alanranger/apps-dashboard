@@ -348,17 +348,23 @@
         Use Schema Tools to generate JSON-LD schemas from your updated CSV data. This must happen <strong>before</strong> Chat AI Bot ingestion.
       </div>
       <div class="step-details">
-        <h3>Schema Generation Order:</h3>
-        <ul>
-          <li><strong>Blog Schema:</strong> Generate from <code>01-blog-posts.csv</code> → <code>outputs/schema/blog/blog-schema.json</code></li>
-          <li><strong>Workshop Schema:</strong> Generate from workshop CSVs → <code>outputs/schema/workshops/workshops-schema.json</code></li>
-          <li><strong>Lessons Schema:</strong> Generate from lessons CSVs → <code>outputs/schema/lessons/lessons-schema.json</code></li>
-          <li><strong>Product Schema:</strong> Generate from <code>csv processed/02-products-cleaned.xlsx</code> → <code>outputs/schema/products/*.json</code></li>
-          <li><strong>Landing Pages:</strong> Generate if updated → <code>outputs/schema/</code></li>
-        </ul>
+        <h3>Schema Generation Process:</h3>
+        <ol style="margin-left: 20px; color: var(--text-muted);">
+          <li><strong>Open Schema Tools:</strong> Navigate to the Schema Tools web interface</li>
+          <li><strong>Upload CSV files:</strong> Upload the updated CSV files from <code>alan-shared-resources/csv/</code>:
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li><strong>Blog Schema:</strong> Upload <code>01-blog-posts.csv</code></li>
+              <li><strong>Workshop Schema:</strong> Upload <code>03-photographic-workshops-near-me.csv</code> and/or <code>05-photo-workshops-uk-landscape.csv</code></li>
+              <li><strong>Lessons Schema:</strong> Upload <code>02-beginners-photography-lessons.csv</code> and/or <code>04-photography-services-courses-mentoring.csv</code></li>
+              <li><strong>Product Schema:</strong> Upload <code>csv processed/02-products-cleaned.xlsx</code> (if products were updated)</li>
+            </ul>
+          </li>
+          <li><strong>Generate schemas:</strong> Run the schema generation for each uploaded CSV</li>
+          <li><strong>Download outputs:</strong> Save generated JSON-LD files to <code>alan-shared-resources/outputs/schema/</code></li>
+        </ol>
         <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
         <div class="warning-box">
-          <strong>⚠️ Critical:</strong> Schema generation must complete before Step 4. Chat AI Bot ingestion reads from <code>outputs/schema/</code>.
+          <strong>⚠️ Critical:</strong> Schema generation must complete before Step 5. Chat AI Bot ingestion requires the generated schemas to be available.
         </div>
       </div>
     </div>
@@ -395,20 +401,35 @@
         <div class="step-title">Ingest Data into Chat AI Bot</div>
       </div>
       <div class="step-description">
-        Run the Chat AI Bot ingestion pipeline. This reads from processed CSVs AND the generated schemas from Step 3.
+        Run the Chat AI Bot ingestion pipeline. Upload CSV files manually through the web interface.
       </div>
       <div class="step-details">
         <h3>Ingestion Process:</h3>
-        <ul>
-          <li>Reads from <code>csv processed/</code> (cleaned product data, reviews, mappings)</li>
-          <li>Reads from <code>outputs/schema/</code> (JSON-LD schemas generated in Step 3)</li>
-          <li>Reads from <code>csv/06-site-urls.csv</code> (site structure)</li>
-          <li>Ingests into Supabase tables for AI responses</li>
-          <li>Creates embeddings for semantic search</li>
-        </ul>
+        <ol style="margin-left: 20px; color: var(--text-muted);">
+          <li><strong>Open Chat AI Bot Ingest Pipeline:</strong> Navigate to the bulk ingestion interface</li>
+          <li><strong>Upload CSV files:</strong> Upload files from <code>alan-shared-resources/</code>:
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li><strong>Blog Articles:</strong> <code>csv/01-blog-posts.csv</code></li>
+              <li><strong>Course Events:</strong> <code>csv/02-beginners-photography-lessons.csv</code> and/or <code>csv/04-photography-services-courses-mentoring.csv</code></li>
+              <li><strong>Workshop Events:</strong> <code>csv/03-photographic-workshops-near-me.csv</code> and/or <code>csv/05-photo-workshops-uk-landscape.csv</code></li>
+              <li><strong>Service Products:</strong> <code>csv processed/02-products-cleaned.xlsx</code> (if products were updated)</li>
+              <li><strong>Site URLs:</strong> <code>csv/06-site-urls.csv</code></li>
+              <li><strong>Landing Pages:</strong> <code>csv/08-landing-and-service-pages.csv</code> (if updated)</li>
+            </ul>
+          </li>
+          <li><strong>Run pipeline steps:</strong> Execute in order:
+            <ul style="margin-top: 8px; margin-left: 20px;">
+              <li>Step 1: Import Metadata (imports CSV data)</li>
+              <li>Step 2: Ingest Content (scrapes website and enriches with CSV metadata)</li>
+              <li>Step 3: Build Mappings (creates event-product relationships)</li>
+              <li>Step 4: Finalize (builds enrichment views)</li>
+            </ul>
+          </li>
+          <li><strong>Result:</strong> Data ingested into Supabase tables with embeddings for AI responses</li>
+        </ol>
         <a href="https://alanranger-modules.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
         <div class="warning-box">
-          <strong>⚠️ Critical:</strong> This step requires schemas from Step 3 to be complete. The ingestion reads both CSV data AND schema files.
+          <strong>⚠️ Critical:</strong> This step requires updated CSV files from Step 1. The ingestion process uploads files manually through the web interface - it does not automatically read from the shared-resources folder.
         </div>
       </div>
     </div>
