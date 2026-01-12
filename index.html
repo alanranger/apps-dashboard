@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apps Dashboard - Alan Ranger Tools</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a1f2e;
+      --text: #e2e8f0;
+      --text-muted: #9ca3af;
+      --brand: #f59e0b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #374151;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --pink: #ec4899;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+    
+    .header { 
+      text-align: center; 
+      margin-bottom: 40px; 
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    .header h1 { 
+      font-size: 2.5rem; 
+      margin-bottom: 8px; 
+      color: var(--brand);
+    }
+    .header p { 
+      color: var(--text-muted); 
+      font-size: 1.1rem;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header h2 {
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+
+    .section-icon {
+      font-size: 1.8rem;
+    }
+
+    .tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .tile {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--brand);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .tile:hover {
+      border-color: var(--brand);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+    }
+
+    .tile:hover::before {
+      transform: scaleX(1);
+    }
+
+    .tile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tile-icon {
+      font-size: 2rem;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .tile-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .tile-description {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .tile-description p {
+      margin-bottom: 8px;
+    }
+
+    .tile-description p:last-child {
+      margin-bottom: 0;
+    }
+
+    .tile-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 12px;
+    }
+
+    .badge-internal {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .badge-external {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--blue);
+      border: 1px solid var(--blue);
+    }
+
+    @media (max-width: 768px) {
+      .tiles-grid {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 Apps Dashboard</h1>
+      <p>Central hub for all Alan Ranger tools and applications</p>
+    </div>
+
+    <!-- Chat AI Bot Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">💬</span>
+        <h2>Chat AI Bot</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://alanranger-modules.vercel.app/chat.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🤖</div>
+            <div class="tile-title">Chat: Interface</div>
+          </div>
+          <div class="tile-description">
+            <p>Main chat bot interface for customer interactions.</p>
+            <p>Test responses, view structured content, and interact with the AI assistant.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger-modules.vercel.app/interactive-testing.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🧪</div>
+            <div class="tile-title">Chat: Interactive Testing</div>
+          </div>
+          <div class="tile-description">
+            <p>Manual testing tool with 64-question suite and quality scoring.</p>
+            <p>Score responses, load regression tests, and export results for analysis.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger-modules.vercel.app/regression-comparison.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📊</div>
+            <div class="tile-title">Chat: Regression Testing</div>
+          </div>
+          <div class="tile-description">
+            <p>Automated regression test comparison against master baseline.</p>
+            <p>Run 64Q tests, compare results, and track quality changes over time.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger-modules.vercel.app/bulk-simple.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🔄</div>
+            <div class="tile-title">Chat: Ingest Pipeline</div>
+          </div>
+          <div class="tile-description">
+            <p>Complete data ingestion and processing pipeline for CSV imports.</p>
+            <p>Import metadata, ingest content, build mappings, and finalize enrichment views.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger-modules.vercel.app/analytics.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📈</div>
+            <div class="tile-title">Chat: Analytics Dashboard</div>
+          </div>
+          <div class="tile-description">
+            <p>Comprehensive analytics for chat sessions, interactions, and performance.</p>
+            <p>View metrics, trends, question frequency, and user engagement data.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger-modules.vercel.app/cron-dashboard.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">⏰</div>
+            <div class="tile-title">System: Cron Dashboard</div>
+          </div>
+          <div class="tile-description">
+            <p>Monitor and manage all automated cron jobs and scheduled tasks.</p>
+            <p>View job status, run history, reset statistics, and manage master baseline.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Photography Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📸</span>
+        <h2>Photography Tools</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://alanranger.github.io/exposure-calculator/" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📐</div>
+            <div class="tile-title">Exposure Calculator</div>
+          </div>
+          <div class="tile-description">
+            <p>Visualize and calculate exposure settings for outdoor photography.</p>
+            <p>Interactive tool for understanding aperture, shutter speed, ISO, and exposure triangle relationships.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://alanranger.github.io/photo-print-size-calculator/" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🖼️</div>
+            <div class="tile-title">Photo &amp; Print Size Calculator</div>
+          </div>
+          <div class="tile-description">
+            <p>Calculate optimal photo and print sizes based on aspect ratio, resolution, and viewing distance.</p>
+            <p>Helps choose print dimensions, DPI, and cropping for different media and frame sizes.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://github.com/alanranger/practice-pack-generator" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📦</div>
+            <div class="tile-title">Practice Pack Generator</div>
+          </div>
+          <div class="tile-description">
+            <p>Automated assignment pack builder for photography academy content.</p>
+            <p>Generate blog posts, PDFs, thumbnails, and schema for 30 photography practice assignments.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Workshop & Planning Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📅</span>
+        <h2>Workshop & Planning Tools</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://v0-workshops-optimiser.vercel.app/" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📅</div>
+            <div class="tile-title">Workshop Planner</div>
+          </div>
+          <div class="tile-description">
+            <p>Workshop logistics planner for scheduling and optimizing workshop events.</p>
+            <p>Plan dates, manage capacity, and optimize workshop logistics and clustering.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Blog & Website Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🧩</span>
+        <h2>Blog & Website Tools</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🏷️</div>
+            <div class="tile-title">Schema Tools</div>
+          </div>
+          <div class="tile-description">
+            <p>Schema generation and validation tools for structured data.</p>
+            <p>Generate JSON-LD schemas, validate product data, and manage schema templates.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://blog-snippet-tools.vercel.app/AR-Blog-Optimization-Template-Pack.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🧩</div>
+            <div class="tile-title">Blog: Optimization Template Pack</div>
+          </div>
+          <div class="tile-description">
+            <p>Static template pack for consistent blog optimization blocks.</p>
+            <p>Copy intro hooks, quick tips, editing cards, and schema templates into Squarespace.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://blog-snippet-tools.vercel.app/AR-Blog-Snippet-Skeletons.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🧱</div>
+            <div class="tile-title">Blog: Snippet Skeletons</div>
+          </div>
+          <div class="tile-description">
+            <p>Library of pre-built blog snippet skeletons for hooks, quick tips, and editing panels.</p>
+            <p>Inline-safe HTML designed for Squarespace Code Blocks.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://blog-snippet-tools.vercel.app/ar_cta_generator_v3_3.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🎯</div>
+            <div class="tile-title">Blog: CTA Generator</div>
+          </div>
+          <div class="tile-description">
+            <p>Interactive generator for anchor+span brand CTA buttons with UTMs and accessibility.</p>
+            <p>Build primary/secondary/tertiary CTAs and matching Service JSON-LD.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+
+        <a href="https://blog-snippet-tools.vercel.app/ar-checklist-generator-v1.6.3-default-logo.html" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">✅</div>
+            <div class="tile-title">Blog: Checklist PDF Generator</div>
+          </div>
+          <div class="tile-description">
+            <p>Generates branded one-page PDF checklists for blog posts using html2pdf.</p>
+            <p>Configure content, density, and margins then export A4 PDFs for download CTAs.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- SEO & Analytics Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <h2>SEO & Analytics Tools</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" rel="noopener" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">📊</div>
+            <div class="tile-title">AI GEO Audit Dashboard</div>
+          </div>
+          <div class="tile-description">
+            <p>Automated SEO analysis tool for tracking AI-powered search visibility and entity recognition.</p>
+            <p>Monitor pillar scores, track rankings, analyze SERP behavior, and visualize SEO performance metrics.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Other Tools -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-icon">🌱</span>
+        <h2>Other Tools</h2>
+      </div>
+      <div class="tiles-grid">
+        <a href="https://alanranger.github.io/gardening-measurement-calculator/" target="_blank" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🌱</div>
+            <div class="tile-title">Gardening: Measurement Calculator</div>
+          </div>
+          <div class="tile-description">
+            <p>Calculate accurate quantities for gardening products and applications.</p>
+            <p>Determine mixing ratios, application rates, and quantities for water mixing, direct application, and water treatment.</p>
+          </div>
+          <span class="tile-badge badge-external">External</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
