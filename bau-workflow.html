@@ -314,15 +314,19 @@
         <div class="step-number">3</div>
         <div class="step-title">Generate Schemas</div>
       </div>
+      <div class="warning" style="margin-bottom: 16px;">
+        <strong>⚠️ Important:</strong> For event schemas, you need <code>event-product-mappings-*.csv</code> from Chat AI Bot ingest. Run Step 5 (Ingest) first to generate this file, then return here to generate schemas.
+      </div>
       <ul class="action-list">
         <li>Open Schema Tools</li>
         <li>Upload your updated CSV files</li>
+        <li>Upload <code>event-product-mappings-*.csv</code> (from Step 5 preliminary run)</li>
         <li>Generate JSON-LD schemas</li>
         <li>Save outputs to <code>alan-shared-resources/outputs/schema/</code></li>
       </ul>
       <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
-      <div class="warning">
-        <strong>⚠️ Must complete before Step 5</strong> - Chat AI Bot needs these schemas.
+      <div class="note">
+        <strong>Note:</strong> After generating schemas, you'll run Step 5 (Ingest) again for the final data ingestion.
       </div>
     </div>
 
@@ -348,6 +352,9 @@
         <div class="step-number">5</div>
         <div class="step-title">Ingest to Chat AI Bot</div>
       </div>
+      <div class="note" style="margin-bottom: 16px;">
+        <strong>Note:</strong> Run this step <strong>twice</strong>: (1) Before Step 3 to generate <code>event-product-mappings-*.csv</code> for schema generation, then (2) After Step 4 for final data ingestion.
+      </div>
       <ul class="action-list">
         <li>Open Chat AI Bot Ingest Pipeline</li>
         <li>Upload CSV files (from Step 1)</li>
@@ -355,8 +362,9 @@
         <li>Run Step 2: Ingest Content</li>
         <li>Run Step 3: Build Mappings</li>
         <li>Run Step 4: Finalize</li>
+        <li>Save <code>event-product-mappings-*.csv</code> for Step 3 (first run only)</li>
       </ul>
-      <a href="https://alanranger-modules.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
+      <a href="https://alanranger-modules.vercel.app/bulk-simple" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
     </div>
 
     <!-- Step 6 -->
