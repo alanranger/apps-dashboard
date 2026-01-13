@@ -330,15 +330,48 @@
       <div class="warning" style="margin-bottom: 16px;">
         <strong>⚠️ Important:</strong> You need <code>05-event-product-mappings-latest.csv</code> from Step 2. This file should be in <code>alan-shared-resources/csv processed/</code>.
       </div>
-      <ul class="action-list">
-        <li>Open Schema Tools</li>
-        <li>Upload your updated CSV files from <code>alan-shared-resources/csv/</code></li>
-        <li>Upload <code>05-event-product-mappings-latest.csv</code> from <code>alan-shared-resources/csv processed/</code> (created in Step 2)</li>
-        <li>Generate JSON-LD schemas</li>
-        <li>Save outputs to <code>alan-shared-resources/outputs/schema/</code></li>
-      </ul>
+      
+      <h3 style="color: var(--brand); margin: 20px 0 12px 0; font-size: 1.1rem;">Tab Order - Follow This Sequence:</h3>
+      
+      <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid var(--brand); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+        <h4 style="color: var(--brand); margin-bottom: 12px; font-size: 1rem;">1️⃣ Product Schema Tab (First - Generate Files)</h4>
+        <ul class="action-list" style="margin-left: 0;">
+          <li>Open Schema Tools (Product Schema tab is active by default)</li>
+          <li><strong>Step 1:</strong> Upload <code>raw-01-products-sqsp-export.csv</code> from <code>alan-shared-resources/csv/</code></li>
+          <li><strong>Step 2:</strong> Runs automatically - generates <code>02 – products_cleaned.xlsx</code></li>
+          <li><strong>Step 3a:</strong> (Optional) Fetch Google Reviews</li>
+          <li><strong>Step 3b:</strong> Merge Reviews - generates <code>03 – combined_product_reviews.csv</code></li>
+          <li><strong>Step 4:</strong> Generate Product Schema - creates schema files in <code>outputs/schema/products/</code></li>
+        </ul>
+        <div class="note" style="margin-top: 12px;">
+          <strong>Output Files:</strong> These files are required for Event Schema tab:
+          <ul style="margin: 8px 0 0 20px; color: var(--text-muted);">
+            <li><code>02 – products_cleaned.xlsx</code> (from Step 2)</li>
+            <li><code>03 – combined_product_reviews.csv</code> (from Step 3b)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--blue); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+        <h4 style="color: var(--blue); margin-bottom: 12px; font-size: 1rem;">2️⃣ Event Schema Tab (Second - Use Generated Files)</h4>
+        <ul class="action-list" style="margin-left: 0;">
+          <li>Switch to <strong>Event Schema</strong> tab (second tab at top)</li>
+          <li>Upload <code>events_export.csv</code> from Squarespace (from <code>alan-shared-resources/csv/</code>)</li>
+          <li>Upload <code>05-event-product-mappings-latest.csv</code> from <code>alan-shared-resources/csv processed/</code> (created in Step 2)</li>
+          <li><strong>Upload generated files from Product Schema tab:</strong>
+            <ul style="margin: 8px 0 0 20px; color: var(--text-muted);">
+              <li><code>02 – products_cleaned.xlsx</code> (optional - for SKU values)</li>
+              <li><code>03 – combined_product_reviews.csv</code> (optional - for review enrichment)</li>
+            </ul>
+          </li>
+          <li>Select category filter (Lessons or Workshops)</li>
+          <li>Click <strong>"Generate Event Schema"</strong></li>
+          <li>Save outputs to <code>alan-shared-resources/outputs/schema/</code></li>
+        </ul>
+      </div>
+
       <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
-      <div class="note">
+      <div class="note" style="margin-top: 16px;">
         <strong>Note:</strong> After generating schemas, you'll run Step 5 (Final Ingest) for the complete data ingestion.
       </div>
     </div>
