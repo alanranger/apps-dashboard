@@ -300,12 +300,25 @@
     </div>
 
     <!-- Step 2 -->
-    <div class="step skip">
+    <div class="step">
       <div class="step-header">
         <div class="step-number">2</div>
-        <div class="step-title">Process Data (Optional)</div>
+        <div class="step-title">Run Ingest Process (Preliminary)</div>
       </div>
-      <p style="color: var(--text-muted);">Only if you updated products or reviews. Run data cleaning tools to create files in <code>csv processed/</code>.</p>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">Run the Chat AI Bot ingest pipeline to generate <code>05-event-product-mappings-latest.csv</code> in <code>alan-shared-resources/csv processed/</code>. This file is required for Step 3 (Generate Schemas).</p>
+      <ul class="action-list">
+        <li>Open Chat AI Bot Ingest Pipeline</li>
+        <li>Upload CSV files from Step 1 (from <code>alan-shared-resources/csv/</code>)</li>
+        <li>Run Step 1: Import Metadata</li>
+        <li>Run Step 2: Ingest Content</li>
+        <li>Run Step 3: Build Mappings</li>
+        <li>Run Step 4: Finalize</li>
+        <li>Verify <code>05-event-product-mappings-latest.csv</code> is saved to <code>alan-shared-resources/csv processed/</code></li>
+      </ul>
+      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
+      <div class="note">
+        <strong>Note:</strong> This is a preliminary run. You'll run the ingest process again in Step 5 after schemas are deployed.
+      </div>
     </div>
 
     <!-- Step 3 -->
@@ -315,18 +328,18 @@
         <div class="step-title">Generate Schemas</div>
       </div>
       <div class="warning" style="margin-bottom: 16px;">
-        <strong>⚠️ Important:</strong> For event schemas, you need <code>event-product-mappings-*.csv</code> from Chat AI Bot ingest. Run Step 5 (Ingest) first to generate this file, then return here to generate schemas.
+        <strong>⚠️ Important:</strong> You need <code>05-event-product-mappings-latest.csv</code> from Step 2. This file should be in <code>alan-shared-resources/csv processed/</code>.
       </div>
       <ul class="action-list">
         <li>Open Schema Tools</li>
-        <li>Upload your updated CSV files</li>
-        <li>Upload <code>event-product-mappings-*.csv</code> (from Step 5 preliminary run)</li>
+        <li>Upload your updated CSV files from <code>alan-shared-resources/csv/</code></li>
+        <li>Upload <code>05-event-product-mappings-latest.csv</code> from <code>alan-shared-resources/csv processed/</code> (created in Step 2)</li>
         <li>Generate JSON-LD schemas</li>
         <li>Save outputs to <code>alan-shared-resources/outputs/schema/</code></li>
       </ul>
       <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
       <div class="note">
-        <strong>Note:</strong> After generating schemas, you'll run Step 5 (Ingest) again for the final data ingestion.
+        <strong>Note:</strong> After generating schemas, you'll run Step 5 (Final Ingest) for the complete data ingestion.
       </div>
     </div>
 
@@ -350,19 +363,16 @@
     <div class="step">
       <div class="step-header">
         <div class="step-number">5</div>
-        <div class="step-title">Ingest to Chat AI Bot</div>
+        <div class="step-title">Run Final Ingest to Chat AI Bot</div>
       </div>
-      <div class="note" style="margin-bottom: 16px;">
-        <strong>Note:</strong> Run this step <strong>twice</strong>: (1) Before Step 3 to generate <code>event-product-mappings-*.csv</code> for schema generation, then (2) After Step 4 for final data ingestion.
-      </div>
+      <p style="color: var(--text-muted); margin-bottom: 16px;">After schemas are deployed, run the ingest process again to complete the data ingestion with all updated content and schemas.</p>
       <ul class="action-list">
         <li>Open Chat AI Bot Ingest Pipeline</li>
-        <li>Upload CSV files (from Step 1)</li>
+        <li>Upload CSV files from Step 1 (from <code>alan-shared-resources/csv/</code>)</li>
         <li>Run Step 1: Import Metadata</li>
         <li>Run Step 2: Ingest Content</li>
         <li>Run Step 3: Build Mappings</li>
         <li>Run Step 4: Finalize</li>
-        <li>Save <code>event-product-mappings-*.csv</code> for Step 3 (first run only)</li>
       </ul>
       <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
     </div>
