@@ -201,6 +201,204 @@
       font-style: italic;
     }
 
+    .runner {
+      background: linear-gradient(180deg, rgba(59,130,246,0.12), rgba(16,185,129,0.08));
+      border: 1px solid var(--blue);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .runner h2 {
+      color: #93c5fd;
+      margin-bottom: 8px;
+      font-size: 1.4rem;
+    }
+
+    .runner-intro {
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+
+    .runner-status {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .status-chip {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .runner-progress-wrap {
+      margin: 8px 0 18px 0;
+    }
+
+    .runner-progress {
+      height: 10px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .runner-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--success));
+      transition: width 0.2s ease;
+    }
+
+    .runner-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .phase {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .phase.locked {
+      opacity: 0.6;
+    }
+
+    .phase-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .phase-title {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .phase-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .phase ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .phase li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+      font-size: 0.9rem;
+    }
+
+    .phase li:last-child {
+      border-bottom: none;
+    }
+
+    .phase input[type="checkbox"] {
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    .runner-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .runner-btn {
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .runner-btn:hover {
+      border-color: var(--blue);
+    }
+
+    .quick-links {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .quick-links a {
+      color: #93c5fd;
+      text-decoration: none;
+      margin-right: 12px;
+    }
+
+    .quick-links a:hover {
+      text-decoration: underline;
+    }
+
+    .runner-warn {
+      margin-top: 12px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid var(--brand);
+      border-left: 4px solid var(--brand);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fde68a;
+      font-size: 0.9rem;
+    }
+
+    .runner-warn strong {
+      color: #fbbf24;
+    }
+
+    .runner-verify {
+      margin-top: 10px;
+      background: rgba(30, 64, 175, 0.2);
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #dbeafe;
+      font-size: 0.9rem;
+    }
+
+    .runner-verify h4 {
+      margin: 0 0 6px 0;
+      font-size: 0.95rem;
+      color: #bfdbfe;
+    }
+
+    .runner-verify ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .runner-verify li {
+      margin: 4px 0;
+    }
+
     @media (max-width: 768px) {
       .header h1 {
         font-size: 2rem;
@@ -219,6 +417,100 @@
     <div class="header">
       <h1>🔄 BAU Monthly Workflow</h1>
       <p>Simple step-by-step guide for monthly updates</p>
+    </div>
+
+    <div class="runner" id="smartRunner">
+      <h2>✅ Smart 1-2-3 Runner</h2>
+      <p class="runner-intro">
+        Follow this panel top-to-bottom. It remembers your progress and blocks later phases until prerequisites are complete.
+      </p>
+
+      <div class="runner-status">
+        <span class="status-chip" id="runnerCycleLabel">Cycle: Not started</span>
+        <span class="status-chip" id="runnerNextAction">Next: Start Phase 1</span>
+      </div>
+
+      <div class="runner-progress-wrap">
+        <div class="runner-progress">
+          <div class="runner-progress-fill" id="runnerProgressFill"></div>
+        </div>
+      </div>
+
+      <div class="runner-grid">
+        <div class="phase" id="phase1">
+          <div class="phase-head">
+            <div class="phase-title">Phase 1: Prepare + Preliminary Ingest</div>
+            <span class="phase-badge" id="phase1Badge">Waiting</span>
+          </div>
+          <ul>
+            <li><label><input type="checkbox" data-check="csv_exports_updated"> <span>All monthly CSV exports updated in <code>alan-shared-resources/csv/</code></span></label></li>
+            <li><label><input type="checkbox" data-check="landing_csv_prepared"> <span><code>08-landing-and-service-pages.csv</code> refreshed and categorised</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_prelim_import"> <span>Preliminary ingest: Step 1 (Import Metadata) complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_prelim_content"> <span>Preliminary ingest: Step 2 (Ingest Content) complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_prelim_mappings"> <span>Preliminary ingest: Step 3 (Build Mappings) complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_prelim_finalize"> <span>Preliminary ingest: Step 4 (Finalize) complete</span></label></li>
+            <li><label><input type="checkbox" data-check="mapping_file_verified"> <span><code>05-event-product-mappings-latest.csv</code> verified in <code>csv processed/</code></span></label></li>
+          </ul>
+        </div>
+
+        <div class="phase" id="phase2">
+          <div class="phase-head">
+            <div class="phase-title">Phase 2: Generate + Deploy Schemas</div>
+            <span class="phase-badge" id="phase2Badge">Locked</span>
+          </div>
+          <ul>
+            <li><label><input type="checkbox" data-check="schema_electron_confirmed"> <span>Confirmed Schema Tools is running in Electron mode (not browser mode)</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_product_done"> <span>Product Schema tab complete (includes files for Event tab)</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_event_done"> <span>Event Schema tab complete (used mappings + generated required outputs)</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_blog_index_done"> <span>Blog Index Schema generated, tested, deployed</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_blog_posts_done"> <span>Blog Posts batch generated/deployed (or intentionally skipped this cycle)</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_landing_service_done"> <span>Landing / Service pages updated for this cycle</span></label></li>
+            <li><label><input type="checkbox" data-check="schema_deploy_confirmed"> <span><code>alanranger-schema</code> push complete and schema URLs live</span></label></li>
+          </ul>
+        </div>
+
+        <div class="phase" id="phase3">
+          <div class="phase-head">
+            <div class="phase-title">Phase 3: Final Ingest + Verify</div>
+            <span class="phase-badge" id="phase3Badge">Locked</span>
+          </div>
+          <ul>
+            <li><label><input type="checkbox" data-check="ingest_final_import"> <span>Final ingest rerun: Step 1 complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_final_content"> <span>Final ingest rerun: Step 2 complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_final_mappings"> <span>Final ingest rerun: Step 3 complete</span></label></li>
+            <li><label><input type="checkbox" data-check="ingest_final_finalize"> <span>Final ingest rerun: Step 4 complete</span></label></li>
+            <li><label><input type="checkbox" data-check="qa_validator_done"> <span>Schema validation spot checks complete (index, event, sample blog post, service page)</span></label></li>
+            <li><label><input type="checkbox" data-check="monitoring_done"> <span>AI GEO / quality checks reviewed and cycle signed off</span></label></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="quick-links">
+        Quick links:
+        <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener">Ingest Pipeline</a>
+        <a href="https://schema-tools-six.vercel.app/" target="_blank" rel="noopener">Schema Generator</a>
+        <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" rel="noopener">AI GEO Audit</a>
+      </div>
+
+      <div class="runner-warn">
+        <strong>Electron Required for Phase 2:</strong> Use your local Schema Tools Electron app for save/deploy automation.
+        Browser mode is read-only for deployment workflows and can cause missing TEST/deploy behavior.
+      </div>
+
+      <div class="runner-verify">
+        <h4>Electron Verification Checklist (before Phase 2)</h4>
+        <ul>
+          <li>Open your local Schema Tools app (not the web URL) and confirm it is the desktop app window.</li>
+          <li>In Schema Tools, verify the mode indicator shows Electron/Desktop mode and not browser/read-only mode.</li>
+          <li>Confirm deploy-capable controls are present (for example, GitHub deploy/test-save buttons in Blog/Schema workflows).</li>
+          <li>Then tick <strong>"Confirmed Schema Tools is running in Electron mode"</strong> in Phase 2 above.</li>
+        </ul>
+      </div>
+
+      <div class="runner-actions">
+        <button class="runner-btn" id="copySummaryBtn">Copy Current Summary</button>
+        <button class="runner-btn" id="startNewCycleBtn">Start New Cycle (Reset)</button>
+      </div>
     </div>
 
     <!-- Step 1 -->
@@ -242,37 +534,37 @@
           <tr>
             <td>Events/Workshops</td>
             <td><code>03-photographic-workshops-near-me.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photographic-workshops-near-me" target="_blank">photographic-workshops-near-me</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/photographic-workshops-near-me" target="_blank" rel="noopener">photographic-workshops-near-me</a></td>
             <td class="notes">Run Generate iCal</td>
           </tr>
           <tr>
             <td>Events/Workshops</td>
             <td><code>05-photo-workshops-uk-landscape.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photo-workshops-uk" target="_blank">photo-workshops-uk</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/photo-workshops-uk" target="_blank" rel="noopener">photo-workshops-uk</a></td>
             <td class="notes">Click Export CSV button and save to shared resources folder, then remove any hidden or outdated products.</td>
           </tr>
           <tr>
             <td>Lessons/Courses</td>
             <td><code>02-beginners-photography-lessons.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/beginners-photography-lessons" target="_blank">beginners-photography-lessons</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/beginners-photography-lessons" target="_blank" rel="noopener">beginners-photography-lessons</a></td>
             <td class="notes">Run Generate iCal</td>
           </tr>
           <tr>
             <td>Lessons/Courses</td>
             <td><code>04-photography-services-courses-mentoring.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photography-services-near-me" target="_blank">photography-services-near-me</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/photography-services-near-me" target="_blank" rel="noopener">photography-services-near-me</a></td>
             <td class="notes">Click Export CSV button and save to shared resources folder, then remove any hidden or outdated products.</td>
           </tr>
           <tr>
             <td>Products (all types)</td>
             <td><code>raw-01-products-sqsp-export.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/config/commerce/products" target="_blank">https://alan-ranger.squarespace.com/config/commerce/products</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/config/commerce/products" target="_blank" rel="noopener">https://alan-ranger.squarespace.com/config/commerce/products</a></td>
             <td class="notes">Select Services Tab then export and save to shared resources folder</td>
           </tr>
           <tr>
             <td>Blog Posts</td>
             <td><code>01-blog-posts.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/blog-on-photography" target="_blank">https://alan-ranger.squarespace.com/blog-on-photography</a></td>
+            <td><a href="https://alan-ranger.squarespace.com/blog-on-photography" target="_blank" rel="noopener">https://alan-ranger.squarespace.com/blog-on-photography</a></td>
             <td class="notes">Click Export CSV button and save to shared resources folder</td>
           </tr>
           <tr>
@@ -284,7 +576,7 @@
           <tr>
             <td>Site URLs</td>
             <td><code>06-site-urls.csv</code></td>
-            <td><a href="https://docs.google.com/spreadsheets/d/1xCdB85CszPzwllWVflUpgyzIt79HFUjm9rtrTAvZY9Q/edit?pli=1&gid=0#gid=0" target="_blank">Google Sheets Tool</a></td>
+            <td><a href="https://docs.google.com/spreadsheets/d/1xCdB85CszPzwllWVflUpgyzIt79HFUjm9rtrTAvZY9Q/edit?pli=1&gid=0#gid=0" target="_blank" rel="noopener">Google Sheets Tool</a></td>
             <td class="notes">Use Google Sheets Tool to generate url list from sitemap and save to shared resources folder</td>
           </tr>
         </tbody>
@@ -315,7 +607,7 @@
         <li>Run Step 4: Finalize</li>
         <li>Verify <code>05-event-product-mappings-latest.csv</code> is saved to <code>alan-shared-resources/csv processed/</code></li>
       </ul>
-      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
+      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
       <div class="note">
         <strong>Note:</strong> This is a preliminary run. You'll run the ingest process again in Step 5 after schemas are deployed.
       </div>
@@ -370,7 +662,7 @@
         </ul>
       </div>
 
-      <a href="https://schema-tools-six.vercel.app/" target="_blank" class="tool-link">Open Schema Tools →</a>
+      <a href="https://schema-tools-six.vercel.app/" target="_blank" rel="noopener" class="tool-link">Open Schema Tools →</a>
       <div class="note" style="margin-top: 16px;">
         <strong>Note:</strong> After generating schemas, you'll run Step 5 (Final Ingest) for the complete data ingestion.
       </div>
@@ -407,7 +699,7 @@
         <li>Run Step 3: Build Mappings</li>
         <li>Run Step 4: Finalize</li>
       </ul>
-      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
+      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
     </div>
 
     <!-- Step 6 -->
@@ -421,11 +713,222 @@
         <li>Check GSC metrics for updated pages</li>
         <li>Review rankings and SEO performance</li>
       </ul>
-      <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" class="tool-link">Open AI GEO Audit Dashboard →</a>
+      <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" rel="noopener" class="tool-link">Open AI GEO Audit Dashboard →</a>
       <div class="note">
         Run this after all changes are live on the website.
       </div>
     </div>
   </div>
+  <script>
+    (function () {
+      const STORAGE_KEY = "bau_monthly_runner_v1";
+      const CHECKBOX_SELECTOR = "input[type='checkbox'][data-check]";
+
+      const phaseRequirements = {
+        phase1: [
+          "csv_exports_updated",
+          "landing_csv_prepared",
+          "ingest_prelim_import",
+          "ingest_prelim_content",
+          "ingest_prelim_mappings",
+          "ingest_prelim_finalize",
+          "mapping_file_verified"
+        ],
+        phase2: [
+          "schema_electron_confirmed",
+          "schema_product_done",
+          "schema_event_done",
+          "schema_blog_index_done",
+          "schema_blog_posts_done",
+          "schema_landing_service_done",
+          "schema_deploy_confirmed"
+        ],
+        phase3: [
+          "ingest_final_import",
+          "ingest_final_content",
+          "ingest_final_mappings",
+          "ingest_final_finalize",
+          "qa_validator_done",
+          "monitoring_done"
+        ]
+      };
+
+      function defaultState() {
+        return {
+          cycleStartedAt: "",
+          checks: {}
+        };
+      }
+
+      function loadState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+          const state = defaultState();
+          if (parsed && typeof parsed === "object") {
+            state.cycleStartedAt = parsed.cycleStartedAt || "";
+            state.checks = parsed.checks || {};
+          }
+          return state;
+        } catch (error) {
+          console.error("Failed to load BAU runner state", error);
+          return defaultState();
+        }
+      }
+
+      function saveState(state) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function isPhaseComplete(state, phaseName) {
+        const requirements = phaseRequirements[phaseName];
+        return requirements.every((key) => Boolean(state.checks[key]));
+      }
+
+      function countAllChecks() {
+        return document.querySelectorAll(CHECKBOX_SELECTOR).length;
+      }
+
+      function countChecked(state) {
+        return Object.values(state.checks).filter(Boolean).length;
+      }
+
+      function formatDate(isoString) {
+        if (!isoString) return "Not started";
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return "Not started";
+        return date.toLocaleString();
+      }
+
+      function getNextAction(state, p1Done, p2Done, p3Done) {
+        if (!p1Done) return "Next: Complete Phase 1 (preliminary ingest + mappings)";
+        if (!p2Done) return "Next: Complete Phase 2 (all schema tabs + deploy)";
+        if (!p3Done) return "Next: Complete Phase 3 (final ingest + QA)";
+        return "Next: Cycle complete. Start a new cycle next month.";
+      }
+
+      function setPhaseLock(phaseId, locked) {
+        const phase = document.getElementById(phaseId);
+        if (!phase) return;
+        phase.classList.toggle("locked", locked);
+        phase.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
+          checkbox.disabled = locked;
+        });
+      }
+
+      function getPhaseMeta(isDone, isUnlocked) {
+        if (isDone) return { label: "Complete", type: "complete" };
+        if (isUnlocked) return { label: "Active", type: "active" };
+        return { label: "Locked", type: "locked" };
+      }
+
+      function applyPhaseBadge(id, meta) {
+        setBadge(document.getElementById(id), meta.label, meta.type);
+      }
+
+      function setBadge(el, label, type) {
+        el.textContent = label;
+        if (type === "complete") {
+          el.style.color = "#ecfdf5";
+          el.style.background = "rgba(16,185,129,0.2)";
+          el.style.borderColor = "#10b981";
+        } else if (type === "active") {
+          el.style.color = "#eff6ff";
+          el.style.background = "rgba(59,130,246,0.2)";
+          el.style.borderColor = "#3b82f6";
+        } else {
+          el.style.color = "#9ca3af";
+          el.style.background = "rgba(0,0,0,0.2)";
+          el.style.borderColor = "#374151";
+        }
+      }
+
+      function render(state) {
+        const p1Done = isPhaseComplete(state, "phase1");
+        const p2Done = isPhaseComplete(state, "phase2");
+        const p3Done = isPhaseComplete(state, "phase3");
+        const p2Unlocked = p1Done;
+        const p3Unlocked = p1Done && p2Done;
+
+        setPhaseLock("phase2", !p2Unlocked);
+        setPhaseLock("phase3", !p3Unlocked);
+
+        applyPhaseBadge("phase1Badge", getPhaseMeta(p1Done, true));
+        applyPhaseBadge("phase2Badge", getPhaseMeta(p2Done, p2Unlocked));
+        applyPhaseBadge("phase3Badge", getPhaseMeta(p3Done, p3Unlocked));
+
+        document.getElementById("runnerCycleLabel").textContent = "Cycle started: " + formatDate(state.cycleStartedAt);
+        document.getElementById("runnerNextAction").textContent = getNextAction(state, p1Done, p2Done, p3Done);
+
+        const total = countAllChecks();
+        const checked = countChecked(state);
+        const progress = total > 0 ? Math.min(100, Math.round((checked / total) * 100)) : 0;
+        document.getElementById("runnerProgressFill").style.width = progress + "%";
+      }
+
+      function buildSummary(state) {
+        const lines = [
+          "BAU Monthly Runner Summary",
+          "Cycle started: " + formatDate(state.cycleStartedAt),
+          "",
+          "Phase 1: " + (isPhaseComplete(state, "phase1") ? "Complete" : "Incomplete"),
+          "Phase 2: " + (isPhaseComplete(state, "phase2") ? "Complete" : "Incomplete"),
+          "Phase 3: " + (isPhaseComplete(state, "phase3") ? "Complete" : "Incomplete"),
+          ""
+        ];
+        document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
+          const rawText = checkbox.parentElement ? checkbox.parentElement.innerText.trim() : checkbox.dataset.check;
+          const label = rawText.replaceAll(/\s+/g, " ");
+          lines.push((checkbox.checked ? "[x] " : "[ ] ") + label);
+        });
+        return lines.join("\n");
+      }
+
+      const state = loadState();
+      if (!state.cycleStartedAt) {
+        state.cycleStartedAt = new Date().toISOString();
+        saveState(state);
+      }
+
+      document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
+        const key = checkbox.dataset.check;
+        checkbox.checked = Boolean(state.checks[key]);
+        checkbox.addEventListener("change", () => {
+          state.checks[key] = checkbox.checked;
+          if (!state.cycleStartedAt) {
+            state.cycleStartedAt = new Date().toISOString();
+          }
+          saveState(state);
+          render(state);
+        });
+      });
+
+      document.getElementById("copySummaryBtn").addEventListener("click", async () => {
+        const summary = buildSummary(state);
+        try {
+          await navigator.clipboard.writeText(summary);
+          alert("BAU summary copied to clipboard.");
+        } catch (error) {
+          console.error("Failed to copy BAU summary", error);
+          alert("Could not copy automatically. You can copy manually:\n\n" + summary);
+        }
+      });
+
+      document.getElementById("startNewCycleBtn").addEventListener("click", () => {
+        const confirmed = globalThis.confirm("Start a new monthly cycle? This clears all runner checkboxes.");
+        if (!confirmed) return;
+        const fresh = defaultState();
+        fresh.cycleStartedAt = new Date().toISOString();
+        saveState(fresh);
+        document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+        state.cycleStartedAt = fresh.cycleStartedAt;
+        state.checks = {};
+        render(state);
+      });
+
+      render(state);
+    })();
+  </script>
 </body>
 </html>
