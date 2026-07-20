@@ -57,7 +57,7 @@ function nextWeekly(from, byday) {
 }
 
 function nextMonthlyDom(from, dom) {
-  const d = new Date(from);
+  let d = new Date(from);
   d.setDate(d.getDate() + 1);
   for (let i = 0; i < 24; i += 1) {
     const y = d.getFullYear();
@@ -74,7 +74,7 @@ function nextMonthlyDom(from, dom) {
 function nextMonthlyByDay(from, byday, interval) {
   const bd = parseByDay(byday);
   if (!bd || bd.dow == null || !bd.nth) return null;
-  const d = new Date(from);
+  let d = new Date(from);
   d.setDate(d.getDate() + 1);
   for (let i = 0; i < 36; i += 1) {
     const y = d.getFullYear();
