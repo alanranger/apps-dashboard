@@ -149,14 +149,14 @@ export function priorityMatrixHtml(tasks) {
   const chev = expanded ? 'ti-chevron-up' : 'ti-chevron-down';
   return `
     <div class="card matrix-card">
-      <button type="button" class="matrix-bar-toggle" data-ui-toggle="matrix" aria-expanded="${expanded}">
+      <button type="button" class="matrix-bar-toggle" data-ui-toggle="matrix" aria-expanded="${expanded}" title="Collapse or expand Impact × Difficulty matrix and table">
         <span>Priority matrix</span>
         <span class="pill">${wins} easy wins</span>
-        <span class="meta matrix-bar-hint">${expanded ? 'collapse' : 'expand'}</span>
+        <span class="meta matrix-bar-hint">${expanded ? 'open — click tile to filter by Impact × Difficulty' : 'collapsed — expand to filter'}</span>
         <i class="ti ${chev} matrix-bar-chev" aria-hidden="true"></i>
       </button>
       <div class="matrix-detail ${expanded ? '' : 'collapsed'}">
-        <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — click a tile to filter further. Exec summary tiles above also filter this table.</p>
+        <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — <strong>click a matrix tile</strong> to filter this table (same as URL Money Pages). Open by default.</p>
         <div class="matrix-and-table">
           <div class="priority-matrix">${matrixHtml(tasks)}</div>
           <div class="priority-table-panel">

@@ -1,8 +1,17 @@
+/** v2: exec tiles + priority matrix open by default (Alan). Old v1 collapsed prefs ignored. */
 function readUiPrefs() {
   try {
-    return JSON.parse(localStorage.getItem('mc-ui-prefs') || '{}');
+    const p = JSON.parse(localStorage.getItem('mc-ui-prefs') || '{}');
+    if (p.v !== 2) {
+      return { v: 2, execExpanded: true, matrixExpanded: true };
+    }
+    return {
+      v: 2,
+      execExpanded: p.execExpanded !== false,
+      matrixExpanded: p.matrixExpanded !== false,
+    };
   } catch {
-    return {};
+    return { v: 2, execExpanded: true, matrixExpanded: true };
   }
 }
 
@@ -21,14 +30,15 @@ export const store = {
   /** Exec summary filters — AND together; each dim toggles independently */
   execFilter: { status: null, priority: null, projectId: null, owner: null },
   uiPrefs: {
-    execExpanded: !!readUiPrefs().execExpanded,
-    matrixExpanded: !!readUiPrefs().matrixExpanded,
+    execExpanded: readUiPrefs().execExpanded,
+    matrixExpanded: readUiPrefs().matrixExpanded,
   },
 };
 
 export function setUiPref(key, val) {
   store.uiPrefs[key] = val;
   const p = readUiPrefs();
+  p.v = 2;
   p[key] = val;
   localStorage.setItem('mc-ui-prefs', JSON.stringify(p));
 }

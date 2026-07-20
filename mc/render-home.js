@@ -86,7 +86,7 @@ function summaryHtml(c) {
   const chev = expanded ? 'ti-chevron-up' : 'ti-chevron-down';
   return `
     <div class="card exec-card rag-${c.rag}" aria-label="Executive summary">
-      <button type="button" class="exec-bar-toggle" data-ui-toggle="exec" aria-expanded="${expanded}">
+      <button type="button" class="exec-bar-toggle" data-ui-toggle="exec" aria-expanded="${expanded}" title="Collapse or expand the count tiles">
         <span class="rag-badge rag-${c.rag}">${ragLabel}</span>
         <span class="exec-bar-main">${c.open} open · ${c.dueWeek} due this week · ${c.waiting} waiting</span>
         <span class="exec-bar-side">${c.overdue} overdue · ${c.verify} to verify · ${c.byOwner.alan} on you</span>
@@ -94,6 +94,7 @@ function summaryHtml(c) {
       </button>
       <div class="exec-detail ${expanded ? '' : 'collapsed'}">
         <p class="exec-verdict">${esc(c.ragLabel)}</p>
+        <p class="meta" style="margin-bottom:8px">Tiles open by default — click a tile to filter the matrix table. Chevron only collapses if you want a quieter view.</p>
         ${execDetailHtml(c)}
       </div>
     </div>`;
