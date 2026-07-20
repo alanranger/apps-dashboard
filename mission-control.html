@@ -6,166 +6,7 @@
   <title>Mission Control</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/tabler-icons.min.css" />
   <link rel="stylesheet" href="/mc/tokens.css" />
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    a { color: var(--accent); }
-    button, input, select, textarea {
-      font: inherit;
-      color: inherit;
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-    }
-    button {
-      cursor: pointer;
-      padding: 8px 12px;
-    }
-    button:hover { background: #243044; }
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-    .shell { max-width: 1100px; margin: 0 auto; padding: 16px; }
-    .topnav {
-      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-      border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px;
-    }
-    .topnav a {
-      text-decoration: none; color: var(--text-dim); font-size: 14px; padding: 8px 12px; border-radius: 8px;
-    }
-    .topnav a:hover { background: var(--panel); color: var(--text); }
-    .topnav a.active { color: var(--accent); font-weight: 600; }
-    .build-pill {
-      display: inline-block;
-      font-size: 12px;
-      line-height: 1.4;
-      color: var(--text);
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 12px;
-      margin-bottom: 16px;
-    }
-    .build-pill code { font-family: ui-monospace, monospace; font-weight: 600; }
-    .build-pill .sep { color: var(--text-faint); margin: 0 4px; }
-    .build-pill .loaded { color: var(--green); }
-    h1 { font-size: 20px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
-    .meta { font-size: 12px; color: var(--text-faint); }
-    .chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; padding: 2px 8px; border-radius: 999px;
-      background: var(--blue-bg); color: var(--blue); border: 1px solid var(--border);
-    }
-    .pill {
-      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
-      background: var(--amber-bg); color: var(--amber); border: 1px solid var(--border);
-    }
-    .card {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-      padding: 16px; margin-bottom: 12px;
-    }
-    .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-    .row {
-      display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
-      padding: 10px 0; border-top: 1px solid var(--border);
-    }
-    .row:first-of-type { border-top: 0; }
-    .btn-verify { background: var(--green-bg); color: var(--green); border-color: var(--green); }
-    .btn-verify:hover { background: rgba(63,185,80,.22); }
-    .btn-danger { background: var(--red-bg); color: var(--red); border-color: var(--red); }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
-    .toolbar input { padding: 8px 10px; min-width: 160px; flex: 1; }
-    .proj-switch { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-    .proj-switch button { font-size: 12px; }
-    .proj-switch button.active { color: var(--accent); border-color: var(--accent); }
-    .board {
-      display: grid; gap: 12px;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-    @media (max-width: 1100px) { .board { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 768px) { .board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 480px) { .board { grid-template-columns: 1fr; } }
-    .col { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; min-width: 0; }
-    .col h3 {
-      font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-      color: var(--text-faint); margin-bottom: 8px; font-weight: 600;
-    }
-    .task-card {
-      background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; margin-bottom: 8px; cursor: pointer; min-width: 0;
-    }
-    .task-card:hover { background: #243044; }
-    .task-card.done-claimed { border-color: var(--red); }
-    .task-card.verified { background: var(--green-bg); }
-    .task-card .mcid { font-size: 11px; color: var(--text-faint); }
-    .task-card .title { font-size: 14px; margin: 4px 0; word-break: break-word; }
-    .empty {
-      text-align: center; padding: 24px 12px; color: var(--text-dim); font-size: 14px;
-    }
-    .empty i { font-size: 28px; color: var(--text-faint); display: block; margin-bottom: 8px; }
-    .skeleton { height: 48px; border-radius: 8px; background: var(--panel-2); margin-bottom: 8px; }
-    .gate {
-      max-width: 360px; margin: 80px auto; background: var(--panel);
-      border: 1px solid var(--border); border-radius: 12px; padding: 20px;
-    }
-    .gate input { width: 100%; padding: 10px; margin: 12px 0; }
-    .gate button { width: 100%; }
-    .drawer-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 40;
-    }
-    .drawer-backdrop.open { display: block; }
-    .drawer {
-      position: fixed; top: 0; right: 0; width: min(520px, 100%); height: 100%;
-      background: var(--panel); border-left: 1px solid var(--border);
-      transform: translateX(100%); transition: transform .2s; z-index: 50;
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-    .drawer.open { transform: translateX(0); }
-    .drawer-body { padding: 16px; overflow-y: auto; flex: 1; }
-    .drawer-foot {
-      border-top: 1px solid var(--border); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px;
-    }
-    .inset {
-      background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
-      padding: 12px; margin: 12px 0;
-    }
-    .timeline { border-left: 1px solid var(--border); margin: 12px 0 0 4px; padding-left: 12px; }
-    .timeline .item { margin-bottom: 10px; font-size: 12px; color: var(--text-dim); }
-    .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .thumbs img {
-      max-height: 160px; max-width: 100%; border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
-    }
-    .modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center;
-      justify-content: center; z-index: 60; padding: 16px;
-    }
-    .modal.open { display: flex; }
-    .modal .box {
-      width: min(520px, 100%); background: var(--panel); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px; max-height: 90vh; overflow: auto;
-    }
-    .modal label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 4px; }
-    .modal input, .modal select, .modal textarea { width: 100%; padding: 8px; }
-    .lightbox {
-      position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none;
-      align-items: center; justify-content: center; z-index: 70; padding: 16px;
-    }
-    .lightbox.open { display: flex; }
-    .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
-    .views { display: none; }
-    .views.active { display: block; }
-    .check row, .check-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; }
-    .err { color: var(--red); font-size: 12px; margin-top: 8px; }
-  </style>
+  <link rel="stylesheet" href="/mc/styles.css" />
 </head>
 <body>
   <div class="shell">
@@ -188,7 +29,11 @@
       <input id="pw" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" type="button">Enter</button>
       <p class="err" id="gateErr" hidden></p>
-      <p class="meta" style="margin-top:12px">If you see “not configured”, check Vercel Production env vars and redeploy.</p>
+      <p class="meta" style="margin-top:12px">
+        If you see “not configured”, the five <code>MC_*</code> env vars must be on the
+        <strong>apps-dashboard</strong> Vercel project (apps-dashboard-lilac), then redeploy —
+        not on AI GEO / Academy.
+      </p>
     </div>
 
     <div id="app" hidden>
@@ -213,6 +58,6 @@
   <div id="lightbox" class="lightbox"><img id="lightboxImg" alt="" /></div>
 
   <script src="/mc/version-pill.js"></script>
-  <script src="/mc/app.js"></script>
+  <script type="module" src="/mc/app.js"></script>
 </body>
 </html>
