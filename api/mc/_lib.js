@@ -81,8 +81,10 @@ function requireAuth(req, res) {
   return session;
 }
 
-function actorFromSession(session) {
-  return session.role === 'alan' ? 'alan' : 'cursor';
+function actorFromSession(session, body) {
+  if (session.role === 'alan') return 'alan';
+  const want = String((body && body.actor) || 'cursor');
+  return want === 'claude' ? 'claude' : 'cursor';
 }
 
 async function sb(path, opts = {}) {

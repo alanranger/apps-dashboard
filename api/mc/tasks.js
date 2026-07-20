@@ -93,10 +93,10 @@ module.exports = async function handler(req, res) {
   if (!envReady()) return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
   const session = requireAuth(req, res);
   if (!session) return;
-  const actor = actorFromSession(session);
   try {
     if (req.method === 'POST') {
       const body = await readBody(req);
+      const actor = actorFromSession(session, body);
       if (body.action === 'checklist') {
         return json(res, 200, { item: await toggleChecklist(body, actor) });
       }
@@ -104,6 +104,7 @@ module.exports = async function handler(req, res) {
     }
     if (req.method === 'PATCH') {
       const body = await readBody(req);
+      const actor = actorFromSession(session, body);
       if (!body.id) return json(res, 400, { error: 'id required' });
       return json(res, 200, { task: await patchTask(body.id, body, actor, session.role) });
     }

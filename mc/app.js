@@ -29,10 +29,16 @@
     sessionStorage.removeItem(ROLE_KEY);
   }
 
+  function agentActor() {
+    return sessionStorage.getItem(ROLE_KEY) === 'alan' ? 'alan' : 'cursor';
+  }
+
   async function api(path, opts = {}) {
     const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
     if (token()) headers.Authorization = `Bearer ${token()}`;
-    const res = await fetch(path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    let body = opts.body;
+    if (body && typeof body === 'object' && !body.actor) body = { ...body, actor: agentActor() };
+    const res = await fetch(path, { ...opts, headers, body: body ? JSON.stringify(body) : undefined });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { data, status: res.status });
     return data;

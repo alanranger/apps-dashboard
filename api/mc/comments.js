@@ -77,10 +77,10 @@ module.exports = async function handler(req, res) {
   if (!envReady()) return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
   const session = requireAuth(req, res);
   if (!session) return;
-  const actor = actorFromSession(session);
   try {
     if (req.method === 'POST') {
       const body = await readBody(req);
+      const actor = actorFromSession(session, body);
       if (body.action === 'sign_upload') {
         const ext = String(body.ext || 'png').replace(/[^a-z0-9]/gi, '') || 'png';
         const path = `${body.task_id || 'misc'}/${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
