@@ -4,6 +4,7 @@ import { store, applyBootstrap, taskByMc, setUiPref } from './store.js';
 import { $ } from './util.js';
 import { renderHome } from './render-home.js';
 import { renderBoard } from './render-board.js';
+import { renderRecurring, openRecurringEdit, handleRecurringClick } from './render-recurring.js';
 import { openDrawer, closeDrawer } from './drawer.js';
 import { openNewTaskModal } from './modal.js';
 
@@ -21,15 +22,19 @@ function setView(name) {
   $(`view-${name}`).classList.add('active');
   const label = $('sectionLabel');
   if (label) {
-    label.innerHTML = name === 'board'
-      ? 'You are on: <strong>Project board</strong> — kanban by stream'
-      : 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner';
+    const labels = {
+      board: 'You are on: <strong>Project board</strong> — kanban by stream',
+      recurring: 'You are on: <strong>Recurring</strong> — habits &amp; cadence (Reclaim replacement)',
+      home: 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner',
+    };
+    label.innerHTML = labels[name] || labels.home;
   }
 }
 
 function renderAll() {
   renderHome();
   renderBoard();
+  renderRecurring();
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
 }
 
@@ -93,6 +98,7 @@ function wire() {
     btn.onclick = () => setView(btn.dataset.view);
   });
   document.body.addEventListener('click', async (e) => {
+    if (await handleRecurringClick(e, boot)) return;
     const uiToggle = e.target.closest('[data-ui-toggle]');
     if (uiToggle) {
       const key = uiToggle.getAttribute('data-ui-toggle');

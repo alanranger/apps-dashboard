@@ -56,3 +56,22 @@ If the other agent is already on the task, read `task_log` / comments and coordi
 ## Session closing habit
 
 Claude: update the board as the last act of each session for any MC tasks touched.
+
+## Recurring tasks tab (Reclaim replacement)
+
+Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-calendar-mc-protocol-ruling). Mission Control stores habits in `recurring_tasks`; **no Calendar API or OAuth in apps-dashboard**.
+
+### Claude Monday sweep (with MC-7)
+
+1. Open the **Recurring** tab; read all active rows.
+2. For the coming week, compute each instance from `rrule` + `ideal_time` + `window_days`.
+3. Read Alan's Google Calendar; place each instance around fixed commitments within the window.
+4. Create busy calendar events titled `🔁 {title}` (not MC-{n} — those are project tasks).
+5. Write the placed slot into **Scheduled by Claude** on that row (PATCH `/api/mc/recurring` → `scheduled_note`, e.g. `Thu 23 11:00–13:00`). Optionally set `last_scheduled`.
+
+### Alan / agents on the tab
+
+- **Mark done** sets `last_done` to today and appends `recurring_log`.
+- Missed instances show red until marked done or deactivated.
+- Edit cadence via human `cadence_text` + `rrule` (six presets in UI + custom).
+- Reclaim runs in parallel until each habit has fired once (~mid-Aug); Alan cancels Reclaim after proof.

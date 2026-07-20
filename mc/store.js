@@ -22,6 +22,8 @@ export const store = {
   checklist: [],
   comments: [],
   log: [],
+  recurring: [],
+  recurring_log: [],
   activeProjectId: null,
   openTaskId: null,
   /** @type {{ impact: string, diff: string } | null} */
@@ -50,6 +52,8 @@ export function applyBootstrap(data) {
   store.checklist = data.checklist || [];
   store.comments = data.comments || [];
   store.log = data.log || [];
+  store.recurring = data.recurring || [];
+  store.recurring_log = data.recurring_log || [];
   if (!store.activeProjectId) store.activeProjectId = store.projects[0]?.id || null;
 }
 

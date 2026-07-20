@@ -22,6 +22,16 @@ export function fmtDate(d) {
   return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+export function fmtTime(t) {
+  if (!t) return '—';
+  const s = String(t).slice(0, 5);
+  const [h, m] = s.split(':').map(Number);
+  if (Number.isNaN(h)) return s;
+  const dt = new Date();
+  dt.setHours(h, m || 0, 0, 0);
+  return dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
 export function empty(icon, text, actionHtml = '') {
   return `<div class="empty"><i class="ti ${icon}"></i><p>${esc(text)}</p>${actionHtml}</div>`;
 }
