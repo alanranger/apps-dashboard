@@ -114,7 +114,7 @@ function nextUpHtml(tasks) {
         <span class="mcid mcid-nowrap">MC-${t.display_id}</span>
         <div class="nextup-main">
           <div class="nextup-title">${esc(t.title)}</div>
-          ${why ? `<div class="nextup-why meta">${esc(why)}</div>` : ''}
+          <div class="nextup-meta">${projectChip(t)}${why ? `<span class="nextup-why meta">${esc(why)}</span>` : ''}</div>
         </div>
         <span class="due-pill ${tone ? `due-pill-${tone}` : ''}">${esc(due)}</span>
       </div>`;
