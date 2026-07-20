@@ -12,6 +12,18 @@ function skeletonHome() {
   $('view-home').innerHTML = '<div class="card"><div class="skeleton"></div><div class="skeleton"></div></div>';
 }
 
+function activeView() {
+  return document.querySelector('.view-btn.active')?.dataset?.view || 'home';
+}
+
+function paintRecurring() {
+  try { renderRecurring(); }
+  catch (e) {
+    const el = $('view-recurring');
+    if (el) el.innerHTML = `<div class="card"><p class="err">Recurring tab failed: ${e.message || e}</p></div>`;
+  }
+}
+
 function setView(name) {
   document.querySelectorAll('.views').forEach((el) => el.classList.remove('active'));
   document.querySelectorAll('.view-btn').forEach((el) => {
@@ -30,21 +42,26 @@ function setView(name) {
     label.innerHTML = labels[name] || labels.home;
   }
   // Lazy-render Recurring only when opened — never block Dashboard login
-  if (name === 'recurring') {
-    try { renderRecurring(); }
-    catch (e) {
-      const el = $('view-recurring');
-      if (el) el.innerHTML = `<div class="card"><p class="err">Recurring tab failed: ${e.message || e}</p></div>`;
-    }
-  }
+  if (name === 'recurring') paintRecurring();
 }
 
 function renderAll() {
   renderHome();
   renderBoard();
-  const rec = $('view-recurring');
-  if (rec) rec.innerHTML = '<div class="card"><p class="meta">Open the Recurring tab to load habits.</p></div>';
+  if (activeView() === 'recurring') {
+    paintRecurring();
+  } else {
+    const rec = $('view-recurring');
+    if (rec) rec.innerHTML = '<div class="card"><p class="meta">Open the Recurring tab to load habits.</p></div>';
+  }
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
+}
+
+/** After mark-done / edit / toggle — refresh data and keep Recurring table visible. */
+async function refreshRecurring() {
+  const data = await api('/api/mc/bootstrap');
+  applyBootstrap(data);
+  setView('recurring');
 }
 
 async function boot() {
@@ -107,7 +124,7 @@ function wire() {
     btn.onclick = () => setView(btn.dataset.view);
   });
   document.body.addEventListener('click', async (e) => {
-    if (await handleRecurringClick(e, boot)) return;
+    if (await handleRecurringClick(e, refreshRecurring)) return;
     const uiToggle = e.target.closest('[data-ui-toggle]');
     if (uiToggle) {
       const key = uiToggle.getAttribute('data-ui-toggle');

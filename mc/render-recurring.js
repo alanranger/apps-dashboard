@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { $, esc, fmtTime } from './util.js';
+import { $, esc, fmtTime, fmtDate } from './util.js';
 import { nextDueFromRrule, lastDueOnOrBefore, RRULE_PRESETS } from './rrule.js';
 import { api } from './api.js';
 
@@ -41,12 +41,14 @@ export function renderRecurring() {
     const st = statusFor(t);
     const next = nextDue(t);
     const missed = st.label === 'missed' ? '<span class="pill rec-missed-pill">missed</span>' : '';
+    const lastDone = t.last_done ? fmtDate(t.last_done) : '—';
     return `<tr class="${st.cls}">
       <td><strong>${esc(t.title)}</strong>${missed}</td>
       <td>${esc(t.cadence_text)}</td>
       <td>${t.duration_min} min</td>
       <td>${fmtTime(t.ideal_time)}</td>
       <td>${next}</td>
+      <td>${lastDone}</td>
       <td class="rec-sched">${t.scheduled_note ? esc(t.scheduled_note) : '<span class="meta">—</span>'}</td>
       <td><label class="rec-toggle"><input type="checkbox" data-rec-active="${t.id}" ${t.active ? 'checked' : ''} /> active</label></td>
       <td class="rec-actions">
@@ -62,7 +64,7 @@ export function renderRecurring() {
     <div class="rec-table-wrap">
       <table class="rec-table">
         <thead><tr>
-          <th>Title</th><th>Cadence</th><th>Duration</th><th>Ideal time</th><th>Next due</th>
+          <th>Title</th><th>Cadence</th><th>Duration</th><th>Ideal time</th><th>Next due</th><th>Last done</th>
           <th>Scheduled by Claude</th><th>Active</th><th></th>
         </tr></thead>
         <tbody>${body}</tbody>
