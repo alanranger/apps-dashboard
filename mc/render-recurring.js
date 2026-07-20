@@ -9,17 +9,23 @@ function todayStr() {
 
 function statusFor(task) {
   if (!task.active) return { label: 'inactive', cls: '' };
-  const today = todayStr();
-  const lastDue = lastDueOnOrBefore(task.rrule, today);
-  if (lastDue && (!task.last_done || task.last_done < lastDue) && lastDue < today) {
-    return { label: 'missed', cls: 'rec-missed' };
-  }
+  try {
+    const today = todayStr();
+    const lastDue = lastDueOnOrBefore(task.rrule, today);
+    if (lastDue && (!task.last_done || task.last_done < lastDue) && lastDue < today) {
+      return { label: 'missed', cls: 'rec-missed' };
+    }
+  } catch (e) { /* ignore bad rrule */ }
   return { label: 'ok', cls: '' };
 }
 
 function nextDue(task) {
-  const from = task.last_done || todayStr();
-  return nextDueFromRrule(task.rrule, from) || '—';
+  try {
+    const from = task.last_done || todayStr();
+    return nextDueFromRrule(task.rrule, from) || '—';
+  } catch (e) {
+    return '—';
+  }
 }
 
 export function renderRecurring() {

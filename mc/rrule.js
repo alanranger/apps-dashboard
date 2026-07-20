@@ -15,118 +15,125 @@ function parseByDay(val) {
   return { nth: m[1] ? Number(m[1]) : null, dow: DOW[m[2].toUpperCase()] };
 }
 
-function fmt(d) {
-  return d.toISOString().slice(0, 10);
+/** Local calendar date YYYY-MM-DD (no UTC shift). */
+function toYmd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function fromYmd(s) {
+  const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
 }
 
 function addDays(d, n) {
-  const x = new Date(d);
+  const x = new Date(d.getTime());
   x.setDate(x.getDate() + n);
   return x;
 }
 
 function nthWeekdayInMonth(year, month, nth, dow) {
   if (nth > 0) {
-    const first = new Date(year, month, 1);
+    const first = new Date(year, month, 1, 12, 0, 0, 0);
     let day = 1 + ((dow - first.getDay() + 7) % 7);
     day += (nth - 1) * 7;
     const last = new Date(year, month + 1, 0).getDate();
     if (day > last) return null;
-    return new Date(year, month, day);
+    return new Date(year, month, day, 12, 0, 0, 0);
   }
-  const lastDay = new Date(year, month + 1, 0);
-  let day = lastDay.getDate();
-  while (day >= 1) {
-    const d = new Date(year, month, day);
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  for (let day = lastDay; day >= 1; day -= 1) {
+    const d = new Date(year, month, day, 12, 0, 0, 0);
     if (d.getDay() === dow) return d;
-    day -= 1;
   }
   return null;
 }
 
-function nextWeekly(from, byday) {
+function nextWeekly(after, byday) {
   const bd = parseByDay(byday);
   if (!bd || bd.dow == null) return null;
-  const start = addDays(from, 1);
-  let d = new Date(start);
-  for (let i = 0; i < 366; i += 1) {
+  let d = addDays(after, 1);
+  for (let i = 0; i < 14; i += 1) {
     if (d.getDay() === bd.dow) return d;
     d = addDays(d, 1);
   }
   return null;
 }
 
-function nextMonthlyDom(from, dom) {
-  let d = new Date(from);
-  d.setDate(d.getDate() + 1);
+function nextMonthlyDom(after, dom) {
+  let y = after.getFullYear();
+  let m = after.getMonth();
   for (let i = 0; i < 24; i += 1) {
-    const y = d.getFullYear();
-    const m = d.getMonth();
     const last = new Date(y, m + 1, 0).getDate();
     const day = Math.min(dom, last);
-    const cand = new Date(y, m, day);
-    if (cand > from) return cand;
-    d = new Date(y, m + 1, 1);
+    const cand = new Date(y, m, day, 12, 0, 0, 0);
+    if (cand > after) return cand;
+    m += 1;
+    if (m > 11) { m = 0; y += 1; }
   }
   return null;
 }
 
-function nextMonthlyByDay(from, byday, interval) {
+function nextMonthlyByDay(after, byday, interval) {
   const bd = parseByDay(byday);
   if (!bd || bd.dow == null || !bd.nth) return null;
-  let d = new Date(from);
-  d.setDate(d.getDate() + 1);
-  for (let i = 0; i < 36; i += 1) {
-    const y = d.getFullYear();
-    const m = d.getMonth();
+  let y = after.getFullYear();
+  let m = after.getMonth();
+  for (let i = 0; i < 48; i += 1) {
     const cand = nthWeekdayInMonth(y, m, bd.nth, bd.dow);
-    if (cand && cand > from) return cand;
-    d = new Date(y, m + interval, 1);
+    if (cand && cand > after) return cand;
+    m += interval;
+    while (m > 11) { m -= 12; y += 1; }
   }
   return null;
 }
 
-/** Next occurrence on or after tomorrow from `fromDate` (YYYY-MM-DD or Date). */
+/** Next occurrence strictly after fromDate (YYYY-MM-DD or Date). */
 export function nextDueFromRrule(rrule, fromDate) {
   const p = parseRrule(rrule);
   if (!p.FREQ) return null;
-  const from = fromDate ? new Date(String(fromDate).slice(0, 10)) : new Date();
-  from.setHours(12, 0, 0, 0);
+  const after = fromDate instanceof Date
+    ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 12, 0, 0, 0)
+    : fromYmd(fromDate || toYmd(new Date()));
   const interval = Number(p.INTERVAL) || 1;
 
-  if (p.FREQ === 'WEEKLY' && p.BYDAY) {
-    const n = nextWeekly(from, p.BYDAY.split(',')[0]);
-    return n ? fmt(n) : null;
-  }
-  if (p.FREQ === 'MONTHLY' && p.BYMONTHDAY) {
-    const n = nextMonthlyDom(from, Number(p.BYMONTHDAY));
-    return n ? fmt(n) : null;
-  }
-  if (p.FREQ === 'MONTHLY' && p.BYDAY) {
-    const n = nextMonthlyByDay(from, p.BYDAY.split(',')[0], interval);
-    return n ? fmt(n) : null;
-  }
-  return null;
+  let n = null;
+  if (p.FREQ === 'WEEKLY' && p.BYDAY) n = nextWeekly(after, p.BYDAY.split(',')[0]);
+  else if (p.FREQ === 'MONTHLY' && p.BYMONTHDAY) n = nextMonthlyDom(after, Number(p.BYMONTHDAY));
+  else if (p.FREQ === 'MONTHLY' && p.BYDAY) n = nextMonthlyByDay(after, p.BYDAY.split(',')[0], interval);
+  return n ? toYmd(n) : null;
 }
 
-/** Most recent due date on or before today (for missed detection). */
+/** Most recent due date on or before today (missed detection). Bounded — never hangs. */
 export function lastDueOnOrBefore(rrule, today) {
-  const p = parseRrule(rrule);
-  if (!p.FREQ) return null;
-  const end = today ? new Date(String(today).slice(0, 10)) : new Date();
-  end.setHours(12, 0, 0, 0);
-  let cursor = addDays(end, -400);
-  let last = null;
-  while (cursor <= end) {
-    const n = nextDueFromRrule(rrule, addDays(cursor, -1));
-    if (!n) break;
-    const nd = new Date(n);
-    nd.setHours(12, 0, 0, 0);
-    if (nd <= end) last = n;
-    cursor = addDays(nd, 1);
-    if (nd > end) break;
+  const end = today instanceof Date ? toYmd(today) : String(today || toYmd(new Date())).slice(0, 10);
+  const endD = fromYmd(end);
+  // Walk back from end: find previous occurrence by asking "next after (day-1)" repeatedly with a hard cap
+  let probe = addDays(endD, -1);
+  for (let i = 0; i < 400; i += 1) {
+    const n = nextDueFromRrule(rrule, addDays(probe, -370));
+    if (!n) return null;
+    const nd = fromYmd(n);
+    if (nd <= endD) {
+      // Keep advancing until we pass end, track last on/before end
+      let last = n;
+      let cur = nd;
+      for (let j = 0; j < 60; j += 1) {
+        const nxt = nextDueFromRrule(rrule, cur);
+        if (!nxt) break;
+        const nxtd = fromYmd(nxt);
+        if (nxtd > endD) break;
+        if (nxtd.getTime() <= cur.getTime()) break; // safety: no progress
+        last = nxt;
+        cur = nxtd;
+      }
+      return last;
+    }
+    probe = addDays(probe, -30);
   }
-  return last;
+  return null;
 }
 
 export const RRULE_PRESETS = [

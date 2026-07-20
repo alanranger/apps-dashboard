@@ -34,7 +34,12 @@ function setView(name) {
 function renderAll() {
   renderHome();
   renderBoard();
-  renderRecurring();
+  try {
+    renderRecurring();
+  } catch (e) {
+    const el = $('view-recurring');
+    if (el) el.innerHTML = `<div class="card"><p class="err">Recurring tab failed to render: ${e.message || e}</p></div>`;
+  }
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
 }
 
