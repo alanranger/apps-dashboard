@@ -156,3 +156,72 @@
     .views.active { display: block; }
     .check row, .check-item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; }
     .err { color: var(--red); font-size: 12px; margin-top: 8px; }
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+@media (max-width: 900px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.summary-cell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
+}
+.summary-cell.danger { border-color: var(--red); background: var(--red-bg); }
+.summary-cell.warn { border-color: var(--amber); background: var(--amber-bg); }
+.summary-n { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.summary-l { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+
+.matrix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 768px) { .matrix { grid-template-columns: 1fr; } }
+.matrix-cell {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  min-width: 0;
+}
+.matrix-cell.danger { border-color: var(--red); }
+.matrix-cell.warn { border-color: var(--amber); }
+.matrix-cell.muted { opacity: 0.92; }
+.matrix-head h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.matrix-list { margin-top: 8px; max-height: 280px; overflow-y: auto; }
+
+.plan-day { margin-bottom: 12px; }
+.plan-day-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.plan-day.danger .plan-day-label { color: var(--red); }
+.plan-day.today .plan-day-label { color: var(--accent); }
+.plan-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.plan-row:hover { background: var(--panel-2); }
+.plan-row .mcid { font-size: 11px; color: var(--text-faint); min-width: 3.5rem; }
+.plan-title { font-size: 14px; word-break: break-word; }
+.plan-due { white-space: nowrap; }
+.danger-pill { background: var(--red-bg); color: var(--red); }
