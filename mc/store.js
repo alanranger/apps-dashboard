@@ -10,6 +10,8 @@ export const store = {
   /** @type {{ impact: string, diff: string } | null} */
   matrixFilter: null,
   matrixSort: { column: 'due_date', direction: 'asc' },
+  /** Exec summary filters — AND together; each dim toggles independently */
+  execFilter: { status: null, priority: null, projectId: null, owner: null },
 };
 
 export function applyBootstrap(data) {

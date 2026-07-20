@@ -1,6 +1,6 @@
 import { store, projectById } from './store.js';
 import { STATE_LABEL, esc, fmtDate } from './util.js';
-import { isOverdue } from './task-helpers.js';
+import { isOverdue, execFilterActive, execFilterLabel } from './task-helpers.js';
 
 const IMPACTS = ['HIGH', 'MEDIUM', 'LOW'];
 const DIFFS = ['LOW', 'MEDIUM', 'HIGH'];
@@ -141,14 +141,18 @@ function tableHtml(tasks) {
 
 /** Impact × Difficulty matrix + filtered sortable table (Money Pages pattern). */
 export function priorityMatrixHtml(tasks) {
+  const bits = [];
+  if (execFilterActive()) bits.push(execFilterLabel());
+  if (store.matrixFilter) bits.push(`${store.matrixFilter.impact}/${store.matrixFilter.diff}`);
+  const heading = bits.length ? `Tasks (filtered: ${bits.join(' · ')})` : 'Tasks (all open)';
   return `
     <div class="card">
       <h2>Priority matrix</h2>
-      <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — click a tile to filter the table.</p>
+      <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — click a tile to filter further. Exec summary tiles above also filter this table.</p>
       <div class="matrix-and-table">
         <div class="priority-matrix">${matrixHtml(tasks)}</div>
         <div class="priority-table-panel">
-          <h3 class="pm-table-heading">Tasks ${store.matrixFilter ? '(filtered)' : '(all open)'}</h3>
+          <h3 class="pm-table-heading">${esc(heading)}</h3>
           ${tableHtml(tasks)}
         </div>
       </div>

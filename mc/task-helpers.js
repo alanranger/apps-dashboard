@@ -113,6 +113,43 @@ export function plannerGroups(tasks) {
   return groups;
 }
 
+/** Apply Dashboard exec-summary tile filters (status / priority / project / owner). */
+export function applyExecFilter(tasks) {
+  const f = store.execFilter || {};
+  let out = tasks;
+  const weekEnd = dayStart();
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  if (f.status === 'overdue') out = out.filter(isOverdue);
+  else if (f.status === 'dueWeek') {
+    out = out.filter((t) => {
+      const due = parseDue(t);
+      return due && due >= dayStart() && due <= weekEnd;
+    });
+  } else if (f.status === 'in_progress') out = out.filter((t) => t.state === 'in_progress');
+  else if (f.status === 'todo') out = out.filter((t) => t.state === 'todo');
+  else if (f.status === 'verify') out = out.filter((t) => t.state === 'done_claimed');
+  else if (f.status === 'waiting') out = out.filter((t) => t.state === 'waiting');
+  if (f.priority) out = out.filter((t) => t.priority === f.priority);
+  if (f.projectId) out = out.filter((t) => t.project_id === f.projectId);
+  if (f.owner) out = out.filter((t) => t.owner === f.owner);
+  return out;
+}
+
+export function execFilterActive() {
+  const f = store.execFilter || {};
+  return !!(f.status || f.priority || f.projectId || f.owner);
+}
+
+export function execFilterLabel() {
+  const f = store.execFilter || {};
+  const bits = [];
+  if (f.status) bits.push(`status=${f.status}`);
+  if (f.priority) bits.push(f.priority);
+  if (f.projectId) bits.push(projectById(f.projectId)?.name || 'project');
+  if (f.owner) bits.push(f.owner);
+  return bits.length ? bits.join(' · ') : '';
+}
+
 export function summaryCounts(tasks) {
   const verify = tasks.filter((t) => t.state === 'done_claimed').length;
   const waiting = tasks.filter((t) => t.state === 'waiting').length;

@@ -209,18 +209,38 @@
   border-radius: 12px;
   padding: 12px;
   min-width: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
 }
+.summary-cell:hover { border-color: var(--accent); }
 .summary-cell.danger { border-color: var(--red); background: var(--red-bg); }
 .summary-cell.warn { border-color: var(--amber); background: var(--amber-bg); }
 .summary-cell.ok { border-color: rgba(63,185,80,.35); }
+.summary-cell.active {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(240, 180, 41, 0.35);
+  background: rgba(240, 180, 41, 0.14) !important;
+}
 .summary-n { font-size: 22px; font-weight: 700; line-height: 1.2; }
 .summary-l { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
-.owner-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.owner-strip { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .owner-chip {
   font-size: 12px; padding: 4px 10px; border-radius: 999px;
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-dim);
+  cursor: pointer;
 }
 .owner-chip strong { color: var(--accent); margin-right: 4px; }
+.owner-chip.active {
+  border-color: var(--accent);
+  background: rgba(240, 180, 41, 0.14);
+  color: var(--text);
+}
+.exec-filter-note { margin-top: 10px; }
+button.linkish {
+  display: inline; padding: 0; border: 0; background: none; color: var(--accent);
+  text-decoration: underline; cursor: pointer; font: inherit;
+}
 
 .matrix {
   display: grid;

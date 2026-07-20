@@ -6,6 +6,9 @@ import {
   summaryCounts,
   taskLine,
   projectChip,
+  applyExecFilter,
+  execFilterActive,
+  execFilterLabel,
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
@@ -15,34 +18,40 @@ function tileRow(label, cells, aria) {
       <div class="exec-row-label">${esc(label)}</div>
       <div class="summary" aria-label="${esc(aria)}">
         ${cells.map((x) => `
-          <div class="summary-cell ${x.tone || ''}" title="${esc(x.tip || x.label)}">
+          <button type="button" class="summary-cell ${x.tone || ''} ${x.active ? 'active' : ''}"
+            data-exec-dim="${esc(x.dim)}" data-exec-val="${esc(x.val)}"
+            title="${esc(x.tip || `Filter table: ${x.label}`)}">
             <div class="summary-n">${x.n}</div>
-            <div class="summary-l">${x.label}</div>
-          </div>`).join('')}
+            <div class="summary-l">${esc(x.label)}</div>
+          </button>`).join('')}
       </div>
     </div>`;
 }
 
 function summaryHtml(c) {
+  const f = store.execFilter || {};
   const byStatus = [
-    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok', tip: 'Past due date' },
-    { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek ? 'warn' : 'ok', tip: 'Due within the next week' },
-    { n: c.inProgress, label: 'In progress', tone: c.inProgress ? 'warn' : 'ok' },
-    { n: c.todo, label: 'To do', tone: '' },
-    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok' },
-    { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : 'ok' },
-    { n: c.open, label: 'Open total', tone: '' },
+    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok', dim: 'status', val: 'overdue', active: f.status === 'overdue' },
+    { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek ? 'warn' : 'ok', dim: 'status', val: 'dueWeek', active: f.status === 'dueWeek' },
+    { n: c.inProgress, label: 'In progress', tone: c.inProgress ? 'warn' : 'ok', dim: 'status', val: 'in_progress', active: f.status === 'in_progress' },
+    { n: c.todo, label: 'To do', tone: '', dim: 'status', val: 'todo', active: f.status === 'todo' },
+    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok', dim: 'status', val: 'verify', active: f.status === 'verify' },
+    { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : 'ok', dim: 'status', val: 'waiting', active: f.status === 'waiting' },
+    { n: c.open, label: 'Open total', tone: '', dim: 'status', val: 'clear', tip: 'Clear status filter (keep project/priority/owner)', active: !f.status },
   ];
   const byPri = [
-    { n: c.byPriority.p0, label: 'p0 urgent', tone: c.byPriority.p0 ? 'danger' : 'ok', tip: 'Operational priority p0' },
-    { n: c.byPriority.p1, label: 'p1 important', tone: c.byPriority.p1 ? 'warn' : 'ok', tip: 'Operational priority p1' },
-    { n: c.byPriority.p2, label: 'p2 later', tone: '', tip: 'Operational priority p2' },
+    { n: c.byPriority.p0, label: 'p0 urgent', tone: c.byPriority.p0 ? 'danger' : 'ok', dim: 'priority', val: 'p0', active: f.priority === 'p0' },
+    { n: c.byPriority.p1, label: 'p1 important', tone: c.byPriority.p1 ? 'warn' : 'ok', dim: 'priority', val: 'p1', active: f.priority === 'p1' },
+    { n: c.byPriority.p2, label: 'p2 later', tone: '', dim: 'priority', val: 'p2', active: f.priority === 'p2' },
   ];
   const byProject = c.byProject.map((p) => ({
     n: p.n,
     label: p.name,
     tone: p.n >= 8 ? 'warn' : '',
-    tip: `${p.name}: ${p.n} open tasks`,
+    dim: 'projectId',
+    val: p.id,
+    tip: `Filter table: ${p.name}`,
+    active: f.projectId === p.id,
   }));
   const owners = [
     ['alan', c.byOwner.alan],
@@ -50,6 +59,9 @@ function summaryHtml(c) {
     ['cursor', c.byOwner.cursor],
     ['external', c.byOwner.external],
   ];
+  const filterNote = execFilterActive()
+    ? `<p class="meta exec-filter-note">Table filtered: <strong>${esc(execFilterLabel())}</strong> — click a tile again to clear that filter, or <button type="button" class="linkish" data-exec-dim="all" data-exec-val="clear">Clear all filters</button></p>`
+    : '<p class="meta exec-filter-note">Click any tile (or owner) to filter the task table below. Click again to clear.</p>';
   return `
     <div class="card exec-card rag-${c.rag}" aria-label="Executive summary">
       <div class="exec-head">
@@ -60,13 +72,18 @@ function summaryHtml(c) {
           <p class="meta">${c.open} open · ${c.byPriority.p0} p0 · ${c.byPriority.p1} p1 · ${c.byPriority.p2} p2 · ${c.byOwner.alan} on you · ${c.byOwner.claude} Claude · ${c.byOwner.cursor} Cursor</p>
         </div>
       </div>
-      ${tileRow('By status', byStatus, 'Counts by progress status')}
-      ${tileRow('By priority', byPri, 'Counts by operational priority')}
-      ${tileRow('By project', byProject, 'Counts by project stream')}
-      <div class="owner-strip" aria-label="By owner">
+      ${tileRow('By status', byStatus, 'Filter by progress status')}
+      ${tileRow('By priority', byPri, 'Filter by operational priority')}
+      ${tileRow('By project', byProject, 'Filter by project stream')}
+      <div class="owner-strip" aria-label="Filter by owner">
         <span class="meta" style="margin-right:4px">By owner:</span>
-        ${owners.map(([name, n]) => `<span class="owner-chip"><strong>${n}</strong> ${name}</span>`).join('')}
+        ${owners.map(([name, n]) => `
+          <button type="button" class="owner-chip ${f.owner === name ? 'active' : ''}"
+            data-exec-dim="owner" data-exec-val="${name}" title="Filter table: owner ${name}">
+            <strong>${n}</strong> ${name}
+          </button>`).join('')}
       </div>
+      ${filterNote}
     </div>`;
 }
 
@@ -105,12 +122,13 @@ function verifyHtml(tasks) {
 export function renderHome() {
   const tasks = openTasks();
   const counts = summaryCounts(tasks);
-  const groups = plannerGroups(tasks);
+  const tableTasks = applyExecFilter(tasks);
+  const groups = plannerGroups(tableTasks);
 
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}
     ${verifyHtml(tasks)}
-    ${priorityMatrixHtml(tasks)}
+    ${priorityMatrixHtml(tableTasks)}
     ${plannerHtml(groups)}
     <div class="card">
       <h2>Claude ↔ Cursor workflow (how this ties in)</h2>

@@ -102,6 +102,25 @@ function wire() {
       } catch (err) { /* ignore */ }
       return;
     }
+    const exec = e.target.closest('[data-exec-dim]');
+    if (exec) {
+      const dim = exec.getAttribute('data-exec-dim');
+      const val = exec.getAttribute('data-exec-val');
+      if (!store.execFilter) store.execFilter = { status: null, priority: null, projectId: null, owner: null };
+      if (dim === 'all' || (dim === 'status' && val === 'clear')) {
+        if (dim === 'all') {
+          store.execFilter = { status: null, priority: null, projectId: null, owner: null };
+        } else {
+          store.execFilter.status = null;
+        }
+      } else if (store.execFilter[dim] === val) {
+        store.execFilter[dim] = null;
+      } else {
+        store.execFilter[dim] = val;
+      }
+      renderHome();
+      return;
+    }
     const matrix = e.target.closest('[data-matrix-impact]');
     if (matrix) {
       const impact = matrix.getAttribute('data-matrix-impact');
