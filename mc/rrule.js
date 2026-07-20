@@ -106,34 +106,23 @@ export function nextDueFromRrule(rrule, fromDate) {
   return n ? toYmd(n) : null;
 }
 
-/** Most recent due date on or before today (missed detection). Bounded — never hangs. */
+/** Most recent due date on or before today (missed detection). Hard-capped — never hangs. */
 export function lastDueOnOrBefore(rrule, today) {
   const end = today instanceof Date ? toYmd(today) : String(today || toYmd(new Date())).slice(0, 10);
   const endD = fromYmd(end);
-  // Walk back from end: find previous occurrence by asking "next after (day-1)" repeatedly with a hard cap
-  let probe = addDays(endD, -1);
-  for (let i = 0; i < 400; i += 1) {
-    const n = nextDueFromRrule(rrule, addDays(probe, -370));
-    if (!n) return null;
+  // Start ~14 months before end and walk forward (max ~60 steps)
+  let cur = addDays(endD, -420);
+  let last = null;
+  for (let i = 0; i < 80; i += 1) {
+    const n = nextDueFromRrule(rrule, cur);
+    if (!n) break;
     const nd = fromYmd(n);
-    if (nd <= endD) {
-      // Keep advancing until we pass end, track last on/before end
-      let last = n;
-      let cur = nd;
-      for (let j = 0; j < 60; j += 1) {
-        const nxt = nextDueFromRrule(rrule, cur);
-        if (!nxt) break;
-        const nxtd = fromYmd(nxt);
-        if (nxtd > endD) break;
-        if (nxtd.getTime() <= cur.getTime()) break; // safety: no progress
-        last = nxt;
-        cur = nxtd;
-      }
-      return last;
-    }
-    probe = addDays(probe, -30);
+    if (nd.getTime() <= cur.getTime()) break;
+    if (nd > endD) break;
+    last = n;
+    cur = nd;
   }
-  return null;
+  return last;
 }
 
 export const RRULE_PRESETS = [
