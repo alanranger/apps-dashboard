@@ -75,3 +75,23 @@ Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-
 - Missed instances show red until marked done or deactivated.
 - Edit cadence via human `cadence_text` + `rrule` (six presets in UI + custom).
 - Reclaim runs in parallel until each habit has fired once (~mid-Aug); Alan cancels Reclaim after proof.
+
+## Standing rules (20 Jul night orders — Alan-approved)
+
+### Preserve-interactions invariant
+
+No UI change may remove or alter an existing interaction (sorts, filters, clicks, expanded-by-default states) unless the change is explicitly listed in the instruction **and** Alan approved that listed change. **Defaults:** exec tiles + matrix stay **OPEN** (Alan's standing overrule).
+
+### Disclosure rule
+
+Every UI-affecting response includes a **"What changes visibly for Alan"** list.
+
+### Why-line duty
+
+Any task an agent touches gets/keeps a one-line `why` (what it unblocks or what it costs if delayed).
+
+### Events & residential conventions (Alan-ruled 20 Jul)
+
+- **Per event:** "Prep joining details" task due event−10 days; send deadline event−7 days; red if not done by event−5.
+- **Per hotel booking:** decision task due at the booking's exact free-cancellation deadline −3 days (deadlines from Booking.com confirmation emails; Claude reads and creates these tasks — no build needed from Cursor).
+- Claude adds a **"📅 Events & residential"** project and seeds tasks in Claude's pass.
