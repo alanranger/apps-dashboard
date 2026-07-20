@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { $, esc, empty } from './util.js';
+import { $, esc, empty, fmtDate } from './util.js';
 import {
   openTasks,
   plannerGroups,
@@ -9,6 +9,9 @@ import {
   applyExecFilter,
   execFilterActive,
   execFilterLabel,
+  nextUpTasks,
+  taskWhy,
+  duePillTone,
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
@@ -28,14 +31,14 @@ function tileRow(label, cells, aria) {
     </div>`;
 }
 
-function summaryHtml(c) {
+function execDetailHtml(c) {
   const f = store.execFilter || {};
   const byStatus = [
+    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok', dim: 'status', val: 'verify', active: f.status === 'verify' },
     { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok', dim: 'status', val: 'overdue', active: f.status === 'overdue' },
     { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek ? 'warn' : 'ok', dim: 'status', val: 'dueWeek', active: f.status === 'dueWeek' },
     { n: c.inProgress, label: 'In progress', tone: c.inProgress ? 'warn' : 'ok', dim: 'status', val: 'in_progress', active: f.status === 'in_progress' },
     { n: c.todo, label: 'To do', tone: '', dim: 'status', val: 'todo', active: f.status === 'todo' },
-    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok', dim: 'status', val: 'verify', active: f.status === 'verify' },
     { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : 'ok', dim: 'status', val: 'waiting', active: f.status === 'waiting' },
     { n: c.open, label: 'Open total', tone: '', dim: 'status', val: 'clear', tip: 'Clear status filter (keep project/priority/owner)', active: !f.status },
   ];
@@ -63,27 +66,63 @@ function summaryHtml(c) {
     ? `<p class="meta exec-filter-note">Table filtered: <strong>${esc(execFilterLabel())}</strong> — click a tile again to clear that filter, or <button type="button" class="linkish" data-exec-dim="all" data-exec-val="clear">Clear all filters</button></p>`
     : '<p class="meta exec-filter-note">Click any tile (or owner) to filter the task table below. Click again to clear.</p>';
   return `
+    ${tileRow('By status', byStatus, 'Filter by progress status')}
+    ${tileRow('By priority', byPri, 'Filter by operational priority')}
+    ${tileRow('By project', byProject, 'Filter by project stream')}
+    <div class="owner-strip" aria-label="Filter by owner">
+      <span class="meta" style="margin-right:4px">By owner:</span>
+      ${owners.map(([name, n]) => `
+        <button type="button" class="owner-chip ${f.owner === name ? 'active' : ''}"
+          data-exec-dim="owner" data-exec-val="${name}" title="Filter table: owner ${name}">
+          <strong>${n}</strong> ${name}
+        </button>`).join('')}
+    </div>
+    ${filterNote}`;
+}
+
+function summaryHtml(c) {
+  const expanded = store.uiPrefs.execExpanded;
+  const ragLabel = c.rag === 'red' ? 'RED' : c.rag === 'amber' ? 'AMBER' : 'GREEN';
+  const chev = expanded ? 'ti-chevron-up' : 'ti-chevron-down';
+  return `
     <div class="card exec-card rag-${c.rag}" aria-label="Executive summary">
-      <div class="exec-head">
-        <div class="rag-badge rag-${c.rag}">${c.rag === 'red' ? 'RED' : c.rag === 'amber' ? 'AMBER' : 'GREEN'}</div>
-        <div>
-          <h2>Executive summary</h2>
-          <p class="exec-verdict">${esc(c.ragLabel)}</p>
-          <p class="meta">${c.open} open · ${c.byPriority.p0} p0 · ${c.byPriority.p1} p1 · ${c.byPriority.p2} p2 · ${c.byOwner.alan} on you · ${c.byOwner.claude} Claude · ${c.byOwner.cursor} Cursor</p>
+      <button type="button" class="exec-bar-toggle" data-ui-toggle="exec" aria-expanded="${expanded}">
+        <span class="rag-badge rag-${c.rag}">${ragLabel}</span>
+        <span class="exec-bar-main">${c.open} open · ${c.dueWeek} due this week · ${c.waiting} waiting</span>
+        <span class="exec-bar-side">${c.overdue} overdue · ${c.verify} to verify · ${c.byOwner.alan} on you</span>
+        <i class="ti ${chev} exec-bar-chev" aria-hidden="true"></i>
+      </button>
+      <div class="exec-detail ${expanded ? '' : 'collapsed'}">
+        <p class="exec-verdict">${esc(c.ragLabel)}</p>
+        ${execDetailHtml(c)}
+      </div>
+    </div>`;
+}
+
+function nextUpHtml(tasks) {
+  const top = nextUpTasks(tasks, 3);
+  if (!top.length) {
+    return `<div class="card"><h2>Next up — and why</h2>${empty('ti-list-check', 'No open tasks — enjoy the quiet.')}</div>`;
+  }
+  const rows = top.map((t) => {
+    const why = taskWhy(t);
+    const tone = duePillTone(t);
+    const due = t.due_date ? fmtDate(t.due_date) : '—';
+    return `
+      <div class="nextup-row" data-open="${t.id}">
+        <span class="mcid mcid-nowrap">MC-${t.display_id}</span>
+        <div class="nextup-main">
+          <div class="nextup-title">${esc(t.title)}</div>
+          ${why ? `<div class="nextup-why meta">${esc(why)}</div>` : ''}
         </div>
-      </div>
-      ${tileRow('By status', byStatus, 'Filter by progress status')}
-      ${tileRow('By priority', byPri, 'Filter by operational priority')}
-      ${tileRow('By project', byProject, 'Filter by project stream')}
-      <div class="owner-strip" aria-label="Filter by owner">
-        <span class="meta" style="margin-right:4px">By owner:</span>
-        ${owners.map(([name, n]) => `
-          <button type="button" class="owner-chip ${f.owner === name ? 'active' : ''}"
-            data-exec-dim="owner" data-exec-val="${name}" title="Filter table: owner ${name}">
-            <strong>${n}</strong> ${name}
-          </button>`).join('')}
-      </div>
-      ${filterNote}
+        <span class="due-pill ${tone ? `due-pill-${tone}` : ''}">${esc(due)}</span>
+      </div>`;
+  }).join('');
+  return `
+    <div class="card">
+      <h2>Next up — and why</h2>
+      <p class="meta" style="margin-bottom:8px">Top 3 open tasks — overdue first, then due date, priority, blockers.</p>
+      ${rows}
     </div>`;
 }
 
@@ -110,7 +149,7 @@ function verifyHtml(tasks) {
     <div class="row">
       <div>${projectChip(t)}</div>
       <div>
-        <div class="mcid">MC-${t.display_id}</div>
+        <div class="mcid mcid-nowrap">MC-${t.display_id}</div>
         <div>${esc(t.title)}</div>
         <div class="meta">${esc(t.claimed_by || '—')} · ${t.evidence_url ? `<a href="${esc(t.evidence_url)}" target="_blank" rel="noopener">evidence</a>` : 'no evidence'}</div>
       </div>
@@ -127,6 +166,7 @@ export function renderHome() {
 
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}
+    ${nextUpHtml(tasks)}
     ${verifyHtml(tasks)}
     ${priorityMatrixHtml(tableTasks)}
     ${plannerHtml(groups)}

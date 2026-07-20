@@ -28,6 +28,10 @@ Do not skip state writes. `task_log` actor must be accurate (`cursor` or `claude
 
 Each task has `impact` and `difficulty` (`HIGH` | `MEDIUM` | `LOW`) for the Dashboard priority matrix (same pattern as URL Money Pages). Agents may set these via PATCH `/api/mc/tasks` or the task drawer. Keep ops `priority` (p0/p1/p2) for urgency separately.
 
+## Task `why` (Next up card)
+
+Each task may have a nullable `why` text field — one line explaining what the task unblocks or what it costs if delayed. **Every task you touch gets/keeps a one-line why.** Set via drawer or PATCH `/api/mc/tasks`. If empty, the UI falls back to `Blocks {n} task(s)` from reverse `depends_on` count; omit the line if zero.
+
 ## Alan notes + screenshots
 
 - Alan posts via **Post note** (text and/or images) on the task drawer.

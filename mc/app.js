@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { token, setSession, clearSession } from './session.js';
-import { store, applyBootstrap, taskByMc } from './store.js';
+import { store, applyBootstrap, taskByMc, setUiPref } from './store.js';
 import { $ } from './util.js';
 import { renderHome } from './render-home.js';
 import { renderBoard } from './render-board.js';
@@ -93,6 +93,17 @@ function wire() {
     btn.onclick = () => setView(btn.dataset.view);
   });
   document.body.addEventListener('click', async (e) => {
+    const uiToggle = e.target.closest('[data-ui-toggle]');
+    if (uiToggle) {
+      const key = uiToggle.getAttribute('data-ui-toggle');
+      if (key === 'exec') {
+        setUiPref('execExpanded', !store.uiPrefs.execExpanded);
+      } else if (key === 'matrix') {
+        setUiPref('matrixExpanded', !store.uiPrefs.matrixExpanded);
+      }
+      renderHome();
+      return;
+    }
     const copy = e.target.closest('[data-copy]');
     if (copy) {
       e.preventDefault();

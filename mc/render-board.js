@@ -1,5 +1,6 @@
-import { store, projectById } from './store.js';
+import { store } from './store.js';
 import { STATES, STATE_LABEL, $, esc, fmtDate, empty } from './util.js';
+import { projectChip } from './task-helpers.js';
 
 function stalePill(t) {
   if (t.state === 'waiting' || t.owner === 'external') return '';
@@ -35,8 +36,4 @@ export function renderBoard() {
   $('view-board').innerHTML = `<div class="proj-switch">${switcher}</div><div class="board">${cols}</div>`;
 }
 
-export function projectChip(t) {
-  const p = projectById(t.project_id);
-  if (!p) return '';
-  return `<span class="chip"><i class="ti ${esc(p.icon)}"></i> ${esc(p.name)}</span>`;
-}
+export { projectChip };

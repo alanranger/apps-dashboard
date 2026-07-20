@@ -381,6 +381,61 @@ button.linkish {
   display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .03em;
   padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border);
 }
-.lvl-impact-high, .lvl-diff-high { background: var(--red-bg); color: var(--red); }
-.lvl-impact-medium, .lvl-diff-medium { background: var(--amber-bg); color: var(--amber); }
-.lvl-impact-low, .lvl-diff-low { background: var(--green-bg); color: var(--green); }
+.lvl-impact-high { background: rgba(240, 180, 41, 0.12); color: var(--accent); border-color: rgba(240, 180, 41, 0.35); }
+.lvl-impact-medium { background: var(--amber-bg); color: var(--amber); border-color: rgba(217, 164, 65, 0.35); }
+.lvl-impact-low { background: var(--green-bg); color: var(--green); border-color: rgba(63, 185, 80, 0.35); }
+.lvl-diff-high { background: rgba(163, 113, 247, 0.12); color: #a371f7; border-color: rgba(163, 113, 247, 0.35); }
+.lvl-diff-medium { background: var(--amber-bg); color: var(--amber); border-color: rgba(217, 164, 65, 0.35); }
+.lvl-diff-low { background: var(--green-bg); color: var(--green); border-color: rgba(63, 185, 80, 0.35); }
+
+/* Dashboard round 1 — collapsed bars + next up */
+.topnav a.nav-tab { font-size: 13px; color: var(--text-dim); font-weight: 500; }
+.topnav a.nav-tab.active { color: var(--text-dim); font-weight: 600; background: var(--panel); }
+.topnav a.nav-tab i { margin-right: 4px; opacity: 0.85; }
+.exec-bar-toggle {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  width: 100%; text-align: left; border: 0; background: transparent; padding: 0;
+  cursor: pointer; color: inherit;
+}
+.exec-bar-toggle:hover .exec-bar-main { color: var(--text); }
+.exec-bar-main { font-size: 14px; font-weight: 600; flex: 1 1 200px; }
+.exec-bar-side { font-size: 12px; color: var(--text-dim); margin-left: auto; }
+.exec-bar-chev { color: var(--text-faint); font-size: 18px; }
+.exec-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.exec-detail.collapsed { display: none; }
+.matrix-bar-toggle {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  width: 100%; text-align: left; border: 0; background: transparent; padding: 0;
+  cursor: pointer; color: inherit; font-size: 16px; font-weight: 600;
+}
+.matrix-bar-hint { font-weight: 400; }
+.matrix-bar-chev { margin-left: auto; color: var(--text-faint); font-size: 18px; }
+.matrix-detail.collapsed { display: none; }
+.mcid-nowrap { white-space: nowrap; min-width: 4.5rem; }
+.pm-table .td-due { white-space: nowrap; }
+.pm-table .td-project { white-space: nowrap; }
+.proj-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border);
+}
+.proj-pill-0 { background: var(--blue-bg); color: var(--blue); border-color: rgba(88, 166, 255, 0.35); }
+.proj-pill-1 { background: rgba(163, 113, 247, 0.12); color: #a371f7; border-color: rgba(163, 113, 247, 0.35); }
+.proj-pill-2 { background: rgba(56, 178, 172, 0.12); color: #38b2ac; border-color: rgba(56, 178, 172, 0.35); }
+.proj-pill-3 { background: rgba(246, 173, 85, 0.12); color: #f6ad55; border-color: rgba(246, 173, 85, 0.35); }
+.proj-pill-4 { background: rgba(237, 137, 54, 0.12); color: #ed8936; border-color: rgba(237, 137, 54, 0.35); }
+.proj-pill-5 { background: rgba(102, 126, 234, 0.12); color: #667eea; border-color: rgba(102, 126, 234, 0.35); }
+.nextup-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start;
+  padding: 10px 0; border-top: 1px solid var(--border); cursor: pointer;
+}
+.nextup-row:first-of-type { border-top: 0; }
+.nextup-row:hover { background: var(--panel-2); border-radius: 8px; }
+.nextup-title { font-size: 14px; font-weight: 600; }
+.nextup-why { margin-top: 2px; }
+.due-pill {
+  display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--border); white-space: nowrap;
+}
+.due-pill-danger { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.due-pill-warn { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+.summary-cell.danger .summary-n { color: var(--red); }

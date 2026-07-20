@@ -1,6 +1,6 @@
 import { store, projectById } from './store.js';
 import { STATE_LABEL, esc, fmtDate } from './util.js';
-import { isOverdue, execFilterActive, execFilterLabel } from './task-helpers.js';
+import { isOverdue, execFilterActive, execFilterLabel, projectChip, easyWinsCount } from './task-helpers.js';
 
 const IMPACTS = ['HIGH', 'MEDIUM', 'LOW'];
 const DIFFS = ['LOW', 'MEDIUM', 'HIGH'];
@@ -99,19 +99,18 @@ function tableHtml(tasks) {
     return '<p class="meta" style="padding:12px 0">No tasks in this matrix cell. Click another tile or clear the filter.</p>';
   }
   const body = rows.map((t) => {
-    const proj = projectById(t.project_id)?.name || '—';
     const overdue = isOverdue(t) ? ' <span class="pill danger-pill">overdue</span>' : '';
     return `
       <tr data-open="${t.id}" title="${esc((t.detail_md || t.next_step || t.title).replace(/\s+/g, ' ').slice(0, 180))}">
-        <td class="mcid">MC-${t.display_id}</td>
+        <td class="mcid mcid-nowrap">MC-${t.display_id}</td>
         <td class="td-title">${esc(t.title)}</td>
-        <td>${esc(proj)}</td>
+        <td class="td-project">${projectChip(t)}</td>
         <td>${esc(t.owner)}</td>
         <td>${esc(STATE_LABEL[t.state] || t.state)}</td>
         <td>${badge(level(t, 'impact'), 'impact')}</td>
         <td>${badge(level(t, 'difficulty'), 'diff')}</td>
         <td>${esc(t.priority || 'p1')}</td>
-        <td>${fmtDate(t.due_date)}${overdue}</td>
+        <td class="td-due">${fmtDate(t.due_date)}${overdue}</td>
         <td class="td-next">${esc(t.next_step || '—')}</td>
       </tr>`;
   }).join('');
@@ -145,15 +144,25 @@ export function priorityMatrixHtml(tasks) {
   if (execFilterActive()) bits.push(execFilterLabel());
   if (store.matrixFilter) bits.push(`${store.matrixFilter.impact}/${store.matrixFilter.diff}`);
   const heading = bits.length ? `Tasks (filtered: ${bits.join(' · ')})` : 'Tasks (all open)';
+  const expanded = store.uiPrefs.matrixExpanded;
+  const wins = easyWinsCount(tasks);
+  const chev = expanded ? 'ti-chevron-up' : 'ti-chevron-down';
   return `
-    <div class="card">
-      <h2>Priority matrix</h2>
-      <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — click a tile to filter further. Exec summary tiles above also filter this table.</p>
-      <div class="matrix-and-table">
-        <div class="priority-matrix">${matrixHtml(tasks)}</div>
-        <div class="priority-table-panel">
-          <h3 class="pm-table-heading">${esc(heading)}</h3>
-          ${tableHtml(tasks)}
+    <div class="card matrix-card">
+      <button type="button" class="matrix-bar-toggle" data-ui-toggle="matrix" aria-expanded="${expanded}">
+        <span>Priority matrix</span>
+        <span class="pill">${wins} easy wins</span>
+        <span class="meta matrix-bar-hint">${expanded ? 'collapse' : 'expand'}</span>
+        <i class="ti ${chev} matrix-bar-chev" aria-hidden="true"></i>
+      </button>
+      <div class="matrix-detail ${expanded ? '' : 'collapsed'}">
+        <p class="meta" style="margin-bottom:12px">Impact ↑ × Difficulty → — click a tile to filter further. Exec summary tiles above also filter this table.</p>
+        <div class="matrix-and-table">
+          <div class="priority-matrix">${matrixHtml(tasks)}</div>
+          <div class="priority-table-panel">
+            <h3 class="pm-table-heading">${esc(heading)}</h3>
+            ${tableHtml(tasks)}
+          </div>
         </div>
       </div>
     </div>`;

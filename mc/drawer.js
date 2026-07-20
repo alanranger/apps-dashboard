@@ -144,6 +144,7 @@ function wireDrawer(t, onRefresh) {
           impact: $('impactInput')?.value || t.impact || 'MEDIUM',
           difficulty: $('difficultyInput')?.value || t.difficulty || 'MEDIUM',
           waiting_on: $('waitingInput')?.value.trim() || null,
+          why: $('whyInput')?.value.trim() || null,
           detail_md: $('detailInput')?.value.trim() || null,
         },
       });
@@ -267,6 +268,8 @@ export async function openDrawer(taskId, onRefresh) {
         </select>
         <label class="meta" for="dueInput">Due date</label>
         <input id="dueInput" type="date" value="${esc(t.due_date || '')}" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <label class="meta" for="whyInput">Why (one line — what it unblocks or costs)</label>
+        <input id="whyInput" value="${esc(t.why || '')}" placeholder="Unblocks X / costs Y if delayed" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="nextStepInput">Next step</label>
         <input id="nextStepInput" value="${esc(t.next_step || '')}" placeholder="What happens next" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="waitingInput">Waiting on</label>

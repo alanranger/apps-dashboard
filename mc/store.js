@@ -1,3 +1,11 @@
+function readUiPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem('mc-ui-prefs') || '{}');
+  } catch {
+    return {};
+  }
+}
+
 export const store = {
   role: null,
   projects: [],
@@ -12,7 +20,18 @@ export const store = {
   matrixSort: { column: 'due_date', direction: 'asc' },
   /** Exec summary filters — AND together; each dim toggles independently */
   execFilter: { status: null, priority: null, projectId: null, owner: null },
+  uiPrefs: {
+    execExpanded: !!readUiPrefs().execExpanded,
+    matrixExpanded: !!readUiPrefs().matrixExpanded,
+  },
 };
+
+export function setUiPref(key, val) {
+  store.uiPrefs[key] = val;
+  const p = readUiPrefs();
+  p[key] = val;
+  localStorage.setItem('mc-ui-prefs', JSON.stringify(p));
+}
 
 export function applyBootstrap(data) {
   store.role = data.role;

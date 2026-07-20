@@ -35,7 +35,57 @@ export function isDueSoon(t, days = 2) {
 export function projectChip(t) {
   const p = projectById(t.project_id);
   if (!p) return '';
-  return `<span class="chip"><i class="ti ${esc(p.icon)}"></i> ${esc(p.name)}</span>`;
+  const idx = store.projects.findIndex((x) => x.id === p.id);
+  const slot = idx >= 0 ? idx % 6 : 0;
+  return `<span class="proj-pill proj-pill-${slot}"><i class="ti ${esc(p.icon)}"></i> ${esc(p.name)}</span>`;
+}
+
+export function blocksCount(taskId) {
+  return store.tasks.filter((x) => x.depends_on_task_id === taskId).length;
+}
+
+export function taskWhy(t) {
+  if (t.why && String(t.why).trim()) return String(t.why).trim();
+  const n = blocksCount(t.id);
+  if (n > 0) return `Blocks ${n} task(s)`;
+  return '';
+}
+
+export function duePillTone(t) {
+  const due = parseDue(t);
+  if (!due) return '';
+  if (isOverdue(t)) return 'danger';
+  const ms = due.getTime() - Date.now();
+  if (ms <= 48 * 3600000) return 'danger';
+  if (ms <= 7 * 86400000) return 'warn';
+  return '';
+}
+
+const PRI_RANK = { p0: 0, p1: 1, p2: 2 };
+
+export function nextUpTasks(tasks, limit = 3) {
+  return [...tasks]
+    .sort((a, b) => {
+      const ao = isOverdue(a) ? 0 : 1;
+      const bo = isOverdue(b) ? 0 : 1;
+      if (ao !== bo) return ao - bo;
+      const ad = a.due_date || '9999';
+      const bd = b.due_date || '9999';
+      if (ad !== bd) return ad.localeCompare(bd);
+      const ap = PRI_RANK[a.priority] ?? 9;
+      const bp = PRI_RANK[b.priority] ?? 9;
+      if (ap !== bp) return ap - bp;
+      return blocksCount(b.id) - blocksCount(a.id);
+    })
+    .slice(0, limit);
+}
+
+export function easyWinsCount(tasks) {
+  return tasks.filter((t) => {
+    const imp = String(t.impact || 'MEDIUM').toUpperCase();
+    const diff = String(t.difficulty || 'MEDIUM').toUpperCase();
+    return imp === 'HIGH' && (diff === 'LOW' || diff === 'MEDIUM');
+  }).length;
 }
 
 export function taskLine(t, extra = '') {
