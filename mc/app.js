@@ -164,6 +164,11 @@ function wire() {
       renderHome();
       return;
     }
+    const jump = e.target.closest('[data-view-jump]');
+    if (jump) {
+      setView(jump.getAttribute('data-view-jump'));
+      return;
+    }
     const matrix = e.target.closest('[data-matrix-impact]');
     if (matrix) {
       const impact = matrix.getAttribute('data-matrix-impact');

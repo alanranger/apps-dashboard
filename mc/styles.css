@@ -291,6 +291,8 @@ button.linkish {
 .plan-row .mcid { font-size: 11px; color: var(--text-faint); min-width: 3.5rem; }
 .plan-title { font-size: 14px; word-break: break-word; }
 .plan-due { white-space: nowrap; }
+.plan-row-bau { border-left: 3px solid var(--accent); padding-left: 8px; }
+.bau-pill { background: rgba(240, 180, 41, 0.14); color: var(--accent); border-color: rgba(240, 180, 41, 0.4); }
 .danger-pill { background: var(--red-bg); color: var(--red); }
 .card-blurb {
   margin-top: 6px;

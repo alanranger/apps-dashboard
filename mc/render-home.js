@@ -12,6 +12,7 @@ import {
   nextUpTasks,
   taskWhy,
   duePillTone,
+  bauPlannerItems,
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
@@ -131,14 +132,19 @@ function plannerHtml(groups) {
   if (!groups.length) {
     return `<div class="card"><h2>Planner</h2>${empty('ti-calendar', 'No dated work in the next fortnight. Add due dates on tasks so the diary fills in.')}</div>`;
   }
+  const bauCount = groups.reduce((n, g) => n + g.tasks.filter((t) => t.isBauRecurring).length, 0);
   return `
     <div class="card">
       <h2>Planner · next 14 days</h2>
-      <p class="meta" style="margin-bottom:12px">Diary of what must move — overdue first, then by day. Click a row to open the task.</p>
+      <p class="meta" style="margin-bottom:12px">
+        Project tasks + <strong>BAU Recurring ops</strong> from the Recurring tab
+        ${bauCount ? `(${bauCount} habit instance${bauCount === 1 ? '' : 's'} in window)` : ''}.
+        Click a project row to open the task; click a BAU row to open Recurring.
+      </p>
       ${groups.map((g) => `
         <div class="plan-day ${g.tone}">
           <div class="plan-day-label">${esc(g.label)} · ${g.tasks.length}</div>
-          ${g.tasks.map((t) => taskLine(t, t.recurrence ? ' · <span class="pill">recurring</span>' : '')).join('')}
+          ${g.tasks.map((t) => taskLine(t, t.recurrence && !t.isBauRecurring ? ' · <span class="pill">recurring</span>' : '')).join('')}
         </div>`).join('')}
     </div>`;
 }
@@ -163,7 +169,7 @@ export function renderHome() {
   const tasks = openTasks();
   const counts = summaryCounts(tasks);
   const tableTasks = applyExecFilter(tasks);
-  const groups = plannerGroups(tableTasks);
+  const groups = plannerGroups(tableTasks, bauPlannerItems(14));
 
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}
@@ -202,5 +208,5 @@ export function renderHome() {
         </div>
       </div>
     </div>
-    <p class="meta" style="margin-top:8px">Google Calendar is not connected yet — planner uses MC due dates only.</p>`;
+    <p class="meta" style="margin-top:8px">Planner = MC due dates + BAU recurring instances. Google Calendar placement stays Claude-only.</p>`;
 }

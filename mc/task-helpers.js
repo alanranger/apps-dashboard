@@ -1,5 +1,13 @@
 import { store, projectById } from './store.js';
-import { esc, fmtDate } from './util.js';
+import { esc, fmtDate, fmtTime } from './util.js';
+import { occurrencesInRange } from './rrule.js';
+
+function localYmd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 const OPEN = new Set(['todo', 'in_progress', 'waiting', 'done_claimed']);
 
@@ -89,6 +97,17 @@ export function easyWinsCount(tasks) {
 }
 
 export function taskLine(t, extra = '') {
+  if (t.isBauRecurring) {
+    return `
+    <div class="plan-row plan-row-bau" data-view-jump="recurring" title="BAU recurring ops — open Recurring tab">
+      <div class="mcid">BAU</div>
+      <div class="plan-main">
+        <div class="plan-title">${esc(t.title)}</div>
+        <div class="meta"><span class="pill bau-pill">BAU · Recurring ops</span> · ${esc(t.cadence_text || '')} · ideal ${esc(t.ideal_time_label || '—')}${extra}</div>
+      </div>
+      <div class="meta plan-due">${fmtDate(t.due_date)}</div>
+    </div>`;
+  }
   return `
     <div class="plan-row" data-open="${t.id}">
       <div class="mcid">MC-${t.display_id}</div>
@@ -98,6 +117,41 @@ export function taskLine(t, extra = '') {
       </div>
       <div class="meta plan-due">${fmtDate(t.due_date)}</div>
     </div>`;
+}
+
+/** Next-14-day instances from Recurring tab habits (active only; skip if already done for that date). */
+export function bauPlannerItems(days = 14) {
+  const start = dayStart();
+  const end = new Date(start);
+  end.setDate(end.getDate() + (days - 1));
+  const startYmd = localYmd(start);
+  const endYmd = localYmd(end);
+  const items = [];
+  for (const r of store.recurring || []) {
+    if (!r.active) continue;
+    let dates = [];
+    try { dates = occurrencesInRange(r.rrule, startYmd, endYmd); }
+    catch (e) { continue; }
+    for (const due of dates) {
+      if (r.last_done && r.last_done >= due) continue;
+      items.push({
+        id: `bau-${r.id}-${due}`,
+        isBauRecurring: true,
+        display_id: 'BAU',
+        title: r.title,
+        due_date: due,
+        owner: 'alan',
+        state: 'todo',
+        priority: 'p2',
+        project_id: null,
+        recurring_id: r.id,
+        cadence_text: r.cadence_text,
+        ideal_time_label: fmtTime(r.ideal_time),
+        scheduled_note: r.scheduled_note || '',
+      });
+    }
+  }
+  return items;
 }
 
 /** Eisenhower-style for a business owner running multiple streams. */
@@ -132,9 +186,10 @@ export function matrixBuckets(tasks) {
   return { doNow, schedule, waiting, later };
 }
 
-/** Diary groups: Overdue, then each day for the next 14 days, then Undated focus. */
-export function plannerGroups(tasks) {
+/** Diary groups: Overdue, then each day for the next 14 days (MC tasks + BAU recurring), then Undated. */
+export function plannerGroups(tasks, bauItems = []) {
   const groups = [];
+  const all = [...tasks, ...bauItems];
   const overdue = tasks.filter(isOverdue).sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
   if (overdue.length) groups.push({ key: 'overdue', label: 'Overdue', tone: 'danger', tasks: overdue });
 
@@ -142,10 +197,14 @@ export function plannerGroups(tasks) {
   for (let i = 0; i < 14; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
-    const dayTasks = tasks
+    const key = localYmd(d);
+    const dayTasks = all
       .filter((t) => t.due_date === key && !isOverdue(t))
-      .sort((a, b) => a.priority.localeCompare(b.priority));
+      .sort((a, b) => {
+        // BAU recurring after project tasks within the day
+        if (!!a.isBauRecurring !== !!b.isBauRecurring) return a.isBauRecurring ? 1 : -1;
+        return String(a.priority || 'p2').localeCompare(String(b.priority || 'p2'));
+      });
     if (!dayTasks.length) continue;
     const label = i === 0 ? `Today · ${fmtDate(key)}` : i === 1 ? `Tomorrow · ${fmtDate(key)}` : fmtDate(key);
     groups.push({ key, label, tone: i === 0 ? 'today' : 'normal', tasks: dayTasks });

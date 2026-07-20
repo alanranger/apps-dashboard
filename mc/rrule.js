@@ -106,6 +106,24 @@ export function nextDueFromRrule(rrule, fromDate) {
   return n ? toYmd(n) : null;
 }
 
+/** Occurrences from startYmd..endYmd inclusive (local calendar days). Max 40. */
+export function occurrencesInRange(rrule, startYmd, endYmd) {
+  const start = fromYmd(startYmd);
+  const end = fromYmd(endYmd);
+  const out = [];
+  let cur = addDays(start, -1);
+  for (let i = 0; i < 40; i += 1) {
+    const n = nextDueFromRrule(rrule, cur);
+    if (!n) break;
+    const nd = fromYmd(n);
+    if (nd.getTime() <= cur.getTime()) break;
+    if (nd > end) break;
+    if (nd >= start) out.push(n);
+    cur = nd;
+  }
+  return out;
+}
+
 /** Most recent due date on or before today (missed detection). Hard-capped — never hangs. */
 export function lastDueOnOrBefore(rrule, today) {
   const end = today instanceof Date ? toYmd(today) : String(today || toYmd(new Date())).slice(0, 10);
