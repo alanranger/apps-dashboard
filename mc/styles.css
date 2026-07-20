@@ -447,6 +447,11 @@ button.linkish {
 .due-pill-warn { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
 .summary-cell.danger .summary-n { color: var(--red); }
 
+.rec-head {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 12px;
+}
+.rec-head h2 { margin-bottom: 4px; }
 .rec-table-wrap { overflow-x: auto; margin-top: 8px; }
 .rec-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .rec-table th, .rec-table td {

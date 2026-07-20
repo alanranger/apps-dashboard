@@ -13,7 +13,8 @@ export function openNewTaskModal(onCreated) {
     <label>Impact</label><select id="ntImpact"><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option></select>
     <label>Difficulty</label><select id="ntDifficulty"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select>
     <label>Due</label><input id="ntDue" type="date"/>
-    <label>Recurrence</label><input id="ntRec" placeholder="weekly:1 or monthly:1"/>
+    <label>Recurrence (project task only)</label><input id="ntRec" placeholder="optional weekly:1 / monthly:1 — NOT for BAU habits"/>
+    <p class="meta" style="margin:4px 0 8px">For <strong>BAU habits</strong> (Reclaim-style diary booking): cancel and use the <strong>Recurring</strong> tab → <strong>Add habit</strong>. Claude books Calendar <strong>28 days ahead</strong>.</p>
     <label>Next step</label><input id="ntNext"/>
     <label>Detail</label><textarea id="ntDetail" rows="3"></textarea>
     <div style="display:flex;gap:8px;margin-top:12px">

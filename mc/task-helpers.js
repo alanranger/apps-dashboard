@@ -119,8 +119,8 @@ export function taskLine(t, extra = '') {
     </div>`;
 }
 
-/** Next-14-day instances from Recurring tab habits (active only; skip if already done for that date). */
-export function bauPlannerItems(days = 14) {
+/** Instances from Recurring tab habits for the planner (default 28 days — diary horizon). */
+export function bauPlannerItems(days = 28) {
   const start = dayStart();
   const end = new Date(start);
   end.setDate(end.getDate() + (days - 1));
@@ -186,7 +186,7 @@ export function matrixBuckets(tasks) {
   return { doNow, schedule, waiting, later };
 }
 
-/** Diary groups: Overdue, then each day for the next 14 days (MC tasks + BAU recurring), then Undated. */
+/** Diary groups: Overdue, then each day for 28 days (MC tasks + BAU), then Undated. */
 export function plannerGroups(tasks, bauItems = []) {
   const groups = [];
   const all = [...tasks, ...bauItems];
@@ -194,7 +194,7 @@ export function plannerGroups(tasks, bauItems = []) {
   if (overdue.length) groups.push({ key: 'overdue', label: 'Overdue', tone: 'danger', tasks: overdue });
 
   const start = dayStart();
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 28; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     const key = localYmd(d);

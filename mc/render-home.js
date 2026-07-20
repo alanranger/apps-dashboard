@@ -135,11 +135,11 @@ function plannerHtml(groups) {
   const bauCount = groups.reduce((n, g) => n + g.tasks.filter((t) => t.isBauRecurring).length, 0);
   return `
     <div class="card">
-      <h2>Planner · next 14 days</h2>
+      <h2>Planner · next 28 days</h2>
       <p class="meta" style="margin-bottom:12px">
-        Project tasks + <strong>BAU Recurring ops</strong> from the Recurring tab
-        ${bauCount ? `(${bauCount} habit instance${bauCount === 1 ? '' : 's'} in window)` : ''}.
-        Click a project row to open the task; click a BAU row to open Recurring.
+        Project tasks (14-day focus) + <strong>BAU Recurring ops</strong> out to <strong>28 days</strong>
+        ${bauCount ? `(${bauCount} habit instance${bauCount === 1 ? '' : 's'})` : ''}.
+        Claude books diary time 28 days ahead. Add habits on the <strong>Recurring</strong> tab → Add habit.
       </p>
       ${groups.map((g) => `
         <div class="plan-day ${g.tone}">
@@ -169,7 +169,7 @@ export function renderHome() {
   const tasks = openTasks();
   const counts = summaryCounts(tasks);
   const tableTasks = applyExecFilter(tasks);
-  const groups = plannerGroups(tableTasks, bauPlannerItems(14));
+  const groups = plannerGroups(tableTasks, bauPlannerItems(28));
 
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}

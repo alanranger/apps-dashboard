@@ -80,16 +80,21 @@ Per hotel booking: decision task due at the booking’s free-cancellation deadli
 
 Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-calendar-mc-protocol-ruling). Mission Control stores habits in `recurring_tasks`; **no Calendar API or OAuth in apps-dashboard**.
 
+### Diary booking horizon (Alan-ruled)
+
+Book Google Calendar busy time **28 days ahead** for active habits (not just the coming week). Place each upcoming instance in that horizon around fixed commitments, within `window_days` of `ideal_time`.
+
 ### Claude Monday sweep (with MC-7)
 
 1. Open the **Recurring** tab; read all active rows.
-2. For the coming week, compute each instance from `rrule` + `ideal_time` + `window_days`.
-3. Read Alan's Google Calendar; place each instance around fixed commitments within the window.
+2. Compute instances for the next **28 days** from `rrule` + `ideal_time` + `window_days`.
+3. Read Alan's Google Calendar; place each unscheduled instance in that horizon.
 4. Create busy calendar events titled `🔁 {title}` (not MC-{n} — those are project tasks).
 5. Write the placed slot into **Scheduled by Claude** on that row (PATCH `/api/mc/recurring` → `scheduled_note`, e.g. `Thu 23 11:00–13:00`). Optionally set `last_scheduled`.
 
 ### Alan / agents on the tab
 
+- **Add habit** on the Recurring tab (not New task) — presets + custom RRULE.
 - **Mark done** sets `last_done` to today and appends `recurring_log`.
 - Missed instances show red until marked done or deactivated.
 - Edit cadence via human `cadence_text` + `rrule` (six presets in UI + custom).
