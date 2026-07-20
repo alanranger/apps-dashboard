@@ -48,18 +48,18 @@ async function signedRead(path) {
 async function postComment(body, actor) {
   const taskId = body.task_id;
   const text = String(body.body_md || '').trim();
-  if (!taskId || !text) {
-    const err = new Error('task_id and body_md required');
+  const images = Array.isArray(body.image_urls) ? body.image_urls : [];
+  if (!taskId || (!text && !images.length)) {
+    const err = new Error('Add a note and/or at least one screenshot');
     err.status = 400;
     throw err;
   }
-  const images = Array.isArray(body.image_urls) ? body.image_urls : [];
   const rows = await sb('task_comments', {
     method: 'POST',
     body: {
       task_id: taskId,
       author: actor,
-      body_md: text,
+      body_md: text || '(screenshot)',
       image_urls: images,
       kind: body.kind || 'comment',
     },

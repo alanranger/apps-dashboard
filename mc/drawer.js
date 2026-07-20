@@ -33,35 +33,52 @@ async function hydrateCommentImages() {
 }
 
 async function addFiles(taskId, fileList) {
-  for (const file of fileList) {
-    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-    const signed = await api('/api/mc/comments', {
-      method: 'POST',
-      body: { action: 'sign_upload', task_id: taskId, ext },
-    });
-    await fetch(signed.uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-      body: file,
-    });
-    pendingImages.push(signed.path);
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    img.alt = 'pending';
-    $('pendingThumbs').appendChild(img);
+  const files = [...fileList].filter((f) => f && f.type && f.type.startsWith('image/'));
+  if (!files.length) {
+    alert('Please choose an image file (PNG, JPG, WebP, GIF).');
+    return;
+  }
+  for (const file of files) {
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+      const signed = await api('/api/mc/comments', {
+        method: 'POST',
+        body: { action: 'sign_upload', task_id: taskId, ext },
+      });
+      const up = await fetch(signed.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!up.ok) throw new Error(`Upload failed (${up.status})`);
+      pendingImages.push(signed.path);
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = 'pending screenshot';
+      $('pendingThumbs').appendChild(img);
+      const status = $('attachStatus');
+      if (status) status.textContent = `${pendingImages.length} screenshot(s) ready — click Post note`;
+    } catch (e) {
+      alert(e.message || 'Screenshot upload failed');
+    }
   }
 }
 
 async function postNote(taskId, onRefresh) {
   const body_md = $('commentText').value.trim();
-  if (!body_md) {
-    alert('Type a note first, then click Post note.');
+  if (!body_md && !pendingImages.length) {
+    alert('Type a note and/or add a screenshot, then click Post note.');
     return;
   }
   try {
     await api('/api/mc/comments', {
       method: 'POST',
-      body: { task_id: taskId, body_md, image_urls: [...pendingImages], actor: 'alan' },
+      body: {
+        task_id: taskId,
+        body_md: body_md || '(screenshot reply)',
+        image_urls: [...pendingImages],
+        actor: 'alan',
+      },
     });
     pendingImages.length = 0;
     const due = $('dueInput')?.value;
@@ -148,9 +165,20 @@ function wireDrawer(t, onRefresh) {
 
   $('postComment').onclick = () => postNote(t.id, onRefresh);
   const box = $('commentBox');
-  box.ondragover = (e) => e.preventDefault();
+  const fileInput = $('screenshotInput');
+  $('attachScreenshot').onclick = () => fileInput.click();
+  fileInput.onchange = async () => {
+    if (fileInput.files?.length) await addFiles(t.id, fileInput.files);
+    fileInput.value = '';
+  };
+  box.ondragover = (e) => {
+    e.preventDefault();
+    box.classList.add('drop-active');
+  };
+  box.ondragleave = () => box.classList.remove('drop-active');
   box.ondrop = async (e) => {
     e.preventDefault();
+    box.classList.remove('drop-active');
     await addFiles(t.id, e.dataTransfer.files);
   };
   $('commentText').onpaste = async (e) => {
@@ -234,9 +262,15 @@ export async function openDrawer(taskId, onRefresh) {
         ${handoffRef('Q', t.question_file)}<br>
         ${handoffRef('R', t.response_file)}
       </div>
-      <h3 style="font-size:14px;font-weight:600;margin-top:12px">Notes</h3>
-      <div id="commentBox" class="inset">
-        <textarea id="commentText" rows="4" placeholder="Type your note here, then click Post note…" style="width:100%;padding:8px"></textarea>
+      <h3 style="font-size:14px;font-weight:600;margin-top:12px">Your reply (Claude + Cursor both read this)</h3>
+      <p class="meta">Whoever owns the task (claude / cursor / you) must read notes and screenshots before working.</p>
+      <div id="commentBox" class="inset drop-zone">
+        <textarea id="commentText" rows="4" placeholder="Type your note… or paste a screenshot (Ctrl+V)…" style="width:100%;padding:8px"></textarea>
+        <div class="attach-row">
+          <button type="button" id="attachScreenshot">Add screenshot</button>
+          <input id="screenshotInput" type="file" accept="image/*" multiple hidden />
+          <span class="meta" id="attachStatus">Or drag-drop / paste image here</span>
+        </div>
         <div id="pendingThumbs" class="thumbs"></div>
         <button type="button" id="postComment" class="btn-verify" style="margin-top:8px">Post note</button>
       </div>

@@ -100,5 +100,36 @@ export function renderHome() {
     ${verifyHtml(tasks)}
     ${matrixHtml(buckets)}
     ${plannerHtml(groups)}
-    <p class="meta" style="margin-top:8px">Google Calendar is not connected yet — this planner uses Mission Control due dates only. Project board still has the full kanban by stream.</p>`;
+    <div class="card">
+      <h2>Claude ↔ Cursor workflow (how this ties in)</h2>
+      <p class="meta" style="margin-bottom:12px">
+        Mission Control is the <strong>task board</strong>. The Drive loop is still the <strong>long-form</strong> handoff (“check claude”).
+        Both agents must read MC notes + screenshots on tasks assigned to them.
+      </p>
+      <div class="workflow-grid">
+        <div class="inset">
+          <div class="meta">Board of truth</div>
+          <p><strong>Mission Control</strong> — MC-IDs, owner (alan / claude / cursor), due dates, notes, screenshots, verify.</p>
+          <p class="meta">Repo: <a href="https://github.com/alanranger/apps-dashboard" target="_blank" rel="noopener">alanranger/apps-dashboard</a></p>
+        </div>
+        <div class="inset">
+          <div class="meta">Long-form handoff (check claude)</div>
+          <p><strong>Inbox:</strong> Google Drive → Claude Questions for Cursor</p>
+          <p><strong>Outbox:</strong> Google Drive → Cursor Outputs for Claude</p>
+          <p class="meta">Link files on a task via Q / R handoff refs (include MC-14 in filenames).</p>
+        </div>
+        <div class="inset">
+          <div class="meta">Main app repos</div>
+          <p><a href="https://github.com/alanranger/ai-geo-audit" target="_blank" rel="noopener">ai-geo-audit</a></p>
+          <p><a href="https://github.com/alanranger/alan-chat-proxy" target="_blank" rel="noopener">alan-chat-proxy</a> (Chat AI Bot)</p>
+          <p><a href="https://github.com/alanranger/apps-dashboard" target="_blank" rel="noopener">apps-dashboard</a> (this board)</p>
+        </div>
+        <div class="inset">
+          <div class="meta">Who acts</div>
+          <p>Task <strong>owner</strong> = who should work it next. Your notes/screenshots are the reply channel for both Claude and Cursor.</p>
+          <p class="meta">Full map: <a href="/handoff">/handoff</a></p>
+        </div>
+      </div>
+    </div>
+    <p class="meta" style="margin-top:8px">Google Calendar is not connected yet — planner uses MC due dates only.</p>`;
 }

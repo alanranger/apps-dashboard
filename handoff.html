@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude ↔ Cursor handoff</title>
+  <link rel="stylesheet" href="/mc/tokens.css" />
+  <link rel="stylesheet" href="/mc/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <nav class="topnav">
+      <a href="/mission-control">Mission Control</a>
+      <a href="/apps">Apps</a>
+      <a href="/handoff" class="active">Handoff map</a>
+    </nav>
+    <div class="build-pill" id="buildPill" title="Deployed build identity">
+      <strong>Version:</strong> <code id="gitVersion">…</code>
+      <span class="sep">|</span>
+      <strong>Built:</strong> <span id="buildDate">…</span>
+      <span class="sep">|</span>
+      <span class="loaded">Loaded: <span id="loadTimeValue">…</span></span>
+    </div>
+    <h1>Claude ↔ Cursor handoff map</h1>
+    <div class="card">
+      <h2>Two layers — do not confuse them</h2>
+      <div class="workflow-grid">
+        <div class="inset">
+          <h3 style="font-size:14px;font-weight:600">1. Mission Control (board)</h3>
+          <p>Live tasks, owners, due dates, notes, screenshots, verify.</p>
+          <p><a href="/mission-control">Open Mission Control</a></p>
+          <p class="meta">Repo: github.com/alanranger/apps-dashboard · DB: alan-chat-rag</p>
+        </div>
+        <div class="inset">
+          <h3 style="font-size:14px;font-weight:600">2. Drive loop (“check claude”)</h3>
+          <p>Long-form QUESTION / RESPONSE files.</p>
+          <p class="meta">Inbox: …/Claude Questions for Cursor/</p>
+          <p class="meta">Outbox: …/Cursor Outputs for Claude/</p>
+          <p class="meta">Cursor runs: check claude → answers pending questions → updates manifest</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Repositories (usual)</h2>
+      <ul style="margin-left:1.2rem;line-height:1.8">
+        <li><a href="https://github.com/alanranger/apps-dashboard" target="_blank" rel="noopener">apps-dashboard</a> — Mission Control + apps hub</li>
+        <li><a href="https://github.com/alanranger/ai-geo-audit" target="_blank" rel="noopener">ai-geo-audit</a> — SEO / Revenue Truth dashboard</li>
+        <li><a href="https://github.com/alanranger/alan-chat-proxy" target="_blank" rel="noopener">alan-chat-proxy</a> — Chat AI Bot / ingest</li>
+        <li><a href="https://github.com/alanranger/alanranger-modules" target="_blank" rel="noopener">alanranger-modules</a> — Academy modules</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Alan’s reply channel</h2>
+      <p>On any MC task: type a note and/or <strong>Add screenshot</strong> → Post note. Claude and Cursor both read that thread when the task is assigned to them. Prefer filenames like <code>QUESTION-…-MC-14-…</code> when the Drive loop is involved.</p>
+    </div>
+  </div>
+  <script src="/mc/version-pill.js"></script>
+</body>
+</html>

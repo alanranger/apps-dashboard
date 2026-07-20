@@ -2,23 +2,44 @@
 
 Canonical task IDs look like **MC-14**. Chat instructions such as “work on MC-14” refer to that display ID. Related QUESTION/RESPONSE filenames SHOULD include the ID (e.g. `QUESTION-2026-07-22-MC-14-…`).
 
-Both Claude and Cursor write to the same Mission Control Supabase project. The board is the single source of truth. Drive inbox/outbox remains the transport for long-form handoffs; MC stores **references + short summaries**, not file copies.
+Both Claude and Cursor write to the same Mission Control database (alan-chat-rag). The board is the single source of truth for **tasks**. Drive inbox/outbox remains the transport for **long-form** handoffs; MC stores references + short summaries + Alan’s notes/screenshots — not full Drive file copies.
+
+Map page: https://apps-dashboard-lilac.vercel.app/handoff
 
 ## Credentials
 
 - Use the **agent** password / session (`role=agent`).
 - Server rejects `verified` for agent role. Never attempt to verify.
+- Pass `actor: claude` or `actor: cursor` on API writes so the log is accurate.
 
 ## When instructed on MC-{n}
 
-1. Set state `in_progress`.
-2. Add a comment: `started via {cursor|claude} instruction`.
-3. Do the work.
-4. Set `evidence_url` (commit, RESPONSE path, URL, etc.).
-5. Set state `done_claimed` (API requires evidence).
-6. Add a short summary comment (2–3 lines). If a Drive RESPONSE was written, also set `response_file` / `question_file` and comment the summary.
+1. Open the task. **Read all notes and screenshots first** — that is Alan’s reply channel.
+2. Set state `in_progress`.
+3. Add a comment: `started via {cursor|claude} instruction`.
+4. Do the work (only if you are the sensible owner, or after coordinating in comments).
+5. Set `evidence_url` (commit, RESPONSE path, URL, etc.).
+6. Set state `done_claimed` (API requires evidence).
+7. Add a short summary comment (2–3 lines). If a Drive RESPONSE was written, set `response_file` / `question_file` and comment the summary.
 
 Do not skip state writes. `task_log` actor must be accurate (`cursor` or `claude`).
+
+## Alan notes + screenshots
+
+- Alan posts via **Post note** (text and/or images) on the task drawer.
+- Images live in Storage bucket `mc-attachments`; comments in `task_comments`.
+- **Both agents must treat new Alan notes/screenshots as blocking input** before claiming done.
+- Owner field (`alan` / `claude` / `cursor`) says who should act next.
+
+## Relationship to “check claude”
+
+| Layer | What | Where |
+|-------|------|--------|
+| Board | Tasks, verify, notes | Mission Control (`apps-dashboard`) |
+| Long-form | QUESTION / RESPONSE markdown | Google Drive inbox / outbox |
+| Manifest | pending count for Cursor poll | `update-handoff-manifest.mjs` |
+
+When a Drive RESPONSE lands for a linked task, the processing agent adds a 2–3 line MC comment + moves state per protocol.
 
 ## Collisions
 

@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },
+    { "source": "/handoff", "destination": "/handoff.html" },
     { "source": "/apps", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/$1" }
   ]

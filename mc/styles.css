@@ -227,3 +227,20 @@
 .plan-title { font-size: 14px; word-break: break-word; }
 .plan-due { white-space: nowrap; }
 .danger-pill { background: var(--red-bg); color: var(--red); }
+
+.drop-zone.drop-active { border-color: var(--accent); background: rgba(240, 180, 41, 0.08); }
+.attach-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.workflow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 768px) { .workflow-grid { grid-template-columns: 1fr; } }
+.workflow-grid .inset { margin: 0; }
+.workflow-grid a { word-break: break-word; }
