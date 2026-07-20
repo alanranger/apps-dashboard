@@ -370,6 +370,7 @@ button.linkish {
 }
 .pm-table th.sortable { cursor: pointer; user-select: none; }
 .pm-table th.sortable:hover { color: var(--accent); }
+.pm-table th .sort-indicator { pointer-events: none; }
 .pm-table th .sort-indicator::after { content: ' ↕'; opacity: .35; }
 .pm-table th.sort-asc .sort-indicator::after { content: ' ↑'; opacity: 1; color: var(--accent); }
 .pm-table th.sort-desc .sort-indicator::after { content: ' ↓'; opacity: 1; color: var(--accent); }

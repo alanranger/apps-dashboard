@@ -57,6 +57,25 @@ If the other agent is already on the task, read `task_log` / comments and coordi
 
 Claude: update the board as the last act of each session for any MC tasks touched.
 
+## Preserve-interactions invariant (Alan-ruled)
+
+No UI change may remove or alter an existing interaction (sorts, filters, clicks, expanded-by-default states) unless the change is **explicitly listed** in the instruction **and** Alan approved that listed change.
+
+**Standing defaults:** exec summary tiles + priority matrix stay **OPEN** (Alan overruled collapse-by-default).
+
+## Disclosure rule
+
+Every UI-affecting response includes a **"What changes visibly for Alan"** list.
+
+## Why-line duty
+
+Any task an agent touches gets/keeps a one-line `why` (what it unblocks or costs).
+
+## Events & residential conventions (Alan-ruled)
+
+Per event: create **"Prep joining details"** due event−10 days; send deadline event−7 days; red if not done by event−5.  
+Per hotel booking: decision task due at the booking’s free-cancellation deadline −3 days (deadlines from Booking.com confirmation emails). Claude reads and creates these tasks — no Cursor Calendar build. Claude adds a **"📅 Events & residential"** project and seeds in a later pass.
+
 ## Recurring tasks tab (Reclaim replacement)
 
 Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-calendar-mc-protocol-ruling). Mission Control stores habits in `recurring_tasks`; **no Calendar API or OAuth in apps-dashboard**.

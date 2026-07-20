@@ -149,14 +149,19 @@ function wire() {
       renderHome();
       return;
     }
-    const sortTh = e.target.closest('[data-sort]');
+    const sortTh = e.target.closest('th[data-sort], [data-sort]');
     if (sortTh) {
+      e.preventDefault();
+      e.stopPropagation();
       const column = sortTh.getAttribute('data-sort');
+      if (!column) return;
       const cur = store.matrixSort || { column: 'due_date', direction: 'asc' };
       store.matrixSort = {
         column,
         direction: cur.column === column && cur.direction === 'asc' ? 'desc' : 'asc',
       };
+      // Keep Dashboard visible so sorts are obvious
+      setView('home');
       renderHome();
       return;
     }
