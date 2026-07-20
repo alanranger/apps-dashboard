@@ -140,6 +140,9 @@ function wireDrawer(t, onRefresh) {
           id: t.id,
           due_date: $('dueInput').value || null,
           next_step: $('nextStepInput').value.trim() || null,
+          priority: $('priorityInput')?.value || t.priority,
+          waiting_on: $('waitingInput')?.value.trim() || null,
+          detail_md: $('detailInput')?.value.trim() || null,
         },
       });
       await onRefresh();
@@ -241,14 +244,24 @@ export async function openDrawer(taskId, onRefresh) {
       <div class="meta">MC-${t.display_id}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${projectChip(t)}<span class="chip">${esc(STATE_LABEL[t.state])}</span></div>
       <h2 style="font-size:16px;font-weight:600">${esc(t.title)}</h2>
-      <p class="meta">${esc(t.owner)}${t.claimed_by ? ` · claimed by ${esc(t.claimed_by)}` : ''}</p>
+      <p class="meta">${esc(t.owner)} · ${esc(t.priority || 'p1')}${t.claimed_by ? ` · claimed by ${esc(t.claimed_by)}` : ''}</p>
 
       <div class="inset">
+        <div class="meta">What this is about</div>
+        <textarea id="detailInput" rows="8" placeholder="Description: what / why / done when…" style="width:100%;padding:8px;margin:4px 0 8px;white-space:pre-wrap">${esc(t.detail_md || '')}</textarea>
+        <label class="meta" for="priorityInput">Priority</label>
+        <select id="priorityInput" style="width:100%;padding:8px;margin:4px 0 8px">
+          <option value="p0" ${t.priority === 'p0' ? 'selected' : ''}>p0 — urgent</option>
+          <option value="p1" ${t.priority === 'p1' ? 'selected' : ''}>p1 — important</option>
+          <option value="p2" ${t.priority === 'p2' ? 'selected' : ''}>p2 — later</option>
+        </select>
         <label class="meta" for="dueInput">Due date</label>
         <input id="dueInput" type="date" value="${esc(t.due_date || '')}" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="nextStepInput">Next step</label>
         <input id="nextStepInput" value="${esc(t.next_step || '')}" placeholder="What happens next" style="width:100%;padding:8px;margin:4px 0 8px"/>
-        <button type="button" id="saveDetails">Save due date / next step</button>
+        <label class="meta" for="waitingInput">Waiting on</label>
+        <input id="waitingInput" value="${esc(t.waiting_on || '')}" placeholder="Person / blocker (if any)" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <button type="button" id="saveDetails">Save description / dates / priority</button>
       </div>
 
       <h3 style="font-size:14px;font-weight:600;margin-top:12px">Checklist</h3>
