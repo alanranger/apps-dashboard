@@ -39,12 +39,15 @@
     <div id="app" hidden>
       <h1>Mission Control</h1>
       <div class="toolbar">
-        <button type="button" data-view="home" class="view-btn active">Dashboard</button>
-        <button type="button" data-view="board" class="view-btn">Project board</button>
-        <button type="button" id="newTaskBtn">New task</button>
+        <div class="tab-group" role="tablist" aria-label="Main sections">
+          <button type="button" data-view="home" class="view-btn active" role="tab" aria-selected="true">Dashboard</button>
+          <button type="button" data-view="board" class="view-btn" role="tab" aria-selected="false">Project board</button>
+        </div>
+        <button type="button" id="newTaskBtn" class="btn-secondary">New task</button>
         <input id="search" type="search" placeholder="Jump MC-14 or search…" />
-        <button type="button" id="logoutBtn">Log out</button>
+        <button type="button" id="logoutBtn" class="btn-secondary">Log out</button>
       </div>
+      <p class="section-label" id="sectionLabel">You are on: <strong>Dashboard</strong> — RAG overview &amp; planner</p>
 
       <section id="view-home" class="views active"></section>
       <section id="view-board" class="views"></section>

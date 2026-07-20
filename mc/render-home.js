@@ -12,20 +12,40 @@ import {
 
 function summaryHtml(c) {
   const cells = [
-    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : '' },
-    { n: c.dueWeek, label: 'Due in 7 days', tone: '' },
-    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : '' },
-    { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : '' },
-    { n: c.active, label: 'Active work', tone: '' },
+    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok' },
+    { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek && !c.overdue ? 'warn' : (c.dueWeek ? 'warn' : 'ok') },
+    { n: c.inProgress, label: 'In progress', tone: c.inProgress ? 'warn' : 'ok' },
+    { n: c.todo, label: 'To do', tone: '' },
+    { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok' },
+    { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : 'ok' },
     { n: c.open, label: 'Open total', tone: '' },
   ];
+  const owners = [
+    ['alan', c.byOwner.alan],
+    ['claude', c.byOwner.claude],
+    ['cursor', c.byOwner.cursor],
+    ['external', c.byOwner.external],
+  ];
   return `
-    <div class="summary" aria-label="Board summary">
-      ${cells.map((x) => `
-        <div class="summary-cell ${x.tone}">
-          <div class="summary-n">${x.n}</div>
-          <div class="summary-l">${x.label}</div>
-        </div>`).join('')}
+    <div class="card exec-card rag-${c.rag}" aria-label="Executive summary">
+      <div class="exec-head">
+        <div class="rag-badge rag-${c.rag}">${c.rag === 'red' ? 'RED' : c.rag === 'amber' ? 'AMBER' : 'GREEN'}</div>
+        <div>
+          <h2>Executive summary</h2>
+          <p class="exec-verdict">${esc(c.ragLabel)}</p>
+          <p class="meta">${c.open} open · ${c.active} active (todo + in progress) · ${c.byOwner.alan} on you · ${c.byOwner.claude} Claude · ${c.byOwner.cursor} Cursor</p>
+        </div>
+      </div>
+      <div class="summary" aria-label="Task counts">
+        ${cells.map((x) => `
+          <div class="summary-cell ${x.tone}">
+            <div class="summary-n">${x.n}</div>
+            <div class="summary-l">${x.label}</div>
+          </div>`).join('')}
+      </div>
+      <div class="owner-strip" aria-label="By owner">
+        ${owners.map(([name, n]) => `<span class="owner-chip"><strong>${n}</strong> ${name}</span>`).join('')}
+      </div>
     </div>`;
 }
 

@@ -13,8 +13,18 @@ function skeletonHome() {
 
 function setView(name) {
   document.querySelectorAll('.views').forEach((el) => el.classList.remove('active'));
-  document.querySelectorAll('.view-btn').forEach((el) => el.classList.toggle('active', el.dataset.view === name));
+  document.querySelectorAll('.view-btn').forEach((el) => {
+    const on = el.dataset.view === name;
+    el.classList.toggle('active', on);
+    el.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
   $(`view-${name}`).classList.add('active');
+  const label = $('sectionLabel');
+  if (label) {
+    label.innerHTML = name === 'board'
+      ? 'You are on: <strong>Project board</strong> — kanban by stream'
+      : 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner';
+  }
 }
 
 function renderAll() {

@@ -117,12 +117,32 @@ export function summaryCounts(tasks) {
   const verify = tasks.filter((t) => t.state === 'done_claimed').length;
   const waiting = tasks.filter((t) => t.state === 'waiting').length;
   const overdue = tasks.filter(isOverdue).length;
+  const inProgress = tasks.filter((t) => t.state === 'in_progress').length;
+  const todo = tasks.filter((t) => t.state === 'todo').length;
   const weekEnd = dayStart();
   weekEnd.setDate(weekEnd.getDate() + 7);
   const dueWeek = tasks.filter((t) => {
     const due = parseDue(t);
     return due && due >= dayStart() && due <= weekEnd;
   }).length;
-  const active = tasks.filter((t) => t.state === 'todo' || t.state === 'in_progress').length;
-  return { verify, waiting, overdue, dueWeek, active, open: tasks.length };
+  const active = todo + inProgress;
+  const byOwner = { alan: 0, claude: 0, cursor: 0, external: 0 };
+  for (const t of tasks) {
+    if (byOwner[t.owner] !== undefined) byOwner[t.owner] += 1;
+  }
+  let rag = 'green';
+  let ragLabel = 'GREEN — nothing on fire';
+  if (overdue > 0 || verify > 0) {
+    rag = 'red';
+    ragLabel = overdue
+      ? `RED — ${overdue} overdue${verify ? `, ${verify} need verify` : ''}`
+      : `RED — ${verify} awaiting your verify`;
+  } else if (dueWeek > 0 || waiting > 0 || inProgress > 0) {
+    rag = 'amber';
+    ragLabel = `AMBER — ${dueWeek} due in 7 days · ${inProgress} in progress · ${waiting} waiting`;
+  }
+  return {
+    verify, waiting, overdue, dueWeek, active, open: tasks.length,
+    inProgress, todo, byOwner, rag, ragLabel,
+  };
 }
