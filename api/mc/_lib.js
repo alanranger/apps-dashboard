@@ -1,9 +1,13 @@
 const crypto = require('crypto');
 
+function serviceKey() {
+  return process.env.MC_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+}
+
 function envReady() {
   return !!(
     process.env.MC_SUPABASE_URL &&
-    process.env.MC_SUPABASE_SERVICE_KEY &&
+    serviceKey() &&
     process.env.MC_SESSION_SECRET &&
     process.env.MC_ALAN_PASSWORD &&
     process.env.MC_AGENT_PASSWORD
@@ -88,10 +92,11 @@ function actorFromSession(session, body) {
 }
 
 async function sb(path, opts = {}) {
+  const key = serviceKey();
   const url = `${process.env.MC_SUPABASE_URL}/rest/v1/${path}`;
   const headers = {
-    apikey: process.env.MC_SUPABASE_SERVICE_KEY,
-    Authorization: `Bearer ${process.env.MC_SUPABASE_SERVICE_KEY}`,
+    apikey: key,
+    Authorization: `Bearer ${key}`,
     'Content-Type': 'application/json',
     Prefer: opts.prefer || 'return=representation',
     ...(opts.headers || {}),
@@ -165,6 +170,7 @@ async function spawnRecurrence(task, actor) {
 
 module.exports = {
   envReady,
+  serviceKey,
   json,
   cors,
   readBody,

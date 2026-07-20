@@ -1,15 +1,16 @@
 const crypto = require('crypto');
 const {
-  envReady, json, cors, readBody, requireAuth, actorFromSession, sb, logChange, touchActivity,
+  envReady, serviceKey, json, cors, readBody, requireAuth, actorFromSession, sb, logChange, touchActivity,
 } = require('./_lib');
 
 async function signedUpload(path) {
+  const key = serviceKey();
   const url = `${process.env.MC_SUPABASE_URL}/storage/v1/object/upload/sign/mc-attachments/${path}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      apikey: process.env.MC_SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${process.env.MC_SUPABASE_SERVICE_KEY}`,
+      apikey: key,
+      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ expiresIn: 120 }),
@@ -28,12 +29,13 @@ async function signedUpload(path) {
 }
 
 async function signedRead(path) {
+  const key = serviceKey();
   const url = `${process.env.MC_SUPABASE_URL}/storage/v1/object/sign/mc-attachments/${path}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      apikey: process.env.MC_SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${process.env.MC_SUPABASE_SERVICE_KEY}`,
+      apikey: key,
+      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ expiresIn: 3600 }),
