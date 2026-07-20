@@ -7,6 +7,9 @@ export const store = {
   log: [],
   activeProjectId: null,
   openTaskId: null,
+  /** @type {{ impact: string, diff: string } | null} */
+  matrixFilter: null,
+  matrixSort: { column: 'due_date', direction: 'asc' },
 };
 
 export function applyBootstrap(data) {

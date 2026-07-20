@@ -102,6 +102,28 @@ function wire() {
       } catch (err) { /* ignore */ }
       return;
     }
+    const matrix = e.target.closest('[data-matrix-impact]');
+    if (matrix) {
+      const impact = matrix.getAttribute('data-matrix-impact');
+      const diff = matrix.getAttribute('data-matrix-diff');
+      const cur = store.matrixFilter;
+      store.matrixFilter = cur && cur.impact === impact && cur.diff === diff
+        ? null
+        : { impact, diff };
+      renderHome();
+      return;
+    }
+    const sortTh = e.target.closest('[data-sort]');
+    if (sortTh) {
+      const column = sortTh.getAttribute('data-sort');
+      const cur = store.matrixSort || { column: 'due_date', direction: 'asc' };
+      store.matrixSort = {
+        column,
+        direction: cur.column === column && cur.direction === 'asc' ? 'desc' : 'asc',
+      };
+      renderHome();
+      return;
+    }
     const open = e.target.closest('[data-open]');
     if (open) openDrawer(open.getAttribute('data-open'), boot);
     const ver = e.target.closest('[data-verify]');

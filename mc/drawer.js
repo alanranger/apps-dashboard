@@ -141,6 +141,8 @@ function wireDrawer(t, onRefresh) {
           due_date: $('dueInput').value || null,
           next_step: $('nextStepInput').value.trim() || null,
           priority: $('priorityInput')?.value || t.priority,
+          impact: $('impactInput')?.value || t.impact || 'MEDIUM',
+          difficulty: $('difficultyInput')?.value || t.difficulty || 'MEDIUM',
           waiting_on: $('waitingInput')?.value.trim() || null,
           detail_md: $('detailInput')?.value.trim() || null,
         },
@@ -249,11 +251,19 @@ export async function openDrawer(taskId, onRefresh) {
       <div class="inset">
         <div class="meta">What this is about</div>
         <textarea id="detailInput" rows="8" placeholder="Description: what / why / done when…" style="width:100%;padding:8px;margin:4px 0 8px;white-space:pre-wrap">${esc(t.detail_md || '')}</textarea>
-        <label class="meta" for="priorityInput">Priority</label>
+        <label class="meta" for="priorityInput">Priority (ops)</label>
         <select id="priorityInput" style="width:100%;padding:8px;margin:4px 0 8px">
           <option value="p0" ${t.priority === 'p0' ? 'selected' : ''}>p0 — urgent</option>
           <option value="p1" ${t.priority === 'p1' ? 'selected' : ''}>p1 — important</option>
           <option value="p2" ${t.priority === 'p2' ? 'selected' : ''}>p2 — later</option>
+        </select>
+        <label class="meta" for="impactInput">Impact (matrix)</label>
+        <select id="impactInput" style="width:100%;padding:8px;margin:4px 0 8px" title="Business impact for the priority matrix">
+          ${['HIGH', 'MEDIUM', 'LOW'].map((v) => `<option value="${v}" ${(t.impact || 'MEDIUM') === v ? 'selected' : ''}>${v}</option>`).join('')}
+        </select>
+        <label class="meta" for="difficultyInput">Difficulty (matrix)</label>
+        <select id="difficultyInput" style="width:100%;padding:8px;margin:4px 0 8px" title="Effort / difficulty for the priority matrix">
+          ${['LOW', 'MEDIUM', 'HIGH'].map((v) => `<option value="${v}" ${(t.difficulty || 'MEDIUM') === v ? 'selected' : ''}>${v}</option>`).join('')}
         </select>
         <label class="meta" for="dueInput">Due date</label>
         <input id="dueInput" type="date" value="${esc(t.due_date || '')}" style="width:100%;padding:8px;margin:4px 0 8px"/>

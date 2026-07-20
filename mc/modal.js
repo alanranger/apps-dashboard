@@ -10,6 +10,8 @@ export function openNewTaskModal(onCreated) {
     <label>Project</label><select id="ntProject">${opts}</select>
     <label>Owner</label><select id="ntOwner"><option>alan</option><option>claude</option><option>cursor</option><option>external</option></select>
     <label>Priority</label><select id="ntPriority"><option>p0</option><option selected>p1</option><option>p2</option></select>
+    <label>Impact</label><select id="ntImpact"><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option></select>
+    <label>Difficulty</label><select id="ntDifficulty"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select>
     <label>Due</label><input id="ntDue" type="date"/>
     <label>Recurrence</label><input id="ntRec" placeholder="weekly:1 or monthly:1"/>
     <label>Next step</label><input id="ntNext"/>
@@ -28,6 +30,8 @@ export function openNewTaskModal(onCreated) {
         project_id: $('ntProject').value,
         owner: $('ntOwner').value,
         priority: $('ntPriority').value,
+        impact: $('ntImpact').value,
+        difficulty: $('ntDifficulty').value,
         due_date: $('ntDue').value || null,
         recurrence: $('ntRec').value.trim() || null,
         next_step: $('ntNext').value.trim() || null,

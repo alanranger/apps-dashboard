@@ -2,13 +2,12 @@ import { store } from './store.js';
 import { $, esc, empty } from './util.js';
 import {
   openTasks,
-  matrixBuckets,
   plannerGroups,
   summaryCounts,
   taskLine,
   projectChip,
-  isOverdue,
 } from './task-helpers.js';
+import { priorityMatrixHtml } from './render-matrix.js';
 
 function summaryHtml(c) {
   const cells = [
@@ -49,34 +48,6 @@ function summaryHtml(c) {
     </div>`;
 }
 
-function matrixHtml(buckets) {
-  const q = [
-    { key: 'doNow', title: 'Do now', hint: 'Overdue, due soon, P0, or needs your verify', list: buckets.doNow, tone: 'danger' },
-    { key: 'schedule', title: 'Schedule', hint: 'Important — pick a date and do it', list: buckets.schedule, tone: '' },
-    { key: 'waiting', title: 'Waiting / parked', hint: 'Blocked on someone else or external', list: buckets.waiting, tone: 'warn' },
-    { key: 'later', title: 'Later', hint: 'P2 / low pressure — do not let these steal focus', list: buckets.later, tone: 'muted' },
-  ];
-  return `
-    <div class="card">
-      <h2>Priority matrix</h2>
-      <p class="meta" style="margin-bottom:12px">Where to put attention when everything feels on fire.</p>
-      <div class="matrix">
-        ${q.map((cell) => `
-          <div class="matrix-cell ${cell.tone}">
-            <div class="matrix-head">
-              <h3>${cell.title} (${cell.list.length})</h3>
-              <p class="meta">${cell.hint}</p>
-            </div>
-            <div class="matrix-list">
-              ${cell.list.length
-    ? cell.list.map((t) => taskLine(t, isOverdue(t) ? ' · <span class="pill danger-pill">overdue</span>' : '')).join('')
-    : '<p class="meta">Clear.</p>'}
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>`;
-}
-
 function plannerHtml(groups) {
   if (!groups.length) {
     return `<div class="card"><h2>Planner</h2>${empty('ti-calendar', 'No dated work in the next fortnight. Add due dates on tasks so the diary fills in.')}</div>`;
@@ -112,13 +83,12 @@ function verifyHtml(tasks) {
 export function renderHome() {
   const tasks = openTasks();
   const counts = summaryCounts(tasks);
-  const buckets = matrixBuckets(tasks);
   const groups = plannerGroups(tasks);
 
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}
     ${verifyHtml(tasks)}
-    ${matrixHtml(buckets)}
+    ${priorityMatrixHtml(tasks)}
     ${plannerHtml(groups)}
     <div class="card">
       <h2>Claude ↔ Cursor workflow (how this ties in)</h2>

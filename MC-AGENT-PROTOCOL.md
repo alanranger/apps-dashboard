@@ -24,6 +24,10 @@ Map page: https://apps-dashboard-lilac.vercel.app/handoff
 
 Do not skip state writes. `task_log` actor must be accurate (`cursor` or `claude`).
 
+## Impact × Difficulty (priority matrix)
+
+Each task has `impact` and `difficulty` (`HIGH` | `MEDIUM` | `LOW`) for the Dashboard priority matrix (same pattern as URL Money Pages). Agents may set these via PATCH `/api/mc/tasks` or the task drawer. Keep ops `priority` (p0/p1/p2) for urgency separately.
+
 ## Alan notes + screenshots
 
 - Alan posts via **Post note** (text and/or images) on the task drawer.

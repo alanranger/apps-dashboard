@@ -15,6 +15,8 @@ async function createTask(body, actor) {
       due_date: body.due_date || null,
       waiting_on: body.waiting_on || null,
       priority: body.priority || 'p1',
+      impact: body.impact || 'MEDIUM',
+      difficulty: body.difficulty || 'MEDIUM',
       recurrence: body.recurrence || null,
       depends_on_task_id: body.depends_on_task_id || null,
       question_file: body.question_file || null,
@@ -37,7 +39,7 @@ async function patchTask(id, body, actor, role) {
   const patch = {};
   const fields = [
     'title', 'detail_md', 'owner', 'next_step', 'due_date', 'waiting_on',
-    'priority', 'recurrence', 'depends_on_task_id', 'evidence_url',
+    'priority', 'impact', 'difficulty', 'recurrence', 'depends_on_task_id', 'evidence_url',
     'question_file', 'response_file', 'project_id',
   ];
   for (const f of fields) {
