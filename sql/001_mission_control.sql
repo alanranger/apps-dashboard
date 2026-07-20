@@ -1,6 +1,6 @@
--- Mission Control schema + seeds (dedicated Supabase project)
--- Run once in SQL editor after creating the project.
--- Storage: create private bucket "mc-attachments" in Dashboard (or via storage.buckets insert below).
+-- Mission Control schema + seeds
+-- Host: alan-chat-rag (igzvwbvgvmzvvzoclufx) — shared project to avoid extra Supabase compute cost.
+-- Storage: private bucket "mc-attachments".
 
 create extension if not exists pgcrypto;
 
@@ -86,14 +86,18 @@ create index if not exists tasks_state_idx on tasks(state);
 create index if not exists task_comments_task_idx on task_comments(task_id, at desc);
 create index if not exists task_log_task_idx on task_log(task_id, at desc);
 
-insert into storage.buckets (id, name, public)
-values ('mc-attachments', 'mc-attachments', false)
-on conflict (id) do nothing;
+do $$ begin
+  insert into storage.buckets (id, name, public)
+  values ('mc-attachments', 'mc-attachments', false)
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'storage bucket mc-attachments: %', SQLERRM;
+end $$;
 
 -- Seeds (skip if projects already present)
 do $$
 declare
-  p_aigeo uuid; p_seo uuid; p_sign uuid; p_fin uuid; p_cite uuid; p_content uuid;
+  p_aigeo uuid; p_seo uuid; p_sign uuid; p_fin uuid; p_cite uuid; p_content uuid; p_plat uuid;
   t_hastings uuid; t_id uuid;
 begin
   if exists (select 1 from projects limit 1) then
@@ -113,8 +117,10 @@ begin
     ('AI citations', 'ti-sparkles', 5) returning id into p_cite;
   insert into projects (name, icon, sort) values
     ('Content & marketing', 'ti-speakerphone', 6) returning id into p_content;
+  insert into projects (name, icon, sort) values
+    ('Platform & costs', 'ti-database', 7) returning id into p_plat;
 
-  -- AI GEO (MC-1..)
+  -- AI GEO
   insert into tasks (project_id, title, owner, state, priority) values
     (p_aigeo, 'Walkthrough: integrity checker', 'claude', 'todo', 'p1'),
     (p_aigeo, 'Walkthrough: Money rebuild', 'claude', 'todo', 'p1'),
@@ -180,4 +186,17 @@ begin
     (p_content, 'Applied Learning next article', 'claude', 'todo', 'p1');
   insert into tasks (project_id, title, owner, state, priority) values
     (p_content, 'JLR comeback next step', 'alan', 'todo', 'p2');
+
+  -- Platform & costs (Supabase consolidation)
+  insert into tasks (
+    project_id, title, detail_md, owner, state, priority, next_step
+  ) values (
+    p_plat,
+    'Migrate football-tracker Supabase into alan-chat-rag',
+    'Cost saving: retire the separate football-tracker (MICRO) project by moving its schema/data into alan-chat-rag, then pause/delete the old project. Same pattern as Mission Control hosting.',
+    'cursor',
+    'todo',
+    'p2',
+    'Inventory football-tracker tables + app env, plan schema prefix, migrate, cut over, delete old project'
+  );
 end $$;

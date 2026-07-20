@@ -1,33 +1,28 @@
-# Mission Control setup (Alan — one provisioning step)
+# Mission Control setup
 
-Code is shipped. Live data waits on a **new dedicated Supabase project** (do not reuse AI GEO / Academy / Chat).
+**Database host:** existing Supabase project **alan-chat-rag** (`igzvwbvgvmzvvzoclufx`) — shared with Chat/AI GEO to avoid a fourth compute bill. Schema applied 20 Jul 2026.
 
-## Your one step
+Do **not** create a new Supabase project for Mission Control.
 
-1. **Create** a new Supabase project (name suggestion: `mission-control`).
-2. In SQL Editor, run `sql/001_mission_control.sql` from this repo (creates tables, sequence, storage bucket row, seeds).
-3. In Storage, confirm bucket `mc-attachments` exists and is **private**.
-4. Add these **Vercel env vars** on project `apps-dashboard` (Production + Preview), then redeploy:
+## Alan — remaining step (Vercel env + passwords)
+
+In Vercel → project **apps-dashboard** → Environment Variables (Production + Preview), set:
 
 | Name | Value |
 |------|--------|
-| `MC_SUPABASE_URL` | Project URL |
-| `MC_SUPABASE_SERVICE_KEY` | Service role key (server only) |
-| `MC_SESSION_SECRET` | Long random string |
-| `MC_ALAN_PASSWORD` | Your password (sole Verify) |
-| `MC_AGENT_PASSWORD` | Shared agent password for Claude + Cursor |
+| `MC_SUPABASE_URL` | `https://igzvwbvgvmzvvzoclufx.supabase.co` |
+| `MC_SUPABASE_SERVICE_KEY` | Same **service_role** key as AI GEO / Chat for this project (Settings → API) |
+| `MC_SESSION_SECRET` | Long random string (password manager generate) |
+| `MC_ALAN_PASSWORD` | Your Mission Control login (sole Verify) |
+| `MC_AGENT_PASSWORD` | Shared Claude + Cursor agent login |
 
-5. Give Claude the new project connector (same service or scoped key per your usual practice).
-6. Give Cursor the same five values in its env / Vercel (agent password — cannot verify).
+Then **redeploy** apps-dashboard.
 
 ## URLs
 
-- UI: `https://apps-dashboard-lilac.vercel.app/mission-control`
-- Public count (audit chip): `GET /api/mc/public-count` → `{ count }`
+- UI: https://apps-dashboard-lilac.vercel.app/mission-control  
+- Public count: `GET /api/mc/public-count`
 
-## Roles
+## Cost follow-up (seeded on board)
 
-| Role | Can |
-|------|-----|
-| `alan` | Everything including Verify + Send back |
-| `agent` | Create/update/claim/comment — **not** Verify |
+Project **Platform & costs** includes task: *Migrate football-tracker Supabase into alan-chat-rag* (retire the MICRO project after cut-over).
