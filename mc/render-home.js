@@ -9,16 +9,41 @@ import {
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
+function tileRow(label, cells, aria) {
+  return `
+    <div class="exec-row">
+      <div class="exec-row-label">${esc(label)}</div>
+      <div class="summary" aria-label="${esc(aria)}">
+        ${cells.map((x) => `
+          <div class="summary-cell ${x.tone || ''}" title="${esc(x.tip || x.label)}">
+            <div class="summary-n">${x.n}</div>
+            <div class="summary-l">${x.label}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 function summaryHtml(c) {
-  const cells = [
-    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok' },
-    { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek && !c.overdue ? 'warn' : (c.dueWeek ? 'warn' : 'ok') },
+  const byStatus = [
+    { n: c.overdue, label: 'Overdue', tone: c.overdue ? 'danger' : 'ok', tip: 'Past due date' },
+    { n: c.dueWeek, label: 'Due in 7 days', tone: c.dueWeek ? 'warn' : 'ok', tip: 'Due within the next week' },
     { n: c.inProgress, label: 'In progress', tone: c.inProgress ? 'warn' : 'ok' },
     { n: c.todo, label: 'To do', tone: '' },
     { n: c.verify, label: 'Awaiting verify', tone: c.verify ? 'danger' : 'ok' },
     { n: c.waiting, label: 'Waiting on others', tone: c.waiting ? 'warn' : 'ok' },
     { n: c.open, label: 'Open total', tone: '' },
   ];
+  const byPri = [
+    { n: c.byPriority.p0, label: 'p0 urgent', tone: c.byPriority.p0 ? 'danger' : 'ok', tip: 'Operational priority p0' },
+    { n: c.byPriority.p1, label: 'p1 important', tone: c.byPriority.p1 ? 'warn' : 'ok', tip: 'Operational priority p1' },
+    { n: c.byPriority.p2, label: 'p2 later', tone: '', tip: 'Operational priority p2' },
+  ];
+  const byProject = c.byProject.map((p) => ({
+    n: p.n,
+    label: p.name,
+    tone: p.n >= 8 ? 'warn' : '',
+    tip: `${p.name}: ${p.n} open tasks`,
+  }));
   const owners = [
     ['alan', c.byOwner.alan],
     ['claude', c.byOwner.claude],
@@ -32,17 +57,14 @@ function summaryHtml(c) {
         <div>
           <h2>Executive summary</h2>
           <p class="exec-verdict">${esc(c.ragLabel)}</p>
-          <p class="meta">${c.open} open · ${c.active} active (todo + in progress) · ${c.byOwner.alan} on you · ${c.byOwner.claude} Claude · ${c.byOwner.cursor} Cursor</p>
+          <p class="meta">${c.open} open · ${c.byPriority.p0} p0 · ${c.byPriority.p1} p1 · ${c.byPriority.p2} p2 · ${c.byOwner.alan} on you · ${c.byOwner.claude} Claude · ${c.byOwner.cursor} Cursor</p>
         </div>
       </div>
-      <div class="summary" aria-label="Task counts">
-        ${cells.map((x) => `
-          <div class="summary-cell ${x.tone}">
-            <div class="summary-n">${x.n}</div>
-            <div class="summary-l">${x.label}</div>
-          </div>`).join('')}
-      </div>
+      ${tileRow('By status', byStatus, 'Counts by progress status')}
+      ${tileRow('By priority', byPri, 'Counts by operational priority')}
+      ${tileRow('By project', byProject, 'Counts by project stream')}
       <div class="owner-strip" aria-label="By owner">
+        <span class="meta" style="margin-right:4px">By owner:</span>
         ${owners.map(([name, n]) => `<span class="owner-chip"><strong>${n}</strong> ${name}</span>`).join('')}
       </div>
     </div>`;

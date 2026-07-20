@@ -192,14 +192,17 @@
 .rag-badge.rag-red { background: var(--red); color: #fff; border-color: var(--red); }
 .rag-badge.rag-amber { background: var(--amber); color: #1a1200; border-color: var(--amber); }
 .rag-badge.rag-green { background: var(--green); color: #04140a; border-color: var(--green); }
+.exec-row { margin-bottom: 12px; }
+.exec-row-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 6px;
+}
 .summary {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
-@media (max-width: 1100px) { .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .summary-cell {
   background: var(--panel-2);
   border: 1px solid var(--border);

@@ -127,9 +127,18 @@ export function summaryCounts(tasks) {
   }).length;
   const active = todo + inProgress;
   const byOwner = { alan: 0, claude: 0, cursor: 0, external: 0 };
+  const byPriority = { p0: 0, p1: 0, p2: 0 };
+  const byProjectMap = new Map();
   for (const t of tasks) {
     if (byOwner[t.owner] !== undefined) byOwner[t.owner] += 1;
+    if (byPriority[t.priority] !== undefined) byPriority[t.priority] += 1;
+    const p = projectById(t.project_id);
+    const key = p?.id || 'unknown';
+    const cur = byProjectMap.get(key) || { id: key, name: p?.name || 'Unknown', icon: p?.icon || 'ti-folder', n: 0 };
+    cur.n += 1;
+    byProjectMap.set(key, cur);
   }
+  const byProject = [...byProjectMap.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
   let rag = 'green';
   let ragLabel = 'GREEN — nothing on fire';
   if (overdue > 0 || verify > 0) {
@@ -143,6 +152,6 @@ export function summaryCounts(tasks) {
   }
   return {
     verify, waiting, overdue, dueWeek, active, open: tasks.length,
-    inProgress, todo, byOwner, rag, ragLabel,
+    inProgress, todo, byOwner, byPriority, byProject, rag, ragLabel,
   };
 }
