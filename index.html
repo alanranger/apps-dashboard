@@ -179,7 +179,7 @@
       display: flex;
       gap: 8px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
     }
     .top-tabs a {
@@ -192,6 +192,20 @@
     }
     .top-tabs a:hover { color: var(--text); border-color: var(--brand); }
     .top-tabs a.active { color: var(--brand); border-color: var(--brand); }
+    .build-pill {
+      display: inline-block;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      margin-top: 8px;
+    }
+    .build-pill code { font-family: ui-monospace, monospace; font-weight: 600; }
+    .build-pill .sep { color: var(--text-muted); margin: 0 4px; }
+    .build-pill .loaded { color: #4f4; }
 
     @media (max-width: 768px) {
       .tiles-grid {
@@ -209,9 +223,16 @@
       <h1>🚀 Apps Dashboard</h1>
       <p>Central hub for all Alan Ranger tools and applications</p>
       <nav class="top-tabs" aria-label="Primary">
-        <a href="/" class="active">Apps</a>
         <a href="/mission-control">Mission Control</a>
+        <a href="/apps" class="active">Apps</a>
       </nav>
+      <div class="build-pill" id="buildPill" title="Deployed build identity">
+        <strong>Version:</strong> <code id="gitVersion">…</code>
+        <span class="sep">|</span>
+        <strong>Built:</strong> <span id="buildDate">…</span>
+        <span class="sep">|</span>
+        <span class="loaded">Loaded: <span id="loadTimeValue">…</span></span>
+      </div>
     </div>
 
     <!-- Chat AI Bot Tools -->
@@ -550,5 +571,6 @@
       </div>
     </div>
   </div>
+  <script src="/mc/version-pill.js"></script>
 </body>
 </html>

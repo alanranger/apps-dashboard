@@ -17,3 +17,8 @@ npm-debug.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Local secrets (never commit)
+.env
+.env.local
+.env.*.local

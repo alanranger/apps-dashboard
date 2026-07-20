@@ -1,7 +1,9 @@
 {
   "version": 2,
   "rewrites": [
+    { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },
+    { "source": "/apps", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }

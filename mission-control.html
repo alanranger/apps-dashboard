@@ -36,14 +36,28 @@
     }
     .shell { max-width: 1100px; margin: 0 auto; padding: 16px; }
     .topnav {
-      display: flex; gap: 12px; align-items: center;
-      border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px;
     }
     .topnav a {
       text-decoration: none; color: var(--text-dim); font-size: 14px; padding: 8px 12px; border-radius: 8px;
     }
     .topnav a:hover { background: var(--panel); color: var(--text); }
     .topnav a.active { color: var(--accent); font-weight: 600; }
+    .build-pill {
+      display: inline-block;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      margin-bottom: 16px;
+    }
+    .build-pill code { font-family: ui-monospace, monospace; font-weight: 600; }
+    .build-pill .sep { color: var(--text-faint); margin: 0 4px; }
+    .build-pill .loaded { color: var(--green); }
     h1 { font-size: 20px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
     .meta { font-size: 12px; color: var(--text-faint); }
     .chip {
@@ -156,10 +170,17 @@
 <body>
   <div class="shell">
     <nav class="topnav">
-      <a href="/">Apps</a>
       <a href="/mission-control" class="active">Mission Control</a>
+      <a href="/apps">Apps</a>
       <span class="meta" id="roleBadge" style="margin-left:auto"></span>
     </nav>
+    <div class="build-pill" id="buildPill" title="Deployed build identity">
+      <strong>Version:</strong> <code id="gitVersion">…</code>
+      <span class="sep">|</span>
+      <strong>Built:</strong> <span id="buildDate">…</span>
+      <span class="sep">|</span>
+      <span class="loaded">Loaded: <span id="loadTimeValue">…</span></span>
+    </div>
 
     <div id="gate" class="gate">
       <h1>Mission Control</h1>
@@ -167,7 +188,7 @@
       <input id="pw" type="password" placeholder="Password" autocomplete="current-password" />
       <button id="loginBtn" type="button">Enter</button>
       <p class="err" id="gateErr" hidden></p>
-      <p class="meta" style="margin-top:12px">If you see “not configured”, Alan still needs to create the Supabase project and set Vercel env vars.</p>
+      <p class="meta" style="margin-top:12px">If you see “not configured”, check Vercel Production env vars and redeploy.</p>
     </div>
 
     <div id="app" hidden>
@@ -191,6 +212,7 @@
   <div id="modal" class="modal"><div class="box" id="modalBox"></div></div>
   <div id="lightbox" class="lightbox"><img id="lightboxImg" alt="" /></div>
 
+  <script src="/mc/version-pill.js"></script>
   <script src="/mc/app.js"></script>
 </body>
 </html>
