@@ -29,17 +29,21 @@ function setView(name) {
     };
     label.innerHTML = labels[name] || labels.home;
   }
+  // Lazy-render Recurring only when opened — never block Dashboard login
+  if (name === 'recurring') {
+    try { renderRecurring(); }
+    catch (e) {
+      const el = $('view-recurring');
+      if (el) el.innerHTML = `<div class="card"><p class="err">Recurring tab failed: ${e.message || e}</p></div>`;
+    }
+  }
 }
 
 function renderAll() {
   renderHome();
   renderBoard();
-  try {
-    renderRecurring();
-  } catch (e) {
-    const el = $('view-recurring');
-    if (el) el.innerHTML = `<div class="card"><p class="err">Recurring tab failed to render: ${e.message || e}</p></div>`;
-  }
+  const rec = $('view-recurring');
+  if (rec) rec.innerHTML = '<div class="card"><p class="meta">Open the Recurring tab to load habits.</p></div>';
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
 }
 
