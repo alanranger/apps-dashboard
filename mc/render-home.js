@@ -49,9 +49,8 @@ function matrixHtml(buckets) {
             </div>
             <div class="matrix-list">
               ${cell.list.length
-    ? cell.list.slice(0, 8).map((t) => taskLine(t, isOverdue(t) ? ' · <span class="pill danger-pill">overdue</span>' : '')).join('')
+    ? cell.list.map((t) => taskLine(t, isOverdue(t) ? ' · <span class="pill danger-pill">overdue</span>' : '')).join('')
     : '<p class="meta">Clear.</p>'}
-              ${cell.list.length > 8 ? `<p class="meta">+${cell.list.length - 8} more — open Project board</p>` : ''}
             </div>
           </div>`).join('')}
       </div>
