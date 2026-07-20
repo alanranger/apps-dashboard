@@ -175,6 +175,24 @@
       border: 1px solid var(--blue);
     }
 
+    .top-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .top-tabs a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .top-tabs a:hover { color: var(--text); border-color: var(--brand); }
+    .top-tabs a.active { color: var(--brand); border-color: var(--brand); }
+
     @media (max-width: 768px) {
       .tiles-grid {
         grid-template-columns: 1fr;
@@ -190,6 +208,10 @@
     <div class="header">
       <h1>🚀 Apps Dashboard</h1>
       <p>Central hub for all Alan Ranger tools and applications</p>
+      <nav class="top-tabs" aria-label="Primary">
+        <a href="/" class="active">Apps</a>
+        <a href="/mission-control">Mission Control</a>
+      </nav>
     </div>
 
     <!-- Chat AI Bot Tools -->
@@ -457,6 +479,18 @@
         <h2>Workflow & Operations</h2>
       </div>
       <div class="tiles-grid">
+        <a href="/mission-control" class="tile">
+          <div class="tile-header">
+            <div class="tile-icon">🛡️</div>
+            <div class="tile-title">Mission Control</div>
+          </div>
+          <div class="tile-description">
+            <p>Cross-project task ledger. Nothing is finished until Alan verifies it.</p>
+            <p>Projects, claims, comments with screenshots, and agent sync — MC-1 style IDs.</p>
+          </div>
+          <span class="tile-badge badge-internal">Internal</span>
+        </a>
+
         <a href="bau-workflow.html" target="_blank" class="tile">
           <div class="tile-header">
             <div class="tile-icon">🔄</div>

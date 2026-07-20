@@ -1,0 +1,18 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161d2a;
+  --panel-2: #1d2636;
+  --border: #263048;
+  --text: #e6e9f0;
+  --text-dim: #9aa4b8;
+  --text-faint: #64708a;
+  --accent: #f0b429;
+  --red: #e5534b;
+  --red-bg: rgba(229, 83, 75, 0.12);
+  --amber: #d9a441;
+  --amber-bg: rgba(217, 164, 65, 0.12);
+  --green: #3fb950;
+  --green-bg: rgba(63, 185, 80, 0.12);
+  --blue: #58a6ff;
+  --blue-bg: rgba(88, 166, 255, 0.12);
+}
