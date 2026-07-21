@@ -59,6 +59,42 @@ export function taskWhy(t) {
   return '';
 }
 
+const BALL_KEYS = new Set(['alan', 'claude', 'cursor', 'external']);
+
+/** Derived "Ball with" — who is holding the task up (not stored; cannot go stale). */
+export function ballWith(t) {
+  if (t.state === 'verified') return { key: 'none', label: '—', style: 'none' };
+  if (t.state === 'done_claimed') return { key: 'alan', label: 'alan', style: 'alan' };
+  if (t.state === 'waiting') {
+    const wo = String(t.waiting_on || '').trim();
+    if (wo) {
+      const low = wo.toLowerCase();
+      const key = BALL_KEYS.has(low) ? low : 'external';
+      const style = key === 'alan' ? 'alan' : 'waiting';
+      return { key, label: wo, style };
+    }
+    const o = String(t.owner || 'alan');
+    return { key: o, label: o, style: o === 'alan' ? 'alan' : 'waiting' };
+  }
+  const o = String(t.owner || 'alan');
+  const style = o === 'alan' ? 'alan' : o === 'external' ? 'external' : 'agent';
+  return { key: o, label: o, style };
+}
+
+export function ballChipHtml(t) {
+  const b = ballWith(t);
+  return `<span class="ball-chip ball-${b.style}" title="Ball with: ${esc(b.label)}">${esc(b.label)}</span>`;
+}
+
+export function ballCounts(tasks) {
+  const c = { alan: 0, claude: 0, cursor: 0, external: 0, none: 0 };
+  for (const t of tasks) {
+    const k = ballWith(t).key;
+    if (c[k] !== undefined) c[k] += 1;
+  }
+  return c;
+}
+
 export function duePillTone(t) {
   const due = parseDue(t);
   if (!due) return '';
@@ -113,7 +149,7 @@ export function taskLine(t, extra = '') {
       <div class="mcid">MC-${t.display_id}</div>
       <div class="plan-main">
         <div class="plan-title">${esc(t.title)}</div>
-        <div class="meta">${projectChip(t)} · ${esc(t.owner)} · ${esc(t.state.replace('_', ' '))}${extra}</div>
+        <div class="meta">${projectChip(t)} · ${esc(t.owner)} · ${ballChipHtml(t)} · ${esc(t.state.replace('_', ' '))}${extra}</div>
       </div>
       <div class="meta plan-due">${fmtDate(t.due_date)}</div>
     </div>`;
@@ -222,7 +258,7 @@ export function plannerGroups(tasks, bauItems = []) {
   return groups;
 }
 
-/** Apply Dashboard exec-summary tile filters (status / priority / project / owner). */
+/** Apply Dashboard exec-summary tile filters (status / priority / project / owner / ball). */
 export function applyExecFilter(tasks) {
   const f = store.execFilter || {};
   let out = tasks;
@@ -241,12 +277,13 @@ export function applyExecFilter(tasks) {
   if (f.priority) out = out.filter((t) => t.priority === f.priority);
   if (f.projectId) out = out.filter((t) => t.project_id === f.projectId);
   if (f.owner) out = out.filter((t) => t.owner === f.owner);
+  if (f.ball) out = out.filter((t) => ballWith(t).key === f.ball);
   return out;
 }
 
 export function execFilterActive() {
   const f = store.execFilter || {};
-  return !!(f.status || f.priority || f.projectId || f.owner);
+  return !!(f.status || f.priority || f.projectId || f.owner || f.ball);
 }
 
 export function execFilterLabel() {
@@ -255,7 +292,8 @@ export function execFilterLabel() {
   if (f.status) bits.push(`status=${f.status}`);
   if (f.priority) bits.push(f.priority);
   if (f.projectId) bits.push(projectById(f.projectId)?.name || 'project');
-  if (f.owner) bits.push(f.owner);
+  if (f.owner) bits.push(`owner=${f.owner}`);
+  if (f.ball) bits.push(`ball=${f.ball === 'none' ? '—' : f.ball}`);
   return bits.length ? bits.join(' · ') : '';
 }
 
@@ -298,6 +336,7 @@ export function summaryCounts(tasks) {
   }
   return {
     verify, waiting, overdue, dueWeek, active, open: tasks.length,
-    inProgress, todo, byOwner, byPriority, byProject, rag, ragLabel,
+    inProgress, todo, byOwner, byPriority, byProject, byBall: ballCounts(tasks),
+    rag, ragLabel,
   };
 }

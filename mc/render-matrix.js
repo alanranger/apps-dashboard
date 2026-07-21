@@ -1,6 +1,6 @@
 import { store, projectById } from './store.js';
 import { STATE_LABEL, esc, fmtDate } from './util.js';
-import { isOverdue, execFilterActive, execFilterLabel, projectChip, easyWinsCount } from './task-helpers.js';
+import { isOverdue, execFilterActive, execFilterLabel, projectChip, easyWinsCount, ballWith, ballChipHtml } from './task-helpers.js';
 
 const IMPACTS = ['HIGH', 'MEDIUM', 'LOW'];
 const DIFFS = ['LOW', 'MEDIUM', 'HIGH'];
@@ -36,6 +36,7 @@ function sortTasks(tasks) {
       bv = projectById(b.project_id)?.name || '';
     }
     else if (column === 'owner') { av = a.owner || ''; bv = b.owner || ''; }
+    else if (column === 'ball') { av = ballWith(a).key; bv = ballWith(b).key; }
     else if (column === 'state') { av = a.state || ''; bv = b.state || ''; }
     else if (column === 'impact') { av = rank[level(a, 'impact')]; bv = rank[level(b, 'impact')]; }
     else if (column === 'difficulty') { av = rank[level(a, 'difficulty')]; bv = rank[level(b, 'difficulty')]; }
@@ -107,6 +108,7 @@ function tableHtml(tasks) {
         <td class="td-project">${projectChip(t)}</td>
         <td>${esc(t.owner)}</td>
         <td>${esc(STATE_LABEL[t.state] || t.state)}</td>
+        <td>${ballChipHtml(t)}</td>
         <td>${badge(level(t, 'impact'), 'impact')}</td>
         <td>${badge(level(t, 'difficulty'), 'diff')}</td>
         <td>${esc(t.priority || 'p1')}</td>
@@ -125,6 +127,7 @@ function tableHtml(tasks) {
             ${th('project', 'Project', 'Sort by project stream')}
             ${th('owner', 'Owner', 'Who should act next')}
             ${th('state', 'State', 'Workflow state')}
+            ${th('ball', 'Ball with', 'Who is holding the task up (derived)')}
             ${th('impact', 'Impact', 'Business impact HIGH / MEDIUM / LOW')}
             ${th('difficulty', 'Difficulty', 'Effort HIGH / MEDIUM / LOW')}
             ${th('priority', 'Pri', 'Operational priority p0 / p1 / p2')}

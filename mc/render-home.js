@@ -13,6 +13,7 @@ import {
   taskWhy,
   duePillTone,
   bauPlannerItems,
+  ballChipHtml,
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
@@ -63,9 +64,16 @@ function execDetailHtml(c) {
     ['cursor', c.byOwner.cursor],
     ['external', c.byOwner.external],
   ];
+  const balls = [
+    ['alan', c.byBall.alan, 'you'],
+    ['claude', c.byBall.claude, 'claude'],
+    ['cursor', c.byBall.cursor, 'cursor'],
+    ['external', c.byBall.external, 'external'],
+    ['none', c.byBall.none, '—'],
+  ];
   const filterNote = execFilterActive()
     ? `<p class="meta exec-filter-note">Table filtered: <strong>${esc(execFilterLabel())}</strong> — click a tile again to clear that filter, or <button type="button" class="linkish" data-exec-dim="all" data-exec-val="clear">Clear all filters</button></p>`
-    : '<p class="meta exec-filter-note">Click any tile (or owner) to filter the task table below. Click again to clear.</p>';
+    : '<p class="meta exec-filter-note">Click any tile (or owner / Ball with) to filter the task table below. Click again to clear.</p>';
   return `
     ${tileRow('By status', byStatus, 'Filter by progress status')}
     ${tileRow('By priority', byPri, 'Filter by operational priority')}
@@ -76,6 +84,14 @@ function execDetailHtml(c) {
         <button type="button" class="owner-chip ${f.owner === name ? 'active' : ''}"
           data-exec-dim="owner" data-exec-val="${name}" title="Filter table: owner ${name}">
           <strong>${n}</strong> ${name}
+        </button>`).join('')}
+    </div>
+    <div class="owner-strip ball-strip" aria-label="Filter by ball with">
+      <span class="meta" style="margin-right:4px">Ball with:</span>
+      ${balls.map(([key, n, label]) => `
+        <button type="button" class="owner-chip ball-filter-${key} ${f.ball === key ? 'active' : ''}"
+          data-exec-dim="ball" data-exec-val="${key}" title="Filter table: ball with ${label}">
+          <strong>${n}</strong> ${label}
         </button>`).join('')}
     </div>
     ${filterNote}`;
@@ -91,6 +107,7 @@ function summaryHtml(c) {
         <span class="rag-badge rag-${c.rag}">${ragLabel}</span>
         <span class="exec-bar-main">${c.open} open · ${c.dueWeek} due this week · ${c.waiting} waiting</span>
         <span class="exec-bar-side">${c.overdue} overdue · ${c.verify} to verify · ${c.byOwner.alan} on you</span>
+        <span class="exec-bar-ball meta">Ball: you ${c.byBall.alan} · claude ${c.byBall.claude} · cursor ${c.byBall.cursor} · external ${c.byBall.external}</span>
         <i class="ti ${chev} exec-bar-chev" aria-hidden="true"></i>
       </button>
       <div class="exec-detail ${expanded ? '' : 'collapsed'}">
@@ -115,7 +132,7 @@ function nextUpHtml(tasks) {
         <span class="mcid mcid-nowrap">MC-${t.display_id}</span>
         <div class="nextup-main">
           <div class="nextup-title">${esc(t.title)}</div>
-          <div class="nextup-meta">${projectChip(t)}${why ? `<span class="nextup-why meta">${esc(why)}</span>` : ''}</div>
+          <div class="nextup-meta">${projectChip(t)} ${ballChipHtml(t)}${why ? `<span class="nextup-why meta">${esc(why)}</span>` : ''}</div>
         </div>
         <span class="due-pill ${tone ? `due-pill-${tone}` : ''}">${esc(due)}</span>
       </div>`;

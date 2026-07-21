@@ -149,10 +149,10 @@ function wire() {
     if (exec) {
       const dim = exec.getAttribute('data-exec-dim');
       const val = exec.getAttribute('data-exec-val');
-      if (!store.execFilter) store.execFilter = { status: null, priority: null, projectId: null, owner: null };
+      if (!store.execFilter) store.execFilter = { status: null, priority: null, projectId: null, owner: null, ball: null };
       if (dim === 'all' || (dim === 'status' && val === 'clear')) {
         if (dim === 'all') {
-          store.execFilter = { status: null, priority: null, projectId: null, owner: null };
+          store.execFilter = { status: null, priority: null, projectId: null, owner: null, ball: null };
         } else {
           store.execFilter.status = null;
         }

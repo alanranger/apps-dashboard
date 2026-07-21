@@ -1,6 +1,6 @@
 import { store } from './store.js';
 import { STATES, STATE_LABEL, $, esc, fmtDate, empty } from './util.js';
-import { projectChip } from './task-helpers.js';
+import { projectChip, ballChipHtml } from './task-helpers.js';
 
 function stalePill(t) {
   if (t.state === 'waiting' || t.owner === 'external') return '';
@@ -21,7 +21,7 @@ export function renderBoard() {
     const cards = list.length
       ? list.map((t) => `
         <div class="task-card ${st === 'done_claimed' ? 'done-claimed' : ''} ${st === 'verified' ? 'verified' : ''}" data-open="${t.id}">
-          <div class="mcid">MC-${t.display_id} · ${esc(t.priority || 'p1')}</div>
+          <div class="mcid">MC-${t.display_id} · ${esc(t.priority || 'p1')} ${ballChipHtml(t)}</div>
           <div class="title">${esc(t.title)}</div>
           <div class="meta">${esc(t.owner)} · due ${fmtDate(t.due_date)} ${stalePill(t)}
           ${t.depends_on?.display_id ? `<span class="chip">depends MC-${t.depends_on.display_id}</span>` : ''}

@@ -30,7 +30,7 @@ export const store = {
   matrixFilter: null,
   matrixSort: { column: 'due_date', direction: 'asc' },
   /** Exec summary filters — AND together; each dim toggles independently */
-  execFilter: { status: null, priority: null, projectId: null, owner: null },
+  execFilter: { status: null, priority: null, projectId: null, owner: null, ball: null },
   uiPrefs: {
     execExpanded: readUiPrefs().execExpanded,
     matrixExpanded: readUiPrefs().matrixExpanded,
