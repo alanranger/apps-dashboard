@@ -3,6 +3,7 @@
  * Writes pending_diary_changes ONLY — never Google Calendar.
  */
 const { json, sb } = require('../mc/_lib');
+const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
 
 function todayYmd() {
   return new Date().toISOString().slice(0, 10);
@@ -88,13 +89,187 @@ module.exports = async function handler(req, res) {
 
   const today = todayYmd();
   const inserted = [];
+  const { sources, events, errors } = loadScheduleEvents();
   const notes = [
-    'calendar_feed_checks_skipped: no Calendar OAuth in apps-dashboard (DB-only detector)',
+    'calendar_writes: 0 (hard constraint)',
+    ...sources.map((s) => `source ${s.id}: ${s.ok ? `${s.display} (${s.path})` : `FAIL ${s.error}`}`),
   ];
+
+  // Stale / missing CSV → pending (never silent)
+  for (const src of sources) {
+    if (!src.ok) {
+      const relatedId = `source_missing:${src.id}`;
+      if (!(await existingPending('source_missing', relatedId))) {
+        const row = await sb('pending_diary_changes', {
+          method: 'POST',
+          body: {
+            change_type: 'source_missing',
+            target_date: today,
+            summary: `${src.label} missing or unreadable`,
+            proposed_action: `Copy ${src.name} into apps-dashboard/data/schedule/ (from alan-shared-resources/csv) and redeploy, or set MC_SCHEDULE_CSV_DIR.`,
+            reason: src.error || 'missing',
+            urgency: 'high',
+            status: 'pending',
+            related_id: relatedId,
+          },
+        });
+        const id = Array.isArray(row) ? row[0]?.id : row?.id;
+        if (id) inserted.push(id);
+      }
+      continue;
+    }
+    if (src.age_days != null && src.age_days > 14) {
+      const relatedId = `source_stale:${src.id}:${Math.floor(src.age_days)}`;
+      if (!(await existingPending('source_stale', relatedId))) {
+        const row = await sb('pending_diary_changes', {
+          method: 'POST',
+          body: {
+            change_type: 'source_stale',
+            target_date: today,
+            summary: `${src.label} is ${Math.floor(src.age_days)} days old — re-export from Squarespace before trusting this detection run.`,
+            proposed_action: `Re-export ${src.name} into alan-shared-resources/csv and copy to apps-dashboard/data/schedule/, then re-run detector.`,
+            reason: `mtime ${src.mtime}; threshold 14 days (Alan)`,
+            urgency: 'high',
+            status: 'pending',
+            related_id: relatedId,
+          },
+        });
+        const id = Array.isArray(row) ? row[0]?.id : row?.id;
+        if (id) inserted.push(id);
+      }
+    }
+  }
 
   const rules = await sb('scheduling_rules?select=key,value');
   const ruleMap = Object.fromEntries((rules || []).map((r) => [r.key, r.value]));
   const maxRolls = Number(ruleMap.missed_habit_max_rolls || 3);
+  const horizonWeeks = Number(ruleMap.travel_horizon_weeks || 12);
+  const horizonEnd = addDaysYmd(today, horizonWeeks * 7);
+  const homePc = ruleMap.home_postcode || 'CV4 9HW';
+  const bufferScope = ruleMap.buffer_scope || 'home_only';
+  const prepMin = Number(ruleMap.prep_buffer_min || 30);
+  const decompMin = Number(ruleMap.decompress_buffer_min || 30);
+  const arriveMin = Number(ruleMap.arrive_before_start_min || 30);
+  const travelPrefix = ruleMap.title_prefix_travel || 'MC 🚗';
+  const bufferPrefix = ruleMap.title_prefix_buffer || 'MC ⏳';
+
+  const drives = await sb('venue_drive_times?select=venue_name,minutes_from_home');
+  const driveHint = (ev) => {
+    const blob = `${ev.location_name} ${ev.address} ${ev.postcode}`.toLowerCase();
+    const hit = (drives || []).find((d) => blob.includes(String(d.venue_name).toLowerCase().split('/')[0].trim()));
+    return hit ? `${hit.minutes_from_home} min from home (${hit.venue_name})` : 'look up drive time in Scheduling → Drive times';
+  };
+
+  // CSV events in horizon → travel / buffers for NEW rows only (vs snapshot).
+  // First run with empty snapshot = baseline only (no flood of "missing" for whole year).
+  const inHorizon = events.filter((e) => e.start_date >= today && e.start_date <= horizonEnd);
+  const currentKeys = new Set(events.map((e) => e.row_key));
+
+  let prev = [];
+  try {
+    prev = await sb('schedule_csv_snapshot?select=row_key,title,start_date,kind');
+  } catch (e) {
+    notes.push(`snapshot_read_error: ${e.message}`);
+  }
+  const prevKeys = new Set((prev || []).map((p) => p.row_key));
+  const isBaseline = prevKeys.size === 0;
+
+  if (isBaseline) {
+    notes.push(`baseline_snapshot: ${events.length} CSV events recorded; travel/buffer proposals start on next change`);
+  } else {
+    for (const ev of inHorizon) {
+      if (prevKeys.has(ev.row_key)) continue; // not new
+      const home = isHomeBased(ev, homePc);
+      if (!home) {
+        const relatedId = `travel:${ev.row_key}`;
+        if (!(await existingPending('missing_travel', relatedId))) {
+          const row = await sb('pending_diary_changes', {
+            method: 'POST',
+            body: {
+              change_type: 'missing_travel',
+              target_date: ev.start_date,
+              summary: `New located event — travel needed: ${ev.title}`,
+              proposed_action: `Ensure ${travelPrefix} travel block on ${ev.start_date} (arrive ${arriveMin}m before ${ev.start_time || 'start'}). ${driveHint(ev)}. Location: ${ev.location_name || ev.postcode}. URL: ${ev.url || '—'}. Claude checks diary clashes when applying.`,
+              reason: `New in CSV ${ev.source_id} vs previous snapshot; inside ${horizonWeeks}w horizon`,
+              urgency: 'normal',
+              status: 'pending',
+              related_id: relatedId,
+            },
+          });
+          const id = Array.isArray(row) ? row[0]?.id : row?.id;
+          if (id) inserted.push(id);
+        }
+      } else if (bufferScope === 'home_only' || bufferScope === 'all') {
+        const relatedId = `buffer:${ev.row_key}`;
+        if (!(await existingPending('missing_buffer', relatedId))) {
+          const row = await sb('pending_diary_changes', {
+            method: 'POST',
+            body: {
+              change_type: 'missing_buffer',
+              target_date: ev.start_date,
+              summary: `New home session — buffers: ${ev.title}`,
+              proposed_action: `Ensure ${bufferPrefix} prep ${prepMin}m before and decompress ${decompMin}m after on ${ev.start_date} ${ev.start_time || ''}–${ev.end_time || ''}. Home (${homePc}). Claude verifies clashes when applying.`,
+              reason: `New in CSV ${ev.source_id}; buffer_scope=${bufferScope}`,
+              urgency: 'normal',
+              status: 'pending',
+              related_id: relatedId,
+            },
+          });
+          const id = Array.isArray(row) ? row[0]?.id : row?.id;
+          if (id) inserted.push(id);
+        }
+      }
+    }
+  }
+
+  // Cancelled / removed from CSV vs last snapshot
+  if (!isBaseline) {
+    for (const old of prev || []) {
+      if (currentKeys.has(old.row_key)) continue;
+      if (old.start_date < today) continue;
+      const relatedId = `orphan:${old.row_key}`;
+      if (await existingPending('orphaned_block', relatedId)) continue;
+      const row = await sb('pending_diary_changes', {
+        method: 'POST',
+        body: {
+          change_type: 'orphaned_block',
+          target_date: old.start_date,
+          summary: `Removed from CSV: ${old.title}`,
+          proposed_action: `Remove orphaned ${travelPrefix}/${bufferPrefix} MC blocks for "${old.title}" on ${old.start_date} (no longer in workshop/lesson CSV).`,
+          reason: 'Present in previous snapshot, absent from current CSV export',
+          urgency: 'normal',
+          status: 'pending',
+          related_id: relatedId,
+        },
+      });
+      const id = Array.isArray(row) ? row[0]?.id : row?.id;
+      if (id) inserted.push(id);
+    }
+  }
+
+  // Refresh snapshot
+  try {
+    await sb('schedule_csv_snapshot?kind=eq.lesson', { method: 'DELETE', prefer: 'return=minimal' });
+    await sb('schedule_csv_snapshot?kind=eq.workshop', { method: 'DELETE', prefer: 'return=minimal' });
+    if (events.length) {
+      const chunk = events.slice(0, 500).map((e) => ({
+        row_key: e.row_key,
+        title: e.title,
+        start_date: e.start_date,
+        kind: e.kind,
+        location_name: e.location_name || null,
+        seen_at: new Date().toISOString(),
+      }));
+      await sb('schedule_csv_snapshot', {
+        method: 'POST',
+        body: chunk,
+        prefer: 'resolution=merge-duplicates,return=minimal',
+      });
+    }
+    notes.push(`snapshot_refreshed: ${events.length} events from CSV`);
+  } catch (e) {
+    notes.push(`snapshot_write_error: ${e.message}`);
+  }
 
   const habits = await sb('recurring_tasks?active=eq.true');
   for (const h of habits || []) {
@@ -169,11 +344,22 @@ module.exports = async function handler(req, res) {
     if (id) inserted.push(id);
   }
 
+  const readable = sources.filter((s) => s.ok).length;
+  if (inserted.length === 0) {
+    notes.push(
+      `no_new_proposals: read ${readable}/2 CSV sources, ${events.length} events, ${inHorizon.length} in ${horizonWeeks}w horizon — not a silent skip`,
+    );
+  }
+
   return json(res, 200, {
     ok: true,
     today,
     inserted: inserted.length,
     ids: inserted,
+    sources,
+    events_total: events.length,
+    events_in_horizon: inHorizon.length,
+    errors: errors.map((e) => ({ id: e.id, error: e.error })),
     notes,
     calendar_writes: 0,
   });

@@ -477,3 +477,9 @@ button.linkish {
 /* MC-43 Scheduling */
 tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 #view-scheduling .rec-table input { width: 100%; min-width: 4rem; }
+
+.sched-sources { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.sched-src { padding:6px 10px; border-radius:6px; font-size:0.9rem; font-weight:600; }
+.sched-src-green { background:#dcfce7; color:#166534; }
+.sched-src-amber { background:#fef3c7; color:#92400e; }
+.sched-src-red { background:#fee2e2; color:#991b1b; }

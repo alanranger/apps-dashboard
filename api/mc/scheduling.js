@@ -3,6 +3,7 @@ const {
 } = require('./_lib');
 
 async function listAll() {
+  const { getScheduleSources } = require('./scheduleCsv');
   const [rules, audit, drive_times, hotels, pending] = await Promise.all([
     sb('scheduling_rules?order=key.asc'),
     sb('scheduling_rules_audit?order=at.desc&limit=50'),
@@ -10,7 +11,13 @@ async function listAll() {
     sb('workshop_hotels?order=check_in_date.asc.nullslast'),
     sb('pending_diary_changes?status=eq.pending&order=detected_at.desc'),
   ]);
-  return { rules, audit, drive_times, hotels, pending };
+  let sources = [];
+  try {
+    sources = getScheduleSources();
+  } catch (e) {
+    sources = [{ id: 'error', label: 'Schedule CSVs', ok: false, tone: 'red', display: `CSV read error: ${e.message}` }];
+  }
+  return { rules, audit, drive_times, hotels, pending, sources };
 }
 
 async function patchRule(key, value, actor) {

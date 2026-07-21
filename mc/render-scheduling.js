@@ -43,6 +43,17 @@ export async function renderScheduling() {
   const rules = cache.rules || [];
   const drives = cache.drive_times || [];
   const hotels = cache.hotels || [];
+  const sources = cache.sources || [];
+
+  const sourceBanner = sources.length
+    ? `<div class="sched-sources">${sources.map((s) =>
+      `<span class="sched-src sched-src-${esc(s.tone || 'red')}">${esc(s.display || s.label)}</span>`,
+    ).join('')}<p class="meta">Source of truth: workshop/lesson CSVs (fresher than calendar feeds). After Squarespace export, copy into <code>apps-dashboard/data/schedule/</code> and deploy.</p></div>`
+    : '<div class="sched-sources"><span class="sched-src sched-src-red">Schedule CSVs: not loaded</span></div>';
+
+  const pendingEmpty = pending.length
+    ? null
+    : `<tr><td colspan="4" class="meta">No pending proposals. Detector always names CSV sources + ages in the run log — never a silent “all clear”.</td></tr>`;
 
   const pendingRows = pending.length
     ? pending.map((p) => `<tr class="${urgencyClass(p.urgency)}">
@@ -54,7 +65,7 @@ export async function renderScheduling() {
           <button type="button" class="btn-secondary" data-sched-dismiss="${p.id}">Dismiss</button>
         </td>
       </tr>`).join('')
-    : '<tr><td colspan="4" class="meta">No pending diary changes. Nightly detector (06:00) writes proposals here — never Calendar.</td></tr>';
+    : pendingEmpty;
 
   const ruleRows = rules.map((r) => `<tr>
       <td><code>${esc(r.key)}</code></td>
@@ -82,6 +93,7 @@ export async function renderScheduling() {
     </tr>`).join('');
 
   el.innerHTML = `
+    ${sourceBanner}
     <div class="card">
       <div class="rec-head">
         <div>
