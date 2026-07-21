@@ -1,5 +1,14 @@
 {
   "version": 2,
+  "functions": {
+    "api/cron/diary-drift.js": { "maxDuration": 60 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/diary-drift",
+      "schedule": "0 6 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },

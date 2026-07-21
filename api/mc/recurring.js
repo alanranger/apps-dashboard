@@ -59,7 +59,7 @@ async function markDone(id, actor) {
   const today = new Date().toISOString().slice(0, 10);
   const rows = await sb(`recurring_tasks?id=eq.${id}`, {
     method: 'PATCH',
-    body: { last_done: today, updated_at: new Date().toISOString() },
+    body: { last_done: today, rolls_used: 0, updated_at: new Date().toISOString() },
   });
   const row = rows?.[0];
   if (!row) {
@@ -68,6 +68,24 @@ async function markDone(id, actor) {
     throw err;
   }
   await logRecurring(id, actor, `marked done ${today}`);
+  return row;
+}
+
+/** Skip this occurrence — only Alan-sanctioned clear without "done". Advances last_done to today. */
+async function skipOccurrence(id, actor, reason) {
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = await sb(`recurring_tasks?id=eq.${id}`, {
+    method: 'PATCH',
+    body: { last_done: today, rolls_used: 0, updated_at: new Date().toISOString() },
+  });
+  const row = rows?.[0];
+  if (!row) {
+    const err = new Error('recurring task not found');
+    err.status = 404;
+    throw err;
+  }
+  const note = reason ? `skipped occurrence ${today}: ${reason}` : `skipped occurrence ${today}`;
+  await logRecurring(id, actor, note);
   return row;
 }
 
@@ -92,6 +110,10 @@ module.exports = async function handler(req, res) {
       if (body.action === 'mark_done') {
         if (!body.id) return json(res, 400, { error: 'id required' });
         return json(res, 200, { task: await markDone(body.id, actor) });
+      }
+      if (body.action === 'skip') {
+        if (!body.id) return json(res, 400, { error: 'id required' });
+        return json(res, 200, { task: await skipOccurrence(body.id, actor, body.reason) });
       }
       return json(res, 201, { task: await createRecurring(body, actor) });
     }

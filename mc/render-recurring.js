@@ -101,6 +101,7 @@ export function renderRecurring() {
       <td class="rec-actions">
         <button type="button" class="btn-secondary" data-rec-edit="${t.id}">Edit</button>
         <button type="button" class="btn-verify" data-rec-done="${t.id}">Mark done</button>
+        <button type="button" class="btn-secondary" data-rec-skip="${t.id}">Skip</button>
       </td>
     </tr>`;
     }).join('')
@@ -187,6 +188,17 @@ export async function handleRecurringClick(e, onSave) {
     await api('/api/mc/recurring', {
       method: 'POST',
       body: { action: 'mark_done', id: done.getAttribute('data-rec-done') },
+    });
+    if (onSave) await onSave();
+    return true;
+  }
+  const skip = e.target.closest('[data-rec-skip]');
+  if (skip) {
+    const reason = window.prompt('Skip this occurrence — optional reason (left blank is fine):', '') ?? null;
+    if (reason === null) return true; // cancelled prompt
+    await api('/api/mc/recurring', {
+      method: 'POST',
+      body: { action: 'skip', id: skip.getAttribute('data-rec-skip'), reason: reason || null },
     });
     if (onSave) await onSave();
     return true;

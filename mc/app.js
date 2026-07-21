@@ -5,6 +5,7 @@ import { $ } from './util.js';
 import { renderHome } from './render-home.js';
 import { renderBoard } from './render-board.js';
 import { renderRecurring, openRecurringEdit, handleRecurringClick } from './render-recurring.js';
+import { renderScheduling, handleSchedulingClick } from './render-scheduling.js';
 import { openDrawer, closeDrawer } from './drawer.js';
 import { openNewTaskModal } from './modal.js';
 
@@ -24,6 +25,14 @@ function paintRecurring() {
   }
 }
 
+async function paintScheduling() {
+  try { await renderScheduling(); }
+  catch (e) {
+    const el = $('view-scheduling');
+    if (el) el.innerHTML = `<div class="card"><p class="err">Scheduling tab failed: ${e.message || e}</p></div>`;
+  }
+}
+
 function setView(name) {
   document.querySelectorAll('.views').forEach((el) => el.classList.remove('active'));
   document.querySelectorAll('.view-btn').forEach((el) => {
@@ -37,12 +46,13 @@ function setView(name) {
     const labels = {
       board: 'You are on: <strong>Project board</strong> — kanban by stream',
       recurring: 'You are on: <strong>Recurring</strong> — habits &amp; cadence (Reclaim replacement)',
+      scheduling: 'You are on: <strong>Scheduling</strong> — rules, drive times, hotels, pending diary proposals',
       home: 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner',
     };
     label.innerHTML = labels[name] || labels.home;
   }
-  // Lazy-render Recurring only when opened — never block Dashboard login
   if (name === 'recurring') paintRecurring();
+  if (name === 'scheduling') paintScheduling();
 }
 
 function renderAll() {
@@ -54,6 +64,12 @@ function renderAll() {
     const rec = $('view-recurring');
     if (rec) rec.innerHTML = '<div class="card"><p class="meta">Open the Recurring tab to load habits.</p></div>';
   }
+  if (activeView() === 'scheduling') {
+    paintScheduling();
+  } else {
+    const sch = $('view-scheduling');
+    if (sch) sch.innerHTML = '<div class="card"><p class="meta">Open the Scheduling tab to load rules &amp; pending changes.</p></div>';
+  }
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
 }
 
@@ -62,6 +78,11 @@ async function refreshRecurring() {
   const data = await api('/api/mc/bootstrap');
   applyBootstrap(data);
   setView('recurring');
+}
+
+async function refreshScheduling() {
+  setView('scheduling');
+  await paintScheduling();
 }
 
 async function boot() {
@@ -125,6 +146,7 @@ function wire() {
   });
   document.body.addEventListener('click', async (e) => {
     if (await handleRecurringClick(e, refreshRecurring)) return;
+    if (await handleSchedulingClick(e, refreshScheduling)) return;
     const uiToggle = e.target.closest('[data-ui-toggle]');
     if (uiToggle) {
       const key = uiToggle.getAttribute('data-ui-toggle');
