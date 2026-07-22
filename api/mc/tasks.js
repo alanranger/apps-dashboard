@@ -52,6 +52,11 @@ async function patchTask(id, body, actor, role) {
       err.status = 400;
       throw err;
     }
+    if (['done', 'superseded', 'wont_do'].includes(body.state)) {
+      const err = new Error('use Supabase RPC mc_agent_close_task for terminal closes');
+      err.status = 400;
+      throw err;
+    }
     if (body.state === 'done_claimed') {
       const evidence = body.evidence_url || cur.evidence_url || patch.evidence_url;
       if (!evidence) {

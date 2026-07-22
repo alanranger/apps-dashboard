@@ -21,18 +21,13 @@ async function verify(taskId, session) {
     err.status = 400;
     throw err;
   }
-  const updated = await sb(`tasks?id=eq.${taskId}`, {
-    method: 'PATCH',
-    body: {
-      state: 'verified',
-      verified_at: new Date().toISOString(),
-      last_activity_at: new Date().toISOString(),
-      sent_back_note: null,
-    },
+  const updated = await sb('rpc/mc_alan_verify_task', {
+    method: 'POST',
+    body: { p_task_id: taskId },
   });
-  await logChange(taskId, 'alan', 'verified');
-  await spawnRecurrence(task, 'alan');
-  return updated?.[0];
+  const verified = updated?.[0] || updated;
+  await spawnRecurrence(verified || task, 'alan');
+  return verified;
 }
 
 async function sendBack(taskId, note, session) {

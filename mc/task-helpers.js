@@ -10,6 +10,7 @@ function localYmd(d) {
 }
 
 const OPEN = new Set(['todo', 'in_progress', 'waiting', 'done_claimed']);
+const TERMINAL = new Set(['verified', 'done', 'superseded', 'wont_do']);
 
 export function openTasks() {
   return store.tasks.filter((t) => OPEN.has(t.state));
@@ -28,13 +29,13 @@ export function parseDue(t) {
 
 export function isOverdue(t) {
   const due = parseDue(t);
-  if (!due || t.state === 'verified') return false;
+  if (!due || TERMINAL.has(t.state)) return false;
   return due < dayStart();
 }
 
 export function isDueSoon(t, days = 2) {
   const due = parseDue(t);
-  if (!due || t.state === 'verified') return false;
+  if (!due || TERMINAL.has(t.state)) return false;
   const end = dayStart();
   end.setDate(end.getDate() + days);
   return due >= dayStart() && due <= end;
@@ -63,7 +64,7 @@ const BALL_KEYS = new Set(['alan', 'claude', 'cursor', 'external']);
 
 /** Derived "Ball with" — who is holding the task up (not stored; cannot go stale). */
 export function ballWith(t) {
-  if (t.state === 'verified') return { key: 'none', label: '—', style: 'none' };
+  if (TERMINAL.has(t.state)) return { key: 'none', label: '—', style: 'none' };
   if (t.state === 'done_claimed') return { key: 'alan', label: 'alan', style: 'alan' };
   if (t.state === 'waiting') {
     const wo = String(t.waiting_on || '').trim();

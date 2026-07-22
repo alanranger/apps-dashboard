@@ -57,6 +57,25 @@ If the other agent is already on the task, read `task_log` / comments and coordi
 
 Claude: update the board as the last act of each session for any MC tasks touched.
 
+## Alan-authorized terminal closes (MC-55)
+
+Claude closes a task **only** when Alan confirms in writing in chat, **naming the task and the outcome**. Never on Claude's own initiative, never to tidy up, never batch, never reading silence as approval. **`verified` is never Claude's to set.**
+
+Invoke via Supabase MCP (`postgres-rw`):
+
+```sql
+SELECT mc_agent_close_task(
+  p_display_id := 44,
+  p_new_state := 'done',
+  p_authorized_by := 'alan',
+  p_reason := 'Alan confirmed in chat — …',
+  p_superseded_by_display_id := NULL,
+  p_actor := 'claude'
+);
+```
+
+Allowed `p_new_state`: `done`, `superseded`, `wont_do` only. For `superseded`, set `p_superseded_by_display_id` (e.g. `53`). DB rejects `verified` at the function and via trigger (`mc_block_direct_verified`). Audit: `close_authorized_by`, `close_authorized_at`, `close_reason`, `task_log`, and a `status-close` comment on the task.
+
 ## Preserve-interactions invariant (Alan-ruled)
 
 No UI change may remove or alter an existing interaction (sorts, filters, clicks, expanded-by-default states) unless the change is **explicitly listed** in the instruction **and** Alan approved that listed change.

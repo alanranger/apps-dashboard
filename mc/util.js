@@ -1,10 +1,13 @@
-export const STATES = ['todo', 'in_progress', 'waiting', 'done_claimed', 'verified'];
+export const STATES = ['todo', 'in_progress', 'waiting', 'done_claimed', 'done', 'superseded', 'wont_do', 'verified'];
 
 export const STATE_LABEL = {
   todo: 'To do',
   in_progress: 'In progress',
   waiting: 'Waiting',
   done_claimed: 'Done-claimed',
+  done: 'Done',
+  superseded: 'Superseded',
+  wont_do: "Won't do",
   verified: 'Verified',
 };
 
