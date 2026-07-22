@@ -134,11 +134,18 @@ function wireDrawer(t, onRefresh) {
 
   $('saveDetails').onclick = async () => {
     try {
+      let estMinutes = null;
+      const estRaw = $('estInput')?.value;
+      if (estRaw != null && String(estRaw).trim() !== '') {
+        const parsed = Number.parseInt(estRaw, 10);
+        estMinutes = Number.isNaN(parsed) ? null : parsed;
+      }
       await api('/api/mc/tasks', {
         method: 'PATCH',
         body: {
           id: t.id,
           due_date: $('dueInput').value || null,
+          est_minutes: estMinutes,
           next_step: $('nextStepInput').value.trim() || null,
           priority: $('priorityInput')?.value || t.priority,
           impact: $('impactInput')?.value || t.impact || 'MEDIUM',
@@ -269,6 +276,8 @@ export async function openDrawer(taskId, onRefresh) {
         </select>
         <label class="meta" for="dueInput">Due date</label>
         <input id="dueInput" type="date" value="${esc(t.due_date || '')}" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <label class="meta" for="estInput">Estimate (mins)</label>
+        <input id="estInput" type="number" min="0" step="5" inputmode="numeric" value="${t.est_minutes ?? ''}" placeholder="e.g. 90" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="whyInput">Why (one line — what it unblocks or costs)</label>
         <input id="whyInput" value="${esc(t.why || '')}" placeholder="Unblocks X / costs Y if delayed" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="nextStepInput">Next step</label>

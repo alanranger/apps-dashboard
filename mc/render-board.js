@@ -9,6 +9,19 @@ function stalePill(t) {
   return `<span class="pill">stale ${Math.floor(days)}d</span>`;
 }
 
+/** "~Nm" / "~Nh Mm" effort label; empty string when est_minutes is null. */
+export function estLabel(t) {
+  const n = Math.round(Number(t?.est_minutes));
+  if (!Number.isFinite(n) || n <= 0) return '';
+  const h = Math.floor(n / 60);
+  const mm = n % 60;
+  let txt;
+  if (!h) txt = `~${n}m`;
+  else if (mm) txt = `~${h}h ${mm}m`;
+  else txt = `~${h}h`;
+  return `<span class="pill" title="Estimated effort">${txt}</span>`;
+}
+
 export function renderBoard() {
   const switcher = store.projects.map((p) => `
     <button type="button" data-proj="${p.id}" class="${p.id === store.activeProjectId ? 'active' : ''}">
@@ -23,7 +36,7 @@ export function renderBoard() {
         <div class="task-card ${st === 'done_claimed' ? 'done-claimed' : ''} ${st === 'verified' ? 'verified' : ''}" data-open="${t.id}">
           <div class="mcid">MC-${t.display_id} · ${esc(t.priority || 'p1')} ${ballChipHtml(t)}</div>
           <div class="title">${esc(t.title)}</div>
-          <div class="meta">${esc(t.owner)} · due ${fmtDate(t.due_date)} ${stalePill(t)}
+          <div class="meta">${esc(t.owner)} · due ${fmtDate(t.due_date)} ${estLabel(t)} ${stalePill(t)}
           ${t.depends_on?.display_id ? `<span class="chip">depends MC-${t.depends_on.display_id}</span>` : ''}
           ${t.evidence_url ? '<i class="ti ti-link" title="evidence"></i>' : ''}
           </div>
