@@ -125,6 +125,26 @@ export function nextUpTasks(tasks, limit = 3) {
     .slice(0, limit);
 }
 
+/**
+ * Carry-forward queue (detect-only): still-open tasks (see CARRY_OPEN) with a
+ * due date that is today or in the past. Mirrors the server endpoint.
+ * done_claimed is excluded — it is claimed-complete and awaits verify, not carry.
+ */
+const CARRY_OPEN = new Set(['todo', 'in_progress', 'waiting']);
+
+export function carryForwardQueue() {
+  const today = localYmd(dayStart());
+  return store.tasks
+    .filter((t) => CARRY_OPEN.has(t.state) && t.due_date && t.due_date <= today)
+    .map((t) => {
+      const due = new Date(`${t.due_date}T12:00:00Z`);
+      const now = new Date(`${today}T12:00:00Z`);
+      return { ...t, days_overdue: Math.round((now - due) / 86400000) };
+    })
+    .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date))
+      || (PRI_RANK[a.priority] ?? 9) - (PRI_RANK[b.priority] ?? 9));
+}
+
 export function easyWinsCount(tasks) {
   return tasks.filter((t) => {
     const imp = String(t.impact || 'MEDIUM').toUpperCase();

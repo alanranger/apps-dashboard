@@ -14,6 +14,7 @@ import {
   duePillTone,
   bauPlannerItems,
   ballChipHtml,
+  carryForwardQueue,
 } from './task-helpers.js';
 import { priorityMatrixHtml } from './render-matrix.js';
 
@@ -166,6 +167,37 @@ function plannerHtml(groups) {
     </div>`;
 }
 
+function carryForwardHtml() {
+  const q = carryForwardQueue();
+  if (!q.length) {
+    return `<div class="card"><h2>Carry-forward — due/overdue, still open</h2>${empty('ti-calendar', 'Nothing due or overdue and still open.')}</div>`;
+  }
+  const rows = q.map((t) => {
+    const od = t.days_overdue;
+    const odLabel = od <= 0 ? 'due today' : `${od}d overdue`;
+    const tone = od <= 0 ? 'warn' : 'danger';
+    return `
+      <div class="plan-row" data-open="${t.id}">
+        <div class="mcid mcid-nowrap">MC-${t.display_id}</div>
+        <div class="plan-main">
+          <div class="plan-title">${esc(t.title)}</div>
+          <div class="meta">${esc(t.priority)} · ${esc(t.state.replace('_', ' '))} · orig due ${fmtDate(t.due_date)}</div>
+        </div>
+        <span class="due-pill due-pill-${tone}">${esc(odLabel)}</span>
+      </div>`;
+  }).join('');
+  return `
+    <div class="card">
+      <h2>Carry-forward — due/overdue, still open (${q.length})</h2>
+      <p class="meta" style="margin-bottom:8px">
+        Open tasks (to do / in progress / waiting) whose due date is today or past.
+        On your instruction, Claude moves each to today in Google Calendar — the app writes nothing.
+        Mark complete or re-date here to clear an item.
+      </p>
+      ${rows}
+    </div>`;
+}
+
 function verifyHtml(tasks) {
   const verify = tasks.filter((t) => t.state === 'done_claimed');
   if (!verify.length) return '';
@@ -191,6 +223,7 @@ export function renderHome() {
   $('view-home').innerHTML = `
     ${summaryHtml(counts)}
     ${nextUpHtml(tasks)}
+    ${carryForwardHtml()}
     ${verifyHtml(tasks)}
     ${priorityMatrixHtml(tableTasks)}
     ${plannerHtml(groups)}
