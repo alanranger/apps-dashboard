@@ -214,6 +214,29 @@ function verifyHtml(tasks) {
   return `<div class="card"><h2>Needs your verify (${verify.length})</h2>${rows}</div>`;
 }
 
+function reconcileLine(r) {
+  const id = r.display_id != null ? `MC-${r.display_id}` : 'MC-?';
+  const when = r.run_at ? fmtDate(r.run_at) : '';
+  const src = esc(r.source || 'manual');
+  if (r.result === 'updated') {
+    return `<div class="meta">${id} moved ${fmtDate(r.old_due_date) || '—'} → ${fmtDate(r.new_due_date) || '—'} (${src} · ${when})</div>`;
+  }
+  const word = r.result === 'no_change' ? 'no change' : 'unmatched';
+  const tail = r.new_due_date ? ` → ${fmtDate(r.new_due_date)}` : '';
+  return `<div class="meta">${id} ${word}${tail} (${src} · ${when})</div>`;
+}
+
+function reconcileHtml() {
+  const rows = store.reconcile_log || [];
+  if (!rows.length) return '';
+  return `
+    <div class="card">
+      <h2>Calendar reconcile — recent (${rows.length})</h2>
+      <p class="meta" style="margin-bottom:8px">Read-only audit of calendar→DB due-date reconciles. Claude applies moves via <code>/api/mc/reconcile-due-dates</code>; the app never reads the calendar. Last 20.</p>
+      ${rows.map(reconcileLine).join('')}
+    </div>`;
+}
+
 export function renderHome() {
   const tasks = openTasks();
   const counts = summaryCounts(tasks);
@@ -227,6 +250,7 @@ export function renderHome() {
     ${verifyHtml(tasks)}
     ${priorityMatrixHtml(tableTasks)}
     ${plannerHtml(groups)}
+    ${reconcileHtml()}
     <div class="card">
       <h2>Claude ↔ Cursor workflow (how this ties in)</h2>
       <p class="meta" style="margin-bottom:12px">
