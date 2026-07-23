@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  mcLogin, mcApi, recurringSnapshot, pickRow, requireEnv,
+  mcLogin, mcApi, recurringSnapshot, pickRow, requireEnv, sbWrite,
 } from '../helpers/mc.mjs';
 
 const COLS = ['last_done', 'rolls_used', 'scheduled_note'];
@@ -12,13 +12,21 @@ test.describe('Recurring — Skip (API + DB evidence)', () => {
 
   test('skip does not write last_done; logs ideal occurrence date', async () => {
     const { token } = await mcLogin('agent');
+    // Use YESTERDAY's weekday so the most-recent RRULE occurrence is strictly
+    // before today. Otherwise (e.g. skipping a weekly-Thursday habit ON a
+    // Thursday) the true occurrence date legitimately equals today, and the
+    // "occurrence date, not click date" guard on line ~51 cannot discriminate
+    // the Skip bug from correct behaviour.
+    const yday = new Date();
+    yday.setUTCDate(yday.getUTCDate() - 1);
+    const bydayCode = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][yday.getUTCDay()];
     const created = await mcApi('/api/mc/recurring', {
       token,
       method: 'POST',
       body: {
         title: 'TEST skip habit (auto)',
-        cadence_text: 'Every Thursday',
-        rrule: 'FREQ=WEEKLY;BYDAY=TH',
+        cadence_text: `Weekly test (${bydayCode})`,
+        rrule: `FREQ=WEEKLY;BYDAY=${bydayCode}`,
         duration_min: 15,
         ideal_time: '09:00',
         actor: 'cursor',
@@ -50,11 +58,9 @@ test.describe('Recurring — Skip (API + DB evidence)', () => {
     expect(after.recent_log[0].ideal_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(after.recent_log[0].ideal_date).not.toBe(new Date().toISOString().slice(0, 10));
 
-    await mcApi('/api/mc/recurring', {
-      token,
-      method: 'PATCH',
-      body: { id, active: false, actor: 'cursor' },
-    });
+    // Delete the throwaway habit (cascade removes its recurring_log rows) so the
+    // suite leaves nothing behind — deactivating was leaving residue.
+    await sbWrite(`recurring_tasks?id=eq.${id}`, { method: 'DELETE' });
   });
 });
 
@@ -96,11 +102,8 @@ test.describe('Recurring — Mark done (API + DB evidence)', () => {
     expect(after.task.rolls_used).toBe(0);
     expect(after.recent_log[0].change).toMatch(/^marked done/);
 
-    await mcApi('/api/mc/recurring', {
-      token,
-      method: 'PATCH',
-      body: { id, active: false, actor: 'cursor' },
-    });
+    // Delete the throwaway habit (cascade removes its recurring_log rows).
+    await sbWrite(`recurring_tasks?id=eq.${id}`, { method: 'DELETE' });
   });
 });
 
