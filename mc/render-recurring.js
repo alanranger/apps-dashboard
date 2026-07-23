@@ -65,6 +65,14 @@ function formFields(prefix, t = {}) {
     <p class="meta">Claude books Google Calendar busy time <strong>${DIARY_HORIZON_DAYS} days ahead</strong> (not this app). Apps-dashboard never writes to Calendar.</p>`;
 }
 
+function formatScheduledCell(t) {
+  if (!t.scheduled_note && !t.last_scheduled) return '<span class="meta">—</span>';
+  const note = t.scheduled_note || fmtDate(t.last_scheduled);
+  const rolled = /rolled from/i.test(String(note));
+  const pill = rolled ? ' <span class="pill rec-rolled-pill">rolled</span>' : '';
+  return `<span class="${rolled ? 'rec-sched rec-rolled' : 'rec-sched'}">${esc(note)}${pill}</span>`;
+}
+
 function readForm(prefix) {
   return {
     title: $(`${prefix}Title`).value.trim(),
@@ -96,7 +104,7 @@ export function renderRecurring() {
       <td>${fmtTime(t.ideal_time)}</td>
       <td>${next}</td>
       <td>${lastDone}</td>
-      <td class="rec-sched">${t.scheduled_note ? esc(t.scheduled_note) : '<span class="meta">—</span>'}</td>
+      <td>${formatScheduledCell(t)}</td>
       <td><label class="rec-toggle"><input type="checkbox" data-rec-active="${t.id}" ${t.active ? 'checked' : ''} /> active</label></td>
       <td class="rec-actions">
         <button type="button" class="btn-secondary" data-rec-edit="${t.id}">Edit</button>
