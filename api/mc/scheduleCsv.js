@@ -168,67 +168,40 @@ function missingSource(f, error) {
   };
 }
 
-async function fetchDropboxCsv(f) {
-  const token = process.env.DROPBOX_ACCESS_TOKEN || process.env.MC_DROPBOX_ACCESS_TOKEN;
-  if (!token) return null;
-  const dropPath = `/alan-shared-resources/csv/${f.name}`;
-  const metaRes = await fetch('https://api.dropboxapi.com/2/files/get_metadata', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path: dropPath, include_media_info: false }),
-  });
-  if (!metaRes.ok) return null;
-  const meta = await metaRes.json();
-  const dlRes = await fetch('https://content.dropboxapi.com/2/files/download', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Dropbox-API-Arg': JSON.stringify({ path: dropPath }),
-    },
-  });
-  if (!dlRes.ok) return null;
-  const text = await dlRes.text();
-  const mtimeIso = meta.client_modified || meta.server_modified;
-  const mtimeMs = new Date(mtimeIso).getTime();
-  const days = ageDays(mtimeMs);
-  return {
-    id: f.id,
-    label: f.label,
-    name: f.name,
-    kind: f.kind,
-    ok: true,
-    error: null,
-    origin: 'dropbox',
-    path: `dropbox:${dropPath}`,
-    mtime: mtimeIso,
-    age_days: Math.round(days * 10) / 10,
-    tone: freshnessTone(days),
-    display: `${f.label}: updated ${humanAgo(mtimeMs)} (Dropbox original)`,
-    text,
-  };
+function tryLocal(f) {
+  const local = resolveLocalFile(f.name);
+  if (!local) return null;
+  try {
+    return sourceFromLocal(f, local);
+  } catch (e) {
+    return missingSource(f, e.message || 'local_read_failed');
+  }
 }
 
+/**
+ * Source of truth = GitHub `alanranger/alan-shared-resources` `csv/` (tier 1).
+ * Freshness = the file's latest commit date (auto-pushed ~every 10 min, only
+ * when the export bytes change → content-driven, fail-stale never fail-fresh).
+ *
+ * Dropbox was removed on 2026-07-23 (Alan's decision): the previous path was
+ * static-token-only and would expire in ~4h, and no Dropbox app will be created.
+ *
+ * MC_SCHEDULE_CSV_DIR is an explicit dev override (read that local copy first);
+ * otherwise a resolvable local copy is used only as an offline fallback if the
+ * GitHub fetch fails.
+ */
 async function loadOneSource(f) {
+  if (process.env.MC_SCHEDULE_CSV_DIR) {
+    const dev = tryLocal(f);
+    if (dev?.ok) return dev;
+  }
   try {
-    const dbx = await fetchDropboxCsv(f);
-    if (dbx) return dbx;
-  } catch (e) { /* fall through */ }
-  const local = resolveLocalFile(f.name);
-  if (local) {
-    try {
-      return sourceFromLocal(f, local);
-    } catch (e) {
-      return missingSource(f, e.message || 'local_read_failed');
-    }
+    return await fetchGithubCsv(f);
+  } catch (e) {
+    const offline = tryLocal(f);
+    if (offline) return offline;
+    return missingSource(f, e.message || 'github_fetch_failed');
   }
-  if (process.env.VERCEL || process.env.MC_ALLOW_GITHUB_CSV_FALLBACK === 'true') {
-    try {
-      return await fetchGithubCsv(f);
-    } catch (e) {
-      return missingSource(f, e.message || 'github_fetch_failed');
-    }
-  }
-  return missingSource(f, 'dropbox_credentials_missing — set DROPBOX_ACCESS_TOKEN on Vercel; no silent repo fallback');
 }
 
 /** Source freshness for UI + detector logging. */

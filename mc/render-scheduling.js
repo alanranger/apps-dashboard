@@ -48,7 +48,7 @@ export async function renderScheduling() {
   const sourceBanner = sources.length
     ? `<div class="sched-sources">${sources.map((s) =>
       `<span class="sched-src sched-src-${esc(s.tone || 'red')}">${esc(s.display || s.label)}</span>`,
-    ).join('')}<p class="meta">Source of truth: Dropbox <code>alan-shared-resources/csv/</code> (Alan&apos;s originals). Freshness badge = Dropbox <code>client_modified</code>, never a repo copy. Set <code>DROPBOX_ACCESS_TOKEN</code> on Vercel; local dev may use <code>MC_SCHEDULE_CSV_DIR</code>.</p></div>`
+    ).join('')}<p class="meta">Source of truth: GitHub <code>alanranger/alan-shared-resources</code>, <code>csv/</code> path. Freshness badge = the latest commit touching that file (auto-pushed every ~10 min, but only when the export actually changes — so the date is content-driven, never a copy asserting itself fresh). Amber &gt;7 days, red &gt;14 days. Local dev may override with <code>MC_SCHEDULE_CSV_DIR</code>.</p></div>`
     : '<div class="sched-sources"><span class="sched-src sched-src-red">Schedule CSVs: not loaded</span></div>';
 
   const pendingEmpty = pending.length
