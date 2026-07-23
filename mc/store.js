@@ -24,6 +24,7 @@ export const store = {
   log: [],
   recurring: [],
   recurring_log: [],
+  recurring_deps: [],
   reconcile_log: [],
   activeProjectId: null,
   openTaskId: null,
@@ -55,6 +56,7 @@ export function applyBootstrap(data) {
   store.log = data.log || [];
   store.recurring = data.recurring || [];
   store.recurring_log = data.recurring_log || [];
+  store.recurring_deps = data.recurring_deps || [];
   store.reconcile_log = data.reconcile_log || [];
   if (!store.activeProjectId) store.activeProjectId = store.projects[0]?.id || null;
 }

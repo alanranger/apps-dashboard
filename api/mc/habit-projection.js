@@ -6,7 +6,9 @@
  * /api/mc/habit-scheduled. Never filters occurrences except active=false.
  */
 const { envReady, json, cors, sb } = require('./_lib');
-const { occurrencesInRange, fromYmd, addDays, toYmd } = require('./rrule-core');
+const {
+  occurrencesInRange, fromYmd, addDays, toYmd, lastDueOnOrBefore,
+} = require('./rrule-core');
 
 const DEFAULT_HORIZON = 90;
 const MAX_HORIZON = 366;
@@ -19,6 +21,44 @@ function londonToday() {
 
 function fmtTime(t) {
   return String(t || '09:00').slice(0, 5);
+}
+
+/** Blocker cycle complete for this dependent occurrence? */
+function cycleComplete(blocker, idealDate) {
+  if (!blocker?.last_done) return false;
+  let due = null;
+  try { due = lastDueOnOrBefore(blocker.rrule, idealDate); } catch { due = null; }
+  return due ? blocker.last_done >= due : true;
+}
+
+/** Per dep_type satisfaction (date-level; Claude applies slot-time for same_day_after / within_hours). */
+function depSatisfied(dep, blocker, idealDate) {
+  if (!blocker) return false;
+  if (dep.dep_type === 'must_complete_first') return cycleComplete(blocker, idealDate);
+  if (dep.dep_type === 'same_day_after') {
+    return blocker.last_done ? blocker.last_done >= idealDate : false;
+  }
+  if (dep.dep_type === 'within_hours') {
+    if (!cycleComplete(blocker, idealDate)) return false;
+    const done = blocker.last_done;
+    const windowEnd = toYmd(addDays(fromYmd(done), 1));
+    return idealDate >= done && idealDate <= windowEnd;
+  }
+  return false;
+}
+
+function buildBlockedBy(deps, habitMap, idealDate) {
+  return (deps || []).map((dep) => {
+    const blocker = habitMap.get(dep.depends_on_habit_id);
+    return {
+      habit_id: dep.depends_on_habit_id,
+      title: blocker ? blocker.title : '(unknown habit)',
+      dep_type: dep.dep_type,
+      within_hours: dep.within_hours ?? null,
+      satisfied: depSatisfied(dep, blocker, idealDate),
+      blocker_last_done: blocker ? (blocker.last_done || null) : null,
+    };
+  });
 }
 
 module.exports = async function handler(req, res) {
@@ -37,9 +77,17 @@ module.exports = async function handler(req, res) {
   }
   try {
     const endYmd = toYmd(addDays(fromYmd(today), horizon));
-    const habits = await sb(
-      'recurring_tasks?select=id,title,cadence_text,rrule,duration_min,ideal_time,window_days,last_scheduled,last_done,rolls_used&active=eq.true&order=title.asc',
-    );
+    const [habits, allHabits, deps] = await Promise.all([
+      sb('recurring_tasks?select=id,title,cadence_text,rrule,duration_min,ideal_time,window_days,last_scheduled,last_done,rolls_used&active=eq.true&order=title.asc'),
+      sb('recurring_tasks?select=id,title,rrule,last_done'),
+      sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
+    ]);
+    const habitMap = new Map((Array.isArray(allHabits) ? allHabits : []).map((h) => [h.id, h]));
+    const depsByHabit = new Map();
+    for (const d of Array.isArray(deps) ? deps : []) {
+      if (!depsByHabit.has(d.habit_id)) depsByHabit.set(d.habit_id, []);
+      depsByHabit.get(d.habit_id).push(d);
+    }
     const occurrences = [];
     const skipped = [];
     for (const h of Array.isArray(habits) ? habits : []) {
@@ -50,7 +98,9 @@ module.exports = async function handler(req, res) {
         skipped.push({ habit_id: h.id, title: h.title, reason: 'no_occurrences' });
         continue;
       }
+      const habitDeps = depsByHabit.get(h.id) || [];
       for (const idealDate of dates) {
+        const blockedBy = buildBlockedBy(habitDeps, habitMap, idealDate);
         occurrences.push({
           habit_id: h.id,
           title: h.title,
@@ -63,6 +113,8 @@ module.exports = async function handler(req, res) {
           last_scheduled: h.last_scheduled || null,
           last_done: h.last_done || null,
           rolls_used: h.rolls_used ?? 0,
+          blocked_by: blockedBy,
+          blocked: blockedBy.some((b) => !b.satisfied),
         });
       }
     }

@@ -90,6 +90,40 @@ function formatScheduledCell(t) {
   return `<span class="${rolled ? 'rec-sched rec-rolled' : 'rec-sched'}">${esc(note)}${pill}</span>`;
 }
 
+const DEP_TYPE_LABELS = {
+  must_complete_first: 'must complete first',
+  same_day_after: 'same day, after',
+  within_hours: 'within hours',
+};
+
+function depsForHabit(habitId) {
+  return (store.recurring_deps || []).filter((d) => d.habit_id === habitId);
+}
+
+function habitTitle(id) {
+  const h = (store.recurring || []).find((r) => r.id === id);
+  return h ? h.title : '(unknown habit)';
+}
+
+function depChip(d) {
+  const suffix = d.dep_type === 'within_hours' ? ` ${d.within_hours}h` : '';
+  const label = `${habitTitle(d.depends_on_habit_id)} — ${DEP_TYPE_LABELS[d.dep_type] || d.dep_type}${suffix}`;
+  return `<span class="dep-chip">${esc(label)}<button type="button" class="dep-x" data-dep-remove="${d.id}" title="Remove dependency">×</button></span>`;
+}
+
+function depsCell(habitId) {
+  const chips = depsForHabit(habitId).map(depChip).join('');
+  return `<div class="dep-cell">${chips || '<span class="meta">—</span>'}
+    <button type="button" class="btn-secondary dep-add-btn" data-dep-add="${habitId}">+ dep</button></div>`;
+}
+
+function otherHabitOptions(habitId) {
+  return (store.recurring || [])
+    .filter((h) => h.id !== habitId)
+    .map((h) => `<option value="${esc(h.id)}">${esc(h.title)}</option>`)
+    .join('');
+}
+
 function readForm(prefix) {
   return {
     title: $(`${prefix}Title`).value.trim(),
@@ -123,6 +157,7 @@ export function renderRecurring() {
       <td>${next}</td>
       <td>${lastDone}</td>
       <td>${formatScheduledCell(t)}</td>
+      <td>${depsCell(t.id)}</td>
       <td><label class="rec-toggle"><input type="checkbox" data-rec-active="${t.id}" ${t.active ? 'checked' : ''} /> active</label></td>
       <td class="rec-actions">
         <button type="button" class="btn-secondary" data-rec-edit="${t.id}">Edit</button>
@@ -131,7 +166,7 @@ export function renderRecurring() {
       </td>
     </tr>`;
     }).join('')
-    : '<tr><td colspan="9" class="meta">No habits yet — click <strong>Add habit</strong>.</td></tr>';
+    : '<tr><td colspan="10" class="meta">No habits yet — click <strong>Add habit</strong>.</td></tr>';
 
   el.innerHTML = `<div class="card">
     <div class="rec-head">
@@ -145,7 +180,7 @@ export function renderRecurring() {
       <table class="rec-table">
         <thead><tr>
           <th>Title</th><th>Cadence</th><th>Duration</th><th>Ideal time</th><th>Next due</th><th>Last done</th>
-          <th>Scheduled by Claude</th><th>Active</th><th></th>
+          <th>Scheduled by Claude</th><th>Depends on</th><th>Active</th><th></th>
         </tr></thead>
         <tbody>${body}</tbody>
       </table>
@@ -199,9 +234,62 @@ export function openRecurringEdit(id, onSave) {
   modal.classList.add('open');
 }
 
+export function openDepEditor(habitId, onSave) {
+  const modal = $('modal');
+  const box = $('modalBox');
+  box.innerHTML = `<h2>Add dependency</h2>
+    <p class="meta"><strong>${esc(habitTitle(habitId))}</strong> depends on…</p>
+    <label>Blocker habit<select id="depBlocker">${otherHabitOptions(habitId)}</select></label>
+    <label>Type<select id="depType">
+      <option value="must_complete_first">Must complete first</option>
+      <option value="same_day_after">Same day, after</option>
+      <option value="within_hours">Within N hours of blocker</option>
+    </select></label>
+    <label>Within hours (only for “within hours”)<input id="depHours" type="number" min="1" value="24" /></label>
+    <label>Notes<input id="depNotes" placeholder="optional" /></label>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button type="button" id="depSave" class="btn-verify">Add dependency</button>
+      <button type="button" id="depCancel" class="btn-secondary">Cancel</button>
+    </div>`;
+  $('depCancel').onclick = () => modal.classList.remove('open');
+  $('depSave').onclick = async () => {
+    const depType = $('depType').value;
+    const body = {
+      habit_id: habitId,
+      depends_on_habit_id: $('depBlocker').value,
+      dep_type: depType,
+      within_hours: depType === 'within_hours' ? Number($('depHours').value) : null,
+      notes: $('depNotes').value.trim() || null,
+    };
+    try {
+      await api('/api/mc/recurring-deps', { method: 'POST', body });
+    } catch (err) {
+      alert(err.message || 'Could not add dependency');
+      return;
+    }
+    modal.classList.remove('open');
+    if (onSave) await onSave();
+  };
+  modal.classList.add('open');
+}
+
 export async function handleRecurringClick(e, onSave) {
   if (e.target.closest('[data-rec-add]')) {
     openRecurringCreate(onSave);
+    return true;
+  }
+  const depAdd = e.target.closest('[data-dep-add]');
+  if (depAdd) {
+    openDepEditor(depAdd.getAttribute('data-dep-add'), onSave);
+    return true;
+  }
+  const depRemove = e.target.closest('[data-dep-remove]');
+  if (depRemove) {
+    await api('/api/mc/recurring-deps', {
+      method: 'POST',
+      body: { action: 'delete', id: depRemove.getAttribute('data-dep-remove') },
+    });
+    if (onSave) await onSave();
     return true;
   }
   const edit = e.target.closest('[data-rec-edit]');
