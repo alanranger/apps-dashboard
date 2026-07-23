@@ -7,27 +7,30 @@ const FILES = [
     label: 'Lessons CSV',
     name: '02-beginners-photography-lessons.csv',
     kind: 'lesson',
+    githubPath: 'csv/02-beginners-photography-lessons.csv',
   },
   {
     id: 'workshops',
     label: 'Workshops CSV',
     name: '03-photographic-workshops-near-me.csv',
     kind: 'workshop',
+    githubPath: 'csv/03-photographic-workshops-near-me.csv',
   },
 ];
 
-function candidateDirs() {
+const GITHUB_REPO = process.env.MC_SCHEDULE_CSV_GITHUB || 'alanranger/alan-shared-resources';
+const GITHUB_BRANCH = process.env.MC_SCHEDULE_CSV_BRANCH || 'main';
+
+function localCsvDirs() {
   const dirs = [];
   if (process.env.MC_SCHEDULE_CSV_DIR) dirs.push(process.env.MC_SCHEDULE_CSV_DIR);
-  // Deployed copy (Vercel) + Alan's shared Dropbox (local / if mounted)
-  dirs.push(path.join(process.cwd(), 'data', 'schedule'));
-  dirs.push(path.join(__dirname, '..', '..', 'data', 'schedule'));
+  dirs.push(path.join(__dirname, '..', '..', '..', 'alan-shared-resources', 'csv'));
   dirs.push('G:\\Dropbox\\alan ranger photography\\Website Code\\alan-shared-resources\\csv');
   return dirs;
 }
 
-function resolveFile(fileName) {
-  for (const dir of candidateDirs()) {
+function resolveLocalFile(fileName) {
+  for (const dir of localCsvDirs()) {
     const full = path.join(dir, fileName);
     try {
       if (fs.existsSync(full)) return full;
@@ -54,9 +57,9 @@ function parseCsvLine(line) {
   return out;
 }
 
-function readCsvFile(fullPath) {
-  const text = fs.readFileSync(fullPath, 'utf8').replace(/^\uFEFF/, '');
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+function readCsvText(text) {
+  const clean = text.replace(/^\uFEFF/, '');
+  const lines = clean.split(/\r?\n/).filter((l) => l.trim());
   if (!lines.length) return { headers: [], rows: [] };
   const headers = parseCsvLine(lines[0]);
   const rows = lines.slice(1).map((line) => {
@@ -86,45 +89,155 @@ function humanAgo(mtimeMs) {
   return d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
-/** Source freshness for UI + detector logging. */
-function getScheduleSources() {
-  return FILES.map((f) => {
-    const full = resolveFile(f.name);
-    if (!full) {
-      return {
-        id: f.id,
-        label: f.label,
-        name: f.name,
-        kind: f.kind,
-        ok: false,
-        error: 'missing_or_unreadable',
-        path: null,
-        mtime: null,
-        age_days: null,
-        tone: 'red',
-        display: `${f.label}: MISSING — re-export into apps-dashboard/data/schedule/`,
-      };
-    }
-    const st = fs.statSync(full);
-    const days = ageDays(st.mtimeMs);
-    return {
-      id: f.id,
-      label: f.label,
-      name: f.name,
-      kind: f.kind,
-      ok: true,
-      error: null,
-      path: full,
-      mtime: st.mtime.toISOString(),
-      age_days: Math.round(days * 10) / 10,
-      tone: freshnessTone(days),
-      display: `${f.label}: updated ${humanAgo(st.mtimeMs)}`,
-    };
-  });
+function sourceFromLocal(f, full) {
+  const st = fs.statSync(full);
+  const days = ageDays(st.mtimeMs);
+  return {
+    id: f.id,
+    label: f.label,
+    name: f.name,
+    kind: f.kind,
+    ok: true,
+    error: null,
+    origin: 'local',
+    path: full,
+    mtime: st.mtime.toISOString(),
+    age_days: Math.round(days * 10) / 10,
+    tone: freshnessTone(days),
+    display: `${f.label}: updated ${humanAgo(st.mtimeMs)}`,
+    text: fs.readFileSync(full, 'utf8'),
+  };
 }
 
-function loadScheduleEvents() {
-  const sources = getScheduleSources();
+async function fetchGithubCsv(f) {
+  const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${f.githubPath}`;
+  const commitUrl = `https://api.github.com/repos/${GITHUB_REPO}/commits?path=${encodeURIComponent(f.githubPath)}&per_page=1`;
+  const [rawRes, commitRes] = await Promise.all([
+    fetch(rawUrl, { headers: { Accept: 'text/plain' } }),
+    fetch(commitUrl, { headers: { Accept: 'application/vnd.github+json' } }),
+  ]);
+  if (!rawRes.ok) {
+    const err = new Error(`github_raw_${rawRes.status}`);
+    err.status = rawRes.status;
+    throw err;
+  }
+  const text = await rawRes.text();
+  let mtimeIso = null;
+  if (commitRes.ok) {
+    const commits = await commitRes.json();
+    mtimeIso = commits?.[0]?.commit?.committer?.date || null;
+  }
+  if (!mtimeIso) {
+    const hdr = rawRes.headers.get('last-modified');
+    mtimeIso = hdr ? new Date(hdr).toISOString() : new Date().toISOString();
+  }
+  const mtimeMs = new Date(mtimeIso).getTime();
+  const days = ageDays(mtimeMs);
+  return {
+    id: f.id,
+    label: f.label,
+    name: f.name,
+    kind: f.kind,
+    ok: true,
+    error: null,
+    origin: 'github',
+    path: `github:${GITHUB_REPO}/${f.githubPath}@${GITHUB_BRANCH}`,
+    mtime: mtimeIso,
+    age_days: Math.round(days * 10) / 10,
+    tone: freshnessTone(days),
+    display: `${f.label}: updated ${humanAgo(mtimeMs)} (alan-shared-resources)`,
+    text,
+  };
+}
+
+function missingSource(f, error) {
+  return {
+    id: f.id,
+    label: f.label,
+    name: f.name,
+    kind: f.kind,
+    ok: false,
+    error: error || 'missing_or_unreadable',
+    origin: null,
+    path: null,
+    mtime: null,
+    age_days: null,
+    tone: 'red',
+    display: `${f.label}: MISSING — re-export into alan-shared-resources/csv and push`,
+    text: null,
+  };
+}
+
+async function fetchDropboxCsv(f) {
+  const token = process.env.DROPBOX_ACCESS_TOKEN || process.env.MC_DROPBOX_ACCESS_TOKEN;
+  if (!token) return null;
+  const dropPath = `/alan-shared-resources/csv/${f.name}`;
+  const metaRes = await fetch('https://api.dropboxapi.com/2/files/get_metadata', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: dropPath, include_media_info: false }),
+  });
+  if (!metaRes.ok) return null;
+  const meta = await metaRes.json();
+  const dlRes = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Dropbox-API-Arg': JSON.stringify({ path: dropPath }),
+    },
+  });
+  if (!dlRes.ok) return null;
+  const text = await dlRes.text();
+  const mtimeIso = meta.client_modified || meta.server_modified;
+  const mtimeMs = new Date(mtimeIso).getTime();
+  const days = ageDays(mtimeMs);
+  return {
+    id: f.id,
+    label: f.label,
+    name: f.name,
+    kind: f.kind,
+    ok: true,
+    error: null,
+    origin: 'dropbox',
+    path: `dropbox:${dropPath}`,
+    mtime: mtimeIso,
+    age_days: Math.round(days * 10) / 10,
+    tone: freshnessTone(days),
+    display: `${f.label}: updated ${humanAgo(mtimeMs)} (Dropbox original)`,
+    text,
+  };
+}
+
+async function loadOneSource(f) {
+  try {
+    const dbx = await fetchDropboxCsv(f);
+    if (dbx) return dbx;
+  } catch (e) { /* fall through */ }
+  const local = resolveLocalFile(f.name);
+  if (local) {
+    try {
+      return sourceFromLocal(f, local);
+    } catch (e) {
+      return missingSource(f, e.message || 'local_read_failed');
+    }
+  }
+  if (process.env.VERCEL || process.env.MC_ALLOW_GITHUB_CSV_FALLBACK === 'true') {
+    try {
+      return await fetchGithubCsv(f);
+    } catch (e) {
+      return missingSource(f, e.message || 'github_fetch_failed');
+    }
+  }
+  return missingSource(f, 'dropbox_credentials_missing — set DROPBOX_ACCESS_TOKEN on Vercel; no silent repo fallback');
+}
+
+/** Source freshness for UI + detector logging. */
+async function getScheduleSources() {
+  return Promise.all(FILES.map(loadOneSource));
+}
+
+async function loadScheduleEvents() {
+  const sources = await getScheduleSources();
   const events = [];
   const errors = [];
   for (const src of sources) {
@@ -133,7 +246,7 @@ function loadScheduleEvents() {
       continue;
     }
     try {
-      const { rows } = readCsvFile(src.path);
+      const { rows } = readCsvText(src.text);
       rows.forEach((r, idx) => {
         const start = String(r.Start_Date || '').slice(0, 10);
         if (!start || !r.Event_Title) return;

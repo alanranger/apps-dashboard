@@ -132,6 +132,19 @@ function wireDrawer(t, onRefresh) {
     };
   }
 
+  const unpinBtn = $('unpinSlot');
+  if (unpinBtn) {
+    unpinBtn.onclick = async () => {
+      try {
+        await api('/api/mc/tasks', { method: 'PATCH', body: { id: t.id, slot_pinned: false } });
+        await onRefresh();
+        await openDrawer(t.id, onRefresh);
+      } catch (e) {
+        alert(e.message || 'Unpin failed');
+      }
+    };
+  }
+
   $('saveDetails').onclick = async () => {
     try {
       let estMinutes = null;
@@ -254,7 +267,8 @@ export async function openDrawer(taskId, onRefresh) {
       <div class="meta">MC-${t.display_id}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${projectChip(t)}<span class="chip">${esc(STATE_LABEL[t.state])}</span></div>
       <h2 style="font-size:16px;font-weight:600">${esc(t.title)}</h2>
-      <p class="meta">${esc(t.owner)} · ${esc(t.priority || 'p1')}${t.claimed_by ? ` · claimed by ${esc(t.claimed_by)}` : ''}${t.close_authorized_by ? ` · closed by ${esc(t.close_authorized_by)}` : ''}</p>
+      <p class="meta">${esc(t.owner)} · ${esc(t.priority || 'p1')}${t.claimed_by ? ` · claimed by ${esc(t.claimed_by)}` : ''}${t.close_authorized_by ? ` · closed by ${esc(t.close_authorized_by)}` : ''}${t.slot_pinned ? ` · <span class="chip pinned">📌 pinned ${fmtDate(t.slot_pinned_at)}</span>` : ''}${t.completed_on ? ` · completed ${esc(t.completed_on)}` : ''}</p>
+      ${t.slot_pinned ? `<div class="inset"><p class="meta">Work block pinned — auto-scheduling skips this task.</p><button type="button" id="unpinSlot">Unpin / allow rescheduling</button></div>` : ''}
       ${t.close_reason ? `<div class="inset"><div class="meta">Close reason</div><p>${esc(t.close_reason)}</p>${t.superseded_by_display_id ? `<p class="meta">Superseded by MC-${t.superseded_by_display_id}</p>` : ''}${t.close_authorized_at ? `<p class="meta">${fmtDate(t.close_authorized_at)}</p>` : ''}</div>` : ''}
 
       <div class="inset">

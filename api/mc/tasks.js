@@ -41,7 +41,7 @@ async function patchTask(id, body, actor, role) {
   const fields = [
     'title', 'detail_md', 'owner', 'next_step', 'due_date', 'waiting_on', 'why',
     'priority', 'impact', 'difficulty', 'recurrence', 'depends_on_task_id', 'evidence_url',
-    'question_file', 'response_file', 'project_id', 'est_minutes',
+    'question_file', 'response_file', 'project_id', 'est_minutes', 'slot_pinned',
   ];
   for (const f of fields) {
     if (Object.prototype.hasOwnProperty.call(body, f)) patch[f] = body[f];

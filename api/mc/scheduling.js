@@ -13,7 +13,7 @@ async function listAll() {
   ]);
   let sources = [];
   try {
-    sources = getScheduleSources();
+    sources = await getScheduleSources();
   } catch (e) {
     sources = [{ id: 'error', label: 'Schedule CSVs', ok: false, tone: 'red', display: `CSV read error: ${e.message}` }];
   }

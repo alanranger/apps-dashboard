@@ -4,6 +4,8 @@
  */
 const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
+const { ruleMapFromRows } = require('../mc/scheduling-rules-lib');
+const { buildRuleBreachProposals } = require('../mc/rule-breach-lib');
 
 function todayYmd() {
   return new Date().toISOString().slice(0, 10);
@@ -89,7 +91,7 @@ module.exports = async function handler(req, res) {
 
   const today = todayYmd();
   const inserted = [];
-  const { sources, events, errors } = loadScheduleEvents();
+  const { sources, events, errors } = await loadScheduleEvents();
   const notes = [
     'calendar_writes: 0 (hard constraint)',
     ...sources.map((s) => `source ${s.id}: ${s.ok ? `${s.display} (${s.path})` : `FAIL ${s.error}`}`),
@@ -106,7 +108,7 @@ module.exports = async function handler(req, res) {
             change_type: 'source_missing',
             target_date: today,
             summary: `${src.label} missing or unreadable`,
-            proposed_action: `Copy ${src.name} into apps-dashboard/data/schedule/ (from alan-shared-resources/csv) and redeploy, or set MC_SCHEDULE_CSV_DIR.`,
+            proposed_action: `Ensure ${src.name} exists in Dropbox alan-shared-resources/csv and DROPBOX_ACCESS_TOKEN is set on Vercel. Local override: MC_SCHEDULE_CSV_DIR.`,
             reason: src.error || 'missing',
             urgency: 'high',
             status: 'pending',
@@ -127,7 +129,7 @@ module.exports = async function handler(req, res) {
             change_type: 'source_stale',
             target_date: today,
             summary: `${src.label} is ${Math.floor(src.age_days)} days old — re-export from Squarespace before trusting this detection run.`,
-            proposed_action: `Re-export ${src.name} into alan-shared-resources/csv and copy to apps-dashboard/data/schedule/, then re-run detector.`,
+            proposed_action: `Re-export ${src.name} from Squarespace into Dropbox alan-shared-resources/csv, then re-run detector.`,
             reason: `mtime ${src.mtime}; threshold 14 days (Alan)`,
             urgency: 'high',
             status: 'pending',
@@ -252,6 +254,7 @@ module.exports = async function handler(req, res) {
     await sb('schedule_csv_snapshot?kind=eq.lesson', { method: 'DELETE', prefer: 'return=minimal' });
     await sb('schedule_csv_snapshot?kind=eq.workshop', { method: 'DELETE', prefer: 'return=minimal' });
     if (events.length) {
+      const srcById = Object.fromEntries(sources.filter((s) => s.ok).map((s) => [s.id, s]));
       const chunk = events.slice(0, 500).map((e) => ({
         row_key: e.row_key,
         title: e.title,
@@ -259,6 +262,8 @@ module.exports = async function handler(req, res) {
         kind: e.kind,
         location_name: e.location_name || null,
         seen_at: new Date().toISOString(),
+        source_mtime: srcById[e.source_id]?.mtime || null,
+        source_name: srcById[e.source_id]?.name || null,
       }));
       await sb('schedule_csv_snapshot', {
         method: 'POST',
@@ -349,6 +354,35 @@ module.exports = async function handler(req, res) {
     notes.push(
       `no_new_proposals: read ${readable}/2 CSV sources, ${events.length} events, ${inHorizon.length} in ${horizonWeeks}w horizon — not a silent skip`,
     );
+  }
+
+  // Part 6: rule_breach — Claude POSTs block list (cron has no Calendar access)
+  let blocks = [];
+  if (req.method === 'POST') {
+    try {
+      const raw = await new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (c) => { data += c; });
+        req.on('end', () => resolve(data ? JSON.parse(data) : {}));
+        req.on('error', reject);
+      });
+      blocks = Array.isArray(raw?.blocks) ? raw.blocks : [];
+    } catch (e) { /* GET cron — no blocks */ }
+  }
+  if (blocks.length) {
+    const pinnedIds = new Set();
+    const pinned = await sb('tasks?select=display_id&slot_pinned=eq.true');
+    for (const t of pinned || []) pinnedIds.add(Number(t.display_id));
+    const proposals = buildRuleBreachProposals(blocks, ruleMap, pinnedIds);
+    for (const p of proposals) {
+      if (await existingPending('rule_breach', p.related_id)) continue;
+      const row = await sb('pending_diary_changes', { method: 'POST', body: { ...p, status: 'pending' } });
+      const id = Array.isArray(row) ? row[0]?.id : row?.id;
+      if (id) inserted.push(id);
+    }
+    notes.push(`rule_breach: ${proposals.length} proposal(s) from ${blocks.length} block(s)`);
+  } else {
+    notes.push('rule_breach: skipped (no blocks — Claude POSTs block list to /api/cron/diary-drift or /api/mc/rule-breach-check)');
   }
 
   return json(res, 200, {

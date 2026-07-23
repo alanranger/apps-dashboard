@@ -48,7 +48,7 @@ export async function renderScheduling() {
   const sourceBanner = sources.length
     ? `<div class="sched-sources">${sources.map((s) =>
       `<span class="sched-src sched-src-${esc(s.tone || 'red')}">${esc(s.display || s.label)}</span>`,
-    ).join('')}<p class="meta">Source of truth: workshop/lesson CSVs (fresher than calendar feeds). After Squarespace export, copy into <code>apps-dashboard/data/schedule/</code> and deploy.</p></div>`
+    ).join('')}<p class="meta">Source of truth: Dropbox <code>alan-shared-resources/csv/</code> (Alan&apos;s originals). Freshness badge = Dropbox <code>client_modified</code>, never a repo copy. Set <code>DROPBOX_ACCESS_TOKEN</code> on Vercel; local dev may use <code>MC_SCHEDULE_CSV_DIR</code>.</p></div>`
     : '<div class="sched-sources"><span class="sched-src sched-src-red">Schedule CSVs: not loaded</span></div>';
 
   const pendingEmpty = pending.length

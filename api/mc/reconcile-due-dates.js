@@ -6,7 +6,8 @@
  * calendar. Only `due_date` (+ `last_activity_at`) is ever written to `tasks`.
  *
  * Body: { "changes": [ { "display_id": 15, "new_due_date": "2026-08-10",
- *          "source": "google-calendar", "calendar_event_id": "..." }, ... ] }
+ *          "source": "google-calendar", "change_kind": "deadline", "calendar_event_id": "..." }, ... ] }
+ * Block moves MUST use POST /api/mc/task-slot-moved (never changes due_date).
  * Returns: { updated: [...], unchanged: [...], unmatched: [...] }
  *
  * Every change is written to mc_reconcile_log (updated / no_change / unmatched).
@@ -63,7 +64,20 @@ module.exports = async function handler(req, res) {
     const updated = [];
     const unchanged = [];
     const unmatched = [];
+    const rejected = [];
     for (const c of changes) {
+      if (c.change_kind && c.change_kind !== 'deadline') {
+        rejected.push({ display_id: c.display_id, reason: 'use task-slot-moved for block moves' });
+        await logRow({
+          display_id: Number(c.display_id) || null,
+          old_due_date: null,
+          new_due_date: c.new_due_date || null,
+          result: 'rejected_block_move',
+          source: c.source || 'block_move',
+          calendar_event_id: c.calendar_event_id || null,
+        });
+        continue;
+      }
       const d = classify(c, byId);
       if (d.result === 'updated') {
         await sb(`tasks?id=eq.${d.task.id}`, {
@@ -87,7 +101,7 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    return json(res, 200, { updated, unchanged, unmatched });
+    return json(res, 200, { updated, unchanged, unmatched, rejected });
   } catch (e) {
     return json(res, e.status || 500, { error: e.message || 'reconcile error', detail: e.data });
   }
