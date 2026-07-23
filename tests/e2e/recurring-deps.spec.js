@@ -5,14 +5,17 @@ import {
 
 test.describe.configure({ mode: 'serial' });
 
-async function createHabit(token, title, rrule = 'FREQ=WEEKLY;BYDAY=MO') {
+async function createHabit(token, title, rrule) {
+  const today = new Date();
+  const bydayCode = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][today.getUTCDay()];
+  const resolved = rrule || `FREQ=WEEKLY;BYDAY=${bydayCode}`;
   const data = await mcApi('/api/mc/recurring', {
     token,
     method: 'POST',
     body: {
       title,
       cadence_text: 'Weekly test',
-      rrule,
+      rrule: resolved,
       duration_min: 15,
       actor: 'cursor',
     },
@@ -122,7 +125,10 @@ test.describe('Recurring deps — API validation + projection', () => {
     });
 
     const projAfter = await fetchProjection();
-    const sampleAfter = (projAfter.occurrences || []).find((o) => o.habit_id === dependentId);
+    const today = projAfter.today;
+    const sampleAfter = (projAfter.occurrences || []).find(
+      (o) => o.habit_id === dependentId && o.ideal_date === today,
+    ) || (projAfter.occurrences || []).find((o) => o.habit_id === dependentId);
     console.log('BLOCKER EVIDENCE', JSON.stringify({
       before: { blocked: sample.blocked, blocked_by: sample.blocked_by },
       after: { blocked: sampleAfter.blocked, blocked_by: sampleAfter.blocked_by },
