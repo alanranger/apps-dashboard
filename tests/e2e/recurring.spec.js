@@ -1,0 +1,122 @@
+import { test, expect } from '@playwright/test';
+import {
+  mcLogin, mcApi, recurringSnapshot, pickRow, requireEnv,
+} from '../helpers/mc.mjs';
+
+const COLS = ['last_done', 'rolls_used', 'scheduled_note'];
+
+test.describe('Recurring — Skip (API + DB evidence)', () => {
+  test.skip(!process.env.MC_SUPABASE_URL, 'requires MC_SUPABASE_URL');
+
+  test('skip does not write last_done; logs ideal occurrence date', async () => {
+    const { token } = await mcLogin('agent');
+    const created = await mcApi('/api/mc/recurring', {
+      token,
+      method: 'POST',
+      body: {
+        title: 'TEST skip habit (auto)',
+        cadence_text: 'Every Thursday',
+        rrule: 'FREQ=WEEKLY;BYDAY=TH',
+        duration_min: 15,
+        ideal_time: '09:00',
+        actor: 'cursor',
+      },
+    });
+    const id = created.task.id;
+
+    const before = await recurringSnapshot(id);
+    const beforeLastDone = before.task.last_done;
+    const beforeRolls = before.task.rolls_used;
+
+    await mcApi('/api/mc/recurring', {
+      token,
+      method: 'POST',
+      body: { action: 'skip', id, reason: 'test skip — not done', actor: 'cursor' },
+    });
+
+    const after = await recurringSnapshot(id);
+    const evidence = {
+      before: pickRow(before.task, COLS),
+      after: pickRow(after.task, COLS),
+      new_log: after.recent_log[0],
+    };
+    console.log('SKIP EVIDENCE', JSON.stringify(evidence, null, 2));
+
+    expect(after.task.last_done).toBe(beforeLastDone);
+    expect(after.task.rolls_used).toBe(beforeRolls);
+    expect(String(after.recent_log[0].change)).toMatch(/^skipped occurrence \d{4}-\d{2}-\d{2}:/);
+    expect(after.recent_log[0].ideal_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(after.recent_log[0].ideal_date).not.toBe(new Date().toISOString().slice(0, 10));
+
+    await mcApi('/api/mc/recurring', {
+      token,
+      method: 'PATCH',
+      body: { id, active: false, actor: 'cursor' },
+    });
+  });
+});
+
+test.describe('Recurring — Mark done (API + DB evidence)', () => {
+  test.skip(!process.env.MC_SUPABASE_URL, 'requires MC_SUPABASE_URL');
+
+  test('mark done sets last_done only; rolls unchanged unless reset by UI path', async () => {
+    const { token } = await mcLogin('agent');
+    const created = await mcApi('/api/mc/recurring', {
+      token,
+      method: 'POST',
+      body: {
+        title: 'TEST mark-done habit (auto)',
+        cadence_text: 'Every Friday',
+        rrule: 'FREQ=WEEKLY;BYDAY=FR',
+        duration_min: 15,
+        actor: 'cursor',
+      },
+    });
+    const id = created.task.id;
+    const before = await recurringSnapshot(id);
+    const rollsBefore = before.task.rolls_used;
+
+    await mcApi('/api/mc/recurring', {
+      token,
+      method: 'POST',
+      body: { action: 'mark_done', id, actor: 'cursor' },
+    });
+
+    const after = await recurringSnapshot(id);
+    const today = new Date().toISOString().slice(0, 10);
+    console.log('MARK-DONE EVIDENCE', JSON.stringify({
+      before: pickRow(before.task, COLS),
+      after: pickRow(after.task, COLS),
+      new_log: after.recent_log[0],
+    }, null, 2));
+
+    expect(after.task.last_done).toBe(today);
+    expect(after.task.rolls_used).toBe(0);
+    expect(after.recent_log[0].change).toMatch(/^marked done/);
+
+    await mcApi('/api/mc/recurring', {
+      token,
+      method: 'PATCH',
+      body: { id, active: false, actor: 'cursor' },
+    });
+  });
+});
+
+test.describe('Recurring — Skip UI chip', () => {
+  test.skip(!process.env.MC_ALAN_PASSWORD, 'requires Alan login for UI');
+
+  test('clicking Skip shows skipped pill in table', async ({ page }) => {
+    const base = process.env.MC_BASE_URL || 'https://apps-dashboard-lilac.vercel.app';
+    await page.goto(`${base}/mission-control.html`);
+    await page.fill('#pw', requireEnv('MC_ALAN_PASSWORD'));
+    await page.click('#loginBtn');
+    await page.waitForSelector('.view-btn[data-view="recurring"]');
+    await page.click('.view-btn[data-view="recurring"]');
+
+    page.once('dialog', (d) => d.accept('playwright ui skip test'));
+    const skipBtn = page.locator('[data-rec-skip]').first();
+    test.skip(await skipBtn.count() === 0, 'no habits to skip');
+    await skipBtn.click();
+    await expect(page.locator('.rec-skipped-pill').first()).toBeVisible({ timeout: 10000 });
+  });
+});

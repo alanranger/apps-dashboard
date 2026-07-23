@@ -1,6 +1,7 @@
 const {
   envReady, json, cors, readBody, requireAuth, actorFromSession, sb,
 } = require('./_lib');
+const { lastDueOnOrBefore } = require('./rrule-core');
 
 async function logRecurring(taskId, actor, change) {
   await sb('recurring_log', { method: 'POST', body: { recurring_task_id: taskId, actor, change } });
@@ -71,22 +72,39 @@ async function markDone(id, actor) {
   return row;
 }
 
-/** Skip this occurrence — only Alan-sanctioned clear without "done". Advances last_done to today. */
+/** Skip this occurrence — log only; never writes last_done or rolls_used. */
 async function skipOccurrence(id, actor, reason) {
   const today = new Date().toISOString().slice(0, 10);
-  const rows = await sb(`recurring_tasks?id=eq.${id}`, {
-    method: 'PATCH',
-    body: { last_done: today, rolls_used: 0, updated_at: new Date().toISOString() },
-  });
-  const row = rows?.[0];
-  if (!row) {
+  const curRows = await sb(`recurring_tasks?id=eq.${id}&select=id,title,rrule,last_done,rolls_used`);
+  const cur = curRows?.[0];
+  if (!cur) {
     const err = new Error('recurring task not found');
     err.status = 404;
     throw err;
   }
-  const note = reason ? `skipped occurrence ${today}: ${reason}` : `skipped occurrence ${today}`;
-  await logRecurring(id, actor, note);
-  return row;
+  const occurrenceDate = lastDueOnOrBefore(cur.rrule, today);
+  if (!occurrenceDate) {
+    const err = new Error('no occurrence to skip');
+    err.status = 400;
+    throw err;
+  }
+  const note = reason
+    ? `skipped occurrence ${occurrenceDate}: ${reason}`
+    : `skipped occurrence ${occurrenceDate}`;
+  await sb(`recurring_tasks?id=eq.${id}`, {
+    method: 'PATCH',
+    body: { updated_at: new Date().toISOString() },
+  });
+  await sb('recurring_log', {
+    method: 'POST',
+    body: {
+      recurring_task_id: id,
+      actor,
+      change: note,
+      ideal_date: occurrenceDate,
+    },
+  });
+  return { ...cur, skipped_occurrence: occurrenceDate };
 }
 
 module.exports = async function handler(req, res) {

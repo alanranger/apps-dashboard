@@ -14,10 +14,27 @@ function todayStr() {
   return `${y}-${m}-${day}`;
 }
 
+function wasOccurrenceSkipped(task, today) {
+  try {
+    const lastDue = lastDueOnOrBefore(task.rrule, today);
+    if (!lastDue) return false;
+    return (store.recurring_log || []).some(
+      (l) => l.recurring_task_id === task.id
+        && l.ideal_date === lastDue
+        && String(l.change || '').startsWith('skipped occurrence'),
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
 function statusFor(task) {
   if (!task.active) return { label: 'inactive', cls: '' };
   try {
     const today = todayStr();
+    if (wasOccurrenceSkipped(task, today)) {
+      return { label: 'skipped', cls: 'rec-skipped' };
+    }
     const lastDue = lastDueOnOrBefore(task.rrule, today);
     if (lastDue && (!task.last_done || task.last_done < lastDue) && lastDue < today) {
       return { label: 'missed', cls: 'rec-missed' };
@@ -96,9 +113,10 @@ export function renderRecurring() {
       const st = statusFor(t);
       const next = nextDue(t);
       const missed = st.label === 'missed' ? '<span class="pill rec-missed-pill">missed</span>' : '';
+      const skipped = st.label === 'skipped' ? '<span class="pill rec-skipped-pill">skipped</span>' : '';
       const lastDone = t.last_done ? fmtDate(t.last_done) : '—';
       return `<tr class="${st.cls}">
-      <td><strong>${esc(t.title)}</strong>${missed}</td>
+      <td><strong>${esc(t.title)}</strong>${missed}${skipped}</td>
       <td>${esc(t.cadence_text)}</td>
       <td>${t.duration_min} min</td>
       <td>${fmtTime(t.ideal_time)}</td>

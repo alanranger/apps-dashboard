@@ -281,6 +281,10 @@ module.exports = async function handler(req, res) {
     const lastDue = lastDueSimple(h.rrule, today);
     if (!lastDue || lastDue >= today) continue;
     if (h.last_done && h.last_done >= lastDue) continue;
+    const skipRows = await sb(
+      `recurring_log?recurring_task_id=eq.${h.id}&ideal_date=eq.${lastDue}&change=like.skipped%&limit=1`,
+    );
+    if (skipRows?.[0]) continue;
 
     const relatedId = `habit:${h.id}:${lastDue}`;
     if (await existingPending('missed_habit', relatedId)) continue;

@@ -122,4 +122,24 @@ function occurrencesInRange(rrule, startYmd, endYmd, maxSteps = 60) {
   return out;
 }
 
-module.exports = { occurrencesInRange, nextDueFromRrule, toYmd, fromYmd, addDays };
+/** Most recent due date on or before today (missed / skip target). */
+function lastDueOnOrBefore(rrule, today) {
+  const end = today instanceof Date ? toYmd(today) : String(today || toYmd(new Date())).slice(0, 10);
+  const endD = fromYmd(end);
+  let cur = addDays(endD, -420);
+  let last = null;
+  for (let i = 0; i < 80; i += 1) {
+    const n = nextDueFromRrule(rrule, cur);
+    if (!n) break;
+    const nd = fromYmd(n);
+    if (nd.getTime() <= cur.getTime()) break;
+    if (nd > endD) break;
+    last = n;
+    cur = nd;
+  }
+  return last;
+}
+
+module.exports = {
+  occurrencesInRange, nextDueFromRrule, lastDueOnOrBefore, toYmd, fromYmd, addDays,
+};
