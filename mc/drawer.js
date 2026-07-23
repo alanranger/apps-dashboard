@@ -2,6 +2,7 @@ import { api } from './api.js';
 import { store, taskById, commentsFor, logFor, checksFor } from './store.js';
 import { STATE_LABEL, $, esc, fmtDate, handoffRef } from './util.js';
 import { projectChip } from './render-board.js';
+import { prioritySelectOptions } from './priority.js';
 
 const pendingImages = [];
 
@@ -276,9 +277,7 @@ export async function openDrawer(taskId, onRefresh) {
         <textarea id="detailInput" rows="8" placeholder="Description: what / why / done when…" style="width:100%;padding:8px;margin:4px 0 8px;white-space:pre-wrap">${esc(t.detail_md || '')}</textarea>
         <label class="meta" for="priorityInput">Priority (ops)</label>
         <select id="priorityInput" style="width:100%;padding:8px;margin:4px 0 8px">
-          <option value="p0" ${t.priority === 'p0' ? 'selected' : ''}>p0 — urgent</option>
-          <option value="p1" ${t.priority === 'p1' ? 'selected' : ''}>p1 — important</option>
-          <option value="p2" ${t.priority === 'p2' ? 'selected' : ''}>p2 — later</option>
+          ${prioritySelectOptions(t.priority || 'p1')}
         </select>
         <label class="meta" for="impactInput">Impact (matrix)</label>
         <select id="impactInput" style="width:100%;padding:8px;margin:4px 0 8px" title="Business impact for the priority matrix">

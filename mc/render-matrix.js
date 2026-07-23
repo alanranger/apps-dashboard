@@ -1,6 +1,7 @@
 import { store, projectById } from './store.js';
 import { STATE_LABEL, esc, fmtDate } from './util.js';
 import { isOverdue, execFilterActive, execFilterLabel, projectChip, easyWinsCount, ballWith, ballChipHtml } from './task-helpers.js';
+import { PRI_RANK } from './priority.js';
 
 const IMPACTS = ['HIGH', 'MEDIUM', 'LOW'];
 const DIFFS = ['LOW', 'MEDIUM', 'HIGH'];
@@ -25,7 +26,7 @@ function filteredTasks(tasks) {
 function sortTasks(tasks) {
   const { column, direction } = store.matrixSort || { column: 'due_date', direction: 'asc' };
   const dir = direction === 'desc' ? -1 : 1;
-  const rank = { HIGH: 0, MEDIUM: 1, LOW: 2, p0: 0, p1: 1, p2: 2 };
+  const rank = { HIGH: 0, MEDIUM: 1, LOW: 2, ...PRI_RANK };
   return [...tasks].sort((a, b) => {
     let av;
     let bv;
@@ -130,7 +131,7 @@ function tableHtml(tasks) {
             ${th('ball', 'Ball with', 'Who is holding the task up (derived)')}
             ${th('impact', 'Impact', 'Business impact HIGH / MEDIUM / LOW')}
             ${th('difficulty', 'Difficulty', 'Effort HIGH / MEDIUM / LOW')}
-            ${th('priority', 'Pri', 'Operational priority p0 / p1 / p2')}
+            ${th('priority', 'Pri', 'Operational priority p0–p5 (p0 highest)')}
             ${th('due_date', 'Due', 'Due date')}
             ${th('next_step', 'Next step', 'Immediate next action')}
           </tr>

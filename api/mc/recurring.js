@@ -24,6 +24,7 @@ async function createRecurring(body, actor) {
       duration_min: body.duration_min || 60,
       ideal_time: body.ideal_time || '09:00',
       window_days: body.window_days != null ? body.window_days : 2,
+      priority: body.priority || 'p1',
       notes_md: body.notes_md || null,
       scheduled_note: body.scheduled_note || null,
       active: body.active !== false,
@@ -44,7 +45,7 @@ async function patchRecurring(id, body, actor) {
   }
   const patch = { updated_at: new Date().toISOString() };
   const fields = [
-    'title', 'cadence_text', 'rrule', 'duration_min', 'ideal_time', 'window_days',
+    'title', 'cadence_text', 'rrule', 'duration_min', 'ideal_time', 'window_days', 'priority',
     'notes_md', 'scheduled_note', 'active', 'last_scheduled', 'last_done',
   ];
   for (const f of fields) {

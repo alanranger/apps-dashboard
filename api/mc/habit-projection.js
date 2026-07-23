@@ -9,6 +9,8 @@ const { envReady, json, cors, sb } = require('./_lib');
 const {
   occurrencesInRange, fromYmd, addDays, toYmd, lastDueOnOrBefore,
 } = require('./rrule-core');
+const { PRIORITY_ORDER } = require('./priority-lib');
+const { fetchCompetingPool, competitionForRange } = require('./competing-items-lib');
 
 const DEFAULT_HORIZON = 90;
 const MAX_HORIZON = 366;
@@ -61,6 +63,23 @@ function buildBlockedBy(deps, habitMap, idealDate) {
   });
 }
 
+function placementForOccurrence(comp, kind, id) {
+  const key = kind === 'task' ? 'task' : 'habit';
+  const match = (row) => row.kind === key && String(row.id) === String(id);
+  if ((comp.placed || []).some(match)) {
+    return { placement: 'fits', roll_forward: false };
+  }
+  const displaced = (comp.displaced || []).find(match);
+  if (displaced) {
+    return {
+      placement: 'displaced',
+      roll_forward: true,
+      displacement_reason: displaced.reason || 'lower_priority_than_cap',
+    };
+  }
+  return { placement: 'fits', roll_forward: false };
+}
+
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -77,11 +96,15 @@ module.exports = async function handler(req, res) {
   }
   try {
     const endYmd = toYmd(addDays(fromYmd(today), horizon));
-    const [habits, allHabits, deps] = await Promise.all([
-      sb('recurring_tasks?select=id,title,cadence_text,rrule,duration_min,ideal_time,window_days,last_scheduled,last_done,rolls_used&active=eq.true&order=title.asc'),
+    const [habits, allHabits, deps, pool, rules] = await Promise.all([
+      sb('recurring_tasks?select=id,title,cadence_text,rrule,duration_min,ideal_time,window_days,priority,last_scheduled,last_done,rolls_used&active=eq.true&order=title.asc'),
       sb('recurring_tasks?select=id,title,rrule,last_done'),
       sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
+      fetchCompetingPool(sb, today, endYmd),
+      sb('scheduling_rules?key=eq.daily_task_cap_min&select=value'),
     ]);
+    const capMin = Number(rules?.[0]?.value || 240);
+    const competition = competitionForRange(today, endYmd, pool.tasks, pool.habits, capMin);
     const habitMap = new Map((Array.isArray(allHabits) ? allHabits : []).map((h) => [h.id, h]));
     const depsByHabit = new Map();
     for (const d of Array.isArray(deps) ? deps : []) {
@@ -101,9 +124,15 @@ module.exports = async function handler(req, res) {
       const habitDeps = depsByHabit.get(h.id) || [];
       for (const idealDate of dates) {
         const blockedBy = buildBlockedBy(habitDeps, habitMap, idealDate);
+        const blocked = blockedBy.some((b) => !b.satisfied);
+        const comp = competition[idealDate] || { placed: [], displaced: [] };
+        const place = blocked
+          ? { placement: 'blocked', roll_forward: true, displacement_reason: 'dependency_unsatisfied' }
+          : placementForOccurrence(comp, 'habit', h.id);
         occurrences.push({
           habit_id: h.id,
           title: h.title,
+          priority: h.priority || 'p1',
           ideal_date: idealDate,
           ideal_time: fmtTime(h.ideal_time),
           duration_min: h.duration_min,
@@ -114,7 +143,8 @@ module.exports = async function handler(req, res) {
           last_done: h.last_done || null,
           rolls_used: h.rolls_used ?? 0,
           blocked_by: blockedBy,
-          blocked: blockedBy.some((b) => !b.satisfied),
+          blocked,
+          ...place,
         });
       }
     }
@@ -126,6 +156,8 @@ module.exports = async function handler(req, res) {
       timezone: 'Europe/London',
       horizon_days: horizon,
       horizon_end: endYmd,
+      priority_order: PRIORITY_ORDER,
+      placement_rule: 'higher_priority_first_then_roll_forward_never_skip',
       count: occurrences.length,
       occurrences,
       skipped,

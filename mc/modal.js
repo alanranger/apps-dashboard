@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { store } from './store.js';
 import { $, esc } from './util.js';
+import { prioritySelectOptions } from './priority.js';
 
 export function openNewTaskModal(onCreated) {
   const opts = store.projects.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
@@ -9,7 +10,7 @@ export function openNewTaskModal(onCreated) {
     <label>Title</label><input id="ntTitle"/>
     <label>Project</label><select id="ntProject">${opts}</select>
     <label>Owner</label><select id="ntOwner"><option>alan</option><option>claude</option><option>cursor</option><option>external</option></select>
-    <label>Priority</label><select id="ntPriority"><option>p0</option><option selected>p1</option><option>p2</option></select>
+    <label>Priority</label><select id="ntPriority">${prioritySelectOptions('p1')}</select>
     <label>Impact</label><select id="ntImpact"><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option></select>
     <label>Difficulty</label><select id="ntDifficulty"><option>LOW</option><option selected>MEDIUM</option><option>HIGH</option></select>
     <label>Due</label><input id="ntDue" type="date"/>

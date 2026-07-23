@@ -60,7 +60,7 @@ export function pickRow(row, cols) {
 
 export async function recurringSnapshot(habitId) {
   const [tasks, logs] = await Promise.all([
-    sbGet(`recurring_tasks?id=eq.${habitId}&select=id,title,last_done,rolls_used,updated_at,scheduled_note`),
+    sbGet(`recurring_tasks?id=eq.${habitId}&select=id,title,priority,last_done,rolls_used,updated_at,scheduled_note`),
     sbGet(`recurring_log?recurring_task_id=eq.${habitId}&order=at.desc&limit=3&select=actor,change,ideal_date,scheduled_date,at`),
   ]);
   return { task: tasks[0] || null, recent_log: logs };

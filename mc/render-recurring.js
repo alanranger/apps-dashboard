@@ -2,8 +2,7 @@ import { store } from './store.js';
 import { $, esc, fmtTime, fmtDate } from './util.js';
 import { nextDueFromRrule, lastDueOnOrBefore, RRULE_PRESETS } from './rrule.js';
 import { api } from './api.js';
-
-/** How far ahead Claude should book diary time (Alan-ruled). */
+import { prioritySelectOptions } from './priority.js';
 export const DIARY_HORIZON_DAYS = 28;
 
 function todayStr() {
@@ -75,6 +74,7 @@ function formFields(prefix, t = {}) {
     <label>Preset pattern<select id="${prefix}Preset">${presetOptions(t.rrule || '')}</select></label>
     <label>RRULE<input id="${prefix}Rrule" value="${esc(t.rrule || 'FREQ=WEEKLY;BYDAY=TH')}" /></label>
     <label>Duration (min)<input id="${prefix}Dur" type="number" min="5" value="${t.duration_min || 60}" /></label>
+    <label>Priority<select id="${prefix}Pri">${prioritySelectOptions(t.priority || 'p1')}</select></label>
     <label>Ideal time<input id="${prefix}Time" type="time" value="${String(t.ideal_time || '09:00').slice(0, 5)}" /></label>
     <label>Window days (how far slot may drift from ideal)<input id="${prefix}Win" type="number" min="0" value="${t.window_days != null ? t.window_days : 2}" /></label>
     <label>Scheduled by Claude<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Claude fills after booking diary — e.g. Thu 23 11:00–13:00" /></label>
@@ -130,6 +130,7 @@ function readForm(prefix) {
     cadence_text: $(`${prefix}Cadence`).value.trim(),
     rrule: $(`${prefix}Rrule`).value.trim(),
     duration_min: Number($(`${prefix}Dur`).value) || 60,
+    priority: $(`${prefix}Pri`).value || 'p1',
     ideal_time: $(`${prefix}Time`).value || '09:00',
     window_days: Number($(`${prefix}Win`).value),
     scheduled_note: $(`${prefix}Sched`).value.trim() || null,
@@ -152,6 +153,7 @@ export function renderRecurring() {
       return `<tr class="${st.cls}">
       <td><strong>${esc(t.title)}</strong>${missed}${skipped}</td>
       <td>${esc(t.cadence_text)}</td>
+      <td>${esc(t.priority || 'p1')}</td>
       <td>${t.duration_min} min</td>
       <td>${fmtTime(t.ideal_time)}</td>
       <td>${next}</td>
@@ -166,7 +168,7 @@ export function renderRecurring() {
       </td>
     </tr>`;
     }).join('')
-    : '<tr><td colspan="10" class="meta">No habits yet — click <strong>Add habit</strong>.</td></tr>';
+    : '<tr><td colspan="11" class="meta">No habits yet — click <strong>Add habit</strong>.</td></tr>';
 
   el.innerHTML = `<div class="card">
     <div class="rec-head">
@@ -179,7 +181,7 @@ export function renderRecurring() {
     <div class="rec-table-wrap">
       <table class="rec-table">
         <thead><tr>
-          <th>Title</th><th>Cadence</th><th>Duration</th><th>Ideal time</th><th>Next due</th><th>Last done</th>
+          <th>Title</th><th>Cadence</th><th>Priority</th><th>Duration</th><th>Ideal time</th><th>Next due</th><th>Last done</th>
           <th>Scheduled by Claude</th><th>Depends on</th><th>Active</th><th></th>
         </tr></thead>
         <tbody>${body}</tbody>

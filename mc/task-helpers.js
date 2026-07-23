@@ -1,6 +1,7 @@
 import { store, projectById } from './store.js';
 import { esc, fmtDate, fmtTime } from './util.js';
 import { occurrencesInRange } from './rrule.js';
+import { PRI_RANK } from './priority.js';
 
 function localYmd(d) {
   const y = d.getFullYear();
@@ -105,8 +106,6 @@ export function duePillTone(t) {
   if (ms <= 7 * 86400000) return 'warn';
   return '';
 }
-
-const PRI_RANK = { p0: 0, p1: 1, p2: 2 };
 
 export function nextUpTasks(tasks, limit = 3) {
   return [...tasks]
@@ -332,7 +331,7 @@ export function summaryCounts(tasks) {
   }).length;
   const active = todo + inProgress;
   const byOwner = { alan: 0, claude: 0, cursor: 0, external: 0 };
-  const byPriority = { p0: 0, p1: 0, p2: 0 };
+  const byPriority = { p0: 0, p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 };
   const byProjectMap = new Map();
   for (const t of tasks) {
     if (byOwner[t.owner] !== undefined) byOwner[t.owner] += 1;
