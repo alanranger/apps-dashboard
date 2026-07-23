@@ -44,7 +44,9 @@ Google Calendar is **not** accessed in tests. Habit placement is stubbed via API
 | rule_breach 11 Aug | ✅ | — | — |
 | habit-projection source | ✅ | — | — |
 | Dropbox caption regression | ✅ | — | — |
-| Scheduling tab rules | — | planned | planned |
-| Task drawer pin/complete | — | planned | planned |
+| Scheduling rules save + cap behaviour | — | ✅ | — |
+| Pending dismiss / applied | — | ✅ | — |
+| CSV freshness badge | — | ✅ | — |
+| Task drawer estimate / complete / unpin | — | ✅ | — |
 
 Extend `tests/e2e/` following the same before/after snapshot pattern.

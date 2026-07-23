@@ -5,8 +5,10 @@ import {
 
 const COLS = ['last_done', 'rolls_used', 'scheduled_note'];
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Recurring — Skip (API + DB evidence)', () => {
-  test.skip(!process.env.MC_SUPABASE_URL, 'requires MC_SUPABASE_URL');
+  test.skip(!process.env.MC_SUPABASE_SERVICE_KEY, 'requires MC_SUPABASE_SERVICE_KEY');
 
   test('skip does not write last_done; logs ideal occurrence date', async () => {
     const { token } = await mcLogin('agent');
@@ -57,7 +59,7 @@ test.describe('Recurring — Skip (API + DB evidence)', () => {
 });
 
 test.describe('Recurring — Mark done (API + DB evidence)', () => {
-  test.skip(!process.env.MC_SUPABASE_URL, 'requires MC_SUPABASE_URL');
+  test.skip(!process.env.MC_SUPABASE_SERVICE_KEY, 'requires MC_SUPABASE_SERVICE_KEY');
 
   test('mark done sets last_done only; rolls unchanged unless reset by UI path', async () => {
     const { token } = await mcLogin('agent');
