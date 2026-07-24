@@ -18,6 +18,7 @@
     { "source": "/api/mc/task-completed.json", "destination": "/api/mc/task-completed" },
     { "source": "/api/mc/rule-breach-check.json", "destination": "/api/mc/rule-breach-check" },
     { "source": "/api/mc/reconcile-due-dates.json", "destination": "/api/mc/reconcile-due-dates" },
+    { "source": "/api/mc/drive-time.json", "destination": "/api/mc/drive-time" },
     { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },
     { "source": "/handoff", "destination": "/handoff.html" },

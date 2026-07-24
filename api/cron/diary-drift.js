@@ -6,6 +6,11 @@ const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
 const { ruleMapFromRows } = require('../mc/scheduling-rules-lib');
 const { buildRuleBreachProposals } = require('../mc/rule-breach-lib');
+const {
+  runMissingTravelBlockScan,
+  runStaleDriveTimeScan,
+  runHotelDeadlineGapScan,
+} = require('../mc/travel-coverage-lib');
 
 function todayYmd() {
   return new Date().toISOString().slice(0, 10);
@@ -155,7 +160,7 @@ module.exports = async function handler(req, res) {
   const travelPrefix = ruleMap.title_prefix_travel || 'MC 🚗';
   const bufferPrefix = ruleMap.title_prefix_buffer || 'MC ⏳';
 
-  const drives = await sb('venue_drive_times?select=venue_name,minutes_from_home');
+  const drives = await sb('venue_drive_times?select=venue_name,postcode,minutes_from_home,verified_at');
   const driveHint = (ev) => {
     const blob = `${ev.location_name} ${ev.address} ${ev.postcode}`.toLowerCase();
     const hit = (drives || []).find((d) => blob.includes(String(d.venue_name).toLowerCase().split('/')[0].trim()));
@@ -165,6 +170,26 @@ module.exports = async function handler(req, res) {
   // CSV events in horizon → travel / buffers for NEW rows only (vs snapshot).
   // First run with empty snapshot = baseline only (no flood of "missing" for whole year).
   const inHorizon = events.filter((e) => e.start_date >= today && e.start_date <= horizonEnd);
+
+  // Full-horizon safety net vs travel_blocks (catches Oct-16 class gaps the snapshot miss).
+  await runMissingTravelBlockScan({
+    sb,
+    existingPending,
+    inserted,
+    notes,
+    inHorizon,
+    isHomeBased,
+    homePc,
+    bufferScope,
+    travelPrefix,
+    bufferPrefix,
+    prepMin,
+    decompMin,
+    arriveMin,
+    driveHint,
+    horizonWeeks,
+  });
+  await runStaleDriveTimeScan({ sb, existingPending, inserted, drives, notes });
   const currentKeys = new Set(events.map((e) => e.row_key));
 
   let prev = [];
@@ -282,7 +307,7 @@ module.exports = async function handler(req, res) {
     if (!lastDue || lastDue >= today) continue;
     if (h.last_done && h.last_done >= lastDue) continue;
     const skipRows = await sb(
-      `recurring_log?recurring_task_id=eq.${h.id}&ideal_date=eq.${lastDue}&change=like.skipped%&limit=1`,
+      `recurring_log?recurring_task_id=eq.${h.id}&ideal_date=eq.${lastDue}&change=like.${encodeURIComponent('skipped%')}&limit=1`,
     );
     if (skipRows?.[0]) continue;
 
@@ -352,6 +377,8 @@ module.exports = async function handler(req, res) {
     const id = Array.isArray(row) ? row[0]?.id : row?.id;
     if (id) inserted.push(id);
   }
+
+  await runHotelDeadlineGapScan({ sb, existingPending, inserted, notes });
 
   const readable = sources.filter((s) => s.ok).length;
   if (inserted.length === 0) {
