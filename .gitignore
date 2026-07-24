@@ -30,6 +30,10 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+client_secret*.json
+**/client_secret*.json
+gmail-oauth*.json
+**/credentials*.json
 
 # Schedule CSVs live in alan-shared-resources/csv (not duplicated here)
 data/schedule/*.csv
