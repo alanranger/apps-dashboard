@@ -3,7 +3,7 @@
  * ONE-OFF: mint a Gmail OAuth refresh token for Mission Control.
  *
  * Usage (from apps-dashboard root):
- *   node scripts/gmail-mint-refresh-token.mjs "C:\path\to\client_secret_....json"
+ *   node scripts/gmail-mint-refresh-token.cjs "C:\path\to\client_secret_....json"
  *
  * - Opens a browser for consent (gmail.readonly only)
  * - Prints the refresh token to THIS terminal only
@@ -61,7 +61,7 @@ async function exchangeCode(client, code) {
 function main() {
   const jsonPath = process.argv[2];
   if (!jsonPath) {
-    console.error('Usage: node scripts/gmail-mint-refresh-token.mjs <path-to-client-secret.json>');
+    console.error('Usage: node scripts/gmail-mint-refresh-token.cjs <path-to-client-secret.json>');
     process.exit(1);
   }
   if (!fs.existsSync(jsonPath)) {
