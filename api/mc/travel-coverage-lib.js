@@ -148,9 +148,100 @@ async function runHotelDeadlineGapScan(ctx) {
   notes.push(`hotel_deadline_gap_scan: ${n} hotel(s)`);
 }
 
+function hotelReminderLeadDays(hotel, fallback = 3) {
+  if (hotel?.reminder_lead_days != null && hotel.reminder_lead_days !== '') {
+    return Number(hotel.reminder_lead_days);
+  }
+  if (hotel?.cancellation_window_days != null && hotel.cancellation_window_days !== '') {
+    const w = Number(hotel.cancellation_window_days);
+    if (Number.isFinite(w) && w > 0) return Math.min(21, Math.max(3, w * 3));
+  }
+  return Number(fallback) || 3;
+}
+
+/**
+ * Raise when habit or travel placement runway drops below N weeks.
+ * Does NOT flag 13-vs-26 divergence (deliberate).
+ */
+async function runHorizonEdgeScan(ctx) {
+  const {
+    sb, existingPending, inserted, notes, today, addDaysYmd,
+    habitEdgeWeeks, travelEdgeWeeks, habitHorizonWeeks, travelHorizonWeeks,
+  } = ctx;
+
+  const habitEdgeEnd = addDaysYmd(today, habitEdgeWeeks * 7);
+  const travelEdgeEnd = addDaysYmd(today, travelEdgeWeeks * 7);
+
+  let habitLatest = null;
+  try {
+    const rows = await sb(
+      'recurring_log?calendar_event_id=not.is.null&scheduled_date=not.is.null&select=scheduled_date&order=scheduled_date.desc&limit=1',
+    );
+    habitLatest = rows?.[0]?.scheduled_date || null;
+  } catch (e) {
+    notes.push(`horizon_edge_habit_read_error: ${e.message}`);
+  }
+
+  let travelLatest = null;
+  try {
+    const byStart = await sb(
+      'travel_blocks?workshop_start=not.is.null&select=workshop_start&order=workshop_start.desc&limit=1',
+    );
+    const byEnd = await sb(
+      'travel_blocks?select=ends_at&order=ends_at.desc&limit=1',
+    );
+    const a = byStart?.[0]?.workshop_start ? String(byStart[0].workshop_start).slice(0, 10) : null;
+    const b = byEnd?.[0]?.ends_at ? String(byEnd[0].ends_at).slice(0, 10) : null;
+    travelLatest = !a ? b : (!b ? a : (a > b ? a : b));
+  } catch (e) {
+    notes.push(`horizon_edge_travel_read_error: ${e.message}`);
+  }
+
+  let n = 0;
+  if (!habitLatest || habitLatest < habitEdgeEnd) {
+    const relatedId = `horizon_edge:habit:${habitLatest || 'none'}`;
+    await insertPending(sb, existingPending, inserted, {
+      change_type: 'horizon_edge',
+      target_date: habitLatest,
+      summary: habitLatest
+        ? `Habit placement ends ${habitLatest} — under ${habitEdgeWeeks}w runway left`
+        : 'No habit placements found with calendar_event_id',
+      proposed_action: `Extend habit diary placement toward habit_horizon_weeks (${habitHorizonWeeks}). Latest scheduled_date=${habitLatest || 'none'}.`,
+      reason: `horizon_edge habit check; edge=${habitEdgeWeeks}w; target_horizon=${habitHorizonWeeks}w`,
+      urgency: 'normal',
+      status: 'pending',
+      related_id: relatedId,
+    });
+    n += 1;
+  }
+
+  if (!travelLatest || travelLatest < travelEdgeEnd) {
+    const relatedId = `horizon_edge:travel:${travelLatest || 'none'}`;
+    await insertPending(sb, existingPending, inserted, {
+      change_type: 'horizon_edge',
+      target_date: travelLatest,
+      summary: travelLatest
+        ? `Travel/buffer placement ends ${travelLatest} — under ${travelEdgeWeeks}w runway left`
+        : 'No travel_blocks placements found',
+      proposed_action: `Extend travel/buffer placement toward travel_horizon_weeks (${travelHorizonWeeks}). Latest=${travelLatest || 'none'}.`,
+      reason: `horizon_edge travel check; edge=${travelEdgeWeeks}w; target_horizon=${travelHorizonWeeks}w`,
+      urgency: 'normal',
+      status: 'pending',
+      related_id: relatedId,
+    });
+    n += 1;
+  }
+
+  notes.push(
+    `horizon_edge_scan: habit_latest=${habitLatest || 'none'} travel_latest=${travelLatest || 'none'} proposals=${n}`,
+  );
+}
+
 module.exports = {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
   runHotelDeadlineGapScan,
+  runHorizonEdgeScan,
+  hotelReminderLeadDays,
   STALE_DAYS,
 };

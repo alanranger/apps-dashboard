@@ -55,6 +55,7 @@ async function patchHotel(id, body) {
   const fields = [
     'workshop_name', 'workshop_dates', 'hotel', 'booking_ref', 'booked_via',
     'rooms', 'total_cost', 'free_cancel_until', 'check_in_date', 'notes', 'reminder_placed',
+    'cancellation_window_days', 'cancellation_policy', 'reminder_lead_days',
   ];
   for (const f of fields) {
     if (Object.prototype.hasOwnProperty.call(body, f)) patch[f] = body[f];

@@ -10,6 +10,8 @@ const {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
   runHotelDeadlineGapScan,
+  runHorizonEdgeScan,
+  hotelReminderLeadDays,
 } = require('../mc/travel-coverage-lib');
 
 function todayYmd() {
@@ -190,6 +192,18 @@ module.exports = async function handler(req, res) {
     horizonWeeks,
   });
   await runStaleDriveTimeScan({ sb, existingPending, inserted, drives, notes });
+  await runHorizonEdgeScan({
+    sb,
+    existingPending,
+    inserted,
+    notes,
+    today,
+    addDaysYmd,
+    habitEdgeWeeks: Number(ruleMap.habit_horizon_edge_weeks || 4),
+    travelEdgeWeeks: Number(ruleMap.travel_horizon_edge_weeks || 4),
+    habitHorizonWeeks: Number(ruleMap.habit_horizon_weeks || 13),
+    travelHorizonWeeks: horizonWeeks,
+  });
   const currentKeys = new Set(events.map((e) => e.row_key));
 
   let prev = [];
@@ -349,25 +363,29 @@ module.exports = async function handler(req, res) {
 
   const horizon = addDaysYmd(today, 30);
   const hotels = await sb(
-    `workshop_hotels?free_cancel_until=gte.${today}&free_cancel_until=lte.${horizon}&reminder_placed=eq.false`,
+    `workshop_hotels?free_cancel_until=gte.${today}&free_cancel_until=lte.${horizon}&reminder_placed=eq.false&select=*`,
   );
-  const remindDays = Number(ruleMap.hotel_deadline_reminder_days || 3);
+  const fallbackRemind = Number(ruleMap.hotel_deadline_reminder_days || 3);
   for (const hotel of hotels || []) {
     if (!hotel.free_cancel_until) continue;
     const relatedId = `hotel:${hotel.id}:${hotel.free_cancel_until}`;
     if (await existingPending('hotel_deadline', relatedId)) continue;
+    const remindDays = hotelReminderLeadDays(hotel, fallbackRemind);
     const daysLeft = Math.round(
       (new Date(`${hotel.free_cancel_until}T12:00:00Z`) - new Date(`${today}T12:00:00Z`)) / 86400000,
     );
     const remindOn = addDaysYmd(hotel.free_cancel_until, -remindDays);
     const urgency = daysLeft <= 7 ? 'high' : 'normal';
+    const policyNote = hotel.cancellation_policy === 'release_window'
+      ? ' RELEASE decision (not fixed cancel).'
+      : '';
     const row = await sb('pending_diary_changes', {
       method: 'POST',
       body: {
         change_type: 'hotel_deadline',
         target_date: hotel.free_cancel_until,
         summary: `Hotel free-cancel ${hotel.free_cancel_until}: ${hotel.hotel || hotel.workshop_name}`,
-        proposed_action: `Place ${ruleMap.title_prefix_deadline || 'MC ⏰'} reminder on ${remindOn} (deadline−${remindDays}). Workshop: ${hotel.workshop_name}. Ref: ${hotel.booking_ref || '—'}. Then set reminder_placed=true on hotel row.`,
+        proposed_action: `Place ${ruleMap.title_prefix_deadline || 'MC ⏰'} reminder on ${remindOn} (deadline−${remindDays}${hotel.reminder_lead_days != null ? ' override' : hotel.cancellation_window_days != null ? ` from window ${hotel.cancellation_window_days}d` : ''}). Workshop: ${hotel.workshop_name}. Ref: ${hotel.booking_ref || '—'}.${policyNote} Then set reminder_placed=true on hotel row.`,
         reason: 'Free cancel within 30 days; reminder_placed=false',
         urgency,
         status: 'pending',
