@@ -121,16 +121,22 @@ function main() {
       }
       console.log('=== end — token was NOT saved to any file ===');
       console.log('');
-      server.close();
-      process.exit(0);
+      console.log('Copy GMAIL_REFRESH_TOKEN into Vercel, then close this window.');
+      // Delay exit so the HTTP response finishes (avoids libuv assert on Windows).
+      setTimeout(() => {
+        try { server.close(); } catch (_) { /* ignore */ }
+        process.exit(0);
+      }, 500);
     } catch (e) {
       console.error(e.message || e);
       try {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Token exchange failed — see terminal');
       } catch (_) { /* ignore */ }
-      server.close();
-      process.exit(1);
+      setTimeout(() => {
+        try { server.close(); } catch (_) { /* ignore */ }
+        process.exit(1);
+      }, 500);
     }
   });
 

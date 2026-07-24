@@ -1,12 +1,17 @@
 {
   "version": 2,
   "functions": {
-    "api/cron/diary-drift.js": { "maxDuration": 60 }
+    "api/cron/diary-drift.js": { "maxDuration": 60 },
+    "api/cron/hotel-source-reconcile.js": { "maxDuration": 300 }
   },
   "crons": [
     {
       "path": "/api/cron/diary-drift",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/hotel-source-reconcile",
+      "schedule": "30 6 * * 1"
     }
   ],
   "rewrites": [
