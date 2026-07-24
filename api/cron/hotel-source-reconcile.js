@@ -4,7 +4,9 @@
  * Separate from diary-drift (Gmail outage must not kill habit/travel detection).
  */
 const { json, sb } = require('../mc/_lib');
-const { gmailConfigured, getAccessToken, listLabelMessageIds, getMessage } = require('../mc/gmail-lib');
+const {
+  gmailConfigured, gmailEnvFlags, getAccessToken, listLabelMessageIds, getMessage,
+} = require('../mc/gmail-lib');
 const { parseHotelMessage, refsMatch, costMismatch, normalizeRef } = require('../mc/hotel-parse-lib');
 
 const DEFAULT_LABEL = 'Label_209';
@@ -50,7 +52,11 @@ module.exports = async function handler(req, res) {
     return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
   }
   if (!gmailConfigured()) {
-    return json(res, 503, { error: 'GMAIL_NOT_CONFIGURED' });
+    return json(res, 503, {
+      error: 'GMAIL_NOT_CONFIGURED',
+      env_present: gmailEnvFlags(),
+      hint: 'Add GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN on Vercel project apps-dashboard-lilac, then Redeploy',
+    });
   }
 
   const labelId = process.env.GMAIL_HOTEL_LABEL_ID || DEFAULT_LABEL;

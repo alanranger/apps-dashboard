@@ -5,12 +5,19 @@
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1';
 
+function gmailEnvFlags() {
+  return {
+    GMAIL_CLIENT_ID: !!process.env.GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET: !!process.env.GMAIL_CLIENT_SECRET,
+    GMAIL_REFRESH_TOKEN: !!process.env.GMAIL_REFRESH_TOKEN,
+    GMAIL_USER: !!process.env.GMAIL_USER,
+    GMAIL_HOTEL_LABEL_ID: !!process.env.GMAIL_HOTEL_LABEL_ID,
+  };
+}
+
 function gmailConfigured() {
-  return !!(
-    process.env.GMAIL_CLIENT_ID
-    && process.env.GMAIL_CLIENT_SECRET
-    && process.env.GMAIL_REFRESH_TOKEN
-  );
+  const f = gmailEnvFlags();
+  return !!(f.GMAIL_CLIENT_ID && f.GMAIL_CLIENT_SECRET && f.GMAIL_REFRESH_TOKEN);
 }
 
 async function getAccessToken() {
@@ -126,6 +133,7 @@ async function getMessage(accessToken, id) {
 
 module.exports = {
   gmailConfigured,
+  gmailEnvFlags,
   getAccessToken,
   listLabelMessageIds,
   getMessage,
