@@ -7,7 +7,9 @@ const { json, sb } = require('../mc/_lib');
 const {
   gmailConfigured, gmailEnvFlags, getAccessToken, listLabelMessageIds, getMessage,
 } = require('../mc/gmail-lib');
-const { parseHotelMessage, refsMatch, costMismatch, normalizeRef } = require('../mc/hotel-parse-lib');
+const {
+  parseHotelMessage, refsMatch, costMismatch, nameMismatch, normalizeRef, hotelNamesMatch,
+} = require('../mc/hotel-parse-lib');
 
 const DEFAULT_LABEL = 'Label_209';
 const MAX_MESSAGES = 120;
@@ -37,6 +39,20 @@ async function insertPending(inserted, row) {
 function findHotelByRef(hotels, ref) {
   if (!ref) return null;
   return (hotels || []).find((h) => h.booking_ref && refsMatch(h.booking_ref, ref)) || null;
+}
+
+/** Fallback when ref shape is unfamiliar — only if exactly one candidate. */
+function findHotelSoft(hotels, parsed) {
+  const from = String(parsed.from || '').toLowerCase();
+  const ravenstoneMail = /ravenstonemanor\.co\.uk|high-level-software/i.test(from)
+    || /ravenstone/i.test(parsed.subject || '');
+  const candidates = (hotels || []).filter((h) => {
+    if (!h.hotel && !h.workshop_name) return false;
+    if (ravenstoneMail && /ravenstone/i.test(`${h.hotel} ${h.workshop_name}`)) return true;
+    if (parsed.hotel_hint && hotelNamesMatch(parsed.hotel_hint, h.hotel || h.workshop_name)) return true;
+    return false;
+  });
+  return candidates.length === 1 ? candidates[0] : null;
 }
 
 module.exports = async function handler(req, res) {
@@ -120,19 +136,20 @@ module.exports = async function handler(req, res) {
         hit = findHotelByRef(hotels, ref);
         if (hit) break;
       }
+      if (!hit) hit = findHotelSoft(hotels, p);
 
       if (hit) {
         matchedHotelIds.add(hit.id);
+        // Soft-matched rows: mark confirmed only — skip detail mismatch (ref was weak)
+        const softOnly = !p.refs.some((r) => hit.booking_ref && refsMatch(hit.booking_ref, r));
+        if (softOnly) continue;
+
         const mismatches = [];
         if (costMismatch(hit.total_cost, p.amount)) {
           mismatches.push(`cost DB £${hit.total_cost} vs email £${p.amount}`);
         }
-        if (p.hotel_hint && hit.hotel && !String(hit.hotel).toLowerCase().includes(String(p.hotel_hint).toLowerCase().slice(0, 12))
-          && !String(p.hotel_hint).toLowerCase().includes(String(hit.hotel).toLowerCase().slice(0, 12))) {
-          // soft name check — only if both look specific
-          if (p.hotel_hint.length > 8 && hit.hotel.length > 8) {
-            mismatches.push(`name DB "${hit.hotel}" vs email hint "${p.hotel_hint}"`);
-          }
+        if (nameMismatch(hit.hotel, p.hotel_hint, p.subject)) {
+          mismatches.push(`name DB "${hit.hotel}" vs email hint "${p.hotel_hint}"`);
         }
         if (mismatches.length) {
           counts.mismatch += 1;
@@ -150,9 +167,15 @@ module.exports = async function handler(req, res) {
         continue;
       }
 
-      // Unregistered confirmation (needs a ref so we don't flood on newsletters)
-      if (p.primary_ref && p.parse_ok) {
-        const key = normalizeRef(p.primary_ref);
+      // Unregistered: booking.com-style numeric / BDC only — skip cancel/noise threads
+      const sub = String(p.subject || '').toLowerCase();
+      if (/cancell|disruption|action required|request sent|you have a message|confirm to cancel/i.test(sub)) {
+        continue;
+      }
+      // booking.com confirmation numbers are 10 digits; 11–12 digit IDs in threads are noise
+      const unregRef = (p.refs || []).find((r) => /^\d{10}$/.test(r) || /^BDC/i.test(r));
+      if (unregRef && p.parse_ok) {
+        const key = normalizeRef(unregRef);
         if (seenUnreg.has(key)) continue;
         seenUnreg.add(key);
         counts.unregistered += 1;
@@ -160,7 +183,7 @@ module.exports = async function handler(req, res) {
           change_type: 'hotel_booking_unregistered',
           target_date: null,
           summary: `Gmail booking not in workshop_hotels: ${p.hotel_hint || p.subject.slice(0, 80)}`,
-          proposed_action: `Add workshop_hotels row for ref ${p.primary_ref}${p.amount != null ? ` (£${p.amount})` : ''}. Subject: ${p.subject}. From: ${p.from}.`,
+          proposed_action: `Add workshop_hotels row for ref ${unregRef}${p.amount != null ? ` (£${p.amount})` : ''}. Subject: ${p.subject}. From: ${p.from}.`,
           reason: `Confirmation in label ${labelId}; no booking_ref match`,
           urgency: 'high',
           status: 'pending',
