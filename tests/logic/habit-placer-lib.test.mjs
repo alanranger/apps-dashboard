@@ -12,6 +12,8 @@ const {
   londonYmdHmToUtcMs,
   habitGapTier,
   requiredGapMins,
+  datedTasksToIntervals,
+  findTaskBumps,
 } = require('../../api/mc/habit-placer-lib.js');
 
 const rules = {
@@ -213,6 +215,40 @@ describe('habit-placer-lib — tiered gaps', () => {
     const gap = (Date.parse(sorted[1].startIso) - Date.parse(sorted[0].endIso)) / 60000;
     assert.ok(gap >= 15, `gap ${gap}`);
     const proof = provePlacement(placements, [], [], rules);
+    assert.equal(proof.ok, true, proof.fails.join('; '));
+  });
+});
+
+describe('habit-placer-lib — dated tasks', () => {
+  it('pinned tasks are hard busy; unpinned become bumps when habit overlaps', () => {
+    const tasks = [
+      {
+        display_id: 8, title: 'Rev-weighting', state: 'todo', slot_pinned: false,
+        scheduled_start: '2026-08-11T10:00:00+01:00', scheduled_end: '2026-08-11T12:00:00+01:00',
+      },
+      {
+        display_id: 99, title: 'Pinned', state: 'todo', slot_pinned: true,
+        scheduled_start: '2026-08-11T14:00:00+01:00', scheduled_end: '2026-08-11T15:00:00+01:00',
+      },
+    ];
+    const soft = datedTasksToIntervals(tasks, { pinnedOnly: false });
+    const pinned = datedTasksToIntervals(tasks, { pinnedOnly: true });
+    assert.equal(soft.length, 1);
+    assert.equal(pinned.length, 1);
+
+    const habit = {
+      id: 'hx', title: 'BAU global refresh — Day 1', priority: 'p1', duration_min: 60,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    };
+    const { placements } = placeHabits(
+      [habit], [], pinned.slice(), rules, holidays, '2026-08-11', '2026-08-11',
+    );
+    assert.equal(placements.length, 1);
+    const bumps = findTaskBumps(placements, soft);
+    assert.equal(bumps.length, 1);
+    assert.equal(bumps[0].display_id, 8);
+    const proof = provePlacement(placements, pinned, [], rules, { softTaskIntervals: soft, bumps });
     assert.equal(proof.ok, true, proof.fails.join('; '));
   });
 });

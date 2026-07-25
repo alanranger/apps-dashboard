@@ -3,17 +3,9 @@
  */
 const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
 const {
-  buildBusyIntervals, placeHabits, buildAmendments, provePlacement, londonYmdHmToUtcMs,
+  buildBusyIntervals, datedTasksToIntervals, findTaskBumps,
+  placeHabits, buildAmendments, provePlacement,
 } = require('./habit-placer-lib');
-
-function hmLabel(mins) {
-  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
-}
-
-function parseHm(hm) {
-  const [h, m] = String(hm || '10:00').slice(0, 5).split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
-}
 
 function londonHm(iso) {
   try {
@@ -29,7 +21,7 @@ function relatedId(habitId, idealDate) {
   return `habit_place:${habitId}:${idealDate}`;
 }
 
-/** Existing keyed habit blocks from recurring_log (+ GCal times when available). */
+/** Existing keyed habit blocks — calendar event times only (live diary = truth). */
 function loadExistingFromLog(logs, habits, gcalEvents) {
   const habitById = new Map((habits || []).map((h) => [h.id, h]));
   const byEvent = new Map();
@@ -44,18 +36,10 @@ function loadExistingFromLog(logs, habits, gcalEvents) {
     const habit = habitById.get(row.recurring_task_id);
     if (!habit) continue;
     const ev = byEvent.get(row.calendar_event_id);
-    let startIso;
-    let endIso;
-    if (ev?.start?.dateTime) {
-      startIso = new Date(ev.start.dateTime).toISOString();
-      endIso = new Date(ev.end?.dateTime || ev.start.dateTime).toISOString();
-    } else {
-      const day = row.scheduled_date || row.ideal_date;
-      const startMin = parseHm(habit.ideal_time || '10:00');
-      const dur = Number(habit.duration_min) || 60;
-      startIso = new Date(londonYmdHmToUtcMs(day, hmLabel(startMin))).toISOString();
-      endIso = new Date(londonYmdHmToUtcMs(day, hmLabel(startMin + dur))).toISOString();
-    }
+    // Mid-apply / regen: skip log rows whose event is missing from live GCal.
+    if (!ev?.start?.dateTime) continue;
+    const startIso = new Date(ev.start.dateTime).toISOString();
+    const endIso = new Date(ev.end?.dateTime || ev.start.dateTime).toISOString();
     best.set(k, {
       habit_id: row.recurring_task_id,
       title: habit.title,
@@ -109,6 +93,19 @@ function amendmentToPending(a) {
   return null;
 }
 
+function bumpToPending(b) {
+  return {
+    change_type: 'task_bump',
+    target_date: isoToLondonDate(b.task_start) || b.habit_day,
+    urgency: 'medium',
+    status: 'pending',
+    related_id: `task_bump:MC-${b.display_id}:${b.habit_day}`,
+    summary: `Bump MC-${b.display_id}: yields to habit "${b.habit_title}"`,
+    proposed_action: `MOVE MC-${b.display_id} ("${String(b.title || '').replace(/^MC-\d+\s*/, '')}") off ${londonHm(b.task_start)}–${londonHm(b.task_end)} — habit "${b.habit_title}" owns ${b.habit_day} ${londonHm(b.habit_start)}–${londonHm(b.habit_end)}. Pick a free gap the same day or next schedulable day.`,
+    reason: 'Habits outrank dated tasks (unpinned); task must yield — not silent overlap',
+  };
+}
+
 /**
  * Run placer + amendments; optionally insert pending rows (idempotent on related_id).
  * @returns summary for notes / spike JSON
@@ -119,20 +116,34 @@ async function runHabitPlacerPropose(ctx) {
     existingPending, inserted, writePending = true,
   } = ctx;
 
-  const [habits, deps, logs] = await Promise.all([
+  const [habits, deps, logs, taskRows] = await Promise.all([
     sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule&active=eq.true'),
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
+    sb(
+      'tasks?select=display_id,title,state,slot_pinned,scheduled_start,scheduled_end'
+      + '&scheduled_start=not.is.null'
+      + `&scheduled_start=gte.${fromYmd}T00:00:00Z`
+      + `&scheduled_start=lte.${toYmd}T23:59:59Z`
+      + '&state=not.in.(done,verified,wont_do,superseded)',
+    ),
   ]);
 
   const existing = loadExistingFromLog(logs || [], habits || [], gcalEvents || []);
   const clientBusy = buildBusyIntervals(gcalEvents || [], ruleMap);
+  const pinnedBusy = datedTasksToIntervals(taskRows || [], { pinnedOnly: true });
+  const softTasks = datedTasksToIntervals(taskRows || [], { pinnedOnly: false });
+  const hardBusy = clientBusy.concat(pinnedBusy).sort((a, b) => a.startMs - b.startMs);
+
   const { placements, unplaced } = placeHabits(
-    habits || [], deps || [], clientBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
+    habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
   );
-  const proof = provePlacement(placements, clientBusy, deps || [], ruleMap);
-  const amendmentsRaw = buildAmendments(placements, existing, fromYmd);
-  const amendments = amendmentsRaw;
+  const bumps = findTaskBumps(placements, softTasks);
+  const proof = provePlacement(placements, hardBusy, deps || [], ruleMap, {
+    softTaskIntervals: softTasks,
+    bumps,
+  });
+  const amendments = buildAmendments(placements, existing, fromYmd);
   const counts = amendments.reduce((acc, a) => {
     acc[a.action] = (acc[a.action] || 0) + 1;
     return acc;
@@ -150,6 +161,14 @@ async function runHabitPlacerPropose(ctx) {
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
     }
+    for (const b of bumps) {
+      const row = bumpToPending(b);
+      if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
+      const out = await sb('pending_diary_changes', { method: 'POST', body: row });
+      const id = Array.isArray(out) ? out[0]?.id : out?.id;
+      if (id && inserted) inserted.push(id);
+      if (id) pendingWrote += 1;
+    }
   }
 
   return {
@@ -158,6 +177,11 @@ async function runHabitPlacerPropose(ctx) {
     amendments,
     amendment_counts: counts,
     existing_matched: existing.length,
+    dated_tasks_seen: (taskRows || []).length,
+    pinned_busy: pinnedBusy.length,
+    soft_tasks: softTasks.length,
+    task_bumps: bumps,
+    task_bump_count: bumps.length,
     skipped_past: skippedPast,
     proof,
     pending_wrote: pendingWrote,

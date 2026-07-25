@@ -88,6 +88,59 @@ function buildBusyIntervals(events, ruleMap = {}) {
   return out.sort((a, b) => a.startMs - b.startMs);
 }
 
+const DONE_TASK_STATES = new Set(['done', 'verified', 'wont_do', 'superseded']);
+
+/**
+ * Dated one-off MC tasks → intervals.
+ * pinnedOnly=true → hard busy (habits flow around).
+ * pinnedOnly=false → soft (habits outrank; overlaps become bumps).
+ */
+function datedTasksToIntervals(tasks, { pinnedOnly = false } = {}) {
+  const out = [];
+  for (const t of tasks || []) {
+    if (!t?.scheduled_start || DONE_TASK_STATES.has(String(t.state || ''))) continue;
+    const pinned = t.slot_pinned === true;
+    if (pinnedOnly && !pinned) continue;
+    if (!pinnedOnly && pinned) continue;
+    const startMs = Date.parse(t.scheduled_start);
+    const endMs = Date.parse(t.scheduled_end || t.scheduled_start);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+    out.push({
+      startMs,
+      endMs,
+      summary: `MC-${t.display_id} ${t.title || ''}`.trim(),
+      display_id: t.display_id,
+      slot_pinned: pinned,
+      kind: 'dated_task',
+    });
+  }
+  return out.sort((a, b) => a.startMs - b.startMs);
+}
+
+/** Habits outrank unpinned tasks — report overlaps as bumps (task yields). */
+function findTaskBumps(placements, softTaskIntervals) {
+  const bumps = [];
+  for (const task of softTaskIntervals || []) {
+    for (const p of placements || []) {
+      if (overlaps(Date.parse(p.startIso), Date.parse(p.endIso), task.startMs, task.endMs)) {
+        bumps.push({
+          display_id: task.display_id,
+          title: task.summary,
+          task_start: new Date(task.startMs).toISOString(),
+          task_end: new Date(task.endMs).toISOString(),
+          habit_id: p.habit_id,
+          habit_title: p.title,
+          habit_day: p.day,
+          habit_start: p.startIso,
+          habit_end: p.endIso,
+        });
+        break;
+      }
+    }
+  }
+  return bumps;
+}
+
 /** Blockers before dependents; among peers, hardest-first (p0→p5). */
 function orderHabitsForPlacement(habits, deps) {
   const byId = new Map(habits.map((h) => [h.id, h]));
@@ -325,10 +378,14 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
   });
 }
 
-function provePlacement(placements, clientBusy, deps, ruleMap) {
+function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
   const fails = [];
   const { hard } = dayCapLimits(ruleMap);
   const dayUsed = {};
+  const softTasks = opts.softTaskIntervals || [];
+  const bumps = opts.bumps || findTaskBumps(placements, softTasks);
+  const bumpedIds = new Set(bumps.map((b) => Number(b.display_id)));
+
   for (let i = 0; i < placements.length; i += 1) {
     const a = placements[i];
     const aS = Date.parse(a.startIso);
@@ -337,6 +394,12 @@ function provePlacement(placements, clientBusy, deps, ruleMap) {
     for (const b of clientBusy) {
       if (overlaps(aS, aE, b.startMs, b.endMs)) {
         fails.push(`habit-client: ${a.title} @ ${a.day}`);
+      }
+    }
+    for (const t of softTasks) {
+      if (!overlaps(aS, aE, t.startMs, t.endMs)) continue;
+      if (!bumpedIds.has(Number(t.display_id))) {
+        fails.push(`habit-task-silent: ${a.title} × MC-${t.display_id}`);
       }
     }
     for (let j = i + 1; j < placements.length; j += 1) {
@@ -367,12 +430,14 @@ function provePlacement(placements, clientBusy, deps, ruleMap) {
       }
     }
   }
-  return { ok: fails.length === 0, fails };
+  return { ok: fails.length === 0, fails, bumps };
 }
 
 module.exports = {
   londonYmdHmToUtcMs,
   buildBusyIntervals,
+  datedTasksToIntervals,
+  findTaskBumps,
   orderHabitsForPlacement,
   placeHabits,
   buildAmendments,

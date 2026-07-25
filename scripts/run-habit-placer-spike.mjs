@@ -125,6 +125,7 @@ async function main() {
   console.log(`blog: ${blog?.rrule} (${blog?.cadence_text})`);
   console.log(`gaps: admin=${ruleMap.admin_gap_min}m substantial=${ruleMap.decompress_after_task_min}m`);
   console.log(`matched existing: ${result.existing_matched}`);
+  console.log(`dated tasks: ${result.dated_tasks_seen} (pinned hard ${result.pinned_busy}, soft ${result.soft_tasks}, bumps ${result.task_bump_count})`);
   console.log('amendments:', result.amendment_counts);
   console.log(`placements: ${result.placements.length}; unplaced: ${result.unplaced.length}`);
   console.log(`proof ok: ${result.proof.ok}`);

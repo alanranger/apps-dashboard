@@ -23,6 +23,7 @@ function displayChangeType(type) {
     fixture_block: 'Fixture block',
     fixture_block_retire: 'Fixture retire',
     habit_placement: 'Habit place',
+    task_bump: 'Task bump',
     missed_habit: 'Missed habit',
     hotel_deadline: 'Hotel deadline',
     cap_over_target: 'Over target',
