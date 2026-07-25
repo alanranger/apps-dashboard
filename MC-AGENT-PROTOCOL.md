@@ -95,13 +95,53 @@ Any task an agent touches gets/keeps a one-line `why` (what it unblocks or costs
 Per event: create **"Prep joining details"** due event−10 days; send deadline event−7 days; red if not done by event−5.  
 Per hotel booking: decision task due at the booking’s free-cancellation deadline −3 days (deadlines from Booking.com confirmation emails). Claude reads and creates these tasks — no Cursor Calendar build. Claude adds a **"📅 Events & residential"** project and seeds in a later pass.
 
+## Diary placement — standing law (Alan-ruled 25 Jul 2026)
+
+### Division of labour
+
+| Who | Does | Does not |
+|-----|------|----------|
+| **Cursor** | Plans slots, adjudicates, builds detectors, Supabase, repos, **routing API** (`/api/mc/drive-time` + Google Distance Matrix), calendar **READ-ONLY** | Write Google Calendar; invent business rulings |
+| **Claude** | Calendar **read and write**, Gmail, Drive, Supabase SQL | HTTP to the MC app; run deterministic diary code; **choose slots** |
+| **Alan** | Rules on unplaceable / policy | — |
+
+**Cursor plans → Claude writes → Alan rules.** Claude does not pick slots to “make it fit.”
+
+### MC blocks are OUTPUT, never INPUT
+
+> **MC-generated blocks are never part of the busy map.**
+
+Worked failure (24 Jul): a hand re-lay treated already-placed MC blocks as fixed constraints. Wrong placements became “busy,” so overlaps, zero gaps, and 240-cap breaches were faithfully preserved. Strip all MC-tied events (`tasks.calendar_event_id`, `recurring_log.calendar_event_id`, `travel_blocks.calendar_event_id`) before planning. `colorId=10` with **no** tie-back = **UNMATCHED** — list it; do not classify, delete, or plan around it.
+
+### Two independent horizons
+
+| Item type | Horizon |
+|-----------|---------|
+| Recurring tasks / habits | **6 months** rolling (`habit_horizon_weeks=26`) |
+| Workshops, lessons, travel, buffers, hotel deadline reminders / gap tasks | **Indefinite** — as far as the CSVs go (`travel_horizon_weeks=104` practical cap; `workshop_derived_horizon=indefinite`) |
+
+The busy map must extend to the **further** of the two.
+
+### Busy-map fingerprint + re-read-before-write
+
+Every placement/amendment plan returns the **exact list of real-commitment events** planned against (event id, start, end, calendar) for every day touched. Claude re-reads those days live immediately before writing. Match → apply. Differ → **that day is held** and returns to Cursor for re-planning. Claude does not adjust a slot himself.
+
+### Validator independence
+
+A validator that shares the placer’s busy-map assumption proves nothing (23 Jul: “0 overlaps” while 13 blocks sat on residentials). Assert overlaps / gaps / 240-cap **independently** of the placement pass.
+
+### Agent tool inventory (do not re-guess)
+
+- **Cursor:** calendar READ-ONLY (Google Calendar MCP), Gmail (OAuth mint + Label_209 reconcile), Supabase (`igzvwbvgvmzvvzoclufx`), git repos, **live routing** via Mission Control drive-time API / Distance Matrix, Vercel crons in `apps-dashboard`.
+- **Claude:** calendar read **and** write, Gmail, Drive handoff folders, Supabase SQL; **no** HTTP to the MC app; cannot run the Node adjudicator.
+
 ## Recurring tasks tab (Reclaim replacement)
 
 Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-calendar-mc-protocol-ruling). Mission Control stores habits in `recurring_tasks`; **no Calendar API or OAuth in apps-dashboard**.
 
-### Diary booking horizon (Alan-ruled)
+### Diary booking horizon (Alan-ruled — updated 25 Jul)
 
-Book Google Calendar busy time **28 days ahead** for active habits (not just the coming week). Place each upcoming instance in that horizon around fixed commitments, within `window_days` of `ideal_time`.
+Habits: book **6 months** ahead. Workshop-derived travel/buffers/reminders: **indefinite** (CSV span). Older “28 days” Monday-sweep text below is superseded for horizon length; the sweep still places what is due.
 
 ### Claude Monday sweep (with MC-7)
 
