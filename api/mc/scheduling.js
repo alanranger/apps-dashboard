@@ -4,12 +4,13 @@ const {
 
 async function listAll() {
   const { getScheduleSources } = require('./scheduleCsv');
-  const [rules, audit, drive_times, hotels, pending] = await Promise.all([
+  const [rules, audit, drive_times, hotels, pending, runs] = await Promise.all([
     sb('scheduling_rules?order=key.asc'),
     sb('scheduling_rules_audit?order=at.desc&limit=50'),
     sb('venue_drive_times?order=venue_name.asc'),
     sb('workshop_hotels?order=check_in_date.asc.nullslast'),
     sb('pending_diary_changes?status=eq.pending&order=detected_at.desc'),
+    sb('diary_check_runs?order=ran_at.desc&limit=1'),
   ]);
   let sources = [];
   try {
@@ -17,7 +18,28 @@ async function listAll() {
   } catch (e) {
     sources = [{ id: 'error', label: 'Schedule CSVs', ok: false, tone: 'red', display: `CSV read error: ${e.message}` }];
   }
-  return { rules, audit, drive_times, hotels, pending, sources };
+  return {
+    rules, audit, drive_times, hotels, pending, sources, last_run: runs?.[0] || null,
+  };
+}
+
+// Run the diary-drift detector in-process — the SAME handler the 06:00 cron runs,
+// so the button and the cron can never drift apart. scope: '8w' | 'full'.
+function runDiaryCheck(scope) {
+  const diaryDrift = require('../cron/diary-drift');
+  return new Promise((resolve, reject) => {
+    const mockReq = {
+      method: 'GET', query: { scope, mode: 'manual', force: '1' }, headers: {}, on: () => {},
+    };
+    const mockRes = {
+      statusCode: 200,
+      setHeader: () => {},
+      end: (s) => {
+        try { resolve(s ? JSON.parse(s) : {}); } catch (e) { resolve({ raw: s }); }
+      },
+    };
+    Promise.resolve(diaryDrift(mockReq, mockRes)).catch(reject);
+  });
 }
 
 async function patchRule(key, value, actor) {
@@ -56,6 +78,7 @@ async function patchHotel(id, body) {
     'workshop_name', 'workshop_dates', 'hotel', 'booking_ref', 'booked_via',
     'rooms', 'total_cost', 'free_cancel_until', 'check_in_date', 'notes', 'reminder_placed',
     'cancellation_window_days', 'cancellation_policy', 'reminder_lead_days',
+    'status', 'cancelled_at',
   ];
   for (const f of fields) {
     if (Object.prototype.hasOwnProperty.call(body, f)) patch[f] = body[f];
@@ -111,7 +134,11 @@ module.exports = async function handler(req, res) {
         if (!body.id || !body.status) return json(res, 400, { error: 'id and status required' });
         return json(res, 200, { pending: await resolvePending(body.id, body.status, actor) });
       }
-      return json(res, 400, { error: 'entity required: rule|drive|hotel|pending' });
+      if (body.entity === 'run_check') {
+        const scope = body.scope === 'full' ? 'full' : '8w';
+        return json(res, 200, { run: await runDiaryCheck(scope) });
+      }
+      return json(res, 400, { error: 'entity required: rule|drive|hotel|pending|run_check' });
     }
 
     return json(res, 405, { error: 'method not allowed' });

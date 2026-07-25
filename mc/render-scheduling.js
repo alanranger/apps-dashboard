@@ -12,6 +12,64 @@ function urgencyClass(u) {
   return u === 'high' ? 'sched-urgent' : '';
 }
 
+function fmtRunTime(iso) {
+  if (!iso) return 'never';
+  try {
+    return new Date(iso).toLocaleString('en-GB', {
+      timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short',
+    });
+  } catch (e) {
+    return String(iso);
+  }
+}
+
+function sourcesHealthLine(run) {
+  const h = run?.sources_health;
+  if (!h) return 'no source data recorded';
+  const csv = Array.isArray(h.csv) ? h.csv : [];
+  const okCount = csv.filter((s) => s.ok).length;
+  const parts = [];
+  if (csv.length) parts[parts.length] = `${okCount}/${csv.length} CSV sources ok`;
+  if (h.holidays) {
+    const tone = h.holidays === 'ok' ? '' : ' sched-src-red';
+    parts[parts.length] = `<span class="sched-health${tone}">holidays: ${esc(h.holidays)}</span>`;
+  }
+  if (h.calendars) {
+    const ok = String(h.calendars).includes('ok') && !String(h.calendars).includes('error')
+      && !String(h.calendars).includes('not configured');
+    const tone = ok ? '' : ' sched-src-red';
+    parts[parts.length] = `<span class="sched-health${tone}">calendars: ${esc(h.calendars)}</span>`;
+  }
+  return parts.join(' · ') || 'no source data recorded';
+}
+
+function runReadout(run) {
+  const when = run ? `${fmtRunTime(run.ran_at)} · ${esc(run.mode || 'auto')}` : 'never run';
+  const covered = run && run.covered_from
+    ? `${fmtDate(run.covered_from)} → ${fmtDate(run.covered_to)} · ${run.blocks_adjudicated ?? 0} blocks`
+    : '—';
+  return `<div class="card sched-runpanel">
+    <div class="rec-head">
+      <div>
+        <h2><i class="ti ti-radar"></i> Diary check</h2>
+        <p class="meta">The 06:00 cron and this button run the <strong>same</strong> detector. Findings go to the pending list — never a direct calendar write.</p>
+      </div>
+      <div class="sched-run-controls">
+        <select id="schedScope" aria-label="Check scope">
+          <option value="8w">Next 8 weeks</option>
+          <option value="full">Full horizon</option>
+        </select>
+        <button type="button" class="btn-verify" id="schedRunCheck">Run check now</button>
+      </div>
+    </div>
+    <div class="sched-readout">
+      <div><span class="meta">Last run</span><strong>${when}</strong></div>
+      <div><span class="meta">Covered</span><strong>${covered}</strong></div>
+      <div><span class="meta">Sources</span><strong>${sourcesHealthLine(run)}</strong></div>
+    </div>
+  </div>`;
+}
+
 function copyInstructionBlock(pending) {
   const lines = [
     'DIARY APPLY INSTRUCTIONS (from Mission Control Scheduling tab)',
@@ -82,9 +140,15 @@ export async function renderScheduling() {
       <td><button type="button" class="btn-secondary" data-drive-save="${d.id}">Save</button></td>
     </tr>`).join('');
 
+  const statusTone = { cancelled: 'sched-src-red', awaiting_booking: 'sched-src-amber' };
+  const statusPill = (s) => {
+    const v = s || 'active';
+    return `<span class="pill ${statusTone[v] || ''}">${esc(v)}</span>`;
+  };
   const hotelRows = hotels.map((h) => `<tr>
       <td><strong>${esc(h.workshop_name)}</strong><div class="meta">${esc(h.workshop_dates || '')}</div></td>
       <td>${esc(h.hotel || '—')}</td>
+      <td>${statusPill(h.status)}${h.cancelled_at ? `<div class="meta">${fmtDate(h.cancelled_at)}</div>` : ''}</td>
       <td>${esc(h.booking_ref || '—')}</td>
       <td>${esc(h.booked_via || '—')}</td>
       <td>${h.free_cancel_until ? fmtDate(h.free_cancel_until) : '—'}</td>
@@ -94,6 +158,7 @@ export async function renderScheduling() {
 
   el.innerHTML = `
     ${sourceBanner}
+    ${runReadout(cache.last_run)}
     <div class="card">
       <div class="rec-head">
         <div>
@@ -131,7 +196,7 @@ export async function renderScheduling() {
       <h2>Hotel register</h2>
       <p class="meta">Direct-booked venues never appear in booking.com searches. Gower: see MC-42 — Gower workshop reschedule.</p>
       <div class="rec-table-wrap"><table class="rec-table">
-        <thead><tr><th>Workshop</th><th>Hotel</th><th>Ref</th><th>Via</th><th>Free cancel</th><th>Reminder</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Workshop</th><th>Hotel</th><th>Status</th><th>Ref</th><th>Via</th><th>Free cancel</th><th>Reminder</th><th>Notes</th></tr></thead>
         <tbody>${hotelRows}</tbody>
       </table></div>
     </div>`;
@@ -145,6 +210,24 @@ export async function renderScheduling() {
       prompt('Copy this block:', text);
     }
   };
+
+  const runBtn = $('schedRunCheck');
+  if (runBtn) {
+    runBtn.onclick = async () => {
+      const scope = $('schedScope')?.value === 'full' ? 'full' : '8w';
+      const label = runBtn.textContent;
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running…';
+      try {
+        await api('/api/mc/scheduling', { method: 'PATCH', body: { entity: 'run_check', scope } });
+        await renderScheduling();
+      } catch (err) {
+        runBtn.disabled = false;
+        runBtn.textContent = label;
+        alert(`Check failed: ${err.message || err}`);
+      }
+    };
+  }
 }
 
 export async function handleSchedulingClick(e, onSave) {

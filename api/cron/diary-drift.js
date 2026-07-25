@@ -5,14 +5,25 @@
 const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
 const { ruleMapFromRows, holidaySetFromRows } = require('../mc/scheduling-rules-lib');
-const { buildRuleBreachProposals } = require('../mc/rule-breach-lib');
+const { buildRuleBreachProposals, splitMcAndBusy } = require('../mc/rule-breach-lib');
+const { gcalConfigured, fetchHorizonEvents } = require('../mc/gcal-lib');
 const {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
   runHotelDeadlineGapScan,
   runHorizonEdgeScan,
+  runPendingRetirement,
   hotelReminderLeadDays,
 } = require('../mc/travel-coverage-lib');
+
+async function insertProposals(proposals, inserted) {
+  for (const p of proposals) {
+    if (await existingPending(p.change_type, p.related_id)) continue;
+    const row = await sb('pending_diary_changes', { method: 'POST', body: { ...p, status: 'pending' } });
+    const id = Array.isArray(row) ? row[0]?.id : row?.id;
+    if (id) inserted.push(id);
+  }
+}
 
 function todayYmd() {
   return new Date().toISOString().slice(0, 10);
@@ -152,13 +163,21 @@ module.exports = async function handler(req, res) {
   const rules = await sb('scheduling_rules?select=key,value');
   const ruleMap = Object.fromEntries((rules || []).map((r) => [r.key, r.value]));
   const maxRolls = Number(ruleMap.missed_habit_max_rolls || 3);
-  const horizonWeeks = Number(ruleMap.travel_horizon_weeks || 12);
+  // Scope: the 06:00 cron (no scope) and the Scheduling-tab button call THIS same
+  // endpoint. scope=8w → next 8 weeks; scope=full → travel horizon; default → cron horizon.
+  const q = req.query || {};
+  const scope = String(q.scope || '').toLowerCase();
+  const defaultWeeks = Number(ruleMap.travel_horizon_weeks || 12);
+  const scopeWeeks = scope === '8w' ? 8 : (scope === 'full' ? defaultWeeks : null);
+  const runMode = q.mode === 'manual' ? 'manual' : 'auto';
+  const horizonWeeks = scopeWeeks || defaultWeeks;
   const horizonEnd = addDaysYmd(today, horizonWeeks * 7);
 
   // Bank-holiday source health. A holiday input that returns 0 rows over the
   // scheduling horizon is a FAULT (empty is indistinguishable from "no holidays"),
   // not a clean pass — the exact hole that let exclude_bank_holidays sit dead.
   let holidaySet = null;
+  let holidaysHealth = 'n/a';
   if (ruleMap.exclude_bank_holidays === 'true') {
     let bhRows = [];
     try {
@@ -186,10 +205,15 @@ module.exports = async function handler(req, res) {
       }
       notes.push('bank_holidays: EMPTY over horizon — source_empty fault raised; using computed fallback');
       holidaySet = null;
+      holidaysHealth = 'no data';
     } else {
       notes.push(`bank_holidays: ${holidaySet.size} in horizon (${today}..${horizonEnd})`);
+      holidaysHealth = 'ok';
     }
   }
+
+  // Retire pending rows whose underlying condition has since closed.
+  await runPendingRetirement({ sb, inserted, notes });
   const homePc = ruleMap.home_postcode || 'CV4 9HW';
   const bufferScope = ruleMap.buffer_scope || 'home_only';
   const prepMin = Number(ruleMap.prep_buffer_min || 30);
@@ -399,11 +423,12 @@ module.exports = async function handler(req, res) {
 
   const horizon = addDaysYmd(today, 30);
   const hotels = await sb(
-    `workshop_hotels?free_cancel_until=gte.${today}&free_cancel_until=lte.${horizon}&reminder_placed=eq.false&select=*`,
+    `workshop_hotels?status=eq.active&free_cancel_until=gte.${today}&free_cancel_until=lte.${horizon}&reminder_placed=eq.false&select=*`,
   );
   const fallbackRemind = Number(ruleMap.hotel_deadline_reminder_days || 3);
   for (const hotel of hotels || []) {
     if (!hotel.free_cancel_until) continue;
+    if (hotel.status && hotel.status !== 'active') continue;
     const relatedId = `hotel:${hotel.id}:${hotel.free_cancel_until}`;
     if (await existingPending('hotel_deadline', relatedId)) continue;
     const remindDays = hotelReminderLeadDays(hotel, fallbackRemind);
@@ -441,8 +466,11 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Part 6: rule_breach — Claude POSTs block list (cron has no Calendar access)
+  // Part 6: rule_breach — prefer Calendar readonly fetch; POST body still accepted.
   let blocks = [];
+  let busyEvents = [];
+  let calendarsHealth = 'not configured';
+  let mcAdjudicated = 0;
   if (req.method === 'POST') {
     try {
       const raw = await new Promise((resolve, reject) => {
@@ -452,30 +480,75 @@ module.exports = async function handler(req, res) {
         req.on('error', reject);
       });
       blocks = Array.isArray(raw?.blocks) ? raw.blocks : [];
-    } catch (e) { /* GET cron — no blocks */ }
+      busyEvents = Array.isArray(raw?.busy) ? raw.busy : [];
+    } catch (e) { /* ignore body parse */ }
   }
+  if (!blocks.length && gcalConfigured()) {
+    try {
+      const timeMin = `${today}T00:00:00Z`;
+      const timeMax = `${horizonEnd}T23:59:59Z`;
+      const { events: calEvents, health } = await fetchHorizonEvents(timeMin, timeMax);
+      const split = splitMcAndBusy(calEvents, ruleMap);
+      blocks = split.mc;
+      busyEvents = split.busy;
+      const ok = health.filter((h) => h.ok).length;
+      calendarsHealth = health.some((h) => !h.ok) ? `${ok}/${health.length} calendars ok` : `${ok} calendars ok`;
+      notes.push(`gcal: fetched ${calEvents.length} events → ${blocks.length} MC / ${busyEvents.length} busy`);
+    } catch (e) {
+      calendarsHealth = 'error';
+      notes.push(`gcal_fetch_error: ${e.message}`);
+    }
+  } else if (!blocks.length) {
+    calendarsHealth = 'not configured';
+    notes.push('rule_breach: skipped (GCAL_* env not set — mint via scripts/gcal-mint-refresh-token.cjs)');
+  }
+
   if (blocks.length) {
     const pinnedIds = new Set();
     const pinned = await sb('tasks?select=display_id&slot_pinned=eq.true');
     for (const t of pinned || []) pinnedIds.add(Number(t.display_id));
-    const proposals = buildRuleBreachProposals(blocks, ruleMap, pinnedIds, holidaySet);
-    for (const p of proposals) {
-      if (await existingPending('rule_breach', p.related_id)) continue;
-      const row = await sb('pending_diary_changes', { method: 'POST', body: { ...p, status: 'pending' } });
-      const id = Array.isArray(row) ? row[0]?.id : row?.id;
-      if (id) inserted.push(id);
-    }
-    notes.push(`rule_breach: ${proposals.length} proposal(s) from ${blocks.length} block(s)`);
-  } else {
-    notes.push('rule_breach: skipped (no blocks — Claude POSTs block list to /api/cron/diary-drift or /api/mc/rule-breach-check)');
+    const proposals = buildRuleBreachProposals(blocks, ruleMap, pinnedIds, holidaySet, busyEvents);
+    mcAdjudicated = blocks.length;
+    await insertProposals(proposals, inserted);
+    notes.push(`rule_breach: ${proposals.length} proposal(s) from ${blocks.length} MC block(s)`);
+  }
+
+  // Record the run so the Scheduling panel can show last-run + coverage + source health.
+  const sourcesHealth = {
+    csv: sources.map((s) => ({ id: s.id, ok: s.ok, age_days: s.age_days ?? null })),
+    holidays: holidaysHealth,
+    calendars: calendarsHealth,
+  };
+  let runId = null;
+  try {
+    const runRow = await sb('diary_check_runs', {
+      method: 'POST',
+      body: {
+        mode: runMode,
+        scope: scope || 'default',
+        covered_from: today,
+        covered_to: horizonEnd,
+        blocks_adjudicated: mcAdjudicated || inHorizon.length,
+        inserted_count: inserted.length,
+        sources_health: sourcesHealth,
+      },
+    });
+    runId = Array.isArray(runRow) ? runRow[0]?.id : runRow?.id;
+  } catch (e) {
+    notes.push(`diary_check_run_write_error: ${e.message}`);
   }
 
   return json(res, 200, {
     ok: true,
     today,
+    run_id: runId,
+    mode: runMode,
+    scope: scope || 'default',
+    covered: { from: today, to: horizonEnd, weeks: horizonWeeks },
     inserted: inserted.length,
     ids: inserted,
     sources,
+    sources_health: sourcesHealth,
     events_total: events.length,
     events_in_horizon: inHorizon.length,
     errors: errors.map((e) => ({ id: e.id, error: e.error })),

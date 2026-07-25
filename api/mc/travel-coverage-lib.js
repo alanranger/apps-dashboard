@@ -123,7 +123,7 @@ async function runHotelDeadlineGapScan(ctx) {
   const { sb, existingPending, inserted, notes } = ctx;
   let hotels = [];
   try {
-    hotels = await sb('workshop_hotels?select=id,workshop_name,hotel,booking_ref,free_cancel_until') || [];
+    hotels = await sb('workshop_hotels?select=id,workshop_name,hotel,booking_ref,free_cancel_until,status') || [];
   } catch (e) {
     notes.push(`hotel_deadline_gap_read_error: ${e.message}`);
     return;
@@ -131,6 +131,8 @@ async function runHotelDeadlineGapScan(ctx) {
   let n = 0;
   for (const h of hotels) {
     const booked = !!(h.hotel || h.booking_ref);
+    // cancelled = kept for history; awaiting_booking = empty row is expected.
+    if (h.status && h.status !== 'active') continue;
     if (!booked || h.free_cancel_until) continue;
     const relatedId = `hotel_gap:${h.id}`;
     await insertPending(sb, existingPending, inserted, {
@@ -146,6 +148,56 @@ async function runHotelDeadlineGapScan(ctx) {
     n += 1;
   }
   notes.push(`hotel_deadline_gap_scan: ${n} hotel(s)`);
+}
+
+/**
+ * Re-test the condition behind each pending row and auto-retire the ones whose
+ * gap has closed (status resolved_externally, not deleted). A row otherwise only
+ * clears on an explicit Apply/Dismiss, so a self-fixed problem sat there forever.
+ * Only types with a cheap, reliable re-test are retired; anything else is left.
+ */
+async function runPendingRetirement(ctx) {
+  const { sb, inserted, notes } = ctx;
+  let pending = [];
+  let hotels = [];
+  try {
+    pending = await sb('pending_diary_changes?status=eq.pending&select=id,change_type,related_id') || [];
+    hotels = await sb('workshop_hotels?select=id,hotel,booking_ref,free_cancel_until,reminder_placed,status') || [];
+  } catch (e) {
+    notes.push(`pending_retirement_read_error: ${e.message}`);
+    return;
+  }
+  const hotelById = new Map(hotels.map((h) => [h.id, h]));
+  const resolvers = {
+    hotel_deadline_gap: (rid) => {
+      const h = hotelById.get(String(rid).replace('hotel_gap:', ''));
+      if (!h) return 'hotel row removed';
+      if (h.status && h.status !== 'active') return `status=${h.status}`;
+      if (h.free_cancel_until) return 'free_cancel_until now set';
+      if (!(h.hotel || h.booking_ref)) return 'no longer booked';
+      return null;
+    },
+    hotel_deadline: (rid) => {
+      const h = hotelById.get(String(rid).split(':')[1]);
+      if (!h) return 'hotel row removed';
+      if (h.status && h.status !== 'active') return `status=${h.status}`;
+      if (h.reminder_placed) return 'reminder now placed';
+      return null;
+    },
+  };
+  let retired = 0;
+  for (const p of pending) {
+    const resolver = resolvers[p.change_type];
+    const why = resolver ? resolver(p.related_id) : null;
+    if (!why) continue;
+    await sb(`pending_diary_changes?id=eq.${p.id}`, {
+      method: 'PATCH',
+      body: { status: 'resolved_externally', resolved_at: new Date().toISOString(), resolved_by: 'detector' },
+    });
+    inserted.push(`retired:${p.id}`);
+    retired += 1;
+  }
+  notes.push(`pending_retirement: ${retired} row(s) auto-retired (resolved_externally)`);
 }
 
 function hotelReminderLeadDays(hotel, fallback = 3) {
@@ -242,6 +294,7 @@ module.exports = {
   runStaleDriveTimeScan,
   runHotelDeadlineGapScan,
   runHorizonEdgeScan,
+  runPendingRetirement,
   hotelReminderLeadDays,
   STALE_DAYS,
 };
