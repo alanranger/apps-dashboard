@@ -50,6 +50,8 @@ describe('rule_breach proposals', () => {
   it('detects starts before 10:00 on Tue 11 Aug', () => {
     const blocks = [{
       display_id: 14,
+      colorId: '10',
+      summary: 'P0 · MC 🔁 Joining Details',
       start: '2026-08-11T09:30:00+01:00',
       end: '2026-08-11T10:15:00+01:00',
     }];
@@ -62,7 +64,13 @@ describe('rule_breach proposals', () => {
   });
 
   it('skips pinned tasks', () => {
-    const blocks = [{ display_id: 14, start: '2026-08-11T09:00:00+01:00', end: '2026-08-11T09:45:00+01:00' }];
+    const blocks = [{
+      display_id: 14,
+      colorId: '10',
+      summary: 'P0 · MC 🔁 Joining Details',
+      start: '2026-08-11T09:00:00+01:00',
+      end: '2026-08-11T09:45:00+01:00',
+    }];
     const proposals = buildRuleBreachProposals(blocks, ruleMap, new Set([14]));
     assert.equal(proposals.length, 0);
   });

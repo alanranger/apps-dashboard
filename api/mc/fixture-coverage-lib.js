@@ -1,45 +1,86 @@
 /**
- * Ipswich fixture blocks — informational MC ⚽ placements. Proposals only, no
- * Calendar writes (Claude applies). The fixture_blocks table is the tie-back and
- * retirement is re-keyed on fixture_event_id every run.
+ * Ipswich fixture flank blocks — informational MC ⚽ Before / After.
+ * Proposals only (Claude applies). Tie-back: fixture_blocks.before_event_id +
+ * after_event_id. Retirement re-keys on fixture_event_id every run.
  *
- * A fixture block is NOT binding: it never displaces/blocks/flags a class or MC
- * admin and never costs a habit a roll — that guarantee lives in rule-breach-lib
- * (fixtures excluded from the busy map + MC ⚽ excluded from all breach checks).
+ * Shape (per match start S / end E from the live feed):
+ *   Before: S−buffer → S
+ *   After:  E → E+buffer
+ * Match itself is never duplicated (stays on Ipswich feed).
+ *
+ * Flank blocks are NOT binding: rule-breach-lib excludes MC ⚽ from breach checks.
  */
-const { isoToLondonDate } = require('./scheduling-rules-lib');
+const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
 
 function shiftIso(iso, minutes) {
   return new Date(Date.parse(iso) + minutes * 60000).toISOString();
 }
 
-/** Kick-off − buffer → stated end + buffer. */
-function blockWindow(fixture, bufferMin) {
+/** London wall-clock HH:MM for proposal text (never UTC slice). */
+function londonHm(iso) {
+  const mins = isoToLondonMinutes(iso);
+  if (mins == null) return '?';
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Two flanks + envelope. Times are ISO instants from the feed (UTC or offset OK).
+ * @returns {{ fixture_start, fixture_end, before_start, before_end, after_start, after_end, block_start, block_end }|null}
+ */
+function flankWindows(fixture, bufferMin) {
   const start = fixture.start?.dateTime || fixture.start;
   const end = fixture.end?.dateTime || fixture.end;
   if (!start || !end || !String(start).includes('T')) return null;
+  const beforeStart = shiftIso(start, -bufferMin);
+  const afterEnd = shiftIso(end, bufferMin);
   return {
     fixture_start: start,
     fixture_end: end,
-    block_start: shiftIso(start, -bufferMin),
-    block_end: shiftIso(end, bufferMin),
+    before_start: beforeStart,
+    before_end: start,
+    after_start: end,
+    after_end: afterEnd,
+    block_start: beforeStart,
+    block_end: afterEnd,
   };
 }
 
-function hm(iso) {
-  return String(iso).slice(11, 16);
+/** @deprecated use flankWindows — kept for older imports */
+function blockWindow(fixture, bufferMin) {
+  return flankWindows(fixture, bufferMin);
+}
+
+function matchLabel(fixture) {
+  return (fixture.summary || 'Ipswich fixture').replace(/^⚽️\s*/, '').trim();
 }
 
 function createAction(prefix, win, fixture) {
-  return `Create informational ${prefix} block ${win.block_start.slice(0, 10)} `
-    + `${hm(win.block_start)}–${hm(win.block_end)} for "${fixture.summary || 'Ipswich fixture'}" `
-    + '(watch at home; NOT binding — never displaces a class or MC admin, never costs a roll). '
-    + 'Then set calendar_event_id on the fixture_blocks row.';
+  const label = matchLabel(fixture);
+  const day = isoToLondonDate(win.fixture_start);
+  return `Create TWO informational ${prefix} blocks on ${day} for "${label}" `
+    + `(match itself stays on Ipswich feed — do not duplicate):\n`
+    + `1) "${prefix} Before: ${label}" ${londonHm(win.before_start)}–${londonHm(win.before_end)}\n`
+    + `2) "${prefix} After: ${label}" ${londonHm(win.after_start)}–${londonHm(win.after_end)}\n`
+    + 'NOT binding — never displaces a class or MC admin, never costs a roll. '
+    + 'Then set before_event_id + after_event_id on the fixture_blocks row.';
+}
+
+function moveAction(prefix, win, fixture) {
+  const label = matchLabel(fixture);
+  const day = isoToLondonDate(win.fixture_start);
+  return `Move BOTH ${prefix} flanks on ${day} for "${label}" to `
+    + `Before ${londonHm(win.before_start)}–${londonHm(win.before_end)} and `
+    + `After ${londonHm(win.after_start)}–${londonHm(win.after_end)} `
+    + '(kick-off/end shifted). Informational only.';
 }
 
 function timesMoved(row, win) {
-  return String(row.fixture_start) !== win.fixture_start
-    || String(row.fixture_end) !== win.fixture_end;
+  return String(row.fixture_start) !== String(win.fixture_start)
+    || String(row.fixture_end) !== String(win.fixture_end);
+}
+
+function flanksPlaced(row) {
+  return !!(row?.before_event_id && row?.after_event_id);
 }
 
 function rowBody(fixture, win, bufferMin) {
@@ -55,7 +96,6 @@ function rowBody(fixture, win, bufferMin) {
   };
 }
 
-// Insert new / update existing WITHOUT touching calendar_event_id (Claude's tie-back).
 async function writeRow(sb, fixture, row, win, bufferMin) {
   if (row) {
     await sb(`fixture_blocks?id=eq.${row.id}`, {
@@ -81,34 +121,30 @@ async function proposeCreateOrMove(ctx, fixture, row) {
   const {
     sb, existingPending, inserted, prefix, bufferMin,
   } = ctx;
-  const win = blockWindow(fixture, bufferMin);
+  const win = flankWindows(fixture, bufferMin);
   if (!win) return false;
   await writeRow(sb, fixture, row, win, bufferMin);
   const day = isoToLondonDate(win.fixture_start);
 
-  // No MC ⚽ block yet (new fixture, or a retired one reappearing after its block
-  // was deleted) → propose CREATE. Dedup on related_id keeps it to one open row.
-  if (!row || !row.calendar_event_id) {
+  if (!flanksPlaced(row)) {
     await insertPending(sb, existingPending, inserted, {
       change_type: 'fixture_block',
       target_date: day,
-      summary: `Fixture: ${fixture.summary || 'Ipswich Town'} — ${day}`,
+      summary: `Fixture flanks: ${fixture.summary || 'Ipswich Town'} — ${day}`,
       proposed_action: createAction(prefix, win, fixture),
-      reason: 'Ipswich fixture with no MC ⚽ block yet (informational)',
+      reason: 'Ipswich fixture needs MC ⚽ Before + After (informational; two blocks)',
       urgency: 'low',
       status: 'pending',
       related_id: `fixture:${fixture.id}`,
     });
     return true;
   }
-  if (row.calendar_event_id && timesMoved(row, win)) {
+  if (timesMoved(row, win)) {
     await insertPending(sb, existingPending, inserted, {
       change_type: 'fixture_block',
       target_date: day,
       summary: `Fixture moved: ${fixture.summary || 'Ipswich Town'} — ${day}`,
-      proposed_action: `Move ${prefix} block to ${win.block_start.slice(0, 10)} `
-        + `${hm(win.block_start)}–${hm(win.block_end)} (kick-off/end shifted). `
-        + 'Informational only.',
+      proposed_action: moveAction(prefix, win, fixture),
       reason: `Fixture time changed; was ${row.fixture_start}`,
       urgency: 'low',
       status: 'pending',
@@ -130,13 +166,13 @@ async function retireGoneFixtures(ctx, feedIds, activeRows) {
       method: 'PATCH',
       body: { status: 'retired', updated_at: new Date().toISOString() },
     });
-    if (row.calendar_event_id) {
+    if (row.before_event_id || row.after_event_id || row.calendar_event_id) {
       await insertPending(sb, existingPending, inserted, {
         change_type: 'fixture_block_retire',
         target_date: isoToLondonDate(row.fixture_start),
         summary: `Fixture gone: ${row.title || 'Ipswich fixture'}`,
-        proposed_action: `Delete the ${prefix} block for this fixture — it left the feed `
-          + '(postponed/cancelled/replaced). Informational only.',
+        proposed_action: `Delete BOTH ${prefix} Before and After blocks for this fixture `
+          + '(and any legacy single block) — it left the feed. Informational only.',
         reason: `fixture_event_id ${row.fixture_event_id} absent from current feed`,
         urgency: 'low',
         status: 'pending',
@@ -149,7 +185,7 @@ async function retireGoneFixtures(ctx, feedIds, activeRows) {
 }
 
 /**
- * Place/refresh/retire fixture blocks for every fixture in the feed.
+ * Place/refresh/retire fixture flank blocks for every fixture in the feed.
  * @param {object} ctx { sb, existingPending, inserted, notes, fixtures, prefix, bufferMin }
  */
 async function runFixtureBlockScan(ctx) {
@@ -169,7 +205,6 @@ async function runFixtureBlockScan(ctx) {
   for (const fixture of fixtures || []) {
     if (!fixture.id) continue;
     feedIds.add(fixture.id);
-    // writeRow PATCHes an existing row (active or retired → reactivates), inserts if new.
     const changed = await proposeCreateOrMove(ctx, fixture, rowByFixture.get(fixture.id));
     if (changed) proposed += 1;
   }
@@ -180,4 +215,6 @@ async function runFixtureBlockScan(ctx) {
   );
 }
 
-module.exports = { runFixtureBlockScan, blockWindow };
+module.exports = {
+  runFixtureBlockScan, flankWindows, blockWindow, londonHm, matchLabel,
+};
