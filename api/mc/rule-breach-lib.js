@@ -25,6 +25,17 @@ function isMcBlock(block) {
   return t.includes('MC ') || t.includes('MC-');
 }
 
+/**
+ * Informational Ipswich fixture block (MC ⚽). NOT binding: excluded from every
+ * breach check (cap, window, gap, overlap, residential). It must never displace,
+ * flag or cost a roll to a class or MC admin — Alan just wants to see the match.
+ */
+function isFixtureBlock(block, ruleMap = {}) {
+  const t = String(block.summary || block.title || '');
+  const prefix = ruleMap.title_prefix_fixture || 'MC ⚽';
+  return t.includes(prefix) || t.includes('⚽');
+}
+
 function breachesForBlock(block, ruleMap, holidays) {
   const date = isoToLondonDate(block.start);
   const endDate = isoToLondonDate(block.end);
@@ -239,25 +250,22 @@ function collectResidentialProposals(mcBlocks, busyEvents, ruleMap, pinnedIds) {
  * @param {Set|null} injectedHolidays
  * @param {object[]} busyEvents real commitments only — NEVER MC blocks
  */
-function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, busyEvents = []) {
-  const cap = {
-    capMin: Number(ruleMap.daily_task_cap_min || 240),
-    tolMin: Number(ruleMap.daily_task_cap_tolerance_min || 0),
-  };
-  cap.breachMin = cap.capMin + cap.tolMin;
+function normalizeMcBlocks(blocks, ruleMap) {
+  return (blocks || [])
+    .filter(isMcBlock)
+    .filter((b) => !isFixtureBlock(b, ruleMap)) // fixtures never adjudicated
+    .map((b) => ({
+      ...b,
+      start: typeof b.start === 'string' ? b.start : (b.start?.dateTime || b.start),
+      end: typeof b.end === 'string' ? b.end : (b.end?.dateTime || b.end),
+      summary: b.summary || b.title,
+    }));
+}
+
+/** Window breaches (returned) + per-day task minutes (accumulated into byDay). */
+function collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay) {
   const exemptReminders = ruleMap.deadline_reminder_window_exempt === 'true';
-  const gapMin = Number(ruleMap.decompress_after_task_min || 30);
-  const holidays = resolveHolidays(injectedHolidays);
-  const proposals = [];
-  const byDay = {};
-
-  const mcBlocks = (blocks || []).filter(isMcBlock).map((b) => ({
-    ...b,
-    start: typeof b.start === 'string' ? b.start : (b.start?.dateTime || b.start),
-    end: typeof b.end === 'string' ? b.end : (b.end?.dateTime || b.end),
-    summary: b.summary || b.title,
-  }));
-
+  const out = [];
   for (const b of mcBlocks) {
     if (b.slot_pinned || pinnedIds.has(Number(b.display_id))) continue;
     if (!b.start || !String(b.start).includes('T')) continue;
@@ -268,70 +276,73 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
       }
       continue;
     }
-    proposals.push(windowProposal(b, br));
+    out.push(windowProposal(b, br));
   }
+  return out;
+}
+
+function collectGapProposals(mcBlocks, gapMin, pinnedIds) {
+  const out = [];
+  const sorted = [...mcBlocks]
+    .filter((b) => b.start && String(b.start).includes('T'))
+    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const gp = gapProposal(sorted[i], sorted[i + 1], gapMin, pinnedIds);
+    if (gp) out.push(gp);
+  }
+  return out;
+}
+
+function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, busyEvents = []) {
+  const cap = {
+    capMin: Number(ruleMap.daily_task_cap_min || 240),
+    tolMin: Number(ruleMap.daily_task_cap_tolerance_min || 0),
+  };
+  cap.breachMin = cap.capMin + cap.tolMin;
+  const gapMin = Number(ruleMap.decompress_after_task_min || 30);
+  const holidays = resolveHolidays(injectedHolidays);
+  const byDay = {};
+  const mcBlocks = normalizeMcBlocks(blocks, ruleMap);
+  const proposals = collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay);
 
   for (const [day, total] of Object.entries(byDay)) {
     const cp = capProposal(day, total, cap);
     if (cp) proposals.push(cp);
   }
 
-  const sorted = [...mcBlocks]
-    .filter((b) => b.start && String(b.start).includes('T'))
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
-  for (let i = 0; i < sorted.length - 1; i += 1) {
-    const gp = gapProposal(sorted[i], sorted[i + 1], gapMin, pinnedIds);
-    if (gp) proposals.push(gp);
-  }
-
+  proposals.push(...collectGapProposals(mcBlocks, gapMin, pinnedIds));
   proposals.push(...collectOverlapProposals(mcBlocks, pinnedIds));
   proposals.push(...collectResidentialProposals(mcBlocks, busyEvents, ruleMap, pinnedIds));
-  proposals.push(...collectFixtureBusyHits(mcBlocks, busyEvents, ruleMap, pinnedIds));
+  // Fixtures are INFORMATIONAL — they never flag or displace MC work, so no
+  // fixture-vs-MC breach pass here (Alan's 2026-07-25 ruling).
 
   return proposals;
 }
 
-function collectFixtureBusyHits(mcBlocks, busyEvents, ruleMap, pinnedIds) {
-  const out = [];
-  const fixtures = (busyEvents || []).filter((b) => b.force_busy && b.busy_start && b.busy_end);
-  for (const mc of mcBlocks) {
-    if (pinnedIds.has(Number(mc.display_id))) continue;
-    if (isTravelOrBuffer(mc, ruleMap)) continue;
-    if (!mc.start || !String(mc.start).includes('T')) continue;
-    const aS = Date.parse(mc.start);
-    const aE = Date.parse(mc.end);
-    for (const f of fixtures) {
-      const bS = Date.parse(f.busy_start);
-      const bE = Date.parse(f.busy_end);
-      if (!(aS < bE && bS < aE)) continue;
-      const day = isoToLondonDate(mc.start);
-      const label = mc.display_id != null ? `MC-${mc.display_id}` : (mc.summary || mc.id);
-      out.push({
-        change_type: 'rule_breach',
-        summary: `Rule breach: ${label} overlaps fixture buffer for ${f.summary || 'match'} on ${day} (±${f.buffer_min}m)`,
-        proposed_action: `Move ${label} off the fixture window ${f.busy_start}–${f.busy_end}`,
-        reason: `fixture_buffer_min=${f.buffer_min}; fixture=${f.id}`,
-        related_id: `breach:fixture:${mc.id || mc.display_id}:${f.id}:${day}`,
-        target_date: day,
-        urgency: 'high',
-      });
-    }
-  }
-  return out;
-}
-
 /**
- * Split a mixed calendar dump into MC blocks vs busy-map inputs.
- * MC never enters busy. Ipswich (force-busy) events are kept even when Google
- * marks them transparent, expanded by fixture_buffer_min either side.
+ * Split a mixed calendar dump into MC blocks vs busy-map inputs vs fixtures.
+ * MC never enters busy. Ipswich (force-busy) events are routed to `fixtures`
+ * (informational) and NEVER into the busy map — a fixture must not block or flag
+ * a class or MC admin (Alan's 2026-07-25 ruling). MC ⚽ blocks are dropped from
+ * the busy map for the same reason.
  */
 function splitMcAndBusy(events, ruleMap = {}) {
-  const bufferMin = Number(ruleMap.fixture_buffer_min || 60);
   const mc = [];
   const busy = [];
+  const fixtures = [];
   for (const e of events || []) {
     const forceBusy = isForceBusyCalendar(e._calendarId);
-    if (e.transparency === 'transparent' && !forceBusy) continue;
+    if (forceBusy) {
+      const start = e.start?.dateTime || e.start;
+      const end = e.end?.dateTime || e.end;
+      if (start && String(start).includes('T')) {
+        fixtures.push({
+          id: e.id, summary: e.summary, start, end, _calendarId: e._calendarId,
+        });
+      }
+      continue;
+    }
+    if (e.transparency === 'transparent') continue;
 
     if (isMcBlock(e)) {
       mc.push({
@@ -348,12 +359,6 @@ function splitMcAndBusy(events, ruleMap = {}) {
       continue;
     }
 
-    if (forceBusy) {
-      const expanded = expandFixtureWindow(e, bufferMin);
-      if (expanded) busy.push(expanded);
-      continue;
-    }
-
     if (e.start?.date) {
       busy.push({ id: e.id, summary: e.summary, start: e.start, end: e.end });
     } else if (e.start?.dateTime || (typeof e.start === 'string' && String(e.start).includes('T'))) {
@@ -365,7 +370,7 @@ function splitMcAndBusy(events, ruleMap = {}) {
       });
     }
   }
-  return { mc, busy };
+  return { mc, busy, fixtures };
 }
 
 module.exports = {
@@ -374,5 +379,6 @@ module.exports = {
   expandFixtureWindow,
   isReminderBlock,
   isMcBlock,
+  isFixtureBlock,
   isTravelOrBuffer,
 };

@@ -95,7 +95,7 @@ describe('rule-breach-lib — overlap + busy map', () => {
     assert.equal(busy[0].summary, 'Josh Birthday');
   });
 
-  it('forces Ipswich transparent fixtures into busy with ±fixture_buffer_min', () => {
+  it('routes Ipswich fixtures to the fixtures bucket, NOT the busy map (informational)', () => {
     const ipswich = 'c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com';
     const events = [{
       id: 'fix',
@@ -105,26 +105,26 @@ describe('rule-breach-lib — overlap + busy map', () => {
       start: { dateTime: '2026-09-12T15:00:00+01:00' },
       end: { dateTime: '2026-09-12T17:00:00+01:00' },
     }];
-    const { busy } = splitMcAndBusy(events, { ...rules, fixture_buffer_min: '60' });
-    assert.equal(busy.length, 1);
-    assert.equal(busy[0].force_busy, true);
-    assert.ok(Date.parse(busy[0].busy_start) < Date.parse('2026-09-12T15:00:00+01:00'));
-    assert.ok(Date.parse(busy[0].busy_end) > Date.parse('2026-09-12T17:00:00+01:00'));
+    const { busy, fixtures } = splitMcAndBusy(events, { ...rules, fixture_buffer_min: '60' });
+    assert.equal(busy.length, 0); // fixtures never block the diary
+    assert.equal(fixtures.length, 1);
+    assert.equal(fixtures[0].id, 'fix');
   });
 
-  it('flags MC task overlapping an Ipswich fixture buffer', () => {
-    const busy = [{
-      id: 'fix', summary: '⚽️ Crystal Palace vs Ipswich Town', force_busy: true, buffer_min: 60,
-      busy_start: '2026-09-12T14:00:00.000Z', busy_end: '2026-09-12T18:00:00.000Z',
-    }];
-    const blocks = [{
-      id: 'x', display_id: 99, colorId: '10',
-      summary: 'P1 · MC 🔁 Publish Blog Post',
-      start: '2026-09-12T14:30:00+01:00',
-      end: '2026-09-12T16:30:00+01:00',
-    }];
-    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set(), busy);
-    assert.ok(proposals.some((p) => String(p.reason).startsWith('fixture_buffer_min=')));
+  it('never flags an MC ⚽ fixture block against a real commitment (informational)', () => {
+    const blocks = [
+      block(1, '19:00', '21:00', 'Evening Photography Lesson', 1), // class-like MC block
+      {
+        id: 'ball', display_id: 900, colorId: '10',
+        summary: 'MC ⚽ Ipswich Town vs Coventry City',
+        start: `${day}T19:00:00+01:00`,
+        end: `${day}T23:00:00+01:00`,
+      },
+    ];
+    const proposals = buildRuleBreachProposals(blocks, { ...rules, title_prefix_fixture: 'MC ⚽' }, pinned, new Set());
+    // The ⚽ block must not appear in overlap/residential/cap/window breaches.
+    assert.ok(!proposals.some((p) => JSON.stringify(p).includes('⚽')));
+    assert.ok(!proposals.some((p) => String(p.reason).includes('mc_vs_mc_overlap')));
   });
 
   it('does not window-breach travel/buffer blocks', () => {

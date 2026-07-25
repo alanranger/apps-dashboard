@@ -110,6 +110,33 @@ function assessCalendarHealth(health) {
   return { label: `${ok.length} calendars ok`, ok: true, faults: [] };
 }
 
+/**
+ * Fetch fixture events from the force-busy (Ipswich) calendars only, over a
+ * season-length horizon. Used to place informational MC ⚽ blocks for ALL
+ * fixtures — the main busy-map fetch only reaches the 12-week breach horizon.
+ */
+async function fetchFixtureEvents(timeMinIso, timeMaxIso) {
+  const token = await getAccessToken();
+  const ids = calendarIds().filter((id) => isForceBusyCalendar(id));
+  const all = [];
+  const health = [];
+  for (const id of ids) {
+    try {
+      const items = await listEvents(token, id, timeMinIso, timeMaxIso);
+      for (const e of items) {
+        if (e.status === 'cancelled') continue;
+        const start = e.start?.dateTime || e.start?.date;
+        if (!start || !String(start).includes('T')) continue; // timed fixtures only
+        all.push({ ...e, _calendarId: id });
+      }
+      health.push({ id, ok: true, count: items.length });
+    } catch (e) {
+      health.push({ id, ok: false, error: e.message, count: 0 });
+    }
+  }
+  return { fixtures: all, health };
+}
+
 /** Fetch timed + all-day events across configured calendars. */
 async function fetchHorizonEvents(timeMinIso, timeMaxIso) {
   const token = await getAccessToken();
@@ -139,6 +166,7 @@ module.exports = {
   assessCalendarHealth,
   getAccessToken,
   fetchHorizonEvents,
+  fetchFixtureEvents,
   EXPECTED_CALENDARS,
   DEFAULT_CALENDARS,
   FORCE_BUSY_CALENDAR_IDS,

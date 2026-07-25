@@ -25,6 +25,7 @@ async function createRecurring(body, actor) {
       ideal_time: body.ideal_time || '09:00',
       window_days: body.window_days != null ? body.window_days : 2,
       priority: body.priority || 'p1',
+      time_critical: body.time_critical === true,
       notes_md: body.notes_md || null,
       scheduled_note: body.scheduled_note || null,
       active: body.active !== false,
@@ -46,7 +47,7 @@ async function patchRecurring(id, body, actor) {
   const patch = { updated_at: new Date().toISOString() };
   const fields = [
     'title', 'cadence_text', 'rrule', 'duration_min', 'ideal_time', 'window_days', 'priority',
-    'notes_md', 'scheduled_note', 'active', 'last_scheduled', 'last_done',
+    'time_critical', 'notes_md', 'scheduled_note', 'active', 'last_scheduled', 'last_done',
   ];
   for (const f of fields) {
     if (Object.prototype.hasOwnProperty.call(body, f)) patch[f] = body[f];

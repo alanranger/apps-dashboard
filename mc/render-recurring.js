@@ -77,6 +77,7 @@ function formFields(prefix, t = {}) {
     <label>Priority<select id="${prefix}Pri">${prioritySelectOptions(t.priority || 'p1')}</select></label>
     <label>Ideal time<input id="${prefix}Time" type="time" value="${String(t.ideal_time || '09:00').slice(0, 5)}" /></label>
     <label>Window days (how far slot may drift from ideal)<input id="${prefix}Win" type="number" min="0" value="${t.window_days != null ? t.window_days : 2}" /></label>
+    <label class="rec-toggle"><input id="${prefix}Crit" type="checkbox" ${t.time_critical ? 'checked' : ''} /> Time-critical (roll <strong>earlier</strong> if the ideal day is blocked, not later)</label>
     <label>Scheduled by Claude<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Claude fills after booking diary — e.g. Thu 23 11:00–13:00" /></label>
     <label>Notes<textarea id="${prefix}Notes" rows="3">${esc(t.notes_md || '')}</textarea></label>
     <p class="meta">Claude books Google Calendar busy time <strong>${DIARY_HORIZON_DAYS} days ahead</strong> (not this app). Apps-dashboard never writes to Calendar.</p>`;
@@ -133,6 +134,7 @@ function readForm(prefix) {
     priority: $(`${prefix}Pri`).value || 'p1',
     ideal_time: $(`${prefix}Time`).value || '09:00',
     window_days: Number($(`${prefix}Win`).value),
+    time_critical: $(`${prefix}Crit`).checked,
     scheduled_note: $(`${prefix}Sched`).value.trim() || null,
     notes_md: $(`${prefix}Notes`).value.trim() || null,
   };
@@ -149,9 +151,10 @@ export function renderRecurring() {
       const next = nextDue(t);
       const missed = st.label === 'missed' ? '<span class="pill rec-missed-pill">missed</span>' : '';
       const skipped = st.label === 'skipped' ? '<span class="pill rec-skipped-pill">skipped</span>' : '';
+      const crit = t.time_critical ? '<span class="pill rec-crit-pill" title="Rolls earlier (not later) when the ideal day is blocked">time-critical</span>' : '';
       const lastDone = t.last_done ? fmtDate(t.last_done) : '—';
       return `<tr class="${st.cls}">
-      <td><strong>${esc(t.title)}</strong>${missed}${skipped}</td>
+      <td><strong>${esc(t.title)}</strong>${missed}${skipped}${crit}</td>
       <td>${esc(t.cadence_text)}</td>
       <td>${esc(t.priority || 'p1')}</td>
       <td>${t.duration_min} min</td>

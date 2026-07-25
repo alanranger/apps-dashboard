@@ -4,9 +4,11 @@
  */
 const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
-const { ruleMapFromRows, holidaySetFromRows } = require('../mc/scheduling-rules-lib');
+const { holidaySetFromRows, bankHolidaySet } = require('../mc/scheduling-rules-lib');
 const { buildRuleBreachProposals, splitMcAndBusy } = require('../mc/rule-breach-lib');
-const { gcalConfigured, fetchHorizonEvents } = require('../mc/gcal-lib');
+const { gcalConfigured, fetchHorizonEvents, fetchFixtureEvents } = require('../mc/gcal-lib');
+const { runFixtureBlockScan } = require('../mc/fixture-coverage-lib');
+const { computeMissedProposal } = require('../mc/missed-habit-lib');
 const {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
@@ -35,15 +37,6 @@ function addDaysYmd(ymd, n) {
   return d.toISOString().slice(0, 10);
 }
 
-function nextWorkingDay(ymd) {
-  let d = addDaysYmd(ymd, 1);
-  for (let i = 0; i < 7; i += 1) {
-    const dow = new Date(`${d}T12:00:00Z`).getUTCDay();
-    if (dow !== 0 && dow !== 6) return d;
-    d = addDaysYmd(d, 1);
-  }
-  return d;
-}
 
 function lastDueSimple(rrule, today) {
   const parts = {};
@@ -85,6 +78,72 @@ function authOk(req) {
   const h = req.headers.authorization || '';
   const q = req.query || {};
   return h === `Bearer ${secret}` || q.force === '1';
+}
+
+/**
+ * One-time-style re-eval of ALL pending missed_habit rows under the new rule.
+ * Only rewrites TIME-CRITICAL rows (their forward-only proposals are now wrong);
+ * flexible forward rolls are left as-is. Idempotent — safe to run every cron.
+ */
+async function reevalPendingMissedHabits(ctx) {
+  const {
+    sb, inserted, notes, ruleMap, holidays, today, maxRolls,
+  } = ctx;
+  if (ruleMap.missed_habit_direction !== 'backward_if_time_critical') return;
+  let pending = [];
+  let habits = [];
+  try {
+    pending = await sb('pending_diary_changes?status=eq.pending&change_type=eq.missed_habit&select=id,related_id,proposed_action') || [];
+    habits = await sb('recurring_tasks?select=id,title,ideal_time,rolls_used,time_critical') || [];
+  } catch (e) {
+    notes.push(`missed_habit_reeval_read_error: ${e.message}`);
+    return;
+  }
+  const byId = new Map(habits.map((h) => [h.id, h]));
+  let n = 0;
+  for (const p of pending) {
+    const m = /^habit:([^:]+):(\d{4}-\d{2}-\d{2})$/.exec(p.related_id || '');
+    if (!m) continue;
+    const habit = byId.get(m[1]);
+    if (!habit || habit.time_critical !== true) continue;
+    const prop = computeMissedProposal({
+      habit, lastDue: m[2], today, ruleMap, holidays, maxRolls,
+    });
+    if (prop.proposed === p.proposed_action) continue;
+    await sb(`pending_diary_changes?id=eq.${p.id}`, {
+      method: 'PATCH',
+      body: { proposed_action: prop.proposed, reason: prop.reason, urgency: prop.urgency },
+    });
+    inserted.push(`reeval:${p.id}`);
+    n += 1;
+  }
+  notes.push(`missed_habit_reeval: ${n} time-critical fossil(s) rewritten`);
+}
+
+async function maybeRunFixtureScan(ctx) {
+  const {
+    sb, existingPending, inserted, notes, ruleMap, today,
+  } = ctx;
+  try {
+    const fixWeeks = Number(ruleMap.fixture_horizon_weeks || 60);
+    const fixEnd = addDaysYmd(today, fixWeeks * 7);
+    const { fixtures, health } = await fetchFixtureEvents(
+      `${today}T00:00:00Z`, `${fixEnd}T23:59:59Z`,
+    );
+    await runFixtureBlockScan({
+      sb,
+      existingPending,
+      inserted,
+      notes,
+      fixtures,
+      prefix: ruleMap.title_prefix_fixture || 'MC ⚽',
+      bufferMin: Number(ruleMap.fixture_buffer_min || 60),
+    });
+    const feed = health.map((h) => `${h.id}:${h.ok ? h.count : 'FAIL'}`).join(' | ');
+    notes.push(`fixture_feed: ${feed} (horizon ${fixWeeks}w → ${fixEnd})`);
+  } catch (e) {
+    notes.push(`fixture_scan_error: ${e.message}`);
+  }
 }
 
 async function existingPending(changeType, relatedId) {
@@ -375,6 +434,12 @@ module.exports = async function handler(req, res) {
     notes.push(`snapshot_write_error: ${e.message}`);
   }
 
+  // Resolve a holiday set for legality checks (DB source preferred, computed fallback).
+  const nowYr = Number(today.slice(0, 4));
+  const habitHolidays = (holidaySet && holidaySet.size)
+    ? holidaySet
+    : bankHolidaySet(nowYr - 1, nowYr + 1);
+
   const habits = await sb('recurring_tasks?active=eq.true');
   for (const h of habits || []) {
     const lastDue = lastDueSimple(h.rrule, today);
@@ -386,33 +451,31 @@ module.exports = async function handler(req, res) {
     if (skipRows?.[0]) continue;
 
     const relatedId = `habit:${h.id}:${lastDue}`;
-    if (await existingPending('missed_habit', relatedId)) continue;
+    const prop = computeMissedProposal({
+      habit: h, lastDue, today, ruleMap, holidays: habitHolidays, maxRolls,
+    });
 
-    const rolls = Number(h.rolls_used || 0);
-    let proposed;
-    let reason;
-    if (rolls < maxRolls) {
-      const target = nextWorkingDay(today);
-      proposed = `Roll forward to next working day ${target} at ${String(h.ideal_time || '09:00').slice(0, 5)} (roll ${rolls + 1}/${maxRolls}). Title: ${ruleMap.title_prefix_recurring || 'MC 🔁'} ${h.title}`;
-      reason = `Missed occurrence ${lastDue}; policy roll_forward_capped`;
-      await sb(`recurring_tasks?id=eq.${h.id}`, {
-        method: 'PATCH',
-        body: { rolls_used: rolls + 1, updated_at: new Date().toISOString() },
-      });
-    } else {
-      proposed = `Max rolls (${maxRolls}) used — wait for next natural occurrence of "${h.title}". Do not auto-clear.`;
-      reason = `Missed ${lastDue}; rolls_used=${rolls} at cap`;
+    // Existing rows are re-evaluated by reevalPendingMissedHabits (covers ALL
+    // pending occurrences, not just the most recent one this loop computes).
+    if (await existingPending('missed_habit', relatedId)) {
+      continue;
     }
 
+    if (prop.rollsDelta) {
+      await sb(`recurring_tasks?id=eq.${h.id}`, {
+        method: 'PATCH',
+        body: { rolls_used: Number(h.rolls_used || 0) + prop.rollsDelta, updated_at: new Date().toISOString() },
+      });
+    }
     const row = await sb('pending_diary_changes', {
       method: 'POST',
       body: {
         change_type: 'missed_habit',
         target_date: lastDue,
         summary: `Missed habit: ${h.title}`,
-        proposed_action: proposed,
-        reason,
-        urgency: 'normal',
+        proposed_action: prop.proposed,
+        reason: prop.reason,
+        urgency: prop.urgency,
         status: 'pending',
         related_id: relatedId,
       },
@@ -420,6 +483,10 @@ module.exports = async function handler(req, res) {
     const id = Array.isArray(row) ? row[0]?.id : row?.id;
     if (id) inserted.push(id);
   }
+
+  await reevalPendingMissedHabits({
+    sb, inserted, notes, ruleMap, holidays: habitHolidays, today, maxRolls,
+  });
 
   const horizon = addDaysYmd(today, 30);
   const hotels = await sb(
@@ -533,6 +600,14 @@ module.exports = async function handler(req, res) {
     mcAdjudicated = blocks.length;
     await insertProposals(proposals, inserted);
     notes.push(`rule_breach: ${proposals.length} proposal(s) from ${blocks.length} MC block(s)`);
+  }
+
+  // Fixture blocks — dedicated season-length fetch (main busy-map horizon is only
+  // 12w; the feed runs ~11 months). Informational MC ⚽ proposals only.
+  if (gcalConfigured()) {
+    await maybeRunFixtureScan({
+      sb, existingPending, inserted, notes, ruleMap, today,
+    });
   }
 
   // Record the run so the Scheduling panel can show last-run + coverage + source health.
