@@ -213,20 +213,148 @@ export async function renderScheduling() {
 
   const runBtn = $('schedRunCheck');
   if (runBtn) {
-    runBtn.onclick = async () => {
-      const scope = $('schedScope')?.value === 'full' ? 'full' : '8w';
-      const label = runBtn.textContent;
-      runBtn.disabled = true;
-      runBtn.textContent = 'Running…';
-      try {
-        await api('/api/mc/scheduling', { method: 'PATCH', body: { entity: 'run_check', scope } });
-        await renderScheduling();
-      } catch (err) {
-        runBtn.disabled = false;
-        runBtn.textContent = label;
-        alert(`Check failed: ${err.message || err}`);
-      }
+    runBtn.onclick = () => startDiaryCheckWithModal(runBtn);
+  }
+}
+
+const CHECK_PHASES = [
+  'Loading schedule CSVs',
+  'Bank holidays',
+  'Travel / buffer scan',
+  'Missed habits',
+  'Hotel deadlines',
+  'Calendar fetch + rule breaches',
+  'Fixture blocks',
+  'Recording run',
+];
+
+function phaseListHtml(activeIdx) {
+  return CHECK_PHASES.map((label, i) => {
+    let cls = '';
+    let mark = '·';
+    if (i < activeIdx) { cls = 'done'; mark = '✓'; }
+    else if (i === activeIdx) { cls = 'active'; mark = '…'; }
+    return `<li class="${cls}"><span class="sched-phase-mark">${mark}</span>${esc(label)}</li>`;
+  }).join('');
+}
+
+function summaryHtml(run, scope) {
+  if (!run) return '<p class="meta">Check finished — no summary payload.</p>';
+  const covered = run.covered
+    ? `${run.covered.from} → ${run.covered.to} (${run.covered.weeks}w)`
+    : '—';
+  const sh = run.sources_health || {};
+  const csvOk = Array.isArray(sh.csv) ? sh.csv.filter((s) => s.ok).length : 0;
+  const csvN = Array.isArray(sh.csv) ? sh.csv.length : 0;
+  const notes = (run.notes || [])
+    .filter((n) => /fixture_block|rule_breach|missed_habit|gcal:|snapshot_/.test(n))
+    .slice(0, 6)
+    .map((n) => `<li>${esc(n)}</li>`)
+    .join('');
+  return `
+    <div class="sched-check-summary">
+      <div class="sched-sum-grid">
+        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full horizon' : 'Next 8 weeks')}</strong></div>
+        <div><span class="meta">Covered</span><strong>${esc(covered)}</strong></div>
+        <div><span class="meta">New proposals</span><strong>${run.inserted ?? 0}</strong></div>
+        <div><span class="meta">Calendar writes</span><strong>${run.calendar_writes ?? 0}</strong></div>
+        <div><span class="meta">CSV</span><strong>${csvOk}/${csvN} ok</strong></div>
+        <div><span class="meta">Holidays</span><strong>${esc(sh.holidays || '—')}</strong></div>
+        <div><span class="meta">Calendars</span><strong>${esc(sh.calendars || '—')}</strong></div>
+        <div><span class="meta">Events in horizon</span><strong>${run.events_in_horizon ?? '—'}</strong></div>
+      </div>
+      ${notes ? `<ul class="sched-sum-notes">${notes}</ul>` : ''}
+    </div>`;
+}
+
+function openCheckProgressModal(scope) {
+  const modal = $('modal');
+  const box = $('modalBox');
+  const ac = new AbortController();
+  let phaseIdx = 0;
+  let timer = null;
+  const started = Date.now();
+
+  const paintRunning = () => {
+    const elapsed = Math.round((Date.now() - started) / 1000);
+    const pct = Math.min(92, Math.round(((phaseIdx + 1) / CHECK_PHASES.length) * 100));
+    box.innerHTML = `
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check running</h2>
+      <p class="meta">Scope: <strong>${esc(scope === 'full' ? 'Full horizon' : 'Next 8 weeks')}</strong>
+        · Elapsed ${elapsed}s · same detector as the 06:00 cron</p>
+      <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
+      <ul class="sched-phase-list">${phaseListHtml(phaseIdx)}</ul>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button type="button" class="btn-secondary" id="schedCheckCancel">Stop / Cancel</button>
+      </div>
+      <p class="meta" style="margin-top:8px">Cancel stops waiting in this browser. A request already in flight on the server may still finish.</p>`;
+    $('schedCheckCancel').onclick = () => {
+      ac.abort();
+      clearInterval(timer);
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Check cancelled</h2>
+        <p class="meta">Stopped after ${Math.round((Date.now() - started) / 1000)}s. Pending list unchanged from this wait.</p>
+        <button type="button" class="btn-verify" id="schedCheckClose">Close</button>`;
+      $('schedCheckClose').onclick = () => modal.classList.remove('open');
     };
+  };
+
+  paintRunning();
+  modal.classList.add('open');
+  timer = setInterval(() => {
+    if (phaseIdx < CHECK_PHASES.length - 1) phaseIdx += 1;
+    paintRunning();
+  }, 2800);
+
+  return {
+    signal: ac.signal,
+    finish(run) {
+      clearInterval(timer);
+      const secs = Math.round((Date.now() - started) / 1000);
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check complete</h2>
+        <p class="meta">Finished in ${secs}s · findings are in the pending list below</p>
+        ${summaryHtml(run, scope)}
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button type="button" class="btn-verify" id="schedCheckClose">Close</button>
+        </div>`;
+      $('schedCheckClose').onclick = () => modal.classList.remove('open');
+    },
+    fail(err) {
+      clearInterval(timer);
+      if (ac.signal.aborted) return;
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Diary check failed</h2>
+        <p class="err">${esc(err.message || String(err))}</p>
+        <button type="button" class="btn-verify" id="schedCheckClose">Close</button>`;
+      $('schedCheckClose').onclick = () => modal.classList.remove('open');
+    },
+  };
+}
+
+async function startDiaryCheckWithModal(runBtn) {
+  const scope = $('schedScope')?.value === 'full' ? 'full' : '8w';
+  const label = runBtn.textContent;
+  runBtn.disabled = true;
+  runBtn.textContent = 'Running…';
+  const ui = openCheckProgressModal(scope);
+  try {
+    const data = await api('/api/mc/scheduling', {
+      method: 'PATCH',
+      body: { entity: 'run_check', scope },
+      signal: ui.signal,
+    });
+    ui.finish(data.run || data);
+    await renderScheduling();
+  } catch (err) {
+    if (ui.signal.aborted || err.name === 'AbortError') {
+      runBtn.disabled = false;
+      runBtn.textContent = label;
+      return;
+    }
+    ui.fail(err);
+    runBtn.disabled = false;
+    runBtn.textContent = label;
   }
 }
 

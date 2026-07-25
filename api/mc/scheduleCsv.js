@@ -39,31 +39,56 @@ function resolveLocalFile(fileName) {
   return null;
 }
 
-function parseCsvLine(line) {
-  const out = [];
+/**
+ * RFC-4180 CSV parser over the full text (not line-by-line).
+ * Honours quoted fields, embedded commas, embedded newlines, and "" escapes.
+ * The previous line-first split broke on Text_Block HTML (360 newlines inside
+ * quotes in the workshops CSV) and slid location strings into Start_Date —
+ * producing the snapshot error `invalid input syntax for type date: " Kenilwort"`.
+ */
+function parseCsv(text) {
+  const records = [];
+  let row = [];
   let cur = '';
   let inQ = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
+  const pushField = () => { row.push(cur); cur = ''; };
+  const pushRow = () => {
+    pushField();
+    // Drop blank trailing lines (record is a single empty field).
+    if (row.length === 1 && row[0] === '') { row = []; return; }
+    records.push(row);
+    row = [];
+  };
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
     if (inQ) {
-      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i += 1; }
-      else if (ch === '"') inQ = false;
-      else cur += ch;
-    } else if (ch === '"') inQ = true;
-    else if (ch === ',') { out.push(cur); cur = ''; }
-    else cur += ch;
+      if (ch === '"') {
+        if (text[i + 1] === '"') { cur += '"'; i += 1; }
+        else inQ = false;
+      } else cur += ch;
+      continue;
+    }
+    if (ch === '"') { inQ = true; continue; }
+    if (ch === ',') { pushField(); continue; }
+    if (ch === '\n') { pushRow(); continue; }
+    if (ch === '\r') {
+      if (text[i + 1] === '\n') i += 1;
+      pushRow();
+      continue;
+    }
+    cur += ch;
   }
-  out.push(cur);
-  return out;
+  if (cur.length || row.length) pushRow();
+  return records;
 }
 
 function readCsvText(text) {
-  const clean = text.replace(/^\uFEFF/, '');
-  const lines = clean.split(/\r?\n/).filter((l) => l.trim());
-  if (!lines.length) return { headers: [], rows: [] };
-  const headers = parseCsvLine(lines[0]);
-  const rows = lines.slice(1).map((line) => {
-    const cols = parseCsvLine(line);
+  const clean = String(text || '').replace(/^\uFEFF/, '');
+  if (!clean.trim()) return { headers: [], rows: [] };
+  const records = parseCsv(clean);
+  if (!records.length) return { headers: [], rows: [] };
+  const headers = records[0];
+  const rows = records.slice(1).map((cols) => {
     const obj = {};
     headers.forEach((h, i) => { obj[h] = cols[i] != null ? cols[i] : ''; });
     return obj;
@@ -260,4 +285,6 @@ module.exports = {
   getScheduleSources,
   loadScheduleEvents,
   isHomeBased,
+  parseCsv,
+  readCsvText,
 };

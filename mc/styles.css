@@ -512,3 +512,14 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .sched-health.sched-src-red { background:#fee2e2; color:#991b1b; }
 .pill.sched-src-red { background:#fee2e2; color:#991b1b; }
 .pill.sched-src-amber { background:#fef3c7; color:#92400e; }
+
+.sched-prog-bar { height:8px; background:var(--border, #e5e7eb); border-radius:999px; overflow:hidden; margin:12px 0; }
+.sched-prog-fill { height:100%; background:var(--green, #16a34a); transition:width .4s ease; }
+.sched-phase-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+.sched-phase-list li { font-size:13px; color:var(--text-faint, #9ca3af); display:flex; gap:8px; align-items:center; }
+.sched-phase-list li.active { color:var(--text, #111); font-weight:600; }
+.sched-phase-list li.done { color:var(--green, #166534); }
+.sched-phase-mark { width:1.2em; text-align:center; font-variant-numeric:tabular-nums; }
+.sched-sum-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px 14px; margin:12px 0; }
+.sched-sum-grid .meta { font-size:0.8rem; display:block; }
+.sched-sum-notes { margin:8px 0 0; padding-left:18px; font-size:12px; color:var(--text-dim, #6b7280); }
