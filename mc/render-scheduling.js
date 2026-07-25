@@ -12,6 +12,32 @@ function urgencyClass(u) {
   return u === 'high' ? 'sched-urgent' : '';
 }
 
+/** Display labels only — DB change_type values stay unchanged. */
+function displayChangeType(type) {
+  const map = {
+    rule_breach: 'Conflict',
+    missing_travel_block: 'Travel not placed',
+    missing_travel: 'Travel not placed',
+    missing_buffer: 'Buffers not placed',
+    fixture_block: 'Fixture block',
+    fixture_block_retire: 'Fixture retire',
+    missed_habit: 'Missed habit',
+    hotel_deadline: 'Hotel deadline',
+    cap_over_target: 'Over target',
+  };
+  return map[type] || type;
+}
+
+/** Soften “Missing …” fault language for future-dated travel/buffer to-dos. */
+function displaySummary(p) {
+  let s = String(p.summary || '');
+  s = s.replace(/^Missing travel in horizon:\s*/i, 'Travel not yet placed: ');
+  s = s.replace(/^Missing buffers in horizon:\s*/i, 'Buffers not yet placed: ');
+  s = s.replace(/^Missing travel(?: block)?(?:s)?:\s*/i, 'Travel not yet placed: ');
+  s = s.replace(/^Missing buffers?:\s*/i, 'Buffers not yet placed: ');
+  return s;
+}
+
 function fmtRunTime(iso) {
   if (!iso) return 'never';
   try {
@@ -115,11 +141,11 @@ export async function renderScheduling() {
 
   const pendingRows = pending.length
     ? pending.map((p) => `<tr class="${urgencyClass(p.urgency)}">
-        <td><span class="pill">${esc(p.change_type)}</span></td>
+        <td><span class="pill">${esc(displayChangeType(p.change_type))}</span></td>
         <td>${p.target_date ? fmtDate(p.target_date) : '—'}</td>
-        <td><strong>${esc(p.summary)}</strong><div class="meta">${esc(p.proposed_action)}</div></td>
+        <td><strong>${esc(displaySummary(p))}</strong><div class="meta">${esc(p.proposed_action)}</div></td>
         <td class="rec-actions">
-          <button type="button" class="btn-verify" data-sched-apply="${p.id}">Applied</button>
+          <button type="button" class="btn-verify" data-sched-apply="${p.id}">Apply</button>
           <button type="button" class="btn-secondary" data-sched-dismiss="${p.id}">Dismiss</button>
         </td>
       </tr>`).join('')
@@ -164,6 +190,7 @@ export async function renderScheduling() {
         <div>
           <h2><i class="ti ti-calendar-time"></i> Pending diary changes
             ${pending.length ? `<span class="pill">${pending.length}</span>` : ''}</h2>
+          <p class="sched-worklist-banner"><strong>Proposed changes — NOT yet applied to your calendar.</strong> This is a worklist of problems + proposed fixes. Press <strong>Apply</strong> to enact each one (or Dismiss). Nothing has changed your diary until you do.</p>
           <p class="meta">Detector proposes · you or Claude apply. <strong>Zero Calendar writes from cron.</strong></p>
         </div>
         <button type="button" class="btn-verify" id="schedCopyAll" ${pending.length ? '' : 'disabled'}>Copy all as instruction</button>

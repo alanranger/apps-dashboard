@@ -503,6 +503,16 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .sched-src-amber { background:#fef3c7; color:#92400e; }
 .sched-src-red { background:#fee2e2; color:#991b1b; }
 
+.sched-worklist-banner {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.4;
+  border: 1px solid #f59e0b;
+}
 .sched-run-controls { display:flex; gap:8px; align-items:center; }
 .sched-run-controls select { padding:6px 8px; border-radius:6px; }
 .sched-readout { display:flex; flex-wrap:wrap; gap:20px; margin-top:8px; }
