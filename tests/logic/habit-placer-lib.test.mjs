@@ -10,12 +10,15 @@ const {
   buildAmendments,
   provePlacement,
   londonYmdHmToUtcMs,
+  habitGapTier,
+  requiredGapMins,
 } = require('../../api/mc/habit-placer-lib.js');
 
 const rules = {
   daily_task_cap_min: '240',
   daily_task_cap_tolerance_min: '30',
   decompress_after_task_min: '30',
+  admin_gap_min: '15',
   fixture_buffer_min: '60',
   working_days: 'mon,tue,wed,thu,fri,sat,sun',
   working_hours_weekday_start: '09:00',
@@ -154,5 +157,37 @@ describe('habit-placer-lib — place + §5 proof', () => {
       calendar_event_id: 'ev1',
     }]);
     assert.equal(move[0].action, 'MOVE');
+  });
+});
+
+describe('habit-placer-lib — tiered gaps', () => {
+  it('classifies admin vs Publish Blog substantial', () => {
+    assert.equal(habitGapTier('Upload sites — LocalViking'), 'admin');
+    assert.equal(habitGapTier('BAU global refresh — Day 1'), 'admin');
+    assert.equal(habitGapTier('Publish Blog Post'), 'substantial');
+    assert.equal(requiredGapMins('Upload sites', 'SEO Performance Review', rules), 15);
+    assert.equal(requiredGapMins('Publish Blog Post', 'Upload sites', rules), 30);
+  });
+
+  it('never places two admin habits back-to-back (needs ≥15m)', () => {
+    const a = {
+      id: 'a1', title: 'SEO Performance Review', priority: 'p1', duration_min: 60,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    };
+    const b = {
+      id: 'a2', title: 'Upload sites — LocalViking', priority: 'p2', duration_min: 60,
+      ideal_time: '11:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    };
+    const { placements } = placeHabits(
+      [a, b], [], [], rules, holidays, '2026-08-11', '2026-08-11',
+    );
+    assert.equal(placements.length, 2);
+    const sorted = placements.slice().sort((x, y) => Date.parse(x.startIso) - Date.parse(y.startIso));
+    const gap = (Date.parse(sorted[1].startIso) - Date.parse(sorted[0].endIso)) / 60000;
+    assert.ok(gap >= 15, `gap ${gap}`);
+    const proof = provePlacement(placements, [], [], rules);
+    assert.equal(proof.ok, true, proof.fails.join('; '));
   });
 });

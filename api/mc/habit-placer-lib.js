@@ -135,22 +135,54 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays) {
   return [...new Set(days)].filter((d) => isSchedulableDay(d, ruleMap, holidays));
 }
 
-function decompressOk(startMs, endMs, placed, gapMin) {
+/** Admin ticks get admin_gap_min; substantial (incl. Publish Blog) get decompress_after_task_min. */
+function habitGapTier(title) {
+  const t = String(title || '').toLowerCase();
+  if (/publish\s+blog/.test(t)) return 'substantial';
+  const admin = [
+    /joining details/,
+    /hotel bookings/,
+    /booking sheet/,
+    /bau global/,
+    /upload sites/,
+    /seo performance/,
+    /monthly accounts/,
+    /artfully walls/,
+    /backup photos/,
+    /review\/amend course/,
+    /update event schema/,
+    /light and logic/,
+  ];
+  if (admin.some((re) => re.test(t))) return 'admin';
+  return 'substantial';
+}
+
+function gapMinsForTitle(title, ruleMap) {
+  if (habitGapTier(title) === 'admin') return Number(ruleMap.admin_gap_min || 15);
+  return Number(ruleMap.decompress_after_task_min || 30);
+}
+
+/** Gap either side = max(after prev, before next). Never allow zero-gap stacking. */
+function requiredGapMins(prevTitle, nextTitle, ruleMap) {
+  return Math.max(gapMinsForTitle(prevTitle, ruleMap), gapMinsForTitle(nextTitle, ruleMap));
+}
+
+function decompressOk(startMs, endMs, title, placed, ruleMap) {
   const day = isoToLondonDate(new Date(startMs).toISOString());
   for (const p of placed) {
     if (p.day !== day) continue;
     const ps = Date.parse(p.startIso);
     const pe = Date.parse(p.endIso);
     if (overlaps(startMs, endMs, ps, pe)) return false;
-    if (pe <= startMs && (startMs - pe) / 60000 < gapMin) return false;
-    if (endMs <= ps && (ps - endMs) / 60000 < gapMin) return false;
+    const need = requiredGapMins(p.title, title, ruleMap);
+    if (pe <= startMs && (startMs - pe) / 60000 < need) return false;
+    if (endMs <= ps && (ps - endMs) / 60000 < need) return false;
   }
   return true;
 }
 
-function trySlotOnDay(day, durationMin, idealHm, busy, placed, dayUsed, ruleMap) {
+function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, ruleMap) {
   const win = workingWindow(ruleMap, day);
-  const gap = Number(ruleMap.decompress_after_task_min || 30);
   const { hard } = dayCapLimits(ruleMap);
   if ((dayUsed[day] || 0) + durationMin > hard) return null;
 
@@ -164,7 +196,7 @@ function trySlotOnDay(day, durationMin, idealHm, busy, placed, dayUsed, ruleMap)
     const startMs = londonYmdHmToUtcMs(day, hmLabel(startMin));
     const endMs = londonYmdHmToUtcMs(day, hmLabel(startMin + durationMin));
     if (busy.some((b) => overlaps(startMs, endMs, b.startMs, b.endMs))) continue;
-    if (!decompressOk(startMs, endMs, placed, gap)) continue;
+    if (!decompressOk(startMs, endMs, title, placed, ruleMap)) continue;
     return {
       day,
       startIso: new Date(startMs).toISOString(),
@@ -212,7 +244,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
       for (const day of days) {
         const trial = trySlotOnDay(
           day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
-          busyWork, placements, dayUsed, ruleMap,
+          habit.title, busyWork, placements, dayUsed, ruleMap,
         );
         if (!trial || !depOk(habit, trial, placedByHabit, deps)) continue;
         slot = trial;
@@ -300,8 +332,17 @@ function provePlacement(placements, clientBusy, deps, ruleMap) {
     }
     for (let j = i + 1; j < placements.length; j += 1) {
       const o = placements[j];
-      if (overlaps(aS, aE, Date.parse(o.startIso), Date.parse(o.endIso))) {
+      const oS = Date.parse(o.startIso);
+      const oE = Date.parse(o.endIso);
+      if (overlaps(aS, aE, oS, oE)) {
         fails.push(`habit-habit: ${a.title} × ${o.title}`);
+      }
+      if (a.day !== o.day) continue;
+      const gap = aE <= oS ? (oS - aE) / 60000 : (aS - oE) / 60000;
+      if (gap < 0) continue;
+      const need = requiredGapMins(a.title, o.title, ruleMap);
+      if (gap < need) {
+        fails.push(`gap: ${a.day} ${a.title} ↔ ${o.title} ${gap}m < ${need}m`);
       }
     }
   }
@@ -329,4 +370,7 @@ module.exports = {
   provePlacement,
   candidateDays,
   dayCapLimits,
+  habitGapTier,
+  gapMinsForTitle,
+  requiredGapMins,
 };

@@ -37,3 +37,5 @@ gmail-oauth*.json
 
 # Schedule CSVs live in alan-shared-resources/csv (not duplicated here)
 data/schedule/*.csv
+.vercel
+.env*.local

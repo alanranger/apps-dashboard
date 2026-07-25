@@ -22,6 +22,7 @@ function displayChangeType(type) {
     missing_buffer: 'Buffers not placed',
     fixture_block: 'Fixture block',
     fixture_block_retire: 'Fixture retire',
+    habit_placement: 'Habit place',
     missed_habit: 'Missed habit',
     hotel_deadline: 'Hotel deadline',
     cap_over_target: 'Over target',

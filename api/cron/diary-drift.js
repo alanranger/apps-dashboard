@@ -9,6 +9,7 @@ const { buildRuleBreachProposals, splitMcAndBusy } = require('../mc/rule-breach-
 const { gcalConfigured, fetchHorizonEvents, fetchFixtureEvents } = require('../mc/gcal-lib');
 const { runFixtureBlockScan } = require('../mc/fixture-coverage-lib');
 const { computeMissedProposal } = require('../mc/missed-habit-lib');
+const { runHabitPlacerPropose } = require('../mc/habit-placer-propose-lib');
 const {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
@@ -650,6 +651,45 @@ module.exports = async function handler(req, res) {
     await maybeRunFixtureScan({
       sb, existingPending, inserted, notes, ruleMap, today,
     });
+  }
+
+  // Joint habit placer → pending amendments (KEEP omitted; no calendar writes).
+  if (gcalConfigured()) {
+    try {
+      const habitWeeks = Number(ruleMap.habit_horizon_weeks || 26);
+      const habitTo = addDaysYmd(today, habitWeeks * 7);
+      const timeMin = `${today}T00:00:00Z`;
+      const timeMax = `${habitTo}T23:59:59Z`;
+      const { events: habitEvents, assessment } = await fetchHorizonEvents(timeMin, timeMax);
+      if (!assessment.ok) {
+        notes.push(`habit_placer: skipped (calendar fault ${assessment.label})`);
+      } else {
+        const result = await runHabitPlacerPropose({
+          sb,
+          ruleMap,
+          holidays: habitHolidays,
+          fromYmd: today,
+          toYmd: habitTo,
+          gcalEvents: habitEvents,
+          existingPending,
+          inserted,
+          writePending: true,
+        });
+        notes.push(
+          `habit_placer: ${result.amendment_counts.CREATE || 0} CREATE / `
+          + `${result.amendment_counts.MOVE || 0} MOVE / `
+          + `${result.amendment_counts.KEEP || 0} KEEP / `
+          + `${result.amendment_counts.DELETE || 0} DELETE; `
+          + `matched ${result.existing_matched}; pending+${result.pending_wrote}; `
+          + `unplaced ${result.unplaced.length}; proof=${result.proof.ok}`,
+        );
+        if (!result.proof.ok) {
+          notes.push(`habit_placer_KILL: ${result.proof.fails.slice(0, 5).join(' | ')}`);
+        }
+      }
+    } catch (e) {
+      notes.push(`habit_placer_error: ${e.message}`);
+    }
   }
 
   // Record the run so the Scheduling panel can show last-run + coverage + source health.
