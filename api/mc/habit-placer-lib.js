@@ -128,6 +128,7 @@ function findTaskBumps(placements, softTaskIntervals) {
           title: task.summary,
           task_start: new Date(task.startMs).toISOString(),
           task_end: new Date(task.endMs).toISOString(),
+          duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
           habit_id: p.habit_id,
           habit_title: p.title,
           habit_day: p.day,
@@ -139,6 +140,108 @@ function findTaskBumps(placements, softTaskIntervals) {
     }
   }
   return bumps;
+}
+
+/**
+ * Place each bumped task into a concrete gap (never "pick a slot").
+ * Occupying: hard busy + habit placements + soft tasks not in this bump set.
+ */
+function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMap, holidays, fromYmd) {
+  const bumpedIds = new Set((bumps || []).map((b) => Number(b.display_id)));
+  const placedBlocks = (placements || []).map((p) => ({
+    day: p.day,
+    startIso: p.startIso,
+    endIso: p.endIso,
+    title: p.title,
+  }));
+  const dayUsed = {};
+  for (const p of placements || []) {
+    dayUsed[p.day] = (dayUsed[p.day] || 0) + (p.duration_min || 0);
+  }
+
+  const occupying = (softTaskIntervals || [])
+    .filter((t) => !bumpedIds.has(Number(t.display_id)))
+    .map((t) => ({ startMs: t.startMs, endMs: t.endMs, summary: t.summary }));
+
+  const busyBase = (hardBusy || []).concat(occupying);
+  for (const p of placements || []) {
+    busyBase.push({
+      startMs: Date.parse(p.startIso),
+      endMs: Date.parse(p.endIso),
+      summary: p.title,
+    });
+  }
+
+  const scheduled = [];
+  const unplaced = [];
+  const ordered = (bumps || []).slice().sort((a, b) => Date.parse(a.task_start) - Date.parse(b.task_start)
+    || Number(a.display_id) - Number(b.display_id));
+
+  for (const bump of ordered) {
+    const durationMin = bump.duration_min || 30;
+    const title = String(bump.title || `MC-${bump.display_id}`).replace(/^MC-\d+\s*/, '') || `MC-${bump.display_id}`;
+    const idealHm = (() => {
+      try {
+        const m = isoToLondonMinutes(bump.task_start);
+        return hmLabel(m);
+      } catch (e) {
+        return '10:00';
+      }
+    })();
+    const days = [];
+    for (let i = 0; i <= 14; i += 1) {
+      const d = addDays(bump.habit_day || fromYmd, i);
+      if (d >= fromYmd && isSchedulableDay(d, ruleMap, holidays)) days.push(d);
+    }
+
+    let slot = null;
+    const busyWork = busyBase.concat(
+      scheduled.map((s) => ({
+        startMs: Date.parse(s.new_start),
+        endMs: Date.parse(s.new_end),
+        summary: s.title,
+      })),
+    );
+    const placedWork = placedBlocks.concat(
+      scheduled.map((s) => ({
+        day: s.new_day,
+        startIso: s.new_start,
+        endIso: s.new_end,
+        title: s.title,
+      })),
+    );
+
+    for (const day of days) {
+      const trial = trySlotOnDay(
+        day, durationMin, idealHm, title, busyWork, placedWork, dayUsed, ruleMap,
+      );
+      if (!trial) continue;
+      slot = trial;
+      break;
+    }
+
+    if (!slot) {
+      unplaced.push({
+        ...bump,
+        unplaced: true,
+        reason: 'UNPLACED — no legal gap within 14 days under cap/window/gaps',
+      });
+      continue;
+    }
+
+    dayUsed[slot.day] = (dayUsed[slot.day] || 0) + durationMin;
+    scheduled.push({
+      ...bump,
+      title,
+      new_day: slot.day,
+      new_start: slot.startIso,
+      new_end: slot.endIso,
+      duration_min: durationMin,
+      unplaced: false,
+    });
+  }
+
+  return { scheduled, unplaced };
 }
 
 /** Blockers before dependents; among peers, hardest-first (p0→p5). */
@@ -438,6 +541,7 @@ module.exports = {
   buildBusyIntervals,
   datedTasksToIntervals,
   findTaskBumps,
+  placeBumpedTasks,
   orderHabitsForPlacement,
   placeHabits,
   buildAmendments,

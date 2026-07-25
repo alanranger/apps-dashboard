@@ -251,4 +251,26 @@ describe('habit-placer-lib — dated tasks', () => {
     const proof = provePlacement(placements, pinned, [], rules, { softTaskIntervals: soft, bumps });
     assert.equal(proof.ok, true, proof.fails.join('; '));
   });
+
+  it('schedules bumped tasks into a concrete gap (no pick-a-slot)', () => {
+    const { placeBumpedTasks } = require('../../api/mc/habit-placer-lib.js');
+    const soft = datedTasksToIntervals([{
+      display_id: 8, title: 'Rev-weighting', state: 'todo', slot_pinned: false,
+      scheduled_start: '2026-08-11T10:00:00+01:00', scheduled_end: '2026-08-11T11:00:00+01:00',
+    }], { pinnedOnly: false });
+    const placements = [{
+      habit_id: 'h', title: 'BAU global refresh — Day 1', day: '2026-08-11',
+      startIso: new Date(londonYmdHmToUtcMs('2026-08-11', '10:00')).toISOString(),
+      endIso: new Date(londonYmdHmToUtcMs('2026-08-11', '14:00')).toISOString(),
+      duration_min: 240,
+    }];
+    const bumps = findTaskBumps(placements, soft);
+    const { scheduled, unplaced } = placeBumpedTasks(
+      bumps, soft, [], placements, rules, holidays, '2026-08-11',
+    );
+    assert.equal(unplaced.length, 0);
+    assert.equal(scheduled.length, 1);
+    assert.ok(scheduled[0].new_start);
+    assert.ok(Date.parse(scheduled[0].new_start) >= Date.parse(placements[0].endIso));
+  });
 });
