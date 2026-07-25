@@ -1,0 +1,158 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const {
+  orderHabitsForPlacement,
+  buildBusyIntervals,
+  placeHabits,
+  buildAmendments,
+  provePlacement,
+  londonYmdHmToUtcMs,
+} = require('../../api/mc/habit-placer-lib.js');
+
+const rules = {
+  daily_task_cap_min: '240',
+  daily_task_cap_tolerance_min: '30',
+  decompress_after_task_min: '30',
+  fixture_buffer_min: '60',
+  working_days: 'mon,tue,wed,thu,fri,sat,sun',
+  working_hours_weekday_start: '09:00',
+  working_hours_weekday_end: '17:00',
+  working_hours_weekend_start: '09:00',
+  working_hours_weekend_end: '17:00',
+  exclude_bank_holidays: 'false',
+  title_prefix_fixture: 'MC ⚽',
+};
+const holidays = new Set();
+const ipswich = 'c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com';
+
+const day1 = {
+  id: 'h1', title: 'BAU Day 1', priority: 'p1', duration_min: 60,
+  ideal_time: '10:00', window_days: 1, time_critical: false,
+  rrule: 'FREQ=WEEKLY;BYDAY=MO',
+};
+const day2 = {
+  id: 'h2', title: 'BAU Day 2', priority: 'p1', duration_min: 60,
+  ideal_time: '10:00', window_days: 1, time_critical: false,
+  rrule: 'FREQ=WEEKLY;BYDAY=TU',
+};
+const upload = {
+  id: 'h3', title: 'Upload sites', priority: 'p1', duration_min: 60,
+  ideal_time: '10:00', window_days: 2, time_critical: false,
+  rrule: 'FREQ=WEEKLY;BYDAY=WE',
+};
+const deps = [
+  { habit_id: 'h2', depends_on_habit_id: 'h1', dep_type: 'must_complete_first' },
+  { habit_id: 'h3', depends_on_habit_id: 'h2', dep_type: 'within_hours', within_hours: 24 },
+];
+
+describe('habit-placer-lib — topology then hardest-first', () => {
+  it('orders blockers before dependents even if dependent is p0', () => {
+    const soft = { ...day1, priority: 'p2' };
+    const hardDep = { ...day2, priority: 'p0' };
+    const ordered = orderHabitsForPlacement([hardDep, soft], [
+      { habit_id: hardDep.id, depends_on_habit_id: soft.id, dep_type: 'must_complete_first' },
+    ]);
+    assert.equal(ordered[0].id, soft.id);
+    assert.equal(ordered[1].id, hardDep.id);
+  });
+});
+
+describe('habit-placer-lib — busy map', () => {
+  it('strips MC and MC ⚽; expands Ipswich by buffer', () => {
+    const busy = buildBusyIntervals([
+      {
+        summary: 'MC 🔁 Blog', colorId: '10',
+        start: { dateTime: '2026-08-10T10:00:00+01:00' },
+        end: { dateTime: '2026-08-10T12:00:00+01:00' },
+      },
+      {
+        summary: 'MC ⚽ Before: Ipswich', colorId: '10',
+        start: { dateTime: '2026-08-22T14:00:00+01:00' },
+        end: { dateTime: '2026-08-22T15:00:00+01:00' },
+      },
+      {
+        summary: 'Ipswich Town vs Sunderland',
+        _calendarId: ipswich,
+        transparency: 'transparent',
+        start: { dateTime: '2026-08-22T15:00:00+01:00' },
+        end: { dateTime: '2026-08-22T17:00:00+01:00' },
+      },
+      {
+        summary: 'Workshop',
+        start: { dateTime: '2026-08-11T10:00:00+01:00' },
+        end: { dateTime: '2026-08-11T16:00:00+01:00' },
+      },
+    ], rules);
+    assert.equal(busy.length, 2);
+    assert.ok(busy.some((b) => b.summary.includes('Workshop')));
+    const fix = busy.find((b) => b.summary.includes('Ipswich Town'));
+    assert.ok(fix);
+    // 15:00–17:00 London ±60m → 14:00–18:00
+    assert.equal(isoHm(fix.startMs), '14:00');
+    assert.equal(isoHm(fix.endMs), '18:00');
+  });
+});
+
+function isoHm(ms) {
+  const { isoToLondonMinutes } = require('../../api/mc/scheduling-rules-lib.js');
+  const m = isoToLondonMinutes(new Date(ms).toISOString());
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+describe('habit-placer-lib — place + §5 proof', () => {
+  it('places chain with no overlaps and deps held', () => {
+    // Horizon covering one Mon–Wed: 2026-08-10 Mon … 2026-08-12 Wed
+    const from = '2026-08-10';
+    const to = '2026-08-16';
+    const clientBusy = buildBusyIntervals([{
+      summary: 'Client shoot',
+      start: { dateTime: '2026-08-11T13:00:00+01:00' },
+      end: { dateTime: '2026-08-11T15:00:00+01:00' },
+    }], rules);
+    const { placements, unplaced } = placeHabits(
+      [upload, day2, day1], deps, clientBusy.slice(), rules, holidays, from, to,
+    );
+    assert.equal(unplaced.length, 0);
+    assert.ok(placements.length >= 3);
+    const proof = provePlacement(placements, clientBusy, deps, rules);
+    assert.equal(proof.ok, true, proof.fails.join('; '));
+  });
+
+  it('does not sit a habit on client busy', () => {
+    const habit = {
+      id: 'hx', title: 'Joining', priority: 'p0', duration_min: 60,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    };
+    const clientBusy = [{
+      startMs: londonYmdHmToUtcMs('2026-08-11', '09:00'),
+      endMs: londonYmdHmToUtcMs('2026-08-11', '17:00'),
+      summary: 'all day client',
+    }];
+    const { placements, unplaced } = placeHabits(
+      [habit], [], clientBusy.slice(), rules, holidays, '2026-08-11', '2026-08-11',
+    );
+    assert.equal(placements.length, 0);
+    assert.equal(unplaced.length, 1);
+  });
+
+  it('KEEP when existing matches plan; MOVE when shifted', () => {
+    const planned = [{
+      habit_id: 'h1', title: 'A', ideal_date: '2026-08-10',
+      startIso: '2026-08-10T09:00:00.000Z', endIso: '2026-08-10T10:00:00.000Z',
+    }];
+    const keep = buildAmendments(planned, [{
+      ...planned[0], calendar_event_id: 'ev1',
+    }]);
+    assert.equal(keep[0].action, 'KEEP');
+    const move = buildAmendments(planned, [{
+      habit_id: 'h1', title: 'A', ideal_date: '2026-08-10',
+      startIso: '2026-08-10T08:00:00.000Z', endIso: '2026-08-10T09:00:00.000Z',
+      calendar_event_id: 'ev1',
+    }]);
+    assert.equal(move[0].action, 'MOVE');
+  });
+});

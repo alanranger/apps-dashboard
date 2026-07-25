@@ -51,9 +51,12 @@ function nthWeekdayInMonth(year, month, nth, dow) {
   return null;
 }
 
-function nextWeekly(after, byday) {
+function nextWeekly(after, byday, interval = 1) {
   const bd = parseByDay(byday);
   if (!bd || bd.dow == null) return null;
+  const step = Math.max(1, Number(interval) || 1);
+  // Successive walk: previous occurrence was on this weekday → jump INTERVAL weeks.
+  if (after.getDay() === bd.dow) return addDays(after, step * 7);
   let d = addDays(after, 1);
   for (let i = 0; i < 14; i += 1) {
     if (d.getDay() === bd.dow) return d;
@@ -98,7 +101,7 @@ function nextDueFromRrule(rrule, fromDate) {
     : fromYmd(fromDate || toYmd(new Date()));
   const interval = Number(p.INTERVAL) || 1;
   let n = null;
-  if (p.FREQ === 'WEEKLY' && p.BYDAY) n = nextWeekly(after, p.BYDAY.split(',')[0]);
+  if (p.FREQ === 'WEEKLY' && p.BYDAY) n = nextWeekly(after, p.BYDAY.split(',')[0], interval);
   else if (p.FREQ === 'MONTHLY' && p.BYMONTHDAY) n = nextMonthlyDom(after, Number(p.BYMONTHDAY), interval);
   else if (p.FREQ === 'MONTHLY' && p.BYDAY) n = nextMonthlyByDay(after, p.BYDAY.split(',')[0], interval);
   return n ? toYmd(n) : null;
