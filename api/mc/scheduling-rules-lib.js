@@ -67,6 +67,14 @@ function bankHolidaySet(fromY, toY) {
   return s;
 }
 
+// Canonical holiday set from the bank_holidays table (GOV.UK-seeded). Preferred
+// over the computed last-Monday set because it also carries substitute days.
+// An EMPTY result over a range where rows are expected is a FAULT — the caller
+// must surface it (never treat empty as "no holidays this period").
+function holidaySetFromRows(rows) {
+  return new Set((rows || []).map((r) => String(r.holiday_date).slice(0, 10)));
+}
+
 function ruleMapFromRows(rows) {
   return Object.fromEntries((rows || []).map((r) => [r.key, r.value]));
 }
@@ -127,6 +135,6 @@ function blockMinutesOnDay(startIso, endIso, ymdStr) {
 }
 
 module.exports = {
-  parseHm, bankHolidaySet, ruleMapFromRows, workingWindow, workingDaysSet,
+  parseHm, bankHolidaySet, holidaySetFromRows, ruleMapFromRows, workingWindow, workingDaysSet,
   dayName, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, blockMinutesOnDay, addDays,
 };

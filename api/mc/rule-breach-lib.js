@@ -30,13 +30,17 @@ function proposeSlot(date, win, durationMin) {
   return `Move to ${date} ${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}–${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')} (next legal slot honouring ${durationMin}m block)`;
 }
 
-function buildRuleBreachProposals(blocks, ruleMap, pinnedIds) {
+function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays) {
   const capMin = Number(ruleMap.daily_task_cap_min || 240);
   const gapMin = Number(ruleMap.decompress_after_task_min || 30);
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
-  const holidays = bankHolidaySet(Number(today.slice(0, 4)) - 1, Number(today.slice(0, 4)) + 1);
+  // Prefer the DB-seeded holiday set (carries substitute days). Fall back to the
+  // computed last-Monday set only when the caller passes nothing.
+  const holidays = injectedHolidays?.size
+    ? injectedHolidays
+    : bankHolidaySet(Number(today.slice(0, 4)) - 1, Number(today.slice(0, 4)) + 1);
   const proposals = [];
   const byDay = {};
 

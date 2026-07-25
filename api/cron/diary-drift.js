@@ -4,7 +4,7 @@
  */
 const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
-const { ruleMapFromRows } = require('../mc/scheduling-rules-lib');
+const { ruleMapFromRows, holidaySetFromRows } = require('../mc/scheduling-rules-lib');
 const { buildRuleBreachProposals } = require('../mc/rule-breach-lib');
 const {
   runMissingTravelBlockScan,
@@ -154,6 +154,42 @@ module.exports = async function handler(req, res) {
   const maxRolls = Number(ruleMap.missed_habit_max_rolls || 3);
   const horizonWeeks = Number(ruleMap.travel_horizon_weeks || 12);
   const horizonEnd = addDaysYmd(today, horizonWeeks * 7);
+
+  // Bank-holiday source health. A holiday input that returns 0 rows over the
+  // scheduling horizon is a FAULT (empty is indistinguishable from "no holidays"),
+  // not a clean pass — the exact hole that let exclude_bank_holidays sit dead.
+  let holidaySet = null;
+  if (ruleMap.exclude_bank_holidays === 'true') {
+    let bhRows = [];
+    try {
+      bhRows = await sb(`bank_holidays?select=holiday_date&holiday_date=gte.${today}&holiday_date=lte.${horizonEnd}`);
+    } catch (e) { notes.push(`bank_holidays_read_error: ${e.message}`); }
+    holidaySet = holidaySetFromRows(bhRows);
+    if (holidaySet.size === 0) {
+      const relatedId = `source_empty:bank_holidays:${today}`;
+      if (!(await existingPending('source_empty', relatedId))) {
+        const row = await sb('pending_diary_changes', {
+          method: 'POST',
+          body: {
+            change_type: 'source_empty',
+            target_date: today,
+            summary: 'Bank-holiday source returned 0 rows over the scheduling horizon — exclude_bank_holidays is currently unenforceable.',
+            proposed_action: 'Re-seed public.bank_holidays from https://www.gov.uk/bank-holidays.json (england-and-wales division). See sql/018_bank_holidays.sql. Falling back to the computed last-Monday set until fixed.',
+            reason: `bank_holidays empty for ${today}..${horizonEnd}; rule exclude_bank_holidays=true`,
+            urgency: 'high',
+            status: 'pending',
+            related_id: relatedId,
+          },
+        });
+        const id = Array.isArray(row) ? row[0]?.id : row?.id;
+        if (id) inserted.push(id);
+      }
+      notes.push('bank_holidays: EMPTY over horizon — source_empty fault raised; using computed fallback');
+      holidaySet = null;
+    } else {
+      notes.push(`bank_holidays: ${holidaySet.size} in horizon (${today}..${horizonEnd})`);
+    }
+  }
   const homePc = ruleMap.home_postcode || 'CV4 9HW';
   const bufferScope = ruleMap.buffer_scope || 'home_only';
   const prepMin = Number(ruleMap.prep_buffer_min || 30);
@@ -422,7 +458,7 @@ module.exports = async function handler(req, res) {
     const pinnedIds = new Set();
     const pinned = await sb('tasks?select=display_id&slot_pinned=eq.true');
     for (const t of pinned || []) pinnedIds.add(Number(t.display_id));
-    const proposals = buildRuleBreachProposals(blocks, ruleMap, pinnedIds);
+    const proposals = buildRuleBreachProposals(blocks, ruleMap, pinnedIds, holidaySet);
     for (const p of proposals) {
       if (await existingPending('rule_breach', p.related_id)) continue;
       const row = await sb('pending_diary_changes', { method: 'POST', body: { ...p, status: 'pending' } });
