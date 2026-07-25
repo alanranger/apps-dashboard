@@ -120,6 +120,42 @@ async function reevalPendingMissedHabits(ctx) {
   notes.push(`missed_habit_reeval: ${n} time-critical fossil(s) rewritten`);
 }
 
+/**
+ * Retire stale window rule_breach rows that the current detector would not raise
+ * (travel/buffer false-positives from before §7a, or within overrun tolerance).
+ * Only touches starts_before / ends_after reasons — never overlaps/caps/residential.
+ */
+async function retireStaleWindowBreaches(ctx) {
+  const {
+    sb, inserted, notes, freshRelatedIds,
+  } = ctx;
+  let pending = [];
+  try {
+    pending = await sb(
+      'pending_diary_changes?status=eq.pending&change_type=eq.rule_breach&select=id,related_id,reason',
+    ) || [];
+  } catch (e) {
+    notes.push(`stale_window_breach_read_error: ${e.message}`);
+    return;
+  }
+  let n = 0;
+  for (const p of pending) {
+    if (!/starts_before|ends_after/.test(p.reason || '')) continue;
+    if (freshRelatedIds.has(p.related_id)) continue;
+    await sb(`pending_diary_changes?id=eq.${p.id}`, {
+      method: 'PATCH',
+      body: {
+        status: 'resolved_externally',
+        resolved_at: new Date().toISOString(),
+        resolved_by: 'detector',
+      },
+    });
+    inserted.push(`retired:${p.id}`);
+    n += 1;
+  }
+  notes.push(`stale_window_breach_retirement: ${n} row(s)`);
+}
+
 async function maybeRunFixtureScan(ctx) {
   const {
     sb, existingPending, inserted, notes, ruleMap, today,
@@ -600,6 +636,12 @@ module.exports = async function handler(req, res) {
     mcAdjudicated = blocks.length;
     await insertProposals(proposals, inserted);
     notes.push(`rule_breach: ${proposals.length} proposal(s) from ${blocks.length} MC block(s)`);
+    await retireStaleWindowBreaches({
+      sb,
+      inserted,
+      notes,
+      freshRelatedIds: new Set(proposals.map((p) => p.related_id)),
+    });
   }
 
   // Fixture blocks — dedicated season-length fetch (main busy-map horizon is only

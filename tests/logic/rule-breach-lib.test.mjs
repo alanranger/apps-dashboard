@@ -19,6 +19,8 @@ const rules = {
   working_hours_weekday_end: '17:00',
   working_hours_weekend_start: '11:00',
   working_hours_weekend_end: '16:00',
+  window_overrun_max_min: '60',
+  window_overrun_blocked_by: 'workshop,class,tuition,client_shoot,personal_block',
   title_prefix_deadline: 'MC ⏰',
   title_prefix_travel: 'MC 🚗',
   title_prefix_buffer: 'MC ⏳',
@@ -150,5 +152,68 @@ describe('rule-breach-lib — overlap + busy map', () => {
     const busy = [{ id: 'j', summary: 'Josh Birthday', start: { date: '2026-09-01' }, end: { date: '2026-09-02' } }];
     const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set(), busy);
     assert.ok(proposals.some((p) => String(p.reason).startsWith('residential_or_all_day')));
+  });
+});
+
+describe('rule-breach-lib — §7a window overrun', () => {
+  it('exempts sunrise travel at 05:00 (never a window breach)', () => {
+    const blocks = [{
+      id: 't', display_id: 1, colorId: '10',
+      summary: 'MC 🚗 Travel out — sunrise shoot',
+      start: '2026-08-11T05:00:00+01:00',
+      end: '2026-08-11T05:30:00+01:00',
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set());
+    assert.equal(proposals.filter((p) => /starts_before|ends_after/.test(p.reason || '')).length, 0);
+  });
+
+  it('exempts buffer past window close', () => {
+    const blocks = [{
+      id: 'b', display_id: 2, colorId: '10',
+      summary: 'MC ⏳ Decompress — evening class',
+      start: '2026-08-11T21:00:00+01:00',
+      end: '2026-08-11T21:30:00+01:00',
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set());
+    assert.equal(proposals.filter((p) => /starts_before|ends_after/.test(p.reason || '')).length, 0);
+  });
+
+  it('allows admin overrun ≤60m past close (tolerance, not a breach)', () => {
+    const blocks = [{
+      id: 'a', display_id: 3, colorId: '10',
+      summary: 'P1 · MC 🔁 Publish Blog Post',
+      start: '2026-08-11T16:00:00+01:00',
+      end: '2026-08-11T17:45:00+01:00', // 45m past 17:00
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set());
+    assert.equal(proposals.filter((p) => String(p.reason).includes('ends_after')).length, 0);
+  });
+
+  it('flags genuine admin overrun >60m with no justifying commitment', () => {
+    const blocks = [{
+      id: 'a', display_id: 4, colorId: '10',
+      summary: 'P1 · MC 🔁 Publish Blog Post',
+      start: '2026-08-11T16:00:00+01:00',
+      end: '2026-08-11T18:15:00+01:00', // 75m past 17:00
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set());
+    assert.ok(proposals.some((p) => String(p.reason).includes('ends_after_17:00')));
+    assert.ok(proposals.some((p) => String(p.summary).includes('ends ') && String(p.summary).includes('after')));
+  });
+
+  it('exempts admin overrun when day has a class/workshop commitment', () => {
+    const blocks = [{
+      id: 'a', display_id: 5, colorId: '10',
+      summary: 'P1 · MC 🔁 Review notes',
+      start: '2026-08-11T18:30:00+01:00',
+      end: '2026-08-11T19:30:00+01:00',
+    }];
+    const busy = [{
+      id: 'cls', summary: 'Evening Photography Lesson',
+      start: '2026-08-11T19:00:00+01:00',
+      end: '2026-08-11T21:00:00+01:00',
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set(), busy);
+    assert.equal(proposals.filter((p) => /starts_before|ends_after/.test(p.reason || '')).length, 0);
   });
 });

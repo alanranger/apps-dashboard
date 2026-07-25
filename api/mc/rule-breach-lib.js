@@ -36,17 +36,47 @@ function isFixtureBlock(block, ruleMap = {}) {
   return t.includes(prefix) || t.includes('⚽');
 }
 
-function breachesForBlock(block, ruleMap, holidays) {
+/** Day has a real commitment matching window_overrun_blocked_by (justifies overrun). */
+function dayHasJustifyingBusy(day, busyEvents, ruleMap) {
+  const keys = String(ruleMap.window_overrun_blocked_by || '')
+    .split(',').map((s) => s.trim().toLowerCase().replace(/_/g, ' ')).filter(Boolean);
+  if (!keys.length || !busyEvents?.length) return false;
+  const aliases = {
+    workshop: ['workshop', 'woodland', 'residential'],
+    class: ['class', 'lesson', 'tuition'],
+    tuition: ['tuition', 'mentoring', '1-2-1', '121'],
+    'client shoot': ['shoot', 'commission', 'client'],
+    'personal block': ['block out', 'personal', 'birthday', 'holiday'],
+  };
+  return busyEvents.some((e) => {
+    if (e.start?.date) {
+      if (!(day >= e.start.date && day < (e.end?.date || e.start.date))) return false;
+    } else {
+      const start = typeof e.start === 'string' ? e.start : e.start?.dateTime;
+      if (!start || isoToLondonDate(start) !== day) return false;
+    }
+    const blob = `${e.summary || ''} ${e.title || ''}`.toLowerCase();
+    return keys.some((k) => {
+      if (blob.includes(k)) return true;
+      return (aliases[k] || []).some((a) => blob.includes(a));
+    });
+  });
+}
+
+function breachesForBlock(block, ruleMap, holidays, busyEvents = []) {
   const date = isoToLondonDate(block.start);
   const endDate = isoToLondonDate(block.end);
   const win = workingWindow(ruleMap, date);
   const startMin = isoToLondonMinutes(block.start);
   const endMin = endDate === date ? isoToLondonMinutes(block.end) : win.end_min;
   const reminder = isReminderBlock(block, ruleMap);
-  // Travel/buffers attach to real sessions (often evenings). Reminders may be
-  // window-exempt per Alan. Neither is an admin-window breach.
+  // Travel/buffers attach to real sessions (often evenings/sunrise). Reminders may
+  // be window-exempt per Alan. Justifying busy (workshop/class/…) covers evening
+  // workshop-adjacent admin. Neither is an admin-window breach.
   const windowExempt = isTravelOrBuffer(block, ruleMap)
-    || (ruleMap.deadline_reminder_window_exempt === 'true' && reminder);
+    || (ruleMap.deadline_reminder_window_exempt === 'true' && reminder)
+    || dayHasJustifyingBusy(date, busyEvents, ruleMap);
+  const overrunMax = Number(ruleMap.window_overrun_max_min || 0);
   const reasons = [];
   if (!isSchedulableDay(date, ruleMap, holidays)) reasons.push('non_schedulable_day');
   if (ruleMap.exclude_bank_holidays === 'true' && holidays.has(date)) reasons.push('bank_holiday');
@@ -55,7 +85,9 @@ function breachesForBlock(block, ruleMap, holidays) {
       reasons.push(`starts_before_${win.start}`);
     }
     if (endMin != null && win.end_min != null && endMin > win.end_min) {
-      reasons.push(`ends_after_${win.end}`);
+      const over = endMin - win.end_min;
+      // ≤ window_overrun_max_min past close = tolerance, not a breach (Alan §7a).
+      if (over > overrunMax) reasons.push(`ends_after_${win.end}`);
     }
   }
   return {
@@ -94,15 +126,24 @@ function proposeSlot(date, win, durationMin) {
   return `Move to ${date} ${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}–${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')} (next legal slot honouring ${durationMin}m block)`;
 }
 
+function hmLabel(mins) {
+  if (mins == null) return '?';
+  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+}
+
 function windowProposal(b, br) {
   const did = Number(b.display_id);
   const startHm = isoToLondonMinutes(b.start);
-  const startLabel = startHm != null
-    ? `${String(Math.floor(startHm / 60)).padStart(2, '0')}:${String(startHm % 60).padStart(2, '0')}`
-    : '?';
+  const endHm = isoToLondonMinutes(b.end);
+  const why = br.reasons.find((r) => r.startsWith('starts_before') || r.startsWith('ends_after'))
+    || br.reasons[0]
+    || 'window';
+  const summary = why.startsWith('ends_after')
+    ? `Rule breach: MC-${did || '?'} ends ${hmLabel(endHm)}, after ${br.win.end} window`
+    : `Rule breach: MC-${did || '?'} starts ${hmLabel(startHm)}, before ${br.win.start} window`;
   return {
     change_type: 'rule_breach',
-    summary: `Rule breach: MC-${did || '?'} starts ${startLabel}, before ${br.win.start} window`,
+    summary,
     proposed_action: proposeSlot(br.date, br.win, br.duration || 45),
     reason: br.reasons.join('; '),
     related_id: `breach:${did || b.id || 'x'}:${br.date}`,
@@ -263,20 +304,25 @@ function normalizeMcBlocks(blocks, ruleMap) {
 }
 
 /** Window breaches (returned) + per-day task minutes (accumulated into byDay). */
-function collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay) {
+function collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay, busyEvents) {
   const exemptReminders = ruleMap.deadline_reminder_window_exempt === 'true';
   const out = [];
   for (const b of mcBlocks) {
     if (b.slot_pinned || pinnedIds.has(Number(b.display_id))) continue;
     if (!b.start || !String(b.start).includes('T')) continue;
-    const br = breachesForBlock(b, ruleMap, holidays);
+    const br = breachesForBlock(b, ruleMap, holidays, busyEvents);
     if (!br.reasons.length) {
       if (!(exemptReminders && br.reminder) && !isTravelOrBuffer(b, ruleMap)) {
         byDay[br.date] = (byDay[br.date] || 0) + br.duration;
       }
       continue;
     }
-    out.push(windowProposal(b, br));
+    // Only raise a window proposal when a window reason remains (day/holiday
+    // reasons alone are handled elsewhere / still useful as window row).
+    if (br.reasons.some((r) => r.startsWith('starts_before') || r.startsWith('ends_after')
+      || r === 'non_schedulable_day' || r === 'bank_holiday')) {
+      out.push(windowProposal(b, br));
+    }
   }
   return out;
 }
@@ -303,7 +349,7 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
   const holidays = resolveHolidays(injectedHolidays);
   const byDay = {};
   const mcBlocks = normalizeMcBlocks(blocks, ruleMap);
-  const proposals = collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay);
+  const proposals = collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay, busyEvents);
 
   for (const [day, total] of Object.entries(byDay)) {
     const cp = capProposal(day, total, cap);
