@@ -158,6 +158,31 @@ describe('habit-placer-lib — place + §5 proof', () => {
     }]);
     assert.equal(move[0].action, 'MOVE');
   });
+
+  it('KEEP when London wall clock matches despite different ISO offset strings', () => {
+    const planned = [{
+      habit_id: 'h1', title: 'A', ideal_date: '2026-09-03',
+      startIso: '2026-09-03T09:00:00.000Z', endIso: '2026-09-03T12:00:00.000Z',
+    }];
+    const keep = buildAmendments(planned, [{
+      habit_id: 'h1', title: 'A', ideal_date: '2026-09-03',
+      startIso: '2026-09-03T10:00:00+01:00', endIso: '2026-09-03T13:00:00+01:00',
+      calendar_event_id: 'ev1',
+    }]);
+    assert.equal(keep[0].action, 'KEEP');
+  });
+
+  it('skips past-dated amendments when fromYmd set', () => {
+    const planned = [{
+      habit_id: 'h1', title: 'A', ideal_date: '2026-07-24',
+      startIso: '2026-07-24T09:00:00.000Z', endIso: '2026-07-24T10:00:00.000Z',
+      day: '2026-07-24', duration_min: 60,
+    }];
+    const all = buildAmendments(planned, []);
+    assert.equal(all.length, 1);
+    const filtered = buildAmendments(planned, [], '2026-07-25');
+    assert.equal(filtered.length, 0);
+  });
 });
 
 describe('habit-placer-lib — tiered gaps', () => {

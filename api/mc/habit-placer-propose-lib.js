@@ -72,6 +72,7 @@ function amendmentToPending(a) {
   if (!a || a.action === 'KEEP') return null;
   const day = isoToLondonDate(a.startIso) || a.ideal_date;
   const when = `${londonHm(a.startIso)}–${londonHm(a.endIso)}`;
+  const tie = `recurring_task_id=${a.habit_id}; ideal_date=${a.ideal_date}`;
   const base = {
     change_type: 'habit_placement',
     target_date: day,
@@ -83,15 +84,17 @@ function amendmentToPending(a) {
     return {
       ...base,
       summary: `Place habit: ${a.title} — ${day} ${when}`,
-      proposed_action: `CREATE Primary block "${a.title}" ${day} ${when} (ideal ${a.ideal_date}). Tie recurring_log.calendar_event_id.`,
+      proposed_action: `CREATE Primary block "${a.title}" ${day} ${when}. ${tie}. Tie recurring_log.calendar_event_id after create.`,
       reason: 'Joint habit placer — no keyed calendar block for this occurrence',
     };
   }
   if (a.action === 'MOVE') {
+    const fromDay = isoToLondonDate(a.from_startIso) || a.ideal_date;
+    const fromWhen = `${londonHm(a.from_startIso)}–${londonHm(a.from_endIso)}`;
     return {
       ...base,
       summary: `Move habit: ${a.title} → ${day} ${when}`,
-      proposed_action: `MOVE event ${a.calendar_event_id} to ${day} ${when} (was ${londonHm(a.from_startIso)}–${londonHm(a.from_endIso)}).`,
+      proposed_action: `MOVE event ${a.calendar_event_id} to ${day} ${when} (was ${fromDay} ${fromWhen}). ${tie}.`,
       reason: 'Joint habit placer — existing block time/day differs from plan',
     };
   }
@@ -99,7 +102,7 @@ function amendmentToPending(a) {
     return {
       ...base,
       summary: `Remove habit block: ${a.title} (${a.ideal_date})`,
-      proposed_action: `DELETE Primary event ${a.calendar_event_id} (occurrence no longer in plan).`,
+      proposed_action: `DELETE Primary event ${a.calendar_event_id} (${day} ${when}). ${tie}.`,
       reason: 'Joint habit placer — occurrence dropped or superseded',
     };
   }
@@ -128,11 +131,13 @@ async function runHabitPlacerPropose(ctx) {
     habits || [], deps || [], clientBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
   );
   const proof = provePlacement(placements, clientBusy, deps || [], ruleMap);
-  const amendments = buildAmendments(placements, existing);
+  const amendmentsRaw = buildAmendments(placements, existing, fromYmd);
+  const amendments = amendmentsRaw;
   const counts = amendments.reduce((acc, a) => {
     acc[a.action] = (acc[a.action] || 0) + 1;
     return acc;
   }, {});
+  const skippedPast = buildAmendments(placements, existing).length - amendments.length;
 
   let pendingWrote = 0;
   if (writePending && proof.ok) {
@@ -153,6 +158,7 @@ async function runHabitPlacerPropose(ctx) {
     amendments,
     amendment_counts: counts,
     existing_matched: existing.length,
+    skipped_past: skippedPast,
     proof,
     pending_wrote: pendingWrote,
     calendar_writes: 0,

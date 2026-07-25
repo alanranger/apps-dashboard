@@ -278,7 +278,13 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
   return { placements, unplaced };
 }
 
-function buildAmendments(placements, existing = []) {
+function sameLondonSlot(aIso, bIso) {
+  if (!aIso || !bIso) return false;
+  return isoToLondonDate(aIso) === isoToLondonDate(bIso)
+    && isoToLondonMinutes(aIso) === isoToLondonMinutes(bIso);
+}
+
+function buildAmendments(placements, existing = [], fromYmd = null) {
   const key = (r) => `${r.habit_id}|${r.ideal_date}`;
   const plan = new Map(placements.map((p) => [key(p), p]));
   const have = new Map(existing.map((e) => [key(e), e]));
@@ -292,8 +298,7 @@ function buildAmendments(placements, existing = []) {
       });
       continue;
     }
-    const same = Date.parse(e.startIso) === Date.parse(p.startIso)
-      && Date.parse(e.endIso) === Date.parse(p.endIso);
+    const same = sameLondonSlot(e.startIso, p.startIso) && sameLondonSlot(e.endIso, p.endIso);
     out.push({
       action: same ? 'KEEP' : 'MOVE',
       habit_id: p.habit_id,
@@ -313,7 +318,11 @@ function buildAmendments(placements, existing = []) {
       calendar_event_id: e.calendar_event_id,
     });
   }
-  return out;
+  if (!fromYmd) return out;
+  return out.filter((a) => {
+    const day = isoToLondonDate(a.startIso) || a.ideal_date;
+    return day >= fromYmd;
+  });
 }
 
 function provePlacement(placements, clientBusy, deps, ruleMap) {
@@ -373,4 +382,5 @@ module.exports = {
   habitGapTier,
   gapMinsForTitle,
   requiredGapMins,
+  sameLondonSlot,
 };
