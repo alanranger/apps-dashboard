@@ -273,4 +273,36 @@ describe('habit-placer-lib — dated tasks', () => {
     assert.ok(scheduled[0].new_start);
     assert.ok(Date.parse(scheduled[0].new_start) >= Date.parse(placements[0].endIso));
   });
+
+  it('pulls dependents when blocker is bumped and places them after', () => {
+    const { placeBumpedTasks } = require('../../api/mc/habit-placer-lib.js');
+    const soft = datedTasksToIntervals([
+      {
+        display_id: 21, title: 'Funds', state: 'todo', slot_pinned: false,
+        scheduled_start: '2026-08-11T10:00:00+01:00', scheduled_end: '2026-08-11T10:15:00+01:00',
+        depends_on_display_id: null,
+      },
+      {
+        display_id: 22, title: 'Card move', state: 'todo', slot_pinned: false,
+        scheduled_start: '2026-08-11T12:45:00+01:00', scheduled_end: '2026-08-11T13:30:00+01:00',
+        depends_on_display_id: 21,
+      },
+    ], { pinnedOnly: false });
+    const placements = [{
+      habit_id: 'h', title: 'Send Out Joining Details', day: '2026-08-11',
+      startIso: new Date(londonYmdHmToUtcMs('2026-08-11', '10:00')).toISOString(),
+      endIso: new Date(londonYmdHmToUtcMs('2026-08-11', '11:00')).toISOString(),
+      duration_min: 60,
+    }];
+    const bumps = findTaskBumps(placements, soft);
+    assert.ok(bumps.some((b) => Number(b.display_id) === 21));
+    assert.ok(bumps.some((b) => Number(b.display_id) === 22), '22 pulled with 21');
+    const { scheduled } = placeBumpedTasks(
+      bumps, soft, [], placements, rules, holidays, '2026-08-11',
+    );
+    const b21 = scheduled.find((s) => Number(s.display_id) === 21);
+    const b22 = scheduled.find((s) => Number(s.display_id) === 22);
+    assert.ok(b21 && b22);
+    assert.ok(Date.parse(b22.new_start) >= Date.parse(b21.new_end));
+  });
 });

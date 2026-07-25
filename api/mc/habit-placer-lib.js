@@ -112,9 +112,67 @@ function datedTasksToIntervals(tasks, { pinnedOnly = false } = {}) {
       display_id: t.display_id,
       slot_pinned: pinned,
       kind: 'dated_task',
+      calendar_event_id: t.calendar_event_id || null,
+      depends_on_display_id: t.depends_on_display_id != null
+        ? Number(t.depends_on_display_id)
+        : null,
     });
   }
   return out.sort((a, b) => a.startMs - b.startMs);
+}
+
+function expandBumpsWithDependents(bumps, softTaskIntervals) {
+  const out = new Map();
+  for (const b of bumps || []) out.set(Number(b.display_id), b);
+
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of softTaskIntervals || []) {
+      const id = Number(t.display_id);
+      if (out.has(id)) continue;
+      const depOn = t.depends_on_display_id != null ? Number(t.depends_on_display_id) : null;
+      if (depOn == null || !out.has(depOn)) continue;
+      const blocker = out.get(depOn);
+      out.set(id, {
+        display_id: id,
+        title: t.summary,
+        task_start: new Date(t.startMs).toISOString(),
+        task_end: new Date(t.endMs).toISOString(),
+        duration_min: Math.max(15, Math.round((t.endMs - t.startMs) / 60000)),
+        habit_id: blocker.habit_id,
+        habit_title: blocker.habit_title,
+        habit_day: blocker.habit_day,
+        habit_start: blocker.habit_start,
+        habit_end: blocker.habit_end,
+        reason: `pulled_with_blocker_MC-${depOn}`,
+        depends_on_display_id: depOn,
+        calendar_event_id: t.calendar_event_id,
+      });
+      grew = true;
+    }
+  }
+  return [...out.values()];
+}
+
+function findSharedCalendarEventFlags(softTaskIntervals) {
+  const byEvent = new Map();
+  for (const t of softTaskIntervals || []) {
+    const eid = t.calendar_event_id;
+    if (!eid) continue;
+    if (!byEvent.has(eid)) byEvent.set(eid, []);
+    byEvent.get(eid).push(Number(t.display_id));
+  }
+  const flags = [];
+  for (const [eid, ids] of byEvent) {
+    if (ids.length < 2) continue;
+    flags.push({
+      calendar_event_id: eid,
+      display_ids: ids,
+      summary: `Shared calendar_event_id ${eid} on MC-${ids.join(' + MC-')} — split before apply`,
+    });
+  }
+  return flags;
 }
 
 /** Habits outrank unpinned tasks — report overlaps as bumps (task yields). */
@@ -134,20 +192,52 @@ function findTaskBumps(placements, softTaskIntervals) {
           habit_day: p.day,
           habit_start: p.startIso,
           habit_end: p.endIso,
+          depends_on_display_id: task.depends_on_display_id,
+          calendar_event_id: task.calendar_event_id,
         });
         break;
       }
     }
   }
-  return bumps;
+  return expandBumpsWithDependents(bumps, softTaskIntervals);
+}
+
+function orderBumpsByTaskDeps(bumps, softTaskIntervals) {
+  const byId = new Map((softTaskIntervals || []).map((t) => [Number(t.display_id), t]));
+  const bumpById = new Map((bumps || []).map((b) => [Number(b.display_id), b]));
+  const incoming = new Map([...bumpById.keys()].map((id) => [id, 0]));
+  const outs = new Map([...bumpById.keys()].map((id) => [id, []]));
+  for (const id of bumpById.keys()) {
+    const dep = byId.get(id)?.depends_on_display_id;
+    if (dep == null || !bumpById.has(Number(dep))) continue;
+    outs.get(Number(dep)).push(id);
+    incoming.set(id, (incoming.get(id) || 0) + 1);
+  }
+  const ready = [...bumpById.keys()].filter((id) => (incoming.get(id) || 0) === 0)
+    .sort((a, b) => a - b);
+  const ordered = [];
+  while (ready.length) {
+    const id = ready.shift();
+    ordered.push(bumpById.get(id));
+    for (const child of outs.get(id) || []) {
+      incoming.set(child, incoming.get(child) - 1);
+      if (incoming.get(child) === 0) ready.push(child);
+    }
+    ready.sort((a, b) => a - b);
+  }
+  for (const b of bumps || []) {
+    if (!ordered.includes(b)) ordered.push(b);
+  }
+  return ordered;
 }
 
 /**
  * Place each bumped task into a concrete gap (never "pick a slot").
- * Occupying: hard busy + habit placements + soft tasks not in this bump set.
+ * Respects depends_on_display_id: dependents start after blockers' new end.
  */
 function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMap, holidays, fromYmd) {
   const bumpedIds = new Set((bumps || []).map((b) => Number(b.display_id)));
+  const softById = new Map((softTaskIntervals || []).map((t) => [Number(t.display_id), t]));
   const placedBlocks = (placements || []).map((p) => ({
     day: p.day,
     startIso: p.startIso,
@@ -174,23 +264,33 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
 
   const scheduled = [];
   const unplaced = [];
-  const ordered = (bumps || []).slice().sort((a, b) => Date.parse(a.task_start) - Date.parse(b.task_start)
-    || Number(a.display_id) - Number(b.display_id));
+  const ordered = orderBumpsByTaskDeps(bumps, softTaskIntervals);
 
   for (const bump of ordered) {
     const durationMin = bump.duration_min || 30;
-    const title = String(bump.title || `MC-${bump.display_id}`).replace(/^MC-\d+\s*/, '') || `MC-${bump.display_id}`;
+    const title = String(bump.title || `MC-${bump.display_id}`).replace(/^MC-\d+\s*/, '')
+      || `MC-${bump.display_id}`;
+    const soft = softById.get(Number(bump.display_id));
+    const depOn = soft?.depends_on_display_id != null
+      ? Number(soft.depends_on_display_id)
+      : (bump.depends_on_display_id != null ? Number(bump.depends_on_display_id) : null);
+    const blocker = depOn != null
+      ? scheduled.find((s) => Number(s.display_id) === depOn)
+      : null;
+    const notBeforeMs = blocker ? Date.parse(blocker.new_end) : null;
+    const notBeforeDay = blocker ? blocker.new_day : null;
+
     const idealHm = (() => {
       try {
-        const m = isoToLondonMinutes(bump.task_start);
-        return hmLabel(m);
+        return hmLabel(isoToLondonMinutes(bump.task_start));
       } catch (e) {
         return '10:00';
       }
     })();
+    const startDay = notBeforeDay || bump.habit_day || fromYmd;
     const days = [];
     for (let i = 0; i <= 14; i += 1) {
-      const d = addDays(bump.habit_day || fromYmd, i);
+      const d = addDays(startDay, i);
       if (d >= fromYmd && isSchedulableDay(d, ruleMap, holidays)) days.push(d);
     }
 
@@ -216,6 +316,7 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
         day, durationMin, idealHm, title, busyWork, placedWork, dayUsed, ruleMap,
       );
       if (!trial) continue;
+      if (notBeforeMs != null && Date.parse(trial.startIso) < notBeforeMs) continue;
       slot = trial;
       break;
     }
@@ -223,8 +324,11 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
     if (!slot) {
       unplaced.push({
         ...bump,
+        depends_on_display_id: depOn,
         unplaced: true,
-        reason: 'UNPLACED — no legal gap within 14 days under cap/window/gaps',
+        reason: depOn != null
+          ? `UNPLACED — no slot after blocker MC-${depOn} within 14 days`
+          : 'UNPLACED — no legal gap within 14 days under cap/window/gaps',
       });
       continue;
     }
@@ -233,6 +337,7 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
     scheduled.push({
       ...bump,
       title,
+      depends_on_display_id: depOn,
       new_day: slot.day,
       new_start: slot.startIso,
       new_end: slot.endIso,
@@ -241,7 +346,7 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
     });
   }
 
-  return { scheduled, unplaced };
+  return { scheduled, unplaced, shared_calendar_flags: findSharedCalendarEventFlags(softTaskIntervals) };
 }
 
 /** Blockers before dependents; among peers, hardest-first (p0→p5). */
@@ -542,6 +647,7 @@ module.exports = {
   datedTasksToIntervals,
   findTaskBumps,
   placeBumpedTasks,
+  findSharedCalendarEventFlags,
   orderHabitsForPlacement,
   placeHabits,
   buildAmendments,

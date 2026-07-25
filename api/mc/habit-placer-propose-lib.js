@@ -172,7 +172,8 @@ async function runHabitPlacerPropose(ctx) {
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
     sb(
-      'tasks?select=display_id,title,state,slot_pinned,scheduled_start,scheduled_end'
+      'tasks?select=display_id,title,state,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
+      + 'depends_on:depends_on_task_id(display_id)'
       + '&scheduled_start=not.is.null'
       + `&scheduled_start=gte.${fromYmd}T00:00:00Z`
       + `&scheduled_start=lte.${toYmd}T23:59:59Z`
@@ -180,10 +181,14 @@ async function runHabitPlacerPropose(ctx) {
     ),
   ]);
 
+  const taskRowsNorm = (taskRows || []).map((t) => ({
+    ...t,
+    depends_on_display_id: t.depends_on?.display_id ?? t.depends_on_display_id ?? null,
+  }));
   const existingLog = loadExistingFromLog(logs || [], habits || [], gcalEvents || []);
   const clientBusy = buildBusyIntervals(gcalEvents || [], ruleMap);
-  const pinnedBusy = datedTasksToIntervals(taskRows || [], { pinnedOnly: true });
-  const softTasks = datedTasksToIntervals(taskRows || [], { pinnedOnly: false });
+  const pinnedBusy = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: true });
+  const softTasks = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false });
   const hardBusy = clientBusy.concat(pinnedBusy).sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
@@ -193,7 +198,9 @@ async function runHabitPlacerPropose(ctx) {
     existingLog, habits || [], gcalEvents || [], placements,
   );
   const bumpsRaw = findTaskBumps(placements, softTasks);
-  const { scheduled: bumps, unplaced: bumpUnplaced } = placeBumpedTasks(
+  const {
+    scheduled: bumps, unplaced: bumpUnplaced, shared_calendar_flags: sharedFlags,
+  } = placeBumpedTasks(
     bumpsRaw, softTasks, hardBusy, placements, ruleMap, holidays, fromYmd,
   );
   const allBumps = bumps.concat(bumpUnplaced);
@@ -235,13 +242,14 @@ async function runHabitPlacerPropose(ctx) {
     amendments,
     amendment_counts: counts,
     existing_matched: existing.length,
-    dated_tasks_seen: (taskRows || []).length,
+    dated_tasks_seen: taskRowsNorm.length,
     pinned_busy: pinnedBusy.length,
     soft_tasks: softTasks.length,
     task_bumps: allBumps,
     task_bump_count: allBumps.length,
     task_bump_scheduled: bumps.length,
     task_bump_unplaced: bumpUnplaced.length,
+    shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
     proof,
     pending_wrote: pendingWrote,
