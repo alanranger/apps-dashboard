@@ -87,12 +87,55 @@ describe('rule-breach-lib — overlap + busy map', () => {
     const events = [
       { id: 'a', summary: 'P0 · MC 🔁 Blog', colorId: '10', start: { dateTime: `${day}T10:00:00+01:00` }, end: { dateTime: `${day}T12:00:00+01:00` } },
       { id: 'b', summary: 'Josh Birthday', start: { date: '2026-09-01' }, end: { date: '2026-09-02' } },
-      { id: 'c', summary: 'Football', transparency: 'transparent', start: { dateTime: `${day}T15:00:00+01:00` }, end: { dateTime: `${day}T17:00:00+01:00` } },
+      { id: 'c', summary: 'Other free', transparency: 'transparent', start: { dateTime: `${day}T15:00:00+01:00` }, end: { dateTime: `${day}T17:00:00+01:00` } },
     ];
     const { mc, busy } = splitMcAndBusy(events, rules);
     assert.equal(mc.length, 1);
     assert.equal(busy.length, 1);
     assert.equal(busy[0].summary, 'Josh Birthday');
+  });
+
+  it('forces Ipswich transparent fixtures into busy with ±fixture_buffer_min', () => {
+    const ipswich = 'c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com';
+    const events = [{
+      id: 'fix',
+      summary: 'Crystal Palace vs Ipswich Town',
+      transparency: 'transparent',
+      _calendarId: ipswich,
+      start: { dateTime: '2026-09-12T15:00:00+01:00' },
+      end: { dateTime: '2026-09-12T17:00:00+01:00' },
+    }];
+    const { busy } = splitMcAndBusy(events, { ...rules, fixture_buffer_min: '60' });
+    assert.equal(busy.length, 1);
+    assert.equal(busy[0].force_busy, true);
+    assert.ok(Date.parse(busy[0].busy_start) < Date.parse('2026-09-12T15:00:00+01:00'));
+    assert.ok(Date.parse(busy[0].busy_end) > Date.parse('2026-09-12T17:00:00+01:00'));
+  });
+
+  it('flags MC task overlapping an Ipswich fixture buffer', () => {
+    const busy = [{
+      id: 'fix', summary: '⚽️ Crystal Palace vs Ipswich Town', force_busy: true, buffer_min: 60,
+      busy_start: '2026-09-12T14:00:00.000Z', busy_end: '2026-09-12T18:00:00.000Z',
+    }];
+    const blocks = [{
+      id: 'x', display_id: 99, colorId: '10',
+      summary: 'P1 · MC 🔁 Publish Blog Post',
+      start: '2026-09-12T14:30:00+01:00',
+      end: '2026-09-12T16:30:00+01:00',
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set(), busy);
+    assert.ok(proposals.some((p) => String(p.reason).startsWith('fixture_buffer_min=')));
+  });
+
+  it('does not window-breach travel/buffer blocks', () => {
+    const blocks = [{
+      id: 't', display_id: 1, colorId: '10',
+      summary: 'MC 🚗 Travel out — Kenilworth',
+      start: '2026-09-01T17:30:00+01:00',
+      end: '2026-09-01T17:50:00+01:00',
+    }];
+    const proposals = buildRuleBreachProposals(blocks, rules, pinned, new Set());
+    assert.equal(proposals.filter((p) => String(p.reason).includes('ends_after')).length, 0);
   });
 
   it('flags MC task on a residential all-day busy day', () => {

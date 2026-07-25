@@ -1,16 +1,25 @@
 /**
  * Google Calendar readonly helper for Mission Control diary-drift.
  * Env: GCAL_CLIENT_ID, GCAL_CLIENT_SECRET, GCAL_REFRESH_TOKEN
- * Optional: GCAL_CALENDAR_IDS (comma-separated; default primary + known imports)
+ * Optional: GCAL_CALENDAR_IDS (comma-separated override of the expected set)
  */
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const CAL_API = 'https://www.googleapis.com/calendar/v3';
 
-const DEFAULT_CALENDARS = [
-  'primary',
-  'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
-  'nht93uaqhhd191kc3fg1kjs57k6bunhn@import.calendar.google.com',
+/** Canonical busy-map calendars. Short of this set is a FAULT, not "ok". */
+const EXPECTED_CALENDARS = [
+  { id: 'primary', label: 'Primary' },
+  { id: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com', label: 'Workshops' },
+  { id: 'nht93uaqhhd191kc3fg1kjs57k6bunhn@import.calendar.google.com', label: 'Lessons' },
+  { id: 'c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com', label: 'Ipswich Town' },
 ];
+
+const DEFAULT_CALENDARS = EXPECTED_CALENDARS.map((c) => c.id);
+
+/** Ipswich fixtures are transparent/free in Google — still block the diary. */
+const FORCE_BUSY_CALENDAR_IDS = new Set([
+  'c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com',
+]);
 
 function gcalConfigured() {
   return !!(process.env.GCAL_CLIENT_ID
@@ -21,7 +30,15 @@ function gcalConfigured() {
 function calendarIds() {
   const raw = process.env.GCAL_CALENDAR_IDS;
   if (raw) return raw.split(',').map((s) => s.trim()).filter(Boolean);
-  return DEFAULT_CALENDARS;
+  return [...DEFAULT_CALENDARS];
+}
+
+function isForceBusyCalendar(calendarId) {
+  return FORCE_BUSY_CALENDAR_IDS.has(calendarId);
+}
+
+function expectedCalendarCount() {
+  return calendarIds().length;
 }
 
 async function getAccessToken() {
@@ -68,6 +85,31 @@ async function listEvents(accessToken, calendarId, timeMin, timeMax) {
   return data.items || [];
 }
 
+/**
+ * Assess calendar health. Short of the expected set, or any configured calendar
+ * returning zero events over the horizon, is a FAULT — never report as a clean ok.
+ */
+function assessCalendarHealth(health) {
+  const expected = expectedCalendarCount();
+  const ok = (health || []).filter((h) => h.ok);
+  const empty = ok.filter((h) => (h.count || 0) === 0);
+  const failed = (health || []).filter((h) => !h.ok);
+  const faults = [];
+  if ((health || []).length < expected) {
+    faults.push(`short:${(health || []).length}/${expected}`);
+  }
+  for (const h of empty) faults.push(`empty:${h.id}`);
+  for (const h of failed) faults.push(`fail:${h.id}`);
+  if (faults.length) {
+    return {
+      label: `${ok.length}/${expected} calendars — ${faults.join(', ')}`,
+      ok: false,
+      faults,
+    };
+  }
+  return { label: `${ok.length} calendars ok`, ok: true, faults: [] };
+}
+
 /** Fetch timed + all-day events across configured calendars. */
 async function fetchHorizonEvents(timeMinIso, timeMaxIso) {
   const token = await getAccessToken();
@@ -83,10 +125,21 @@ async function fetchHorizonEvents(timeMinIso, timeMaxIso) {
       }
       health.push({ id, ok: true, count: items.length });
     } catch (e) {
-      health.push({ id, ok: false, error: e.message });
+      health.push({ id, ok: false, error: e.message, count: 0 });
     }
   }
-  return { events: all, health };
+  return { events: all, health, assessment: assessCalendarHealth(health) };
 }
 
-module.exports = { gcalConfigured, calendarIds, getAccessToken, fetchHorizonEvents };
+module.exports = {
+  gcalConfigured,
+  calendarIds,
+  expectedCalendarCount,
+  isForceBusyCalendar,
+  assessCalendarHealth,
+  getAccessToken,
+  fetchHorizonEvents,
+  EXPECTED_CALENDARS,
+  DEFAULT_CALENDARS,
+  FORCE_BUSY_CALENDAR_IDS,
+};

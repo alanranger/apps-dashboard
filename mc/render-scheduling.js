@@ -35,8 +35,8 @@ function sourcesHealthLine(run) {
     parts[parts.length] = `<span class="sched-health${tone}">holidays: ${esc(h.holidays)}</span>`;
   }
   if (h.calendars) {
-    const ok = String(h.calendars).includes('ok') && !String(h.calendars).includes('error')
-      && !String(h.calendars).includes('not configured');
+    // "N calendars ok" is green; short/empty/fail/error/not configured are red.
+    const ok = /^\d+ calendars ok$/.test(String(h.calendars).trim());
     const tone = ok ? '' : ' sched-src-red';
     parts[parts.length] = `<span class="sched-health${tone}">calendars: ${esc(h.calendars)}</span>`;
   }

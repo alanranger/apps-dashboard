@@ -2,6 +2,7 @@ const {
   bankHolidaySet, workingWindow, isSchedulableDay,
   isoToLondonDate, isoToLondonMinutes,
 } = require('./scheduling-rules-lib');
+const { isForceBusyCalendar } = require('./gcal-lib');
 
 function isReminderBlock(block, ruleMap) {
   const t = String(block.summary || block.title || '');
@@ -31,7 +32,10 @@ function breachesForBlock(block, ruleMap, holidays) {
   const startMin = isoToLondonMinutes(block.start);
   const endMin = endDate === date ? isoToLondonMinutes(block.end) : win.end_min;
   const reminder = isReminderBlock(block, ruleMap);
-  const windowExempt = ruleMap.deadline_reminder_window_exempt === 'true' && reminder;
+  // Travel/buffers attach to real sessions (often evenings). Reminders may be
+  // window-exempt per Alan. Neither is an admin-window breach.
+  const windowExempt = isTravelOrBuffer(block, ruleMap)
+    || (ruleMap.deadline_reminder_window_exempt === 'true' && reminder);
   const reasons = [];
   if (!isSchedulableDay(date, ruleMap, holidays)) reasons.push('non_schedulable_day');
   if (ruleMap.exclude_bank_holidays === 'true' && holidays.has(date)) reasons.push('bank_holiday');
@@ -45,6 +49,28 @@ function breachesForBlock(block, ruleMap, holidays) {
   }
   return {
     date, reasons, win, reminder, duration: Math.max(0, (endMin || 0) - (startMin || 0)),
+  };
+}
+
+function shiftIso(iso, minutes) {
+  return new Date(Date.parse(iso) + minutes * 60000).toISOString();
+}
+
+/** Expand a fixture to kick-off−buffer … end+buffer (reads fixture_buffer_min). */
+function expandFixtureWindow(e, bufferMin) {
+  const start = e.start?.dateTime || e.start;
+  const end = e.end?.dateTime || e.end;
+  if (!start || !end || !String(start).includes('T')) return null;
+  return {
+    id: e.id,
+    summary: e.summary,
+    start,
+    end,
+    busy_start: shiftIso(start, -bufferMin),
+    busy_end: shiftIso(end, bufferMin),
+    force_busy: true,
+    buffer_min: bufferMin,
+    _calendarId: e._calendarId,
   };
 }
 
@@ -260,38 +286,84 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
 
   proposals.push(...collectOverlapProposals(mcBlocks, pinnedIds));
   proposals.push(...collectResidentialProposals(mcBlocks, busyEvents, ruleMap, pinnedIds));
+  proposals.push(...collectFixtureBusyHits(mcBlocks, busyEvents, ruleMap, pinnedIds));
 
   return proposals;
 }
 
-/** Split a mixed calendar dump into MC blocks vs busy-map inputs. MC never enters busy. */
+function collectFixtureBusyHits(mcBlocks, busyEvents, ruleMap, pinnedIds) {
+  const out = [];
+  const fixtures = (busyEvents || []).filter((b) => b.force_busy && b.busy_start && b.busy_end);
+  for (const mc of mcBlocks) {
+    if (pinnedIds.has(Number(mc.display_id))) continue;
+    if (isTravelOrBuffer(mc, ruleMap)) continue;
+    if (!mc.start || !String(mc.start).includes('T')) continue;
+    const aS = Date.parse(mc.start);
+    const aE = Date.parse(mc.end);
+    for (const f of fixtures) {
+      const bS = Date.parse(f.busy_start);
+      const bE = Date.parse(f.busy_end);
+      if (!(aS < bE && bS < aE)) continue;
+      const day = isoToLondonDate(mc.start);
+      const label = mc.display_id != null ? `MC-${mc.display_id}` : (mc.summary || mc.id);
+      out.push({
+        change_type: 'rule_breach',
+        summary: `Rule breach: ${label} overlaps fixture buffer for ${f.summary || 'match'} on ${day} (±${f.buffer_min}m)`,
+        proposed_action: `Move ${label} off the fixture window ${f.busy_start}–${f.busy_end}`,
+        reason: `fixture_buffer_min=${f.buffer_min}; fixture=${f.id}`,
+        related_id: `breach:fixture:${mc.id || mc.display_id}:${f.id}:${day}`,
+        target_date: day,
+        urgency: 'high',
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * Split a mixed calendar dump into MC blocks vs busy-map inputs.
+ * MC never enters busy. Ipswich (force-busy) events are kept even when Google
+ * marks them transparent, expanded by fixture_buffer_min either side.
+ */
 function splitMcAndBusy(events, ruleMap = {}) {
+  const bufferMin = Number(ruleMap.fixture_buffer_min || 60);
   const mc = [];
   const busy = [];
   for (const e of events || []) {
-    if (e.transparency === 'transparent') continue;
-    const block = {
-      id: e.id,
-      summary: e.summary,
-      title: e.summary,
-      start: e.start?.dateTime || e.start?.date || e.start,
-      end: e.end?.dateTime || e.end?.date || e.end,
-      colorId: e.colorId,
-      display_id: e.display_id,
-      slot_pinned: e.slot_pinned,
-      is_mc: isMcBlock(e),
-    };
-    // Preserve all-day shape for residential check
-    if (e.start?.date) {
-      block.start = { date: e.start.date };
-      block.end = { date: e.end?.date || e.start.date };
+    const forceBusy = isForceBusyCalendar(e._calendarId);
+    if (e.transparency === 'transparent' && !forceBusy) continue;
+
+    if (isMcBlock(e)) {
+      mc.push({
+        id: e.id,
+        summary: e.summary,
+        title: e.summary,
+        colorId: e.colorId,
+        display_id: e.display_id,
+        slot_pinned: e.slot_pinned,
+        is_mc: true,
+        start: e.start?.dateTime || e.start,
+        end: e.end?.dateTime || e.end,
+      });
+      continue;
     }
-    if (isMcBlock(e)) mc.push({
-      ...block,
-      start: e.start?.dateTime || e.start,
-      end: e.end?.dateTime || e.end,
-    });
-    else busy.push(e.start?.date ? { id: e.id, summary: e.summary, start: e.start, end: e.end } : block);
+
+    if (forceBusy) {
+      const expanded = expandFixtureWindow(e, bufferMin);
+      if (expanded) busy.push(expanded);
+      continue;
+    }
+
+    if (e.start?.date) {
+      busy.push({ id: e.id, summary: e.summary, start: e.start, end: e.end });
+    } else if (e.start?.dateTime || (typeof e.start === 'string' && String(e.start).includes('T'))) {
+      busy.push({
+        id: e.id,
+        summary: e.summary,
+        start: e.start?.dateTime || e.start,
+        end: e.end?.dateTime || e.end,
+      });
+    }
   }
   return { mc, busy };
 }
@@ -299,6 +371,8 @@ function splitMcAndBusy(events, ruleMap = {}) {
 module.exports = {
   buildRuleBreachProposals,
   splitMcAndBusy,
+  expandFixtureWindow,
   isReminderBlock,
   isMcBlock,
+  isTravelOrBuffer,
 };

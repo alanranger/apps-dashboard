@@ -487,13 +487,35 @@ module.exports = async function handler(req, res) {
     try {
       const timeMin = `${today}T00:00:00Z`;
       const timeMax = `${horizonEnd}T23:59:59Z`;
-      const { events: calEvents, health } = await fetchHorizonEvents(timeMin, timeMax);
+      const { events: calEvents, health, assessment } = await fetchHorizonEvents(timeMin, timeMax);
       const split = splitMcAndBusy(calEvents, ruleMap);
       blocks = split.mc;
       busyEvents = split.busy;
-      const ok = health.filter((h) => h.ok).length;
-      calendarsHealth = health.some((h) => !h.ok) ? `${ok}/${health.length} calendars ok` : `${ok} calendars ok`;
+      calendarsHealth = assessment.label;
       notes.push(`gcal: fetched ${calEvents.length} events → ${blocks.length} MC / ${busyEvents.length} busy`);
+      notes.push(`gcal_ids: ${health.map((h) => `${h.id}:${h.ok ? h.count : 'FAIL'}`).join(' | ')}`);
+      // Short busy map / empty calendar is a FAULT — never report as a clean pass.
+      if (!assessment.ok) {
+        const relatedId = `source_empty:calendars:${today}:${assessment.faults.join(',')}`;
+        if (!(await existingPending('source_empty', relatedId))) {
+          const row = await sb('pending_diary_changes', {
+            method: 'POST',
+            body: {
+              change_type: 'source_empty',
+              target_date: today,
+              summary: `Busy-map calendar source fault: ${assessment.label}`,
+              proposed_action: 'Expected Primary + Workshops + Lessons + Ipswich Town. Fix GCAL_CALENDAR_IDS / default set, or investigate a calendar that returned zero events over the horizon.',
+              reason: `calendars_fault=${assessment.faults.join(';')}`,
+              urgency: 'high',
+              status: 'pending',
+              related_id: relatedId,
+            },
+          });
+          const id = Array.isArray(row) ? row[0]?.id : row?.id;
+          if (id) inserted.push(id);
+        }
+        notes.push(`calendars: FAULT — ${assessment.faults.join(', ')}`);
+      }
     } catch (e) {
       calendarsHealth = 'error';
       notes.push(`gcal_fetch_error: ${e.message}`);
