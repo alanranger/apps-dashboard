@@ -118,7 +118,25 @@ Mission Control **Diary** tab (`/mission-control` → Diary): Outlook-style 4-we
 | `GET/PATCH /api/mc/gcal-push` | Consolidated manifest; `mark_ready` when `gcal_writes_available=true` |
 | Warn-checks | `habit-placer-lib.requiredGapMins` / `dayCapLimits` / `awaySpansFromTravelBlocks` — never a flat reimplementation |
 
-**Push button does not write Google.** It marks the queue `ready` for Claude. While Anthropic GCal writes are down, `scheduling_rules.gcal_writes_available=false` and the button stays disabled. Away-span **37-row** backlog remains in `pending_diary_changes` and is listed beside the queue for the **same** Claude flush path.
+**Push button does not write Google.** It marks the queue `ready` for Claude. While Anthropic GCal writes are down, `scheduling_rules.gcal_writes_available=false` and the button stays disabled. Away-span backlog remains in `pending_diary_changes` and is listed beside the queue for the **same** Claude flush path.
+
+**UI (26 Jul evening):** Diary top has a standout **Google Calendar flush** panel (amber when writes available + items waiting; red when blocked). Counts = diary edit queue + away-span backlog. Button copy: “Hand N to Claude → Google” / “Blocked · N waiting”. Explainer on-panel: edits already save to DB + `gcal_push_queue` (latest `related_id` wins); Push only marks `ready`.
+
+### Alan capacity model — LOCKED (26 Jul 2026)
+
+Do **not** invent alternate denominators. Fuel gauge + 8-week horizon board use this only (`weekCapacity` in `api/mc/diary-lib.js`).
+
+1. **Teaching / client days** (workshop, class, lesson, Zoom 1-2-1, client booking): day owned by the event + travel + packing. **No habits/tasks** that day. Admin free capacity = **0** (committed hours = capacity for that day). `daily_task_cap_min` is irrelevant on these days.
+2. **Residential / away** (travel-out → travel-back inclusive, plus bank holidays treated as away for capacity): on-location ≈ **05:00–22:00** committed and capacity. After travel-back: **full rest day** (typically Monday after Sunday drive home) — no appointments. (Placer auto-rest not fully shipped yet — Alan rule stands.)
+3. **Normal desk days:** core window from `scheduling_rules` — weekday **10:00–17:00**, weekend **11:00–16:00** — plus optional **19:00–21:00** catch-up **unless** evening class/fixture. Display axis remains 07:00–23:00; **fuel = realistic load, not display axis**.
+4. **Separately:** `daily_task_cap_min=240` (4h admin) is a placer/breach rule for desk days — **not** the fuel-gauge denominator.
+5. **Movable vs fixed (UX):** editable = blue **tasks** + green **habits**. Everything else (client/workshop, lesson, fixture, travel, buffers, personal) is read-only GCal truth. Horizon tiles show Fixed / Movable hours + “how to stay human” tips.
+
+### Editable vs read-only (Alan UX)
+
+- Drag / ☑ / amend / skip: **tasks + habits** only.
+- Habit complete: occurrence-level; can set actual minutes; skip logs without `last_done`.
+- DONE messages must be plain English (not “read-only calendar” for completed work).
 
 ### MC blocks are OUTPUT, never INPUT
 
