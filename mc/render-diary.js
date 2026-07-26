@@ -243,23 +243,34 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
 }
 
 function renderLegend() {
-  const items = [
-    ['dy-workshop', '📷', 'Client booking', 'workshop / shoot / Zoom 1-2-1 — fixed P0'],
-    ['dy-lesson', '🎓', 'Lesson', 'group class feed'],
-    ['dy-habit', '🔁', 'Recurring habit', ''],
-    ['dy-task', '📋', 'Manual task', 'MC-nn — use ☑ to complete'],
-    ['dy-travel', '🚗', 'Travel', ''],
-    ['dy-buffer', '⏳', 'Prep / decompress', 'buffer'],
-    ['dy-fixture', '⚽', 'Fixture', 'info'],
-    ['dy-personal', '•', 'Personal', ''],
+  const editable = [
+    ['dy-task', '📋', 'Manual task', 'drag · ☑ · amend'],
+    ['dy-habit', '🔁', 'Recurring habit', 'drag · ☑ · amend'],
   ];
+  const readonly = [
+    ['dy-workshop', '📷', 'Client booking', 'Zoom / workshop — locked'],
+    ['dy-lesson', '🎓', 'Lesson', 'group class feed'],
+    ['dy-fixture', '⚽', 'Fixture', 'match + pre/post'],
+    ['dy-travel', '🚗', 'Travel', ''],
+    ['dy-buffer', '⏳', 'Prep / decompress', ''],
+    ['dy-personal', '•', 'Personal', 'Primary calendar'],
+  ];
+  const row = ([cls, icon, label, hint]) => `
+    <div class="dy-leg-item">
+      <span class="dy-leg-swatch ${cls}">${icon}</span>
+      <span><strong>${label}</strong>${hint ? ` <span class="meta">${hint}</span>` : ''}</span>
+    </div>`;
   return `
     <div class="dy-legend card">
-      ${items.map(([cls, icon, label, hint]) => `
-        <div class="dy-leg-item">
-          <span class="dy-leg-swatch ${cls}">${icon}</span>
-          <span><strong>${label}</strong>${hint ? ` <span class="meta">(${hint})</span>` : ''}</span>
-        </div>`).join('')}
+      <div class="dy-leg-group">
+        <div class="dy-leg-head dy-leg-head-edit">Editable — drag these</div>
+        <div class="dy-leg-row">${editable.map(row).join('')}</div>
+      </div>
+      <div class="dy-leg-group">
+        <div class="dy-leg-head dy-leg-head-ro">From calendar — read-only</div>
+        <div class="dy-leg-row">${readonly.map(row).join('')}</div>
+      </div>
+      <p class="meta dy-leg-note">Blue tasks &amp; green habits only. Locked 🔒 client bookings cannot move.</p>
     </div>`;
 }
 
@@ -271,8 +282,9 @@ function renderToolbar(data) {
     <div class="dy-toolbar card">
       <div>
         <strong>Diary</strong>
-        <span class="meta"> · Mon–Sun · rolling 8 weeks · 30-min axis · ${data.from} → ${data.to} · DB master · GCal read-only</span>
+        <span class="meta"> · Mon–Sun · 8 weeks · 30-min axis · ${data.from} → ${data.to}</span>
       </div>
+      <p class="meta dy-edit-hint">Editable: <strong>blue tasks</strong> &amp; <strong>green habits</strong> (grab cursor + ☑). Everything else is Google Calendar truth.</p>
       <div class="dy-toolbar-actions">
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
         <button type="button" class="btn-secondary" data-dy-push ${enabled ? '' : 'disabled'}
@@ -323,12 +335,24 @@ function renderBlock(b, axis) {
     stackClass(b.kind, isBuffer),
     tall,
   ].filter(Boolean).join(' ');
+  const canEdit = !!(b.editable && !isBuffer);
+  const canDrag = !!(canEdit && !locked);
+  const tipBits = [
+    `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
+    b.client_fixed ? 'Locked client booking — not movable' : '',
+    canDrag ? 'Drag to reschedule · click for actions' : '',
+    canEdit && locked ? 'Locked — unlock before dragging · click for actions' : '',
+    !canEdit ? 'Read-only (from Google Calendar)' : '',
+  ].filter(Boolean);
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
-    : (b.editable ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
-  const drag = b.editable && !locked && !isBuffer ? 'draggable="true"' : '';
-  const doneBtn = (b.editable && (b.kind === 'mc_task' || b.kind === 'habit') && !isBuffer)
+    : (canEdit ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
+  const drag = canDrag ? 'draggable="true"' : '';
+  const doneBtn = (canEdit && (b.kind === 'mc_task' || b.kind === 'habit'))
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
+    : '';
+  const editBadge = canDrag
+    ? '<span class="dy-edit-badge" title="Editable">EDIT</span>'
     : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())
@@ -338,11 +362,12 @@ function renderBlock(b, axis) {
   return `<div class="dy-block ${cls} ${status}"
     style="top:${top}%;height:${h}%"
     data-block-id="${b.id}"
-    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})${b.client_fixed ? ' · fixed client booking' : ''} — click for actions"
+    title="${tipBits.join(' · ')}"
     ${drag}>
     <div class="dy-block-row">
       ${doneBtn}
       <span class="dy-block-label">${label}</span>
+      ${editBadge}
       ${priorityTag(b.priority)}
       ${lock}
     </div>

@@ -553,12 +553,19 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-toolbar { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
 .dy-toolbar-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
 .dy-push-hint { margin:0; }
-.dy-legend.card { display:flex; flex-wrap:wrap; gap:10px 16px; margin-bottom:12px; padding:10px 12px; }
-.dy-leg-item { display:flex; align-items:center; gap:8px; font-size:12px; min-width:180px; }
+.dy-legend.card { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; padding:10px 12px; }
+.dy-leg-group { display:flex; flex-direction:column; gap:6px; }
+.dy-leg-head { font-size:11px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; }
+.dy-leg-head-edit { color:#86efac; }
+.dy-leg-head-ro { color:#9ca3af; }
+.dy-leg-row { display:flex; flex-wrap:wrap; gap:8px 14px; }
+.dy-leg-item { display:flex; align-items:center; gap:8px; font-size:12px; min-width:160px; }
 .dy-leg-swatch {
   display:inline-flex; align-items:center; justify-content:center;
   width:28px; height:22px; border-radius:4px; font-size:12px; border:1px solid rgba(0,0,0,0.2);
 }
+.dy-leg-note { margin:0; }
+.dy-edit-hint { margin:0; }
 .dy-scroll { overflow:auto; max-height:calc(100vh - 260px); border:1px solid var(--border); border-radius:8px; }
 .dy-week { display:grid; grid-template-columns:repeat(7, minmax(120px, 1fr)); border-bottom:2px solid var(--border); min-width:980px; }
 .dy-week-wrap { min-width:980px; border-bottom:3px solid var(--border); }
@@ -632,7 +639,14 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block.dy-tall .dy-block-label { white-space:normal; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 .dy-block.dy-expanded { z-index:8 !important; min-height:48px; box-shadow:0 4px 14px rgba(0,0,0,0.5); }
 .dy-block.dy-expanded .dy-block-label { white-space:normal; -webkit-line-clamp:unset; display:block; }
-.dy-block.dy-edit { cursor:grab; }
+.dy-block.dy-edit { cursor:grab; outline:1px solid rgba(255,255,255,0.35); }
+.dy-block.dy-edit:active { cursor:grabbing; }
+.dy-block.dy-ro { cursor:default; opacity:0.92; }
+.dy-edit-badge {
+  flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:0.04em;
+  padding:0 4px; border-radius:3px; line-height:14px;
+  background:rgba(255,255,255,0.22); color:#fff; text-shadow:none;
+}
 .dy-ro { opacity:1; }
 /* Stacking: buffers under personal under travel under client under MC */
 .dy-z-buffer { z-index:1; }
