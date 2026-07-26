@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
     const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows] = await Promise.all([
-      sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
+      sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),

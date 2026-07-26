@@ -278,16 +278,19 @@ module.exports = async function handler(req, res) {
 
     if (action === 'complete') {
       const today = isoToLondonDate(new Date().toISOString());
+      const actualMin = body.actual_minutes != null ? Number(body.actual_minutes) : null;
       if (body.habit_id) {
         const habitId = body.habit_id;
         const scheduledDate = String(body.scheduled_date || body.completed_on || today).slice(0, 10);
         const ideal = String(body.ideal_date || scheduledDate).slice(0, 10);
-        // last_done must cover the occurrence's ideal so drift/placer skip this cycle
         const lastDone = ideal > scheduledDate ? ideal : scheduledDate;
         const habit = (await sb(
-          `recurring_tasks?id=eq.${habitId}&select=id,title,last_done`,
+          `recurring_tasks?id=eq.${habitId}&select=id,title,last_done,duration_min`,
         ))?.[0];
         if (!habit) return json(res, 404, { error: 'habit not found' });
+        const mins = Number.isFinite(actualMin) && actualMin > 0
+          ? Math.round(actualMin)
+          : Number(habit.duration_min || 60);
         await sb(`recurring_tasks?id=eq.${habitId}`, {
           method: 'PATCH', prefer: 'return=minimal',
           body: {
@@ -301,7 +304,7 @@ module.exports = async function handler(req, res) {
           + '&select=id&order=at.desc&limit=1',
         );
         const logBody = {
-          change: `completed ${lastDone}`,
+          change: `completed ${lastDone}|actual=${mins}`,
           roll_reason: 'diary_complete',
           ideal_date: ideal,
           scheduled_date: scheduledDate,
@@ -326,51 +329,126 @@ module.exports = async function handler(req, res) {
           related_id: relatedIdForHabit(habitId, ideal),
           entity_type: 'habit',
           change_kind: 'complete',
-          summary: `Complete habit ${habit.title} (occurrence ${ideal})`,
-          proposed_action: `Mark habit complete in GCal if an event exists; DB last_done=${lastDone} for ideal ${ideal}`,
+          summary: `Complete habit ${habit.title} (${mins}m actual)`,
+          proposed_action: `Mark GCal event complete/shorten to ${mins}m if present; DB last_done=${lastDone}`,
           payload: {
             habit_id: habitId,
             completed_on: lastDone,
             ideal_date: ideal,
             scheduled_date: scheduledDate,
+            actual_minutes: mins,
             calendar_event_id: body.calendar_event_id || null,
           },
         });
         return json(res, 200, {
           habit_id: habitId,
           last_done: lastDone,
-          ideal_date: ideal,
-          scheduled_date: scheduledDate,
+          actual_minutes: mins,
           calendar_writes: 0,
         });
       }
       const completedOn = body.completed_on || today;
       if (body.task_id || body.display_id) {
         const q = body.task_id
-          ? `tasks?id=eq.${body.task_id}&select=id,display_id,title,calendar_event_id`
-          : `tasks?display_id=eq.${Number(body.display_id)}&select=id,display_id,title,calendar_event_id`;
+          ? `tasks?id=eq.${body.task_id}&select=id,display_id,title,calendar_event_id,scheduled_start,scheduled_end,est_minutes`
+          : `tasks?display_id=eq.${Number(body.display_id)}&select=id,display_id,title,calendar_event_id,scheduled_start,scheduled_end,est_minutes`;
         const task = (await sb(q))?.[0];
         if (!task) return json(res, 404, { error: 'task not found' });
-        await sb(`tasks?id=eq.${task.id}`, {
-          method: 'PATCH', prefer: 'return=minimal',
-          body: {
-            completed_on: completedOn,
-            slot_pinned: true,
-            slot_pinned_at: new Date().toISOString(),
-            last_activity_at: new Date().toISOString(),
-          },
-        });
-        await logChange(task.id, actor, `completed ${completedOn} via diary`);
+        const mins = Number.isFinite(actualMin) && actualMin > 0
+          ? Math.round(actualMin)
+          : Number(task.est_minutes || 30);
+        const patch = {
+          completed_on: completedOn,
+          actual_minutes: mins,
+          slot_pinned: true,
+          slot_pinned_at: new Date().toISOString(),
+          last_activity_at: new Date().toISOString(),
+        };
+        if (task.scheduled_start) {
+          const startMs = Date.parse(task.scheduled_start);
+          if (Number.isFinite(startMs)) {
+            patch.scheduled_end = new Date(startMs + mins * 60000).toISOString();
+          }
+        }
+        await sb(`tasks?id=eq.${task.id}`, { method: 'PATCH', prefer: 'return=minimal', body: patch });
+        await logChange(task.id, actor, `completed ${completedOn} via diary; actual ${mins}m`);
         await upsertPushRow(sb, {
           related_id: relatedIdForTask(task.id),
           entity_type: 'task',
           change_kind: 'complete',
-          summary: `Complete MC-${task.display_id}`,
-          proposed_action: `Optionally colour/complete GCal event ${task.calendar_event_id || '(none)'} for MC-${task.display_id}`,
-          payload: { task_id: task.id, display_id: task.display_id, completed_on: completedOn },
+          summary: `Complete MC-${task.display_id} (${mins}m actual)`,
+          proposed_action: `Update/complete GCal event ${task.calendar_event_id || '(none)'} for MC-${task.display_id} to ${mins}m`,
+          payload: {
+            task_id: task.id,
+            display_id: task.display_id,
+            completed_on: completedOn,
+            actual_minutes: mins,
+            scheduled_end: patch.scheduled_end || null,
+          },
         });
-        return json(res, 200, { task_id: task.id, completed_on: completedOn, calendar_writes: 0 });
+        return json(res, 200, {
+          task_id: task.id,
+          completed_on: completedOn,
+          actual_minutes: mins,
+          calendar_writes: 0,
+        });
       }
+    }
+
+    if (action === 'skip' && body.habit_id) {
+      const habitId = body.habit_id;
+      const scheduledDate = String(body.scheduled_date || '').slice(0, 10);
+      const ideal = String(body.ideal_date || scheduledDate).slice(0, 10);
+      if (!scheduledDate) return json(res, 400, { error: 'scheduled_date required for skip' });
+      const habit = (await sb(`recurring_tasks?id=eq.${habitId}&select=id,title`))?.[0];
+      if (!habit) return json(res, 404, { error: 'habit not found' });
+      // Skip this occurrence only — do NOT set last_done (next RRULE still places)
+      const existing = await sb(
+        `recurring_log?recurring_task_id=eq.${habitId}&scheduled_date=eq.${scheduledDate}`
+        + '&select=id&order=at.desc&limit=1',
+      );
+      const logBody = {
+        change: `skipped ${ideal}`,
+        roll_reason: 'diary_skip',
+        ideal_date: ideal,
+        scheduled_date: scheduledDate,
+      };
+      if (existing?.[0]?.id) {
+        await sb(`recurring_log?id=eq.${existing[0].id}`, {
+          method: 'PATCH', prefer: 'return=minimal', body: logBody,
+        });
+      } else {
+        await sb('recurring_log', {
+          method: 'POST', prefer: 'return=minimal',
+          body: {
+            recurring_task_id: habitId,
+            actor,
+            ...logBody,
+            calendar_event_id: body.calendar_event_id || null,
+            projection_key: `diary-skip:${habitId}:${ideal}`,
+          },
+        });
+      }
+      await upsertPushRow(sb, {
+        related_id: relatedIdForHabit(habitId, ideal),
+        entity_type: 'habit',
+        change_kind: 'skip',
+        summary: `Skip habit ${habit.title} occurrence ${ideal}`,
+        proposed_action: `Delete/cancel GCal event for this occurrence only; next RRULE occurrence still schedules. ideal=${ideal}`,
+        payload: {
+          habit_id: habitId,
+          ideal_date: ideal,
+          scheduled_date: scheduledDate,
+          calendar_event_id: body.calendar_event_id || null,
+        },
+      });
+      return json(res, 200, {
+        habit_id: habitId,
+        skipped: true,
+        ideal_date: ideal,
+        scheduled_date: scheduledDate,
+        calendar_writes: 0,
+      });
     }
 
     if (action === 'dismiss' && body.task_id) {
@@ -391,7 +469,7 @@ module.exports = async function handler(req, res) {
       return json(res, 200, { task_id: task.id, state: 'wont_do', calendar_writes: 0 });
     }
 
-    return json(res, 400, { error: 'action required: warn|move|lock|unlock|complete|dismiss' });
+    return json(res, 400, { error: 'action required: warn|move|lock|unlock|complete|skip|dismiss' });
   } catch (e) {
     return json(res, e.status || 500, {
       error: e.message || 'diary-action error',

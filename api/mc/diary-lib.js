@@ -91,6 +91,8 @@ function toBlock(opts) {
     running_late: !!opts.running_late,
     is_buffer: opts.kind === 'buffer',
     client_fixed: !!opts.client_fixed,
+    done: !!opts.done,
+    actual_minutes: opts.actual_minutes != null ? Number(opts.actual_minutes) : null,
   };
 }
 
@@ -98,12 +100,19 @@ function tasksToBlocks(tasks, todayYmd) {
   const now = Date.now();
   return (tasks || []).filter((t) => t.scheduled_start && t.scheduled_end).map((t) => {
     const done = isDoneTask(t);
+    let end = t.scheduled_end;
+    if (done && t.actual_minutes && t.scheduled_start) {
+      const startMs = Date.parse(t.scheduled_start);
+      if (Number.isFinite(startMs)) {
+        end = new Date(startMs + Number(t.actual_minutes) * 60000).toISOString();
+      }
+    }
     return toBlock({
       id: `task:${t.id}`,
       kind: 'mc_task',
       title: t.title || `MC-${t.display_id}`,
       start: t.scheduled_start,
-      end: t.scheduled_end,
+      end,
       editable: !done,
       slot_pinned: !!t.slot_pinned,
       display_id: t.display_id,
@@ -113,6 +122,8 @@ function tasksToBlocks(tasks, todayYmd) {
       state: t.state || null,
       overdue: !done && t.due_date && t.due_date < todayYmd,
       running_late: !done && Date.parse(t.scheduled_start) < now,
+      done,
+      actual_minutes: t.actual_minutes != null ? t.actual_minutes : null,
     });
   });
 }
@@ -244,11 +255,21 @@ function parseDiaryPin(change) {
   return { start: m[1].trim(), end: m[2].trim() };
 }
 
+function parseCompleteMeta(change) {
+  const m = String(change || '').match(/^completed\s+(\d{4}-\d{2}-\d{2})(?:\|actual=(\d+))?/i);
+  if (!m) return null;
+  return { date: m[1], actual_min: m[2] != null ? Number(m[2]) : null };
+}
+
+function isSkippedChange(change) {
+  return /^skipped\b/i.test(String(change || ''));
+}
+
 function habitLogsToBlocks(logs, habitMap) {
   const best = new Map();
   for (const log of logs || []) {
     if (!log.scheduled_date || !log.recurring_task_id) continue;
-    if (/^completed\b/i.test(String(log.change || ''))) continue;
+    if (isSkippedChange(log.change)) continue; // this occurrence removed from schedule
     const key = `${log.recurring_task_id}:${log.scheduled_date}`;
     const prev = best.get(key);
     if (!prev) {
@@ -257,8 +278,11 @@ function habitLogsToBlocks(logs, habitMap) {
     }
     const prevPin = !!parseDiaryPin(prev.change);
     const curPin = !!parseDiaryPin(log.change);
-    if (curPin && !prevPin) best.set(key, log);
-    else if (curPin === prevPin && String(log.at || '') > String(prev.at || '')) best.set(key, log);
+    const prevDone = !!parseCompleteMeta(prev.change);
+    const curDone = !!parseCompleteMeta(log.change);
+    if (curDone && !prevDone) best.set(key, log);
+    else if (curPin && !prevPin && !prevDone) best.set(key, log);
+    else if (String(log.at || '') > String(prev.at || '')) best.set(key, log);
   }
   const out = [];
   for (const log of best.values()) {
@@ -266,15 +290,20 @@ function habitLogsToBlocks(logs, habitMap) {
     if (!habit) continue;
     const day = log.scheduled_date;
     const ideal = log.ideal_date || day;
-    // Already done for this occurrence cycle — don't paint / invite re-complete
-    if (habit.last_done && String(habit.last_done) >= String(ideal)) continue;
-    const dur = Number(habit.duration_min || 60);
+    const doneMeta = parseCompleteMeta(log.change);
+    const done = !!(doneMeta || (habit.last_done && String(habit.last_done) >= String(ideal)));
+    const durPlan = Number(habit.duration_min || 60);
+    const actual = doneMeta?.actual_min != null ? doneMeta.actual_min : null;
+    const dur = actual != null ? actual : durPlan;
     const pin = parseDiaryPin(log.change);
     let startIso;
     let endIso;
-    if (pin?.start && pin?.end) {
+    if (pin?.start && pin?.end && !done) {
       startIso = pin.start;
       endIso = pin.end;
+    } else if (pin?.start && done) {
+      startIso = pin.start;
+      endIso = new Date(Date.parse(pin.start) + dur * 60000).toISOString();
     } else {
       const hm = String(habit.ideal_time || '09:00').slice(0, 5);
       const startMs = londonYmdHmToUtcMs(day, hm);
@@ -287,12 +316,14 @@ function habitLogsToBlocks(logs, habitMap) {
       title: habit.title,
       start: startIso,
       end: endIso,
-      editable: true,
+      editable: !done,
       slot_pinned: false,
       habit_id: habit.id,
       ideal_date: ideal,
       calendar_event_id: log.calendar_event_id || null,
       priority: habit.priority || null,
+      done,
+      actual_minutes: actual,
     }));
   }
   return out;
@@ -488,6 +519,8 @@ module.exports = {
   holidayMapFromRows,
   habitLogsToBlocks,
   parseDiaryPin,
+  parseCompleteMeta,
+  isSkippedChange,
   insertDecompressStrips,
   warnDrop,
   weeksFrom,

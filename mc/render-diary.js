@@ -148,9 +148,26 @@ function showMenu(block, x, y, refresh) {
   };
 }
 
+function askActualMinutes(block) {
+  const planned = block.duration_min || block.est_minutes || 30;
+  const raw = window.prompt(
+    `Actual minutes spent on:\n${block.title}\n\n(planned ${planned}m — Enter what really happened)`,
+    String(planned),
+  );
+  if (raw == null) return null; // cancel
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n) || n <= 0) {
+    alert('Enter a positive number of minutes');
+    return null;
+  }
+  return n;
+}
+
 async function runMenuAction(act, block, refresh) {
   try {
     if (act === 'complete') {
+      const actual = askActualMinutes(block);
+      if (actual == null) return;
       await api('/api/mc/diary-action', {
         method: 'POST',
         body: {
@@ -162,8 +179,10 @@ async function runMenuAction(act, block, refresh) {
           scheduled_date: block.day || undefined,
           ideal_date: block.ideal_date || block.day || undefined,
           calendar_event_id: block.calendar_event_id || undefined,
+          actual_minutes: actual,
         },
       });
+      toast(`Completed · ${actual}m actual · queued for Claude`);
     } else if (act === 'lock' || act === 'unlock') {
       await api('/api/mc/diary-action', {
         method: 'POST',
@@ -176,8 +195,18 @@ async function runMenuAction(act, block, refresh) {
         body: { action: 'dismiss', task_id: block.id.replace(/^task:/, '') },
       });
     } else if (act === 'skip') {
-      alert('Skip: mark in Recurring / pending if needed — habit skip via diary push coming next.');
-      return;
+      if (!confirm(`Skip this occurrence only?\n${block.title}\n\nRemoves it from this day. Next scheduled occurrence still appears.`)) return;
+      await api('/api/mc/diary-action', {
+        method: 'POST',
+        body: {
+          action: 'skip',
+          habit_id: block.habit_id,
+          scheduled_date: block.day,
+          ideal_date: block.ideal_date || block.day,
+          calendar_event_id: block.calendar_event_id || undefined,
+        },
+      });
+      toast('Skipped this occurrence · next cycle still schedules');
     } else if (act === 'settime') {
       const afterSave = async () => {
         try {
@@ -327,6 +356,7 @@ function renderBlock(b, axis) {
   const icon = KIND_ICON[b.kind] || '•';
   const locked = !!(b.slot_pinned || b.client_fixed);
   const isBuffer = !!(b.is_buffer || b.synthetic);
+  const done = !!b.done;
   const tall = (b.duration_min || 30) >= 90 ? 'dy-tall' : '';
   const status = [
     b.overdue ? 'dy-overdue' : '',
@@ -336,27 +366,33 @@ function renderBlock(b, axis) {
     b.editable ? 'dy-edit' : 'dy-ro',
     isBuffer ? 'dy-buffer-strip' : '',
     b.client_fixed ? 'dy-client-fixed' : '',
+    done ? 'dy-done-block' : '',
     stackClass(b.kind, isBuffer),
     tall,
   ].filter(Boolean).join(' ');
-  const canEdit = !!(b.editable && !isBuffer);
+  const canEdit = !!(b.editable && !isBuffer && !done);
   const canDrag = !!(canEdit && !locked);
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
+    done && b.actual_minutes != null ? `Done · ${b.actual_minutes}m actual` : '',
+    done && b.actual_minutes == null ? 'Done' : '',
     b.client_fixed ? 'Locked client booking — not movable' : '',
     canDrag ? 'Drag to reschedule · click for actions' : '',
     canEdit && locked ? 'Locked — unlock before dragging · click for actions' : '',
-    !canEdit ? 'Read-only (from Google Calendar)' : '',
+    !canEdit && !done ? 'Read-only (from Google Calendar)' : '',
   ].filter(Boolean);
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : (canEdit ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
   const drag = canDrag ? 'draggable="true"' : '';
-  const doneBtn = (canEdit && (b.kind === 'mc_task' || b.kind === 'habit'))
+  const doneBtn = canEdit && (b.kind === 'mc_task' || b.kind === 'habit')
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
     : '';
   const editBadge = canDrag
     ? '<span class="dy-edit-badge" title="Editable">EDIT</span>'
+    : '';
+  const doneBadge = done
+    ? `<span class="dy-done-badge">DONE${b.actual_minutes != null ? ` ${b.actual_minutes}m` : ''}</span>`
     : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())
@@ -372,6 +408,7 @@ function renderBlock(b, axis) {
       ${doneBtn}
       <span class="dy-block-label">${label}</span>
       ${editBadge}
+      ${doneBadge}
       ${priorityTag(b.priority)}
       ${lock}
     </div>
@@ -473,12 +510,10 @@ function wireDiary(root, data, refresh) {
     const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
     if (!block || block.is_buffer || block.synthetic) return;
 
-    if (e.target.closest('[data-dy-done]')) {
-      if (!block.editable) return;
-      if (!confirm(`Mark complete: ${block.title}?`)) return;
+      if (e.target.closest('[data-dy-done]')) {
+      if (!block.editable || block.done) return;
       try {
         await runMenuAction('complete', block, refresh);
-        toast('Marked complete · queued for Claude');
       } catch (err) {
         alert(err.message || 'Complete failed');
       }
