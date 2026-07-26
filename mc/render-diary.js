@@ -4,6 +4,9 @@
  */
 import { api } from './api.js';
 import { $ } from './util.js';
+import { openDrawer } from './drawer.js';
+import { openRecurringEdit } from './render-recurring.js';
+import { applyBootstrap } from './store.js';
 
 const KIND_CLASS = {
   workshop: 'dy-workshop',
@@ -77,10 +80,14 @@ function showMenu(block, x, y, refresh) {
   menu.style.top = `${Math.min(y, window.innerHeight - 180)}px`;
   const items = [
     ['complete', 'Mark complete'],
-    ['settime', 'Set date/time…'],
-    block.slot_pinned ? ['unlock', 'Unlock slot'] : ['lock', 'Lock slot'],
-    block.kind === 'habit' ? ['skip', 'Skip occurrence'] : ['dismiss', 'Dismiss'],
+    ['settime', 'Amend / open details…'],
   ];
+  if (block.kind === 'mc_task') {
+    items.push(block.slot_pinned ? ['unlock', 'Unlock slot'] : ['lock', 'Lock slot']);
+    items.push(['dismiss', 'Dismiss']);
+  } else if (block.kind === 'habit') {
+    items.push(['skip', 'Skip occurrence']);
+  }
   menu.innerHTML = items.map(([a, label]) => (
     `<button type="button" data-dy-act="${a}">${label}</button>`
   )).join('');
@@ -122,11 +129,33 @@ async function runMenuAction(act, block, refresh) {
       alert('Skip: mark in Recurring / pending if needed — habit skip via diary push coming next.');
       return;
     } else if (act === 'settime') {
-      const day = prompt('Date YYYY-MM-DD', block.day);
-      const start = prompt('Start HH:MM', fmtHm(block.start_min));
-      const end = prompt('End HH:MM', fmtHm(block.end_min));
-      if (!day || !start || !end) return;
-      await dropBlock(block, day, start, end, true, refresh);
+      const afterSave = async () => {
+        try {
+          const data = await api('/api/mc/bootstrap');
+          applyBootstrap(data);
+        } catch (e) { /* ignore */ }
+        await refresh();
+      };
+      if (block.kind === 'mc_task') {
+        const taskId = block.id.replace(/^task:/, '');
+        try {
+          const data = await api('/api/mc/bootstrap');
+          applyBootstrap(data);
+        } catch (e) { /* ignore */ }
+        await openDrawer(taskId, afterSave);
+        return;
+      }
+      if (block.kind === 'habit' && block.habit_id) {
+        openRecurringEdit(block.habit_id, afterSave, {
+          day: block.day,
+          start_hm: fmtHm(block.start_min),
+          end_hm: fmtHm(block.end_min),
+          ideal_date: block.ideal_date || block.day,
+          calendar_event_id: block.calendar_event_id || null,
+        });
+        return;
+      }
+      alert('No task/habit details to open for this block.');
       return;
     }
     await refresh();

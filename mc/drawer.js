@@ -6,6 +6,22 @@ import { prioritySelectOptions } from './priority.js';
 
 const pendingImages = [];
 
+/** Browser-local datetime-local value from ISO (Alan's machine = London). */
+function toDatetimeLocal(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromDatetimeLocal(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
 export function closeDrawer() {
   store.openTaskId = null;
   $('drawer').classList.remove('open');
@@ -169,6 +185,24 @@ function wireDrawer(t, onRefresh) {
           detail_md: $('detailInput')?.value.trim() || null,
         },
       });
+      const newStart = fromDatetimeLocal($('schedStartInput')?.value);
+      const newEnd = fromDatetimeLocal($('schedEndInput')?.value);
+      const startChanged = newStart && newStart !== t.scheduled_start;
+      const endChanged = newEnd && newEnd !== t.scheduled_end;
+      if (newStart && newEnd && (startChanged || endChanged)) {
+        await api('/api/mc/diary-action', {
+          method: 'POST',
+          body: {
+            action: 'move',
+            task_id: t.id,
+            title: t.title,
+            new_start: newStart,
+            new_end: newEnd,
+            override: true,
+            calendar_event_id: t.calendar_event_id || undefined,
+          },
+        });
+      }
       await onRefresh();
       await openDrawer(t.id, onRefresh);
     } catch (e) {
@@ -289,6 +323,11 @@ export async function openDrawer(taskId, onRefresh) {
         </select>
         <label class="meta" for="dueInput">Due date</label>
         <input id="dueInput" type="date" value="${esc(t.due_date || '')}" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <label class="meta" for="schedStartInput">Diary slot start</label>
+        <input id="schedStartInput" type="datetime-local" value="${esc(toDatetimeLocal(t.scheduled_start))}" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <label class="meta" for="schedEndInput">Diary slot end</label>
+        <input id="schedEndInput" type="datetime-local" value="${esc(toDatetimeLocal(t.scheduled_end))}" style="width:100%;padding:8px;margin:4px 0 8px"/>
+        <p class="meta">Changing the diary slot pins the block and queues a GCal push (due date is unchanged).</p>
         <label class="meta" for="estInput">Estimate (mins)</label>
         <input id="estInput" type="number" min="0" step="5" inputmode="numeric" value="${t.est_minutes ?? ''}" placeholder="e.g. 90" style="width:100%;padding:8px;margin:4px 0 8px"/>
         <label class="meta" for="whyInput">Why (one line — what it unblocks or costs)</label>

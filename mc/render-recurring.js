@@ -217,12 +217,28 @@ export function openRecurringCreate(onSave) {
   modal.classList.add('open');
 }
 
-export function openRecurringEdit(id, onSave) {
+export function openRecurringEdit(id, onSave, occurrence = null) {
   const t = (store.recurring || []).find((r) => r.id === id);
   if (!t) return;
   const modal = $('modal');
   const box = $('modalBox');
+  const occStart = occurrence
+    ? String(occurrence.start_hm || occurrence.start || '09:00').slice(0, 5)
+    : '';
+  const occEnd = occurrence
+    ? String(occurrence.end_hm || '').slice(0, 5)
+    : '';
+  const occDay = occurrence?.day || '';
+  const occBlock = occurrence ? `
+    <div class="inset" style="margin-bottom:12px">
+      <h3 style="font-size:14px;margin:0 0 8px">This diary occurrence</h3>
+      <p class="meta">Read the habit notes below, then set the slot for <strong>${esc(occDay)}</strong>.</p>
+      <label>Date<input id="reOccDay" type="date" value="${esc(occDay)}" /></label>
+      <label>Start<input id="reOccStart" type="time" value="${esc(occStart)}" /></label>
+      <label>End<input id="reOccEnd" type="time" value="${esc(occEnd)}" /></label>
+    </div>` : '';
   box.innerHTML = `<h2>Edit recurring habit</h2>
+    ${occBlock}
     ${formFields('re', t)}
     <div style="display:flex;gap:8px;margin-top:12px">
       <button type="button" id="reSave">Save</button>
@@ -233,6 +249,26 @@ export function openRecurringEdit(id, onSave) {
   $('reSave').onclick = async () => {
     const body = readForm('re');
     await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
+    const dayEl = $('reOccDay');
+    const startEl = $('reOccStart');
+    const endEl = $('reOccEnd');
+    if (dayEl && startEl && endEl && dayEl.value && startEl.value && endEl.value) {
+      const newStart = `${dayEl.value}T${startEl.value}:00.000Z`;
+      const newEnd = `${dayEl.value}T${endEl.value}:00.000Z`;
+      await api('/api/mc/diary-action', {
+        method: 'POST',
+        body: {
+          action: 'move',
+          habit_id: t.id,
+          title: t.title,
+          ideal_date: occurrence?.ideal_date || dayEl.value,
+          new_start: newStart,
+          new_end: newEnd,
+          override: true,
+          calendar_event_id: occurrence?.calendar_event_id || undefined,
+        },
+      });
+    }
     modal.classList.remove('open');
     if (onSave) await onSave();
   };
