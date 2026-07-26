@@ -8,7 +8,8 @@ const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
   awaySpansFromTravelBlocks, tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
-  habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, DAY_START_MIN, DAY_END_MIN,
+  habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity,
+  DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
 
@@ -37,7 +38,7 @@ module.exports = async function handler(req, res) {
       sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active&active=eq.true'),
-      sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
+      sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
       listOpenPush(sb),
       listAwaySpanBacklog(sb),
       sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
@@ -88,7 +89,13 @@ module.exports = async function handler(req, res) {
       from,
       to,
       weeks: attachWeekCapacity(weeksFrom(from, weeks), blocks, awayDays, ruleMap),
-      day_axis: { start_min: DAY_START_MIN, end_min: DAY_END_MIN },
+      day_axis: {
+        start_min: DAY_START_MIN,
+        end_min: DAY_END_MIN,
+        step_min: AXIS_STEP_MIN,
+        px_per_step: PX_PER_STEP,
+        grid_px: GRID_PX,
+      },
       blocks,
       away_days: awayDays,
       away_spans: awaySpans,

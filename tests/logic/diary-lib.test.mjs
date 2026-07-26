@@ -156,6 +156,38 @@ describe('diary calendar feeds', () => {
     const hol = holidayMapFromRows([{ holiday_date: '2026-08-31', title: 'Summer bank holiday' }]);
     assert.equal(hol['2026-08-31'], 'Summer bank holiday');
   });
+
+  it('day axis is 30-minute steps with taller grid', () => {
+    const {
+      AXIS_STEP_MIN, DAY_START_MIN, DAY_END_MIN, GRID_PX, PX_PER_STEP,
+    } = require('../../api/mc/diary-lib.js');
+    assert.equal(AXIS_STEP_MIN, 30);
+    assert.equal(PX_PER_STEP, 36);
+    assert.equal(GRID_PX, ((DAY_END_MIN - DAY_START_MIN) / 30) * 36);
+    assert.ok(GRID_PX > 640, 'grid taller than old 640px hour axis');
+  });
+
+  it('diary_pin on recurring_log wins over ideal_time', () => {
+    const { habitLogsToBlocks, parseDiaryPin } = require('../../api/mc/diary-lib.js');
+    assert.deepEqual(
+      parseDiaryPin('diary_pin:2026-08-10T09:00:00.000Z|2026-08-10T10:00:00.000Z'),
+      { start: '2026-08-10T09:00:00.000Z', end: '2026-08-10T10:00:00.000Z' },
+    );
+    const habitId = 'h1';
+    const habitMap = new Map([[habitId, {
+      id: habitId, title: 'Hotel check', duration_min: 45, ideal_time: '10:00:00', priority: 'p1',
+    }]]);
+    const blocks = habitLogsToBlocks([{
+      recurring_task_id: habitId,
+      scheduled_date: '2026-08-10',
+      ideal_date: '2026-08-10',
+      change: 'diary_pin:2026-08-10T13:00:00.000Z|2026-08-10T13:45:00.000Z',
+      at: '2026-07-26T12:00:00Z',
+    }], habitMap);
+    assert.equal(blocks.length, 1);
+    assert.equal(blocks[0].start, '2026-08-10T13:00:00.000Z');
+    assert.equal(blocks[0].editable, true);
+  });
 });
 
 describe('gcal push related_id', () => {

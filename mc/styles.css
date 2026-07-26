@@ -587,10 +587,25 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   letter-spacing:0.02em;
 }
 .dy-day-grid {
-  position:relative; height:640px;
-  background:repeating-linear-gradient(to bottom, transparent 0, transparent 39px, rgba(255,255,255,0.04) 39px, rgba(255,255,255,0.04) 40px);
+  position:relative; height:1152px;
+  --dy-step:36px;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0, transparent calc(var(--dy-step) - 1px),
+    rgba(255,255,255,0.07) calc(var(--dy-step) - 1px), rgba(255,255,255,0.07) var(--dy-step)
+  );
 }
 .dy-hour { position:absolute; left:2px; font-size:10px; color:var(--text-faint,#9ca3af); pointer-events:none; z-index:0; }
+.dy-hour-half { font-size:9px; opacity:0.55; }
+.dy-dragging .dy-block { pointer-events:none !important; }
+.dy-toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:#111827; color:#f9fafb; border:1px solid #374151; border-radius:8px;
+  padding:10px 16px; font-size:13px; z-index:80; opacity:0; pointer-events:none;
+  transition:opacity 0.2s, transform 0.2s; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+}
+.dy-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.dy-menu-note { padding:8px 10px; font-size:12px; color:var(--text-faint,#d1d5db); max-width:220px; line-height:1.35; }
 .dy-block {
   position:absolute; left:4px; right:4px; overflow:hidden; border-radius:4px;
   padding:3px 5px; font-size:12px; font-weight:600; line-height:1.25;

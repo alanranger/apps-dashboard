@@ -6,11 +6,15 @@ const { isoToLondonDate, isoToLondonMinutes, ruleMapFromRows, workingWindow, isS
 const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
+  londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
 
 const DAY_START_MIN = 7 * 60;
 const DAY_END_MIN = 23 * 60;
+const AXIS_STEP_MIN = 30;
+const PX_PER_STEP = 36;
+const GRID_PX = ((DAY_END_MIN - DAY_START_MIN) / AXIS_STEP_MIN) * PX_PER_STEP;
 
 const WORKSHOP_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Workshops')?.id || '';
 const LESSON_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Lessons')?.id || '';
@@ -234,22 +238,50 @@ function holidayMapFromRows(rows) {
   return map;
 }
 
+function parseDiaryPin(change) {
+  const m = String(change || '').match(/^diary_pin:([^|]+)\|(.+)$/);
+  if (!m) return null;
+  return { start: m[1].trim(), end: m[2].trim() };
+}
+
 function habitLogsToBlocks(logs, habitMap) {
-  const out = [];
+  const best = new Map();
   for (const log of logs || []) {
+    if (!log.scheduled_date || !log.recurring_task_id) continue;
+    const key = `${log.recurring_task_id}:${log.scheduled_date}`;
+    const prev = best.get(key);
+    if (!prev) {
+      best.set(key, log);
+      continue;
+    }
+    const prevPin = !!parseDiaryPin(prev.change);
+    const curPin = !!parseDiaryPin(log.change);
+    if (curPin && !prevPin) best.set(key, log);
+    else if (curPin === prevPin && String(log.at || '') > String(prev.at || '')) best.set(key, log);
+  }
+  const out = [];
+  for (const log of best.values()) {
     const habit = habitMap.get(log.recurring_task_id);
     if (!habit) continue;
     const day = log.scheduled_date;
-    if (!day) continue;
     const dur = Number(habit.duration_min || 60);
-    const hm = String(habit.ideal_time || '09:00').slice(0, 5);
-    const startMs = Date.parse(`${day}T${hm}:00.000Z`);
-    const endIso = new Date(startMs + dur * 60000).toISOString();
+    const pin = parseDiaryPin(log.change);
+    let startIso;
+    let endIso;
+    if (pin?.start && pin?.end) {
+      startIso = pin.start;
+      endIso = pin.end;
+    } else {
+      const hm = String(habit.ideal_time || '09:00').slice(0, 5);
+      const startMs = londonYmdHmToUtcMs(day, hm);
+      startIso = new Date(startMs).toISOString();
+      endIso = new Date(startMs + dur * 60000).toISOString();
+    }
     out.push(toBlock({
       id: `habit:${habit.id}:${day}`,
       kind: 'habit',
       title: habit.title,
-      start: new Date(startMs).toISOString(),
+      start: startIso,
       end: endIso,
       editable: true,
       slot_pinned: false,
@@ -435,6 +467,9 @@ function attachWeekCapacity(weeks, blocks, awayDays, ruleMap) {
 module.exports = {
   DAY_START_MIN,
   DAY_END_MIN,
+  AXIS_STEP_MIN,
+  PX_PER_STEP,
+  GRID_PX,
   addDaysYmd,
   londonToday,
   mondayOnOrBefore,
@@ -448,6 +483,7 @@ module.exports = {
   allDayBannersFromBusy,
   holidayMapFromRows,
   habitLogsToBlocks,
+  parseDiaryPin,
   insertDecompressStrips,
   warnDrop,
   weeksFrom,

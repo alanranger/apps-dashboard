@@ -31,7 +31,7 @@ const KIND_ICON = {
 };
 
 const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-const MIN_BLOCK_PX = 28;
+const MIN_BLOCK_PX = 24;
 let diaryState = { data: null, menu: null };
 
 function minsToTop(min, axis) {
@@ -41,7 +41,8 @@ function minsToTop(min, axis) {
 
 function heightPct(dur, axis) {
   const span = axis.end_min - axis.start_min;
-  return Math.max((dur / span) * 100, (MIN_BLOCK_PX / 640) * 100);
+  const gridPx = axis.grid_px || 640;
+  return Math.max((dur / span) * 100, (MIN_BLOCK_PX / gridPx) * 100);
 }
 
 function fmtHm(min) {
@@ -60,8 +61,42 @@ function weekdayIndex(ymd) {
   return dow === 0 ? 6 : dow - 1; // Mon=0 … Sun=6
 }
 
+/** London wall-clock ymd+HH:MM → ISO (same correction loop as placer). */
 function londonYmdHmToIso(ymd, hm) {
+  const want = Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+  let t = Date.parse(`${ymd}T${hm}:00.000Z`);
+  for (let i = 0; i < 48; i += 1) {
+    const d = new Date(t);
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d);
+    const get = (type) => parts.find((p) => p.type === type)?.value;
+    const day = `${get('year')}-${get('month')}-${get('day')}`;
+    const got = Number(get('hour')) * 60 + Number(get('minute'));
+    if (day !== ymd) {
+      t += (ymd > day ? 1 : -1) * 3600000;
+      continue;
+    }
+    if (got === want) return d.toISOString();
+    t += (want - got) * 60000;
+  }
   return `${ymd}T${hm}:00.000Z`;
+}
+
+function toast(msg) {
+  let el = document.getElementById('dy-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dy-toast';
+    el.className = 'dy-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
 function closeMenu() {
@@ -72,12 +107,23 @@ function closeMenu() {
 
 function showMenu(block, x, y, refresh) {
   closeMenu();
-  if (block.read_only || block.is_buffer || block.synthetic) return;
+  if (block.is_buffer || block.synthetic) return;
   const menu = document.createElement('div');
   menu.id = 'dy-menu';
   menu.className = 'dy-menu';
   menu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
   menu.style.top = `${Math.min(y, window.innerHeight - 180)}px`;
+
+  if (block.read_only || !block.editable) {
+    const why = block.client_fixed
+      ? 'Locked client booking (from Google Calendar) — not movable here.'
+      : 'Read-only calendar block — drag green habits / blue tasks only.';
+    menu.innerHTML = `<div class="dy-menu-note">${why}</div>`;
+    document.body.appendChild(menu);
+    diaryState.menu = { block };
+    return;
+  }
+
   const items = [
     ['complete', 'Mark complete'],
     ['settime', 'Amend / open details…'],
@@ -192,6 +238,7 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
     body.override = true;
     await api('/api/mc/diary-action', { method: 'POST', body });
   }
+  toast('Saved to DB · GCal change queued for Claude flush');
   await refresh();
 }
 
@@ -224,7 +271,7 @@ function renderToolbar(data) {
     <div class="dy-toolbar card">
       <div>
         <strong>Diary</strong>
-        <span class="meta"> · Mon–Sun · rolling 8 weeks · ${data.from} → ${data.to} · DB master · GCal read-only</span>
+        <span class="meta"> · Mon–Sun · rolling 8 weeks · 30-min axis · ${data.from} → ${data.to} · DB master · GCal read-only</span>
       </div>
       <div class="dy-toolbar-actions">
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
@@ -317,8 +364,14 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
     .map((b) => `<div class="dy-allday" title="${b.title}">${b.title}</div>`)
     .join('');
   const hours = [];
-  for (let m = axis.start_min; m < axis.end_min; m += 60) {
-    hours.push(`<div class="dy-hour" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`);
+  const step = axis.step_min || 30;
+  const gridPx = axis.grid_px || 1152;
+  const pxStep = axis.px_per_step || 36;
+  for (let m = axis.start_min; m < axis.end_min; m += step) {
+    const half = m % 60 !== 0;
+    hours.push(
+      `<div class="dy-hour${half ? ' dy-hour-half' : ''}" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`,
+    );
   }
   const wd = WEEKDAYS[weekdayIndex(day)];
   return `
@@ -329,7 +382,8 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
         ${bhBadge}
       </div>
       ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
-      <div class="dy-day-grid" data-day="${day}">
+      <div class="dy-day-grid" data-day="${day}"
+        style="height:${gridPx}px;--dy-step:${pxStep}px">
         ${awayBanner}
         ${hours.join('')}
         ${dayBlocks.map((b) => renderBlock(b, axis)).join('')}
@@ -373,41 +427,65 @@ function renderWeek(week, blocks, awayDays, axis, banners, holidays) {
     </div>`;
 }
 
-function wireDrag(root, data, refresh) {
-  const axis = data.day_axis;
+function wireDiary(root, data, refresh) {
+  const axis = data.day_axis || { start_min: 420, end_min: 1380, step_min: 30 };
   let dragBlock = null;
+  let dragStarted = false;
 
-  root.querySelectorAll('.dy-block.dy-edit').forEach((el) => {
-    el.addEventListener('dragstart', (e) => {
-      if (e.target.closest('[data-dy-done]')) {
-        e.preventDefault();
-        return;
+  root.addEventListener('click', async (e) => {
+    const blockEl = e.target.closest('.dy-block');
+    if (!blockEl || !root.contains(blockEl)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragStarted) {
+      dragStarted = false;
+      return;
+    }
+    const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
+    if (!block || block.is_buffer || block.synthetic) return;
+
+    if (e.target.closest('[data-dy-done]')) {
+      if (!block.editable) return;
+      if (!confirm(`Mark complete: ${block.title}?`)) return;
+      try {
+        await runMenuAction('complete', block, refresh);
+        toast('Marked complete · queued for Claude');
+      } catch (err) {
+        alert(err.message || 'Complete failed');
       }
-      dragBlock = (data.blocks || []).find((b) => b.id === el.dataset.blockId);
-      e.dataTransfer.setData('text/plain', el.dataset.blockId);
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    el.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const block = (data.blocks || []).find((b) => b.id === el.dataset.blockId);
-      if (!block || block.is_buffer || block.synthetic) return;
+      return;
+    }
 
-      // ☑ = mark complete immediately (what Alan expected)
-      if (e.target.closest('[data-dy-done]')) {
-        e.preventDefault();
-        if (!confirm(`Mark complete: ${block.title}?`)) return;
-        try {
-          await runMenuAction('complete', block, refresh);
-        } catch (err) {
-          alert(err.message || 'Complete failed');
-        }
-        return;
-      }
+    blockEl.classList.add('dy-expanded');
+    showMenu(block, e.clientX, e.clientY, refresh);
+  });
 
-      // Any other click → action menu (no expand-first dance)
-      el.classList.add('dy-expanded');
-      showMenu(block, e.clientX, e.clientY, refresh);
-    });
+  root.addEventListener('dragstart', (e) => {
+    const blockEl = e.target.closest('.dy-block.dy-edit');
+    if (!blockEl) {
+      e.preventDefault();
+      return;
+    }
+    if (e.target.closest('[data-dy-done]')) {
+      e.preventDefault();
+      return;
+    }
+    dragBlock = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
+    if (!dragBlock || dragBlock.slot_pinned || dragBlock.client_fixed) {
+      e.preventDefault();
+      dragBlock = null;
+      return;
+    }
+    dragStarted = true;
+    root.classList.add('dy-dragging');
+    e.dataTransfer.setData('text/plain', blockEl.dataset.blockId);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  root.addEventListener('dragend', () => {
+    root.classList.remove('dy-dragging');
+    setTimeout(() => { dragStarted = false; }, 0);
+    dragBlock = null;
   });
 
   root.querySelectorAll('.dy-day-grid').forEach((grid) => {
@@ -417,13 +495,18 @@ function wireDrag(root, data, refresh) {
     });
     grid.addEventListener('drop', async (e) => {
       e.preventDefault();
+      e.stopPropagation();
       const day = grid.getAttribute('data-day');
-      if (!dragBlock || !day) return;
+      if (!dragBlock || !day) {
+        toast('Nothing to drop — drag a green habit or blue task');
+        return;
+      }
       const rect = grid.getBoundingClientRect();
       const y = e.clientY - rect.top;
       const span = axis.end_min - axis.start_min;
-      let startMin = Math.round((axis.start_min + (y / rect.height) * span) / 15) * 15;
-      startMin = Math.max(axis.start_min, Math.min(startMin, axis.end_min - 15));
+      const step = axis.step_min || 30;
+      let startMin = Math.round((axis.start_min + (y / rect.height) * span) / step) * step;
+      startMin = Math.max(axis.start_min, Math.min(startMin, axis.end_min - step));
       const dur = dragBlock.duration_min || 60;
       const endMin = Math.min(startMin + dur, axis.end_min);
       try {
@@ -432,6 +515,7 @@ function wireDrag(root, data, refresh) {
         alert(err.message || 'Drop failed');
       }
       dragBlock = null;
+      root.classList.remove('dy-dragging');
     });
   });
 }
@@ -453,7 +537,7 @@ export async function renderDiary() {
           data.day_banners || [], data.holidays || {},
         )).join('')}
       </div>`;
-    wireDrag(el, data, () => renderDiary());
+    wireDiary(el, data, () => renderDiary());
   } catch (e) {
     el.innerHTML = `<div class="card"><p class="err">Diary failed: ${e.message || e}</p></div>`;
   }

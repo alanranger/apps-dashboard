@@ -17,7 +17,7 @@ async function loadPeers(fromIso, toIso) {
   const [tasks, habits, logs] = await Promise.all([
     sb(`tasks?select=id,display_id,title,scheduled_start,scheduled_end,slot_pinned,calendar_event_id&scheduled_start=gte.${fromIso}&scheduled_start=lt.${toIso}`),
     sb('recurring_tasks?select=id,title,duration_min,ideal_time&active=eq.true'),
-    sb('recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&scheduled_date=gte.'
+    sb('recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.'
       + `${fromIso.slice(0, 10)}&scheduled_date=lte.${toIso.slice(0, 10)}`),
   ]);
   const habitMap = new Map((habits || []).map((h) => [h.id, h]));
@@ -71,7 +71,20 @@ async function moveTask(body, actor) {
       due_date: task.due_date,
     },
   });
-  return { task_id: task.id, display_id: task.display_id, due_date: task.due_date, slot_pinned: true };
+  await sb('pending_diary_changes', {
+    method: 'POST', prefer: 'return=minimal',
+    body: {
+      change_type: 'diary_manual_move',
+      related_id: relatedIdForTask(task.id),
+      target_date: day,
+      summary: `Diary grid: moved MC-${task.display_id} (${task.title}) → ${day}`,
+      proposed_action: action,
+      reason: 'alan_diary_grid',
+      urgency: 'normal',
+      status: 'pending',
+    },
+  });
+  return { task_id: task.id, display_id: task.display_id, due_date: task.due_date, slot_pinned: true, queued: true };
 }
 
 async function moveHabit(body, actor) {
@@ -85,6 +98,7 @@ async function moveHabit(body, actor) {
     throw err;
   }
   const day = isoToLondonDate(body.new_start);
+  const pinChange = `diary_pin:${body.new_start}|${body.new_end}`;
   const note = `${day} ${String(body.new_start).slice(11, 16)} (diary pin)`;
   await sb(`recurring_tasks?id=eq.${habit.id}`, {
     method: 'PATCH', prefer: 'return=minimal',
@@ -94,26 +108,43 @@ async function moveHabit(body, actor) {
       updated_at: new Date().toISOString(),
     },
   });
-  await sb('recurring_log', {
-    method: 'POST', prefer: 'return=minimal',
-    body: {
-      recurring_task_id: habit.id,
-      actor,
-      change: `diary move → ${body.new_start}`,
-      ideal_date: ideal,
-      scheduled_date: day,
-      roll_reason: 'diary_manual_pin',
-      calendar_event_id: body.calendar_event_id || null,
-      projection_key: body.projection_key || `diary:${habit.id}:${ideal}`,
-    },
-  });
+  const existing = await sb(
+    `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
+    + '&select=id&order=at.desc&limit=1',
+  );
+  if (existing?.[0]?.id) {
+    await sb(`recurring_log?id=eq.${existing[0].id}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        change: pinChange,
+        scheduled_date: day,
+        roll_reason: 'diary_manual_pin',
+        calendar_event_id: body.calendar_event_id || null,
+      },
+    });
+  } else {
+    await sb('recurring_log', {
+      method: 'POST', prefer: 'return=minimal',
+      body: {
+        recurring_task_id: habit.id,
+        actor,
+        change: pinChange,
+        ideal_date: ideal,
+        scheduled_date: day,
+        roll_reason: 'diary_manual_pin',
+        calendar_event_id: body.calendar_event_id || null,
+        projection_key: body.projection_key || `diary:${habit.id}:${ideal}`,
+      },
+    });
+  }
   const action = [
     `MOVE/CREATE habit "${habit.title}" block to ${body.new_start} – ${body.new_end}.`,
     body.calendar_event_id ? `event_id=${body.calendar_event_id}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
     `ideal_date=${ideal}; scheduled_date=${day}.`,
   ].join(' ');
+  const related = relatedIdForHabit(habit.id, ideal);
   await upsertPushRow(sb, {
-    related_id: relatedIdForHabit(habit.id, ideal),
+    related_id: related,
     entity_type: 'habit',
     change_kind: 'move',
     summary: `Move habit ${habit.title} → ${day}`,
@@ -127,7 +158,20 @@ async function moveHabit(body, actor) {
       calendar_event_id: body.calendar_event_id || null,
     },
   });
-  return { habit_id: habit.id, scheduled_date: day };
+  await sb('pending_diary_changes', {
+    method: 'POST', prefer: 'return=minimal',
+    body: {
+      change_type: 'diary_manual_move',
+      related_id: related,
+      target_date: day,
+      summary: `Diary grid: moved habit "${habit.title}" → ${day}`,
+      proposed_action: action,
+      reason: 'alan_diary_grid',
+      urgency: 'normal',
+      status: 'pending',
+    },
+  });
+  return { habit_id: habit.id, scheduled_date: day, queued: true };
 }
 
 async function setPin(taskId, pinned, actor) {
