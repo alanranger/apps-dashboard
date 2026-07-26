@@ -360,6 +360,7 @@ module.exports = async function handler(req, res) {
         const patch = {
           completed_on: completedOn,
           actual_minutes: mins,
+          state: 'done',
           slot_pinned: true,
           slot_pinned_at: new Date().toISOString(),
           last_activity_at: new Date().toISOString(),

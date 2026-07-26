@@ -114,10 +114,17 @@ function showMenu(block, x, y, refresh) {
   menu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
   menu.style.top = `${Math.min(y, window.innerHeight - 180)}px`;
 
-  if (block.read_only || !block.editable) {
-    const why = block.client_fixed
-      ? 'Locked client booking (from Google Calendar) — not movable here.'
-      : 'Read-only calendar block — drag green habits / blue tasks only.';
+  if (block.done || block.read_only || !block.editable) {
+    let why;
+    if (block.done) {
+      why = block.actual_minutes != null
+        ? `Already completed (${block.actual_minutes}m). It stays on the day for the record — you can’t move it.`
+        : 'Already completed. It stays on the day for the record — you can’t move it.';
+    } else if (block.client_fixed) {
+      why = 'Fixed client booking from Google Calendar (workshop / Zoom / 1-2-1). You can’t move it here.';
+    } else {
+      why = 'This comes from Google Calendar (travel, personal, lesson feed, etc.). Only green habits and blue tasks are editable in Diary.';
+    }
     menu.innerHTML = `<div class="dy-menu-note">${why}</div>`;
     document.body.appendChild(menu);
     diaryState.menu = { block };
@@ -374,12 +381,12 @@ function renderBlock(b, axis) {
   const canDrag = !!(canEdit && !locked);
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
-    done && b.actual_minutes != null ? `Done · ${b.actual_minutes}m actual` : '',
-    done && b.actual_minutes == null ? 'Done' : '',
-    b.client_fixed ? 'Locked client booking — not movable' : '',
-    canDrag ? 'Drag to reschedule · click for actions' : '',
-    canEdit && locked ? 'Locked — unlock before dragging · click for actions' : '',
-    !canEdit && !done ? 'Read-only (from Google Calendar)' : '',
+    done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
+    done && b.actual_minutes == null ? 'Completed · can’t move' : '',
+    b.client_fixed ? 'Fixed client booking · can’t move' : '',
+    canDrag ? 'Drag to reschedule · click for menu' : '',
+    canEdit && locked ? 'Pinned · unlock in menu before dragging' : '',
+    !canEdit && !done && !b.client_fixed ? 'From Google Calendar · not editable here' : '',
   ].filter(Boolean);
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
