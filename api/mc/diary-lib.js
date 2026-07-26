@@ -456,36 +456,63 @@ function weeksFrom(fromYmd, weekCount) {
 }
 
 /**
- * Week fuel gauge: filled minutes inside working windows / available working minutes.
- * Away days contribute 0 available. Buffers/synthetic strips excluded from filled.
+ * Merge [start,end] minute intervals (overlap → one span).
+ */
+function mergeIntervals(intervals) {
+  if (!intervals.length) return [];
+  const sorted = intervals.map((x) => [x[0], x[1]]).sort((a, b) => a[0] - b[0]);
+  const out = [sorted[0]];
+  for (let i = 1; i < sorted.length; i += 1) {
+    const last = out[out.length - 1];
+    const cur = sorted[i];
+    if (cur[0] <= last[1]) last[1] = Math.max(last[1], cur[1]);
+    else out.push(cur);
+  }
+  return out;
+}
+
+/**
+ * Week fuel gauge = REAL diary load, not admin-only office hours.
+ * Available: waking axis 07:00–23:00 × every day in the week.
+ * Filled: away/bank-holiday days = full day; else merged duration of ALL
+ * timed blocks (travel, workshop, lesson, habit, task, personal, fixture,
+ * real buffers). Synthetic decompress strips excluded. Overlaps merged once.
  */
 function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
+  const a0 = DAY_START_MIN;
+  const a1 = DAY_END_MIN;
+  const daySpan = Math.max(0, a1 - a0);
   let available = 0;
   let filled = 0;
-  const daySet = new Set(days || []);
+  let awayDaysCounted = 0;
   for (const day of days || []) {
-    if (awayDays?.[day]) continue;
-    if (!isSchedulableDay(day, ruleMap, holidays)) continue;
-    const win = workingWindow(ruleMap, day);
-    const a0 = win.start_min ?? 0;
-    const a1 = win.end_min ?? 0;
-    const avail = Math.max(0, a1 - a0);
-    available += avail;
+    available += daySpan;
+    const away = !!(awayDays?.[day] || (holidays && holidays.has(day)));
+    if (away) {
+      filled += daySpan;
+      awayDaysCounted += 1;
+      continue;
+    }
+    const intervals = [];
     for (const b of blocks || []) {
-      if (b.day !== day || b.is_buffer || b.synthetic || b.kind === 'buffer') continue;
+      if (b.day !== day || b.synthetic) continue;
       const start = Math.max(b.start_min || 0, a0);
       const end = Math.min(b.end_min || 0, a1);
-      if (end > start) filled += end - start;
+      if (end > start) intervals.push([start, end]);
     }
+    for (const [s, e] of mergeIntervals(intervals)) filled += (e - s);
   }
   const pct = available > 0 ? Math.round((filled / available) * 100) : (filled > 0 ? 100 : 0);
+  const filledH = Math.round((filled / 60) * 10) / 10;
+  const availH = Math.round((available / 60) * 10) / 10;
   return {
     available_min: available,
     filled_min: filled,
     free_min: Math.max(0, available - filled),
     pct: Math.min(pct, 999),
     over: filled > available,
-    label: `${Math.min(pct, 999)}% · ${Math.round(filled / 60 * 10) / 10}h / ${Math.round(available / 60 * 10) / 10}h`,
+    away_days: awayDaysCounted,
+    label: `${Math.min(pct, 999)}% · ${filledH}h / ${availH}h`,
   };
 }
 
@@ -525,6 +552,7 @@ module.exports = {
   warnDrop,
   weeksFrom,
   weekCapacity,
+  mergeIntervals,
   attachWeekCapacity,
   isZoomClientBooking,
   blockTypeFromBusy,

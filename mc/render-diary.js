@@ -468,12 +468,14 @@ function renderWeekGauge(week) {
   const tone = cap.over || pct >= 95 ? 'dy-fuel-hot' : pct >= 75 ? 'dy-fuel-warm' : 'dy-fuel-ok';
   const start = week.days?.[0] || '';
   const end = week.days?.[6] || '';
+  const awayN = cap.away_days || 0;
   return `
-    <div class="dy-fuel ${tone}" title="Filled time inside working windows ÷ available working minutes (away days excluded)">
+    <div class="dy-fuel ${tone}" title="REAL load: away/bank-holiday days count as full 07:00–23:00; plus travel, workshops, lessons, habits, tasks, personal (overlaps merged once). Not admin-office-hours only.">
       <div class="dy-fuel-meta">
         <strong>Week ${fmtDayLabel(start)} – ${fmtDayLabel(end)}</strong>
         <span>${cap.label || `${pct}%`}</span>
         <span class="meta">${fmtHours(cap.free_min || 0)} free</span>
+        ${awayN ? `<span class="meta">${awayN} away day${awayN === 1 ? '' : 's'}</span>` : ''}
       </div>
       <div class="dy-fuel-track" aria-hidden="true">
         <div class="dy-fuel-fill" style="width:${pct}%"></div>

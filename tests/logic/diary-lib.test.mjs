@@ -221,6 +221,42 @@ describe('diary calendar feeds', () => {
   });
 });
 
+describe('week capacity — real load', () => {
+  it('counts away days as full waking axis and merges overlaps', () => {
+    const {
+      weekCapacity, DAY_START_MIN, DAY_END_MIN, mergeIntervals,
+    } = require('../../api/mc/diary-lib.js');
+    assert.deepEqual(mergeIntervals([[600, 700], [650, 800], [900, 950]]), [[600, 800], [900, 950]]);
+    const days = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-08', '2026-08-09'];
+    const awayDays = {
+      '2026-08-03': { label: 'AWAY' },
+      '2026-08-04': { label: 'AWAY' },
+      '2026-08-05': { label: 'AWAY' },
+      '2026-08-06': { label: 'AWAY' },
+    };
+    const daySpan = DAY_END_MIN - DAY_START_MIN;
+    const blocks = [{
+      day: '2026-08-07', kind: 'habit', start_min: 9 * 60, end_min: 11 * 60, synthetic: false,
+    }];
+    const cap = weekCapacity(days, blocks, awayDays, {}, new Set());
+    assert.equal(cap.away_days, 4);
+    assert.equal(cap.available_min, daySpan * 7);
+    assert.equal(cap.filled_min, daySpan * 4 + 120);
+    assert.ok(cap.pct > 50, `residential week should look busy, got ${cap.pct}%`);
+  });
+
+  it('old admin-only behaviour would exclude away — we do not', () => {
+    const { weekCapacity, DAY_START_MIN, DAY_END_MIN } = require('../../api/mc/diary-lib.js');
+    const days = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07'];
+    const awayDays = {
+      '2026-08-03': {}, '2026-08-04': {}, '2026-08-05': {}, '2026-08-06': {},
+    };
+    const cap = weekCapacity(days, [], awayDays, {}, new Set());
+    assert.equal(cap.filled_min, (DAY_END_MIN - DAY_START_MIN) * 4);
+    assert.ok(cap.pct >= 70);
+  });
+});
+
 describe('gcal push related_id', () => {
   it('one net key per task/habit occurrence', () => {
     assert.equal(relatedIdForTask('abc'), 'gcal:task:abc');
