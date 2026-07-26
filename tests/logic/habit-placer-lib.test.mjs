@@ -337,9 +337,10 @@ describe('habit-placer-lib — away spans', () => {
     assert.equal(spans.length, 1);
     assert.equal(spans[0].startDay, '2026-08-03');
     assert.equal(spans[0].endDay, '2026-08-06');
+    assert.equal(spans[0].restDay, '2026-08-07');
   });
 
-  it('rolls ideal away-day past the whole span, not onto travel days', () => {
+  it('rolls ideal away-day past the whole span including rest day', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Norfolk',
@@ -356,10 +357,11 @@ describe('habit-placer-lib — away spans', () => {
     assert.ok(!days.includes('2026-11-20'));
     assert.ok(!days.includes('2026-11-21'));
     assert.ok(!days.includes('2026-11-22'));
-    assert.ok(days.includes('2026-11-19') || days.includes('2026-11-23'));
+    assert.ok(!days.includes('2026-11-23')); // rest after travel-back
+    assert.ok(days.includes('2026-11-19') || days.includes('2026-11-24'));
   });
 
-  it('does not place habit on middle away day', () => {
+  it('does not place habit on middle away day or rest day', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Rosedale Abbey',
@@ -377,13 +379,30 @@ describe('habit-placer-lib — away spans', () => {
       ideal_time: '10:00', window_days: 0, time_critical: false,
       rrule: 'FREQ=WEEKLY;BYDAY=WE;COUNT=1',
     };
-    // Force one ideal on Wed 5 Aug (middle of Rosedale) via narrow horizon + weekly
     const { placements } = placeHabits(
       [{ ...habit, rrule: 'FREQ=DAILY;COUNT=1' }], [], spans, rules, holidays,
       '2026-08-05', '2026-08-05',
     );
-    // COUNT=1 from DTSTART default may not land on 5 Aug — place via empty rrule range:
-    // use occurrences by setting from=to=5 Aug with FREQ=DAILY
-    assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-06'));
+    assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-07'));
+  });
+
+  it('does not place habit on teaching/client day', () => {
+    const { teachingDaySpansFromEvents } = require('../../api/mc/habit-placer-lib.js');
+    const teaching = teachingDaySpansFromEvents([{
+      summary: 'Landscape workshop',
+      _calendarId: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
+      start: { dateTime: '2026-09-10T10:00:00+01:00' },
+      end: { dateTime: '2026-09-10T16:00:00+01:00' },
+    }]);
+    assert.equal(teaching[0].startDay, '2026-09-10');
+    const habit = {
+      id: 'hy', title: 'BAU tick', priority: 'p2', duration_min: 30,
+      ideal_time: '11:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=DAILY;COUNT=1',
+    };
+    const { placements } = placeHabits(
+      [habit], [], teaching, rules, holidays, '2026-09-10', '2026-09-10',
+    );
+    assert.ok(placements.every((p) => p.day !== '2026-09-10'));
   });
 });

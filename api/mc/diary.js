@@ -6,7 +6,7 @@ const { envReady, json, cors, requireAuth, sb } = require('./_lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
-  awaySpansFromTravelBlocks, tasksToBlocks, travelToBlocks, busyToBlocks,
+  awaySpansFromTravelBlocks, teachingDaySpansFromEvents, tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
@@ -50,10 +50,12 @@ module.exports = async function handler(req, res) {
     let busyBlocks = [];
     let dayBanners = [];
     let gcalHealth = null;
+    let busyEvents = [];
     if (gcalConfigured()) {
       const { events, assessment } = await fetchHorizonEvents(timeMin, timeMax);
       gcalHealth = assessment;
       const split = splitMcAndBusy(events, ruleMap);
+      busyEvents = split.busy || [];
       busyBlocks = busyToBlocks(split.busy, split.fixtures);
       dayBanners = allDayBannersFromBusy(split.busy);
     }
@@ -64,6 +66,7 @@ module.exports = async function handler(req, res) {
     }
 
     const awaySpans = awaySpansFromTravelBlocks(travel || []);
+    const teachingSpans = teachingDaySpansFromEvents(busyEvents || []);
     const rawBlocks = [
       ...tasksToBlocks(tasks, today),
       ...habitLogsToBlocks(logs, habitMap),
@@ -80,8 +83,34 @@ module.exports = async function handler(req, res) {
         awayDays[d] = {
           label: 'AWAY',
           summary: span.summary || null,
+          kind: 'away_span',
         };
         d = addDaysYmd(d, 1);
+      }
+      if (span.restDay && !awayDays[span.restDay]) {
+        awayDays[span.restDay] = {
+          label: 'REST',
+          summary: 'Rest day after residential (no appointments)',
+          kind: 'rest_after_away',
+        };
+      }
+    }
+    for (const span of teachingSpans) {
+      if (awayDays[span.startDay]?.kind === 'away_span') continue;
+      awayDays[span.startDay] = {
+        label: 'TEACHING',
+        summary: span.summary || 'Teaching / client day',
+        kind: 'teaching_day',
+      };
+    }
+    for (const [day, meta] of Object.entries(awayDays)) {
+      if (meta.kind === 'rest_after_away' || meta.kind === 'teaching_day') {
+        dayBanners.push({
+          day,
+          title: meta.label === 'REST' ? 'REST (after residential)' : 'TEACHING / client day',
+          source: meta.kind,
+          id: `${meta.kind}:${day}`,
+        });
       }
     }
 
@@ -119,7 +148,8 @@ module.exports = async function handler(req, res) {
         'habit-placer-lib.requiredGapMins',
         'habit-placer-lib.dayCapLimits',
         'habit-placer-lib.awaySpansFromTravelBlocks',
-        'habit-placer-lib.dayInsideAwaySpan',
+        'habit-placer-lib.dayBlockedForPlacement',
+        'habit-placer-lib.teachingDaySpansFromEvents',
       ],
     });
   } catch (e) {

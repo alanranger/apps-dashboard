@@ -6,6 +6,7 @@ const { isoToLondonDate, isoToLondonMinutes, ruleMapFromRows, workingWindow, isS
 const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
+  dayBlockedForPlacement, teachingDaySpansFromEvents,
   londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
@@ -401,8 +402,15 @@ function warnDrop({
       suggest: null,
     };
   }
-  if (dayInsideAwaySpan(day, awaySpans)) {
-    warnings.push('Away-span day (travel-out → travel-back inclusive)');
+  if (dayBlockedForPlacement(day, awaySpans)) {
+    const awayOnly = dayInsideAwaySpan(day, awaySpans);
+    warnings.push(awayOnly
+      ? 'Away-span day (travel-out → travel-back inclusive)'
+      : 'Blocked day (post-residential rest — no habits/tasks)');
+  }
+  if ((peers || []).some((p) => p.day === day
+    && (p.kind === 'workshop' || p.kind === 'lesson' || p.client_fixed))) {
+    warnings.push('Teaching/client day — no habits/tasks');
   }
   const { target, hard } = dayCapLimits(ruleMap);
   const used = peers.filter((p) => p.day === day)
@@ -531,7 +539,8 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
   };
 
   for (const day of days || []) {
-    const away = !!(awayDays?.[day] || (holidays && holidays.has(day)));
+    const dayMeta = awayDays?.[day];
+    const dayKind = dayMeta?.kind || (dayMeta ? 'away_span' : null);
     const dayBlocks = blocksOnDay(blocks, day);
     const km = kindMinutes(dayBlocks);
     for (const [k, v] of Object.entries(km)) {
@@ -539,7 +548,11 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
       else breakdown.other += v;
     }
 
-    if (away) {
+    // Post-residential rest: protected — no admin capacity (not 05–22 residential fill).
+    if (dayKind === 'rest_after_away') continue;
+
+    // Residential / bank holiday away.
+    if (dayKind === 'away_span' || (!dayKind && holidays && holidays.has(day))) {
       const span = AWAY_DAY_END_MIN - AWAY_DAY_START_MIN;
       available += span;
       filled += span;
@@ -548,18 +561,16 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
       continue;
     }
 
-    const teaching = dayIsTeaching(dayBlocks);
-    const committed = mergedMins(dayBlocks);
-
-    if (teaching) {
+    // Teaching / client day (tagged or inferred from blocks).
+    if (dayKind === 'teaching_day' || dayIsTeaching(dayBlocks)) {
       teachingDays += 1;
-      // No admin free capacity — day is owned by the client event + travel/packing
-      const cap = Math.max(committed, 1);
-      available += cap;
+      const committed = mergedMins(dayBlocks);
+      available += Math.max(committed, 1);
       filled += committed;
       continue;
     }
 
+    const committed = mergedMins(dayBlocks);
     const win = workingWindow(ruleMap || {}, day);
     const w0 = win.start_min ?? 10 * 60;
     const w1 = win.end_min ?? 17 * 60;
@@ -622,6 +633,8 @@ module.exports = {
   ruleMapFromRows,
   splitMcAndBusy,
   awaySpansFromTravelBlocks,
+  teachingDaySpansFromEvents,
+  dayBlockedForPlacement,
   tasksToBlocks,
   travelToBlocks,
   busyToBlocks,

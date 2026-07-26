@@ -52,6 +52,7 @@ function dayCapLimits(ruleMap) {
  * Hard-busy whole London days out→back (incl. travel days + middle).
  * Same-day day-trips skipped (drive intervals already cover those).
  * Pair by workshop_row_key or venue|workshop_start; else next unused back.
+ * Alan rule: multi-day trips also lock restDay = day after travel_back (no appointments).
  */
 function awaySpansFromTravelBlocks(blocks) {
   const outs = [];
@@ -82,9 +83,11 @@ function awaySpansFromTravelBlocks(blocks) {
     const startDay = isoToLondonDate(out.starts_at);
     const endDay = isoToLondonDate(back.ends_at);
     if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
+    const restDay = addDays(endDay, 1);
     spans.push({
       startDay,
       endDay,
+      restDay,
       startMs: londonYmdHmToUtcMs(startDay, '00:00'),
       endMs: londonYmdHmToUtcMs(endDay, '23:59') + 60000,
       summary: `away:${out.venue_name || out.workshop_title || key}`,
@@ -94,8 +97,81 @@ function awaySpansFromTravelBlocks(blocks) {
   return spans.sort((a, b) => a.startMs - b.startMs);
 }
 
+/** Travel-out → travel-back inclusive only (not the rest day). */
 function dayInsideAwaySpan(day, spans) {
-  return (spans || []).some((s) => day >= s.startDay && day <= s.endDay);
+  return (spans || []).some((s) => s.kind !== 'teaching_day'
+    && day >= s.startDay && day <= s.endDay);
+}
+
+/** Away days + post-residential rest day + teaching/client days — no habits/tasks. */
+function dayBlockedForPlacement(day, spans) {
+  return (spans || []).some((s) => {
+    if (s.kind === 'teaching_day') return day === s.startDay;
+    if (day >= s.startDay && day <= s.endDay) return true;
+    return !!(s.restDay && day === s.restDay);
+  });
+}
+
+function coveringBlockedSpan(day, spans) {
+  return (spans || []).find((s) => {
+    if (s.kind === 'teaching_day') return day === s.startDay;
+    if (day >= s.startDay && day <= s.endDay) return true;
+    return !!(s.restDay && day === s.restDay);
+  }) || null;
+}
+
+/** Paid Zoom / online 1-2-1 — same rule as diary purple client bookings. */
+function isZoomClientBooking(summary) {
+  const t = String(summary || '').toLowerCase();
+  const is121 = /1\s*[-–]?\s*2\s*[-–]?\s*1|\b121\b/.test(t);
+  if (is121 && /zoom|online|tuition|mentoring|1-2-1/.test(t)) return true;
+  if (/\bonline\b/.test(t) && is121) return true;
+  if (/\bzoom\b/.test(t) && /(tuition|mentoring|1\s*[-–]?\s*2\s*[-–]?\s*1)/.test(t)) return true;
+  return false;
+}
+
+function isTeachingCalendarEvent(e) {
+  const title = e?.summary || e?.title || '';
+  if (isZoomClientBooking(title)) return true;
+  const cal = String(e?._calendarId || e?.calendarId || '');
+  if (!cal) return false;
+  if (isForceBusyCalendar(cal)) return false;
+  if (cal.includes('ic364d06')) return true; // Workshops
+  if (cal.includes('nht93uaq')) return true; // Lessons
+  return false;
+}
+
+/**
+ * Whole-day hard blocks for workshop / lesson / Zoom 1-2-1 days.
+ * Alan: teaching day owns the day — no habits/tasks.
+ */
+function teachingDaySpansFromEvents(events) {
+  const byDay = new Map();
+  for (const e of events || []) {
+    if (!isTeachingCalendarEvent(e)) continue;
+    if (e.start?.date && !e.start?.dateTime) {
+      let d = e.start.date;
+      const endDay = e.end?.date || addDays(d, 1);
+      while (d < endDay) {
+        byDay.set(d, e.summary || 'teaching');
+        d = addDays(d, 1);
+      }
+      continue;
+    }
+    const startRaw = e.start?.dateTime || e.start;
+    if (!startRaw || !String(startRaw).includes('T')) continue;
+    const day = isoToLondonDate(String(startRaw));
+    if (day) byDay.set(day, e.summary || 'teaching');
+  }
+  return [...byDay.entries()].map(([day, summary]) => ({
+    startDay: day,
+    endDay: day,
+    restDay: null,
+    startMs: londonYmdHmToUtcMs(day, '00:00'),
+    endMs: londonYmdHmToUtcMs(day, '23:59') + 60000,
+    summary: `teaching:${summary}`,
+    kind: 'teaching_day',
+  })).sort((a, b) => a.startMs - b.startMs);
 }
 
 /**
@@ -338,13 +414,13 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
         return '10:00';
       }
     })();
-    const awaySpans = (hardBusy || []).filter((b) => b.kind === 'away_span');
+    const awaySpans = (hardBusy || []).filter((b) => b.kind === 'away_span' || b.kind === 'teaching_day');
     const startDay = notBeforeDay || bump.habit_day || fromYmd;
     const days = [];
     for (let i = 0; i <= 14; i += 1) {
       const d = addDays(startDay, i);
       if (d >= fromYmd && isSchedulableDay(d, ruleMap, holidays)
-        && !dayInsideAwaySpan(d, awaySpans)) days.push(d);
+        && !dayBlockedForPlacement(d, awaySpans)) days.push(d);
     }
 
     let slot = null;
@@ -436,10 +512,11 @@ function orderHabitsForPlacement(habits, deps) {
 function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = []) {
   const w = Math.max(0, Number(windowDays) || 0);
   const days = [];
-  const cover = (awaySpans || []).find((s) => idealYmd >= s.startDay && idealYmd <= s.endDay);
-  // Ideal on an away day → jump past the whole span (before out / after back).
+  const cover = coveringBlockedSpan(idealYmd, awaySpans);
+  // Ideal on away / rest / teaching → jump past the whole blocked run.
   if (cover) {
-    days.push(addDays(cover.startDay, -1), addDays(cover.endDay, 1));
+    const after = addDays(cover.restDay || cover.endDay, 1);
+    days.push(addDays(cover.startDay, -1), after);
   }
   if (timeCritical) {
     for (let i = w; i >= 0; i -= 1) days.push(addDays(idealYmd, -i));
@@ -452,7 +529,7 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
     }
   }
   return [...new Set(days)].filter((d) => isSchedulableDay(d, ruleMap, holidays)
-    && !dayInsideAwaySpan(d, awaySpans));
+    && !dayBlockedForPlacement(d, awaySpans));
 }
 
 /** Admin ticks get admin_gap_min; substantial (incl. Publish Blog) get decompress_after_task_min. */
@@ -554,7 +631,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
   const dayUsed = {};
   const placedByHabit = new Map();
   const busyWork = busy.slice();
-  const awaySpans = (busy || []).filter((b) => b.kind === 'away_span');
+  const awaySpans = (busy || []).filter((b) => b.kind === 'away_span' || b.kind === 'teaching_day');
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
@@ -706,6 +783,9 @@ module.exports = {
   buildBusyIntervals,
   awaySpansFromTravelBlocks,
   dayInsideAwaySpan,
+  dayBlockedForPlacement,
+  coveringBlockedSpan,
+  teachingDaySpansFromEvents,
   datedTasksToIntervals,
   findTaskBumps,
   placeBumpedTasks,
