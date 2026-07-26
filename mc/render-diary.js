@@ -268,7 +268,7 @@ function renderDayColumn(day, blocks, away, axis) {
     <div class="dy-day${awayCls}" data-day="${day}">
       <div class="dy-day-head sticky">
         <div class="dy-wd">${wd}</div>
-        <div class="dy-date meta">${fmtDayLabel(day)}</div>
+        <div class="dy-date">${fmtDayLabel(day)}</div>
       </div>
       <div class="dy-day-grid" data-day="${day}">
         ${awayBanner}

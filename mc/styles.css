@@ -566,8 +566,15 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   padding:8px 8px 6px; background:var(--panel-2); border-bottom:1px solid var(--border);
   position:sticky; top:0; z-index:2; text-align:center;
 }
-.dy-wd { font-size:13px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; line-height:1.2; }
-.dy-date { font-size:11px; opacity:0.7; margin-top:2px; }
+.dy-wd { font-size:13px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; line-height:1.2; color:var(--text, #e5e7eb); }
+.dy-date {
+  font-size:13px;
+  font-weight:600;
+  margin-top:3px;
+  opacity:1;
+  color:#f3f4f6;
+  letter-spacing:0.02em;
+}
 .dy-day-grid {
   position:relative; height:640px;
   background:repeating-linear-gradient(to bottom, transparent 0, transparent 39px, rgba(255,255,255,0.04) 39px, rgba(255,255,255,0.04) 40px);
