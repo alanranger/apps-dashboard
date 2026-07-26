@@ -8,6 +8,7 @@ const {
 const { ruleMapFromRows } = require('./scheduling-rules-lib');
 const {
   listOpenPush, listAwaySpanBacklog, markPushStatus, markAllPendingReady, BACKLOG_SQL_HINT,
+  collapsePushManifest,
 } = require('./gcal-push-lib');
 
 module.exports = async function handler(req, res) {
@@ -23,18 +24,22 @@ module.exports = async function handler(req, res) {
 
     if (req.method === 'GET') {
       const [open, backlog] = await Promise.all([listOpenPush(sb), listAwaySpanBacklog(sb)]);
+      const collapsed = collapsePushManifest(open || []);
       return json(res, 200, {
         writes_available: writesAvailable,
         push_button_enabled: writesAvailable,
-        items: open || [],
+        items: collapsed,
+        items_raw_count: (open || []).length,
+        items_collapsed_count: collapsed.length,
         backlog: backlog || [],
         backlog_filter: BACKLOG_SQL_HINT,
         how_to_flush: [
           '1. Alan clicks Push when writes_available=true (marks items status=ready).',
-          '2. Claude reads items where status=ready PLUS backlog rows (pending_diary_changes away-span set).',
-          '3. Claude performs GCal writes; collapses already done — one related_id = one net write.',
-          '4. Claude PATCH /api/mc/gcal-push { action: applied, ids: [...] } and Scheduling pending applied for backlog.',
-          '5. Multiple diary edits of the same task already collapsed in gcal_push_queue (unique related_id).',
+          '2. Claude reads items (already occurrence-collapsed: complete/skip beats move/pin for same habit+event/ideal).',
+          '3. Claude ALSO applies backlog rows (pending_diary_changes away-span set).',
+          '4. Claude performs GCal writes; one net action per occurrence.',
+          '5. Claude PATCH /api/mc/gcal-push { action: applied, ids: [...] } and Scheduling pending applied for backlog.',
+          '6. Diary complete/skip also dismisses sibling open queue rows for the same habit occurrence.',
         ],
         calendar_writes: 0,
       });

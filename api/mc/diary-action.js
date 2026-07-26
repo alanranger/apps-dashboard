@@ -9,7 +9,7 @@ const {
   warnDrop, ruleMapFromRows, awaySpansFromTravelBlocks, tasksToBlocks, habitLogsToBlocks,
 } = require('./diary-lib');
 const {
-  relatedIdForTask, relatedIdForHabit, upsertPushRow,
+  relatedIdForTask, relatedIdForHabit, upsertPushRow, supersedeSiblingHabitRows,
 } = require('./gcal-push-lib');
 const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
 
@@ -142,7 +142,7 @@ async function moveHabit(body, actor) {
     body.calendar_event_id ? `event_id=${body.calendar_event_id}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
     `ideal_date=${ideal}; scheduled_date=${day}.`,
   ].join(' ');
-  const related = relatedIdForHabit(habit.id, ideal);
+  const related = relatedIdForHabit(habit.id, ideal, body.calendar_event_id || null);
   await upsertPushRow(sb, {
     related_id: related,
     entity_type: 'habit',
@@ -158,6 +158,16 @@ async function moveHabit(body, actor) {
       calendar_event_id: body.calendar_event_id || null,
     },
   });
+  if (body.calendar_event_id) {
+    await supersedeSiblingHabitRows(sb, {
+      habitId: habit.id,
+      keepRelatedId: related,
+      calendarEventId: body.calendar_event_id,
+      idealDate: ideal,
+      scheduledDate: day,
+      actor,
+    });
+  }
   await sb('pending_diary_changes', {
     method: 'POST', prefer: 'return=minimal',
     body: {
@@ -325,8 +335,9 @@ module.exports = async function handler(req, res) {
             },
           });
         }
+        const related = relatedIdForHabit(habitId, ideal, body.calendar_event_id || null);
         await upsertPushRow(sb, {
-          related_id: relatedIdForHabit(habitId, ideal),
+          related_id: related,
           entity_type: 'habit',
           change_kind: 'complete',
           summary: `Complete habit ${habit.title} (${mins}m actual)`,
@@ -339,6 +350,14 @@ module.exports = async function handler(req, res) {
             actual_minutes: mins,
             calendar_event_id: body.calendar_event_id || null,
           },
+        });
+        await supersedeSiblingHabitRows(sb, {
+          habitId,
+          keepRelatedId: related,
+          calendarEventId: body.calendar_event_id || null,
+          idealDate: ideal,
+          scheduledDate: scheduledDate,
+          actor,
         });
         return json(res, 200, {
           habit_id: habitId,
@@ -430,8 +449,9 @@ module.exports = async function handler(req, res) {
           },
         });
       }
+      const related = relatedIdForHabit(habitId, ideal, body.calendar_event_id || null);
       await upsertPushRow(sb, {
-        related_id: relatedIdForHabit(habitId, ideal),
+        related_id: related,
         entity_type: 'habit',
         change_kind: 'skip',
         summary: `Skip habit ${habit.title} occurrence ${ideal}`,
@@ -442,6 +462,14 @@ module.exports = async function handler(req, res) {
           scheduled_date: scheduledDate,
           calendar_event_id: body.calendar_event_id || null,
         },
+      });
+      await supersedeSiblingHabitRows(sb, {
+        habitId,
+        keepRelatedId: related,
+        calendarEventId: body.calendar_event_id || null,
+        idealDate: ideal,
+        scheduledDate: scheduledDate,
+        actor,
       });
       return json(res, 200, {
         habit_id: habitId,

@@ -15,8 +15,110 @@ function relatedIdForTask(taskId) {
   return `gcal:task:${taskId}`;
 }
 
-function relatedIdForHabit(habitId, idealDate) {
+function relatedIdForHabit(habitId, idealDate, calendarEventId) {
+  if (calendarEventId) return `gcal:habit:${habitId}:evt:${calendarEventId}`;
   return `gcal:habit:${habitId}:${idealDate}`;
+}
+
+function habitIdFromRelated(relatedId) {
+  const m = String(relatedId || '').match(/^gcal:habit:([^:]+):/);
+  return m ? m[1] : null;
+}
+
+function londonDayFromIso(iso) {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(iso));
+  } catch (e) {
+    return String(iso).slice(0, 10);
+  }
+}
+
+/**
+ * Terminal habit actions (complete/skip) must supersede earlier move/pin rows for the
+ * same occurrence — related_id alone is not enough when ideal_date drifted.
+ */
+async function supersedeSiblingHabitRows(sb, {
+  habitId, keepRelatedId, calendarEventId, idealDate, scheduledDate, actor,
+}) {
+  const open = await sb(
+    'gcal_push_queue?status=in.(pending,ready)&entity_type=eq.habit&select=id,related_id,change_kind,payload,status',
+  );
+  const ids = [];
+  for (const row of open || []) {
+    if (!row?.id || row.related_id === keepRelatedId) continue;
+    const hid = row.payload?.habit_id || habitIdFromRelated(row.related_id);
+    if (hid !== habitId) continue;
+    const p = row.payload || {};
+    const sameEvt = !!(calendarEventId && p.calendar_event_id && p.calendar_event_id === calendarEventId);
+    const sameIdeal = !!(idealDate && (p.ideal_date === idealDate
+      || String(row.related_id).endsWith(`:${idealDate}`)));
+    const moveOntoScheduled = row.change_kind === 'move' && scheduledDate
+      && londonDayFromIso(p.new_start) === scheduledDate;
+    const moveSameIdeal = row.change_kind === 'move' && idealDate && p.ideal_date === idealDate;
+    if (sameEvt || sameIdeal || moveOntoScheduled || moveSameIdeal) ids.push(row.id);
+  }
+  if (!ids.length) return [];
+  return markPushStatus(sb, ids, 'dismissed', actor || 'supersede');
+}
+
+/**
+ * Flush-time safety net: for each habit occurrence, keep one net row.
+ * Priority: complete > skip > move/pin (latest updated_at wins within kind).
+ */
+function collapsePushManifest(items) {
+  const rank = { complete: 3, skip: 2, move: 1, pin: 1 };
+  const best = new Map();
+  for (const row of items || []) {
+    if (row.entity_type !== 'habit') {
+      best.set(`row:${row.id || row.related_id}`, row);
+      continue;
+    }
+    const hid = row.payload?.habit_id || habitIdFromRelated(row.related_id);
+    const evt = row.payload?.calendar_event_id || null;
+    const ideal = row.payload?.ideal_date || null;
+    const sched = row.payload?.scheduled_date || londonDayFromIso(row.payload?.new_start) || null;
+    const occ = evt ? `evt:${evt}` : `ideal:${ideal || sched || row.related_id}`;
+    const key = `habit:${hid}:${occ}`;
+    const prev = best.get(key);
+    if (!prev) {
+      best.set(key, row);
+      continue;
+    }
+    const pr = rank[row.change_kind] || 0;
+    const pp = rank[prev.change_kind] || 0;
+    if (pr > pp) best.set(key, row);
+    else if (pr === pp && String(row.updated_at || '') > String(prev.updated_at || '')) {
+      best.set(key, row);
+    }
+  }
+  // Second pass: if a complete/skip exists for habit+evt OR habit with overlapping ideal/sched,
+  // drop leftover moves that only share habit_id + calendar_event_id / scheduled day.
+  const list = [...best.values()];
+  const terminals = list.filter((r) => r.entity_type === 'habit'
+    && (r.change_kind === 'complete' || r.change_kind === 'skip'));
+  return list.filter((row) => {
+    if (row.entity_type !== 'habit' || row.change_kind === 'complete' || row.change_kind === 'skip') {
+      return true;
+    }
+    const hid = row.payload?.habit_id || habitIdFromRelated(row.related_id);
+    const evt = row.payload?.calendar_event_id || null;
+    const moveDay = londonDayFromIso(row.payload?.new_start);
+    const ideal = row.payload?.ideal_date || null;
+    return !terminals.some((t) => {
+      const th = t.payload?.habit_id || habitIdFromRelated(t.related_id);
+      if (th !== hid) return false;
+      const te = t.payload?.calendar_event_id || null;
+      if (evt && te && evt === te) return true;
+      const ts = t.payload?.scheduled_date || t.payload?.completed_on || null;
+      const ti = t.payload?.ideal_date || null;
+      if (moveDay && ts && moveDay === ts) return true;
+      if (ideal && ti && ideal === ti) return true;
+      return false;
+    });
+  });
 }
 
 async function upsertPushRow(sb, row) {
@@ -102,4 +204,7 @@ module.exports = {
   listAwaySpanBacklog,
   markPushStatus,
   markAllPendingReady,
+  supersedeSiblingHabitRows,
+  collapsePushManifest,
+  habitIdFromRelated,
 };
