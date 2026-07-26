@@ -472,35 +472,48 @@ function mergeIntervals(intervals) {
 }
 
 /**
- * Week fuel gauge = REAL diary load, not admin-only office hours.
- * Available: waking axis 07:00–23:00 × every day in the week.
- * Filled: away/bank-holiday days = full day; else merged duration of ALL
- * timed blocks (travel, workshop, lesson, habit, task, personal, fixture,
- * real buffers). Synthetic decompress strips excluded. Overlaps merged once.
+ * Week fuel = real load vs YOUR working windows (scheduling_rules), not the
+ * diary display axis. Available = weekday 10–17 / weekend 11–16 (from rules).
+ * Away/bank-holiday = that day's whole window filled. Other days = merged
+ * travel/workshop/habit/task/personal/buffer clipped to the window; load
+ * outside the window still counts (pct can exceed 100% = overrun).
  */
 function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
-  const a0 = DAY_START_MIN;
-  const a1 = DAY_END_MIN;
-  const daySpan = Math.max(0, a1 - a0);
   let available = 0;
   let filled = 0;
   let awayDaysCounted = 0;
   for (const day of days || []) {
-    available += daySpan;
+    const win = workingWindow(ruleMap || {}, day);
+    const w0 = win.start_min ?? 10 * 60;
+    const w1 = win.end_min ?? 17 * 60;
+    const dayAvail = Math.max(0, w1 - w0);
+    available += dayAvail;
+
     const away = !!(awayDays?.[day] || (holidays && holidays.has(day)));
     if (away) {
-      filled += daySpan;
+      filled += dayAvail;
       awayDaysCounted += 1;
       continue;
     }
+
     const intervals = [];
     for (const b of blocks || []) {
       if (b.day !== day || b.synthetic) continue;
-      const start = Math.max(b.start_min || 0, a0);
-      const end = Math.min(b.end_min || 0, a1);
+      const start = b.start_min || 0;
+      const end = b.end_min || 0;
       if (end > start) intervals.push([start, end]);
     }
-    for (const [s, e] of mergeIntervals(intervals)) filled += (e - s);
+    // Inside-window load (capacity used) + outside-window overtime
+    let inside = 0;
+    let outside = 0;
+    for (const [s, e] of mergeIntervals(intervals)) {
+      const inS = Math.max(s, w0);
+      const inE = Math.min(e, w1);
+      if (inE > inS) inside += (inE - inS);
+      if (s < w0) outside += Math.min(e, w0) - s;
+      if (e > w1) outside += e - Math.max(s, w1);
+    }
+    filled += inside + outside;
   }
   const pct = available > 0 ? Math.round((filled / available) * 100) : (filled > 0 ? 100 : 0);
   const filledH = Math.round((filled / 60) * 10) / 10;
