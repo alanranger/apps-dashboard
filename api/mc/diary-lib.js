@@ -471,53 +471,113 @@ function mergeIntervals(intervals) {
   return out;
 }
 
+/** On-location residential / away day clock (Alan's model ~05:00–22:00). */
+const AWAY_DAY_START_MIN = 5 * 60;
+const AWAY_DAY_END_MIN = 22 * 60;
+const EVENING_CATCHUP_START = 19 * 60;
+const EVENING_CATCHUP_END = 21 * 60;
+
+function blocksOnDay(blocks, day) {
+  return (blocks || []).filter((b) => b.day === day && !b.synthetic);
+}
+
+function dayIsTeaching(dayBlocks) {
+  return dayBlocks.some((b) => b.kind === 'workshop' || b.kind === 'lesson' || b.client_fixed);
+}
+
+function dayHasEveningCommitment(dayBlocks) {
+  return dayBlocks.some((b) => {
+    if ((b.start_min || 0) < 17 * 60) return false;
+    return b.kind === 'workshop' || b.kind === 'lesson' || b.kind === 'fixture' || b.client_fixed;
+  });
+}
+
+function mergedMins(dayBlocks) {
+  const intervals = [];
+  for (const b of dayBlocks) {
+    const s = b.start_min || 0;
+    const e = b.end_min || 0;
+    if (e > s) intervals.push([s, e]);
+  }
+  return mergeIntervals(intervals).reduce((n, [s, e]) => n + (e - s), 0);
+}
+
+function kindMinutes(dayBlocks) {
+  const out = {};
+  for (const b of dayBlocks) {
+    const kind = b.kind === 'mc_task' ? 'task' : (b.kind || 'other');
+    const dur = Math.max(0, (b.end_min || 0) - (b.start_min || 0));
+    out[kind] = (out[kind] || 0) + dur;
+  }
+  return out;
+}
+
 /**
- * Week fuel = real load vs YOUR working windows (scheduling_rules), not the
- * diary display axis. Available = weekday 10–17 / weekend 11–16 (from rules).
- * Away/bank-holiday = that day's whole window filled. Other days = merged
- * travel/workshop/habit/task/personal/buffer clipped to the window; load
- * outside the window still counts (pct can exceed 100% = overrun).
+ * Realistic week load (Alan's model):
+ * - Away/residential day: committed = full ~05–22; capacity = same (no admin gaps).
+ * - Teaching/client day (workshop/lesson/1-2-1): committed = all blocks; capacity = committed
+ *   (no free admin slots to “fill”).
+ * - Normal desk day: capacity = core working window + optional 19–21 catch-up
+ *   (catch-up dropped if evening class/fixture); committed = merged timed blocks.
  */
 function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
   let available = 0;
   let filled = 0;
   let awayDaysCounted = 0;
-  for (const day of days || []) {
-    const win = workingWindow(ruleMap || {}, day);
-    const w0 = win.start_min ?? 10 * 60;
-    const w1 = win.end_min ?? 17 * 60;
-    const dayAvail = Math.max(0, w1 - w0);
-    available += dayAvail;
+  let teachingDays = 0;
+  const breakdown = {
+    away: 0, workshop: 0, lesson: 0, travel: 0, habit: 0, task: 0,
+    fixture: 0, personal: 0, buffer: 0, other: 0,
+  };
 
+  for (const day of days || []) {
     const away = !!(awayDays?.[day] || (holidays && holidays.has(day)));
+    const dayBlocks = blocksOnDay(blocks, day);
+    const km = kindMinutes(dayBlocks);
+    for (const [k, v] of Object.entries(km)) {
+      if (breakdown[k] != null) breakdown[k] += v;
+      else breakdown.other += v;
+    }
+
     if (away) {
-      filled += dayAvail;
+      const span = AWAY_DAY_END_MIN - AWAY_DAY_START_MIN;
+      available += span;
+      filled += span;
+      breakdown.away += span;
       awayDaysCounted += 1;
       continue;
     }
 
-    const intervals = [];
-    for (const b of blocks || []) {
-      if (b.day !== day || b.synthetic) continue;
-      const start = b.start_min || 0;
-      const end = b.end_min || 0;
-      if (end > start) intervals.push([start, end]);
+    const teaching = dayIsTeaching(dayBlocks);
+    const committed = mergedMins(dayBlocks);
+
+    if (teaching) {
+      teachingDays += 1;
+      // No admin free capacity — day is owned by the client event + travel/packing
+      const cap = Math.max(committed, 1);
+      available += cap;
+      filled += committed;
+      continue;
     }
-    // Inside-window load (capacity used) + outside-window overtime
-    let inside = 0;
-    let outside = 0;
-    for (const [s, e] of mergeIntervals(intervals)) {
-      const inS = Math.max(s, w0);
-      const inE = Math.min(e, w1);
-      if (inE > inS) inside += (inE - inS);
-      if (s < w0) outside += Math.min(e, w0) - s;
-      if (e > w1) outside += e - Math.max(s, w1);
+
+    const win = workingWindow(ruleMap || {}, day);
+    const w0 = win.start_min ?? 10 * 60;
+    const w1 = win.end_min ?? 17 * 60;
+    let dayCap = Math.max(0, w1 - w0);
+    if (!dayHasEveningCommitment(dayBlocks)) {
+      dayCap += (EVENING_CATCHUP_END - EVENING_CATCHUP_START);
     }
-    filled += inside + outside;
+    available += dayCap;
+    filled += committed;
   }
+
   const pct = available > 0 ? Math.round((filled / available) * 100) : (filled > 0 ? 100 : 0);
   const filledH = Math.round((filled / 60) * 10) / 10;
   const availH = Math.round((available / 60) * 10) / 10;
+  const breakdown_h = {};
+  for (const [k, v] of Object.entries(breakdown)) {
+    if (v > 0) breakdown_h[k] = Math.round((v / 60) * 10) / 10;
+  }
   return {
     available_min: available,
     filled_min: filled,
@@ -525,7 +585,10 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
     pct: Math.min(pct, 999),
     over: filled > available,
     away_days: awayDaysCounted,
-    label: `${Math.min(pct, 999)}% · ${filledH}h / ${availH}h`,
+    teaching_days: teachingDays,
+    breakdown_min: breakdown,
+    breakdown_h,
+    label: `${Math.min(pct, 999)}% · ${filledH}h committed / ${availH}h realistic`,
   };
 }
 

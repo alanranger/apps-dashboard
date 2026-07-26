@@ -229,39 +229,41 @@ describe('week capacity — real load', () => {
     working_hours_weekend_end: '16:00',
   };
 
-  it('uses working windows from rules, not 07–23 display axis', () => {
-    const { weekCapacity, mergeIntervals } = require('../../api/mc/diary-lib.js');
-    assert.deepEqual(mergeIntervals([[600, 700], [650, 800], [900, 950]]), [[600, 800], [900, 950]]);
-    // Mon–Fri weekdays = 7h each; Sat–Sun = 5h each
-    const days = ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-08', '2026-08-09'];
-    const awayDays = {
-      '2026-08-03': { label: 'AWAY' },
-      '2026-08-04': { label: 'AWAY' },
-      '2026-08-05': { label: 'AWAY' },
-      '2026-08-06': { label: 'AWAY' },
-    };
-    const blocks = [{
-      day: '2026-08-07', kind: 'habit', start_min: 10 * 60, end_min: 12 * 60, synthetic: false,
-    }];
+  it('away days use residential 05–22 and teaching days have no free admin', () => {
+    const { weekCapacity } = require('../../api/mc/diary-lib.js');
+    const days = ['2026-08-03', '2026-08-04', '2026-08-07'];
+    const awayDays = { '2026-08-03': { label: 'AWAY' }, '2026-08-04': { label: 'AWAY' } };
+    const blocks = [
+      {
+        day: '2026-08-07', kind: 'workshop', client_fixed: true,
+        start_min: 9 * 60, end_min: 16 * 60, synthetic: false,
+      },
+      {
+        day: '2026-08-07', kind: 'travel',
+        start_min: 7 * 60, end_min: 9 * 60, synthetic: false,
+      },
+    ];
     const cap = weekCapacity(days, blocks, awayDays, rules, new Set());
-    assert.equal(cap.away_days, 4);
-    // 5 weekdays×7h + 2 weekend×5h = 35+10 = 45h = 2700m
-    assert.equal(cap.available_min, 5 * 7 * 60 + 2 * 5 * 60);
-    // 4 away weekdays×7h + Fri 2h habit
-    assert.equal(cap.filled_min, 4 * 7 * 60 + 120);
-    assert.ok(cap.pct > 50, `residential week should look busy, got ${cap.pct}%`);
+    assert.equal(cap.away_days, 2);
+    assert.equal(cap.teaching_days, 1);
+    assert.equal(cap.breakdown_h.away, 34); // 2 × 17h
+    assert.equal(cap.breakdown_min.away, 2 * 17 * 60);
+    assert.ok(cap.breakdown_h.workshop > 0);
+    assert.ok(cap.breakdown_h.travel > 0);
+    // teaching day capacity == committed (no spare admin)
+    assert.equal(cap.free_min, 0);
   });
 
-  it('counts early travel outside the window as overrun load', () => {
+  it('normal day includes evening catch-up unless evening fixture', () => {
     const { weekCapacity } = require('../../api/mc/diary-lib.js');
-    const days = ['2026-08-07']; // Friday
-    const blocks = [{
-      day: '2026-08-07', kind: 'travel', start_min: 8 * 60 + 30, end_min: 10 * 60, synthetic: false,
-    }];
-    const cap = weekCapacity(days, blocks, {}, rules, new Set());
-    assert.equal(cap.available_min, 7 * 60);
-    assert.equal(cap.filled_min, 90); // 08:30–10:00 outside window
-    assert.equal(cap.over, false);
+    const open = weekCapacity(['2026-08-07'], [], {}, rules, new Set());
+    // Fri 10–17 (7h) + 19–21 (2h) = 9h
+    assert.equal(open.available_min, 9 * 60);
+    const withFix = weekCapacity(['2026-08-07'], [{
+      day: '2026-08-07', kind: 'fixture', start_min: 19 * 60, end_min: 21 * 60, synthetic: false,
+    }], {}, rules, new Set());
+    assert.equal(withFix.available_min, 7 * 60);
+    assert.equal(withFix.breakdown_h.fixture, 2);
   });
 });
 

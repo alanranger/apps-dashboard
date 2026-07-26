@@ -462,6 +462,33 @@ function fmtHours(mins) {
   return `${h}h`;
 }
 
+function renderWeekBreakdown(cap) {
+  const rows = [
+    ['away', 'Away', 'dy-travel'],
+    ['workshop', 'Client / workshop', 'dy-workshop'],
+    ['lesson', 'Lesson', 'dy-lesson'],
+    ['travel', 'Travel', 'dy-travel'],
+    ['habit', 'Habits', 'dy-habit'],
+    ['task', 'Tasks', 'dy-task'],
+    ['fixture', 'Fixture', 'dy-fixture'],
+    ['personal', 'Personal', 'dy-personal'],
+    ['buffer', 'Buffers', 'dy-buffer'],
+  ];
+  const bh = cap.breakdown_h || {};
+  const chips = rows
+    .filter(([k]) => (bh[k] || 0) > 0)
+    .map(([k, label, cls]) => `
+      <span class="dy-bd-chip">
+        <span class="dy-leg-swatch ${cls}"></span>
+        <span>${label} <strong>${bh[k]}h</strong></span>
+      </span>`)
+    .join('');
+  if (!chips) {
+    return '<div class="dy-breakdown meta">No timed load this week</div>';
+  }
+  return `<div class="dy-breakdown" title="Hours by type (category sums; overlaps can mean types add up to more than clock hours)">${chips}</div>`;
+}
+
 function renderWeekGauge(week) {
   const cap = week.capacity || { pct: 0, filled_min: 0, available_min: 0, free_min: 0, over: false, label: '—' };
   const pct = Math.min(100, cap.pct || 0);
@@ -469,17 +496,20 @@ function renderWeekGauge(week) {
   const start = week.days?.[0] || '';
   const end = week.days?.[6] || '';
   const awayN = cap.away_days || 0;
+  const teachN = cap.teaching_days || 0;
   return `
-    <div class="dy-fuel ${tone}" title="Load vs your working hours (weekdays 10:00–17:00, weekends 11:00–16:00 from scheduling rules). Away/bank-holiday = full day used. Travel/workshops/tasks count too; time outside the window still adds (can go over 100%).">
+    <div class="dy-fuel ${tone}" title="Committed hours vs realistic capacity: away≈05–22 full; teaching/client days have no admin free slots; normal days = core window + optional 19–21 unless evening class/fixture.">
       <div class="dy-fuel-meta">
         <strong>Week ${fmtDayLabel(start)} – ${fmtDayLabel(end)}</strong>
         <span>${cap.label || `${pct}%`}</span>
-        <span class="meta">${fmtHours(cap.free_min || 0)} free in window</span>
-        ${awayN ? `<span class="meta">${awayN} away day${awayN === 1 ? '' : 's'}</span>` : ''}
+        <span class="meta">${fmtHours(cap.free_min || 0)} free (realistic)</span>
+        ${awayN ? `<span class="meta">${awayN} away</span>` : ''}
+        ${teachN ? `<span class="meta">${teachN} teaching</span>` : ''}
       </div>
       <div class="dy-fuel-track" aria-hidden="true">
         <div class="dy-fuel-fill" style="width:${pct}%"></div>
       </div>
+      ${renderWeekBreakdown(cap)}
     </div>`;
 }
 
