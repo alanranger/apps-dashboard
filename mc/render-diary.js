@@ -316,27 +316,56 @@ function renderLegend() {
 
 function renderToolbar(data) {
   const push = data.push || {};
-  const n = (push.open_count || 0) + (push.backlog_count || 0);
+  const openN = push.open_count || 0;
+  const backlogN = push.backlog_count || 0;
+  const n = openN + backlogN;
   const enabled = !!push.writes_available;
+  const pushTone = !n ? 'dy-push-idle' : enabled ? 'dy-push-go' : 'dy-push-blocked';
+  const statusLabel = enabled
+    ? (n ? 'Ready to hand to Claude' : 'Queue clear')
+    : 'Writes blocked (Anthropic) — queue still building';
   return `
     <div class="dy-toolbar card">
-      <div>
-        <strong>Diary</strong>
-        <span class="meta"> · Mon–Sun · 8 weeks · 30-min axis · ${data.from} → ${data.to}</span>
+      <div class="dy-toolbar-top">
+        <div>
+          <strong>Diary</strong>
+          <span class="meta"> · Mon–Sun · 8 weeks · 30-min axis · ${data.from} → ${data.to}</span>
+        </div>
+        <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
       </div>
       <p class="meta dy-edit-hint">Editable: <strong>blue tasks</strong> &amp; <strong>green habits</strong> (grab cursor + ☑). Everything else is Google Calendar truth.</p>
-      <div class="dy-toolbar-actions">
-        <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
-        <button type="button" class="btn-secondary" data-dy-push ${enabled ? '' : 'disabled'}
-          title="${enabled ? 'Mark consolidated manifest ready for Claude' : 'GCal writes down — button disabled'}">
-          Push ${n} to Google
-        </button>
-        <span class="meta">${enabled ? 'writes available' : 'writes blocked (Anthropic)'}</span>
+      <div class="dy-push-panel ${pushTone}">
+        <div class="dy-push-panel-head">
+          <span class="dy-push-kicker">Google Calendar flush</span>
+          <span class="dy-push-status">${statusLabel}</span>
+        </div>
+        <div class="dy-push-panel-body">
+          <div class="dy-push-counts">
+            <div class="dy-push-count">
+              <strong>${n}</strong>
+              <span>total waiting</span>
+            </div>
+            <div class="dy-push-count">
+              <strong>${openN}</strong>
+              <span>diary edits</span>
+            </div>
+            <div class="dy-push-count">
+              <strong>${backlogN}</strong>
+              <span>away-span backlog</span>
+            </div>
+          </div>
+          <button type="button" class="dy-push-btn" data-dy-push ${enabled && n ? '' : 'disabled'}
+            title="${enabled
+    ? 'Marks the queue READY for Claude. Does not write Google itself.'
+    : 'Blocked until Anthropic GCal writes recover. Edits still save to DB + queue.'}">
+            ${enabled ? `Hand ${n || 0} to Claude → Google` : `Blocked · ${n} waiting`}
+          </button>
+        </div>
+        <p class="dy-push-explain">
+          Diary edits already save to DB and update the push queue (latest state per task/habit wins).
+          This button only marks them <strong>ready</strong> for Claude — Claude then writes Google and clears the queue.
+        </p>
       </div>
-      <p class="meta dy-push-hint">
-        Open push queue: <strong>${push.open_count || 0}</strong>
-        · Away-span backlog: <strong>${push.backlog_count || 0}</strong>
-      </p>
     </div>`;
 }
 
