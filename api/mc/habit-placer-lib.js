@@ -3,7 +3,7 @@
  * Busy map frozen first → habits by dep-topology then hardest-first → amendments.
  */
 const {
-  workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays,
+  workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays, dayName,
 } = require('./scheduling-rules-lib');
 const { occurrencesInRange } = require('./rrule-core');
 const { priorityRank } = require('./priority-lib');
@@ -52,9 +52,17 @@ function dayCapLimits(ruleMap) {
  * Hard-busy whole London days out→back (incl. travel days + middle).
  * Same-day day-trips skipped (drive intervals already cover those).
  * Pair by workshop_row_key or venue|workshop_start; else next unused back.
- * Alan rule: multi-day trips also lock restDay = day after travel_back (no appointments).
+ *
+ * Rest day (Alan 26 Jul): ONLY when travel_back ends on a London Sunday,
+ * following Monday is blocked — controlled by scheduling_rules
+ * rest_day_after_sunday_return (default true). No rest invent for other return weekdays.
  */
-function awaySpansFromTravelBlocks(blocks) {
+function awaySpansFromTravelBlocks(blocks, ruleMap = {}) {
+  const restAfterSunday = String(
+    ruleMap.rest_day_after_sunday_return != null
+      ? ruleMap.rest_day_after_sunday_return
+      : 'true',
+  ) === 'true';
   const outs = [];
   const backs = [];
   for (const b of blocks || []) {
@@ -83,11 +91,13 @@ function awaySpansFromTravelBlocks(blocks) {
     const startDay = isoToLondonDate(out.starts_at);
     const endDay = isoToLondonDate(back.ends_at);
     if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
-    const restDay = addDays(endDay, 1);
+    const sundayReturn = dayName(endDay) === 'sun';
+    const restDay = (restAfterSunday && sundayReturn) ? addDays(endDay, 1) : null;
     spans.push({
       startDay,
       endDay,
       restDay,
+      sunday_return: sundayReturn,
       startMs: londonYmdHmToUtcMs(startDay, '00:00'),
       endMs: londonYmdHmToUtcMs(endDay, '23:59') + 60000,
       summary: `away:${out.venue_name || out.workshop_title || key}`,

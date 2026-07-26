@@ -65,7 +65,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const awaySpans = awaySpansFromTravelBlocks(travel || []);
+    const awaySpans = awaySpansFromTravelBlocks(travel || [], ruleMap);
     const teachingSpans = teachingDaySpansFromEvents(busyEvents || []);
     const rawBlocks = [
       ...tasksToBlocks(tasks, today),
@@ -136,6 +136,7 @@ module.exports = async function handler(req, res) {
         decompress_after_task_min: Number(ruleMap.decompress_after_task_min || 30),
         buffer_scope: ruleMap.buffer_scope || 'home_only',
         gcal_writes_available: writesAvailable,
+        rest_day_after_sunday_return: String(ruleMap.rest_day_after_sunday_return || 'true') === 'true',
       },
       push: {
         open_count: (pushOpen || []).length,

@@ -251,35 +251,41 @@ async function runMenuAction(act, block, refresh) {
 }
 
 async function dropBlock(block, day, startHm, endHm, override, refresh) {
-  const body = {
-    action: 'move',
-    new_start: londonYmdHmToIso(day, startHm),
-    new_end: londonYmdHmToIso(day, endHm),
-    title: block.title,
-    override: !!override,
-    calendar_event_id: block.calendar_event_id || undefined,
-  };
-  if (block.kind === 'mc_task') {
-    body.task_id = block.id.replace(/^task:/, '');
-    if (block.slot_pinned) {
-      alert('Pinned — unlock before dragging');
+  if (dropBlock._busy) return;
+  dropBlock._busy = true;
+  try {
+    const body = {
+      action: 'move',
+      new_start: londonYmdHmToIso(day, startHm),
+      new_end: londonYmdHmToIso(day, endHm),
+      title: block.title,
+      override: !!override,
+      calendar_event_id: block.calendar_event_id || undefined,
+    };
+    if (block.kind === 'mc_task') {
+      body.task_id = block.id.replace(/^task:/, '');
+      if (block.slot_pinned) {
+        alert('Pinned — unlock before dragging');
+        return;
+      }
+    } else if (block.kind === 'habit') {
+      body.habit_id = block.habit_id;
+      body.ideal_date = block.ideal_date || block.day;
+    } else {
       return;
     }
-  } else if (block.kind === 'habit') {
-    body.habit_id = block.habit_id;
-    body.ideal_date = block.ideal_date || block.day;
-  } else {
-    return;
+    const res = await api('/api/mc/diary-action', { method: 'POST', body });
+    if (res.needs_override) {
+      const msg = `Warnings:\n- ${res.warnings.join('\n- ')}\n\nOverride and place anyway?`;
+      if (!confirm(msg)) return;
+      body.override = true;
+      await api('/api/mc/diary-action', { method: 'POST', body });
+    }
+    toast('Saved to DB · GCal change queued for Claude flush');
+    await refresh();
+  } finally {
+    dropBlock._busy = false;
   }
-  const res = await api('/api/mc/diary-action', { method: 'POST', body });
-  if (res.needs_override) {
-    const msg = `Warnings:\n- ${res.warnings.join('\n- ')}\n\nOverride and place anyway?`;
-    if (!confirm(msg)) return;
-    body.override = true;
-    await api('/api/mc/diary-action', { method: 'POST', body });
-  }
-  toast('Saved to DB · GCal change queued for Claude flush');
-  await refresh();
 }
 
 function renderLegend() {
@@ -385,60 +391,34 @@ function stackClass(kind, isBuffer) {
   return 'dy-z-mc';
 }
 
-/** Parallel columns for concurrent blocks (buffers stay full-width underneath). */
-function overlapLayout(dayBlocks) {
-  const map = new Map();
+/** Mark genuine time conflicts between non-buffer blocks (do NOT split into columns). */
+function conflictIds(dayBlocks) {
   const timed = (dayBlocks || [])
-    .filter((b) => !b.is_buffer && !b.synthetic && (b.end_min || 0) > (b.start_min || 0))
-    .sort((a, b) => (a.start_min - b.start_min) || (b.end_min - a.end_min));
-  let cluster = [];
-  let clusterEnd = -1;
-  const flush = () => {
-    if (!cluster.length) return;
-    const colEnds = [];
-    const assigned = [];
-    for (const b of cluster) {
-      let c = colEnds.findIndex((e) => e <= b.start_min);
-      if (c < 0) {
-        c = colEnds.length;
-        colEnds.push(b.end_min);
-      } else {
-        colEnds[c] = b.end_min;
+    .filter((b) => !b.is_buffer && !b.synthetic && (b.end_min || 0) > (b.start_min || 0));
+  const bad = new Set();
+  for (let i = 0; i < timed.length; i += 1) {
+    for (let j = i + 1; j < timed.length; j += 1) {
+      const a = timed[i];
+      const b = timed[j];
+      if (a.start_min < b.end_min && b.start_min < a.end_min) {
+        bad.add(a.id);
+        bad.add(b.id);
       }
-      assigned.push(c);
     }
-    const n = Math.max(1, colEnds.length);
-    cluster.forEach((b, i) => map.set(b.id, { col: assigned[i], cols: n }));
-    cluster = [];
-    clusterEnd = -1;
-  };
-  for (const b of timed) {
-    if (cluster.length && b.start_min >= clusterEnd) flush();
-    cluster.push(b);
-    clusterEnd = Math.max(clusterEnd, b.end_min);
   }
-  flush();
-  return map;
+  return bad;
 }
 
-function blockPositionStyle(b, axis, layout) {
+function renderBlock(b, axis, conflicts) {
   const top = minsToTop(b.start_min, axis);
   const h = heightPct(b.duration_min || 30, axis);
-  const lay = layout?.get(b.id);
-  if (!lay || lay.cols <= 1) return `top:${top}%;height:${h}%`;
-  const pad = 3;
-  const colW = (100 - pad * 2) / lay.cols;
-  const left = pad + lay.col * colW;
-  return `top:${top}%;height:${h}%;left:${left}%;width:calc(${colW}% - 2px);right:auto`;
-}
-
-function renderBlock(b, axis, layout) {
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
   const icon = KIND_ICON[b.kind] || '•';
   const locked = !!(b.slot_pinned || b.client_fixed);
   const isBuffer = !!(b.is_buffer || b.synthetic);
   const done = !!b.done;
   const tall = (b.duration_min || 30) >= 90 ? 'dy-tall' : '';
+  const conflict = conflicts?.has(b.id) ? 'dy-conflict' : '';
   const status = [
     b.overdue ? 'dy-overdue' : '',
     b.running_late ? 'dy-late' : '',
@@ -449,12 +429,14 @@ function renderBlock(b, axis, layout) {
     b.client_fixed ? 'dy-client-fixed' : '',
     done ? 'dy-done-block' : '',
     stackClass(b.kind, isBuffer),
+    conflict,
     tall,
   ].filter(Boolean).join(' ');
   const canEdit = !!(b.editable && !isBuffer && !done);
   const canDrag = !!(canEdit && !locked);
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
+    conflict ? '⚠ Time conflict with another block — reschedule one' : '',
     done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
     done && b.actual_minutes == null ? 'Completed · can’t move' : '',
     b.client_fixed ? 'Fixed client booking · can’t move' : '',
@@ -475,13 +457,14 @@ function renderBlock(b, axis, layout) {
   const doneBadge = done
     ? `<span class="dy-done-badge">DONE${b.actual_minutes != null ? ` ${b.actual_minutes}m` : ''}</span>`
     : '';
+  const conflictBadge = conflict ? '<span class="dy-conflict-badge">CONFLICT</span>' : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())
       ? `<span class="dy-type-icon" aria-hidden="true">${KIND_ICON.buffer}</span> ${b.title}`
       : `${KIND_ICON.buffer} decompress`)
     : `<span class="dy-type-icon" aria-hidden="true">${icon}</span> ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
-    style="${blockPositionStyle(b, axis, layout)}"
+    style="top:${top}%;height:${h}%"
     data-block-id="${b.id}"
     title="${tipBits.join(' · ')}"
     ${drag}>
@@ -490,6 +473,7 @@ function renderBlock(b, axis, layout) {
       <span class="dy-block-label">${label}</span>
       ${editBadge}
       ${doneBadge}
+      ${conflictBadge}
       ${priorityTag(b.priority)}
       ${lock}
     </div>
@@ -498,7 +482,7 @@ function renderBlock(b, axis, layout) {
 
 function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const dayBlocks = blocks.filter((b) => b.day === day);
-  const layout = overlapLayout(dayBlocks);
+  const conflicts = conflictIds(dayBlocks);
   const awayCls = away ? ' dy-away' : '';
   const bhCls = holidayTitle ? ' dy-bh' : '';
   const awayBanner = away
@@ -532,7 +516,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
         ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
         ${awayBanner}
         ${hours.join('')}
-        ${dayBlocks.map((b) => renderBlock(b, axis, layout)).join('')}
+        ${dayBlocks.map((b) => renderBlock(b, axis, conflicts)).join('')}
       </div>
     </div>`;
 }

@@ -745,12 +745,21 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   background:#166534; color:#bbf7d0; text-shadow:none;
 }
 .dy-ro { opacity:1; }
-/* Stacking order only — horizontal position comes from overlap columns */
+/* Stacking: buffers under personal under travel under client under MC */
 .dy-z-buffer { z-index:1; }
-.dy-z-personal { z-index:2; }
+.dy-z-personal { z-index:2; left:4px; right:36%; }
 .dy-z-travel { z-index:3; }
 .dy-z-client { z-index:4; }
-.dy-z-mc { z-index:5; }
+.dy-z-mc { z-index:5; left:10px; }
+.dy-conflict {
+  outline:2px solid #ef4444 !important; outline-offset:0;
+  box-shadow:0 0 0 2px rgba(239,68,68,0.35);
+}
+.dy-conflict-badge {
+  flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:0.03em;
+  padding:0 4px; border-radius:3px; line-height:14px;
+  background:#7f1d1d; color:#fecaca; text-shadow:none;
+}
 .dy-lock { flex-shrink:0; font-size:13px; line-height:1; }
 .dy-lock-hint { flex-shrink:0; font-size:11px; opacity:0; }
 .dy-block.dy-unlocked:hover .dy-lock-hint { opacity:0.45; }

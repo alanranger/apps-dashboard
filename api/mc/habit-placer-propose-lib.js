@@ -196,7 +196,7 @@ async function runHabitPlacerPropose(ctx) {
   const clientBusy = buildBusyIntervals(gcalEvents || [], ruleMap);
   const pinnedBusy = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: true });
   const softTasks = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false });
-  const awaySpans = awaySpansFromTravelBlocks(travelBlocks || []);
+  const awaySpans = awaySpansFromTravelBlocks(travelBlocks || [], ruleMap);
   const teachingSpans = teachingDaySpansFromEvents(gcalEvents || []);
   const hardBusy = clientBusy.concat(pinnedBusy).concat(awaySpans).concat(teachingSpans)
     .sort((a, b) => a.startMs - b.startMs);

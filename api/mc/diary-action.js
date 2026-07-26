@@ -100,6 +100,7 @@ async function moveHabit(body, actor) {
   const day = isoToLondonDate(body.new_start);
   const pinChange = `diary_pin:${body.new_start}|${body.new_end}`;
   const note = `${day} ${String(body.new_start).slice(11, 16)} (diary pin)`;
+  const projectionKey = body.projection_key || `diary:${habit.id}:${ideal}`;
   await sb(`recurring_tasks?id=eq.${habit.id}`, {
     method: 'PATCH', prefer: 'return=minimal',
     body: {
@@ -108,32 +109,50 @@ async function moveHabit(body, actor) {
       updated_at: new Date().toISOString(),
     },
   });
-  const existing = await sb(
+  // Idempotent: one row per habit+ideal (also match live event id / projection_key).
+  let existing = await sb(
     `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
-    + '&select=id&order=at.desc&limit=1',
+    + '&select=id&order=at.desc&limit=5',
   );
-  if (existing?.[0]?.id) {
-    await sb(`recurring_log?id=eq.${existing[0].id}`, {
-      method: 'PATCH', prefer: 'return=minimal',
-      body: {
-        change: pinChange,
-        scheduled_date: day,
-        roll_reason: 'diary_manual_pin',
-        calendar_event_id: body.calendar_event_id || null,
-      },
+  if (!existing?.[0] && body.calendar_event_id) {
+    existing = await sb(
+      `recurring_log?recurring_task_id=eq.${habit.id}`
+      + `&calendar_event_id=eq.${encodeURIComponent(body.calendar_event_id)}`
+      + '&select=id&order=at.desc&limit=5',
+    );
+  }
+  if (!existing?.[0]) {
+    existing = await sb(
+      `recurring_log?projection_key=eq.${encodeURIComponent(projectionKey)}`
+      + '&select=id&order=at.desc&limit=5',
+    );
+  }
+  const keepId = existing?.[0]?.id || null;
+  const logBody = {
+    change: pinChange,
+    scheduled_date: day,
+    roll_reason: 'diary_manual_pin',
+    calendar_event_id: body.calendar_event_id || null,
+    ideal_date: ideal,
+    projection_key: projectionKey,
+  };
+  if (keepId) {
+    await sb(`recurring_log?id=eq.${keepId}`, {
+      method: 'PATCH', prefer: 'return=minimal', body: logBody,
     });
+    // Drop accidental duplicates from prior double-writes
+    for (const row of (existing || []).slice(1)) {
+      if (row?.id) {
+        await sb(`recurring_log?id=eq.${row.id}`, { method: 'DELETE', prefer: 'return=minimal' });
+      }
+    }
   } else {
     await sb('recurring_log', {
       method: 'POST', prefer: 'return=minimal',
       body: {
         recurring_task_id: habit.id,
         actor,
-        change: pinChange,
-        ideal_date: ideal,
-        scheduled_date: day,
-        roll_reason: 'diary_manual_pin',
-        calendar_event_id: body.calendar_event_id || null,
-        projection_key: body.projection_key || `diary:${habit.id}:${ideal}`,
+        ...logBody,
       },
     });
   }
@@ -168,19 +187,29 @@ async function moveHabit(body, actor) {
       actor,
     });
   }
-  await sb('pending_diary_changes', {
-    method: 'POST', prefer: 'return=minimal',
-    body: {
-      change_type: 'diary_manual_move',
-      related_id: related,
-      target_date: day,
-      summary: `Diary grid: moved habit "${habit.title}" → ${day}`,
-      proposed_action: action,
-      reason: 'alan_diary_grid',
-      urgency: 'normal',
-      status: 'pending',
-    },
-  });
+  // Idempotent pending row — patch existing related_id if still pending
+  const pending = await sb(
+    `pending_diary_changes?related_id=eq.${encodeURIComponent(related)}&status=eq.pending&select=id&limit=1`,
+  );
+  const pendingBody = {
+    change_type: 'diary_manual_move',
+    related_id: related,
+    target_date: day,
+    summary: `Diary grid: moved habit "${habit.title}" → ${day}`,
+    proposed_action: action,
+    reason: 'alan_diary_grid',
+    urgency: 'normal',
+    status: 'pending',
+  };
+  if (pending?.[0]?.id) {
+    await sb(`pending_diary_changes?id=eq.${pending[0].id}`, {
+      method: 'PATCH', prefer: 'return=minimal', body: pendingBody,
+    });
+  } else {
+    await sb('pending_diary_changes', {
+      method: 'POST', prefer: 'return=minimal', body: pendingBody,
+    });
+  }
   return { habit_id: habit.id, scheduled_date: day, queued: true };
 }
 
@@ -227,7 +256,7 @@ module.exports = async function handler(req, res) {
       const rules = await sb('scheduling_rules?select=key,value');
       const ruleMap = ruleMapFromRows(rules);
       const travel = await sb('travel_blocks?select=*');
-      const awaySpans = awaySpansFromTravelBlocks(travel || []);
+      const awaySpans = awaySpansFromTravelBlocks(travel || [], ruleMap);
       const day = isoToLondonDate(body.new_start);
       const peers = await loadPeers(
         `${addDays(day, -1)}T00:00:00.000Z`,
@@ -250,7 +279,7 @@ module.exports = async function handler(req, res) {
       const rules = await sb('scheduling_rules?select=key,value');
       const ruleMap = ruleMapFromRows(rules);
       const travel = await sb('travel_blocks?select=*');
-      const awaySpans = awaySpansFromTravelBlocks(travel || []);
+      const awaySpans = awaySpansFromTravelBlocks(travel || [], ruleMap);
       const day = isoToLondonDate(body.new_start);
       const peers = await loadPeers(
         `${addDays(day, -1)}T00:00:00.000Z`,

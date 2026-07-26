@@ -337,10 +337,10 @@ describe('habit-placer-lib — away spans', () => {
     assert.equal(spans.length, 1);
     assert.equal(spans[0].startDay, '2026-08-03');
     assert.equal(spans[0].endDay, '2026-08-06');
-    assert.equal(spans[0].restDay, '2026-08-07');
+    assert.equal(spans[0].restDay, null); // Thu return — no auto rest (Sunday-return only)
   });
 
-  it('rolls ideal away-day past the whole span including rest day', () => {
+  it('rolls ideal away-day past the whole span including Sunday-return Monday rest', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Norfolk',
@@ -352,16 +352,17 @@ describe('habit-placer-lib — away spans', () => {
         workshop_start: '2026-11-20T09:30:00Z',
         starts_at: '2026-11-22T14:00:00Z', ends_at: '2026-11-22T17:30:00Z',
       },
-    ]);
+    ], { rest_day_after_sunday_return: 'true' });
+    assert.equal(spans[0].restDay, '2026-11-23'); // Sun 22 → Mon 23
     const days = candidateDays('2026-11-22', 2, false, rules, holidays, spans);
     assert.ok(!days.includes('2026-11-20'));
     assert.ok(!days.includes('2026-11-21'));
     assert.ok(!days.includes('2026-11-22'));
-    assert.ok(!days.includes('2026-11-23')); // rest after travel-back
+    assert.ok(!days.includes('2026-11-23')); // rest after Sunday return
     assert.ok(days.includes('2026-11-19') || days.includes('2026-11-24'));
   });
 
-  it('does not place habit on middle away day or rest day', () => {
+  it('does not place habit on middle away day; non-Sunday return has no rest day', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Rosedale Abbey',
@@ -383,7 +384,7 @@ describe('habit-placer-lib — away spans', () => {
       [{ ...habit, rrule: 'FREQ=DAILY;COUNT=1' }], [], spans, rules, holidays,
       '2026-08-05', '2026-08-05',
     );
-    assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-07'));
+    assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-06'));
   });
 
   it('does not place habit on teaching/client day', () => {
