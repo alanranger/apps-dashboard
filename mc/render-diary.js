@@ -168,8 +168,8 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
 
 function renderLegend() {
   const items = [
-    ['dy-workshop', '📷', 'Client booking', 'workshop / shoot'],
-    ['dy-lesson', '🎓', 'Lesson', 'class / 1-2-1'],
+    ['dy-workshop', '📷', 'Client booking', 'workshop / shoot / Zoom 1-2-1 — fixed P0'],
+    ['dy-lesson', '🎓', 'Lesson', 'group class feed'],
     ['dy-habit', '🔁', 'Recurring habit', ''],
     ['dy-task', '☑️', 'Manual task', 'MC-nn'],
     ['dy-travel', '🚗', 'Travel', ''],
@@ -225,25 +225,27 @@ function renderBlock(b, axis) {
   const h = heightPct(b.duration_min || 30, axis);
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
   const icon = KIND_ICON[b.kind] || '•';
+  const locked = !!(b.slot_pinned || b.client_fixed);
   const status = [
     b.overdue ? 'dy-overdue' : '',
     b.running_late ? 'dy-late' : '',
-    b.slot_pinned ? 'dy-pinned' : '',
-    b.editable && !b.slot_pinned ? 'dy-unlocked' : '',
+    locked ? 'dy-pinned' : '',
+    b.editable && !locked ? 'dy-unlocked' : '',
     b.editable ? 'dy-edit' : 'dy-ro',
     b.is_buffer || b.synthetic ? 'dy-buffer-strip' : '',
+    b.client_fixed ? 'dy-client-fixed' : '',
   ].filter(Boolean).join(' ');
-  const lock = b.slot_pinned
+  const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : (b.editable ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
-  const drag = b.editable && !b.slot_pinned && !b.is_buffer ? 'draggable="true"' : '';
+  const drag = b.editable && !locked && !b.is_buffer ? 'draggable="true"' : '';
   const label = b.is_buffer || b.synthetic
     ? `${icon} decompress`
     : `${icon} ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
     style="top:${top}%;height:${h}%"
     data-block-id="${b.id}"
-    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})"
+    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})${b.client_fixed ? ' · fixed client booking' : ''}"
     ${drag}>
     <div class="dy-block-row">
       <span class="dy-block-label">${label}</span>

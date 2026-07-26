@@ -15,13 +15,25 @@ const DAY_END_MIN = 23 * 60;
 const WORKSHOP_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Workshops')?.id || '';
 const LESSON_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Lessons')?.id || '';
 
+/** Paid Zoom / online 1-2-1 client sessions — purple client booking, always locked. */
+function isZoomClientBooking(summary) {
+  const t = String(summary || '').toLowerCase();
+  const is121 = /1\s*[-–]?\s*2\s*[-–]?\s*1|\b121\b/.test(t);
+  if (is121 && /zoom|online|tuition|mentoring|1-2-1/.test(t)) return true;
+  if (/\bonline\b/.test(t) && is121) return true;
+  if (/\bzoom\b/.test(t) && /(tuition|mentoring|1\s*[-–]?\s*2\s*[-–]?\s*1)/.test(t)) return true;
+  return false;
+}
+
 function blockTypeFromBusy(ev) {
+  const title = ev.summary || ev.title || '';
+  // Zoom 1-2-1s win over Lessons/Primary feed — they're fixed client bookings
+  if (isZoomClientBooking(title)) return 'workshop';
   const cal = String(ev._calendarId || '');
   if (!cal) return 'personal';
   if (isForceBusyCalendar(cal)) return 'fixture';
   if (WORKSHOP_CAL && cal === WORKSHOP_CAL) return 'workshop';
   if (LESSON_CAL && cal === LESSON_CAL) return 'lesson';
-  // Fallback: Squarespace import feeds (stable id prefix)
   if (cal.includes('ic364d06')) return 'workshop';
   if (cal.includes('nht93uaq')) return 'lesson';
   return 'personal';
@@ -74,6 +86,7 @@ function toBlock(opts) {
     overdue: !!opts.overdue,
     running_late: !!opts.running_late,
     is_buffer: opts.kind === 'buffer',
+    client_fixed: !!opts.client_fixed,
   };
 }
 
@@ -123,12 +136,19 @@ function busyToBlocks(busy, fixtures) {
     const start = e.start?.dateTime || e.start;
     const end = e.end?.dateTime || e.end;
     if (!start || !String(start).includes('T')) continue;
+    const kind = blockTypeFromBusy(e);
+    const title = e.summary || '(busy)';
+    const clientFixed = kind === 'workshop' || isZoomClientBooking(title);
     out.push(toBlock({
       id: `busy:${e.id}`,
-      kind: blockTypeFromBusy(e),
-      title: e.summary || '(busy)',
-      start, end,
+      kind,
+      title,
+      start,
+      end,
       editable: false,
+      slot_pinned: clientFixed,
+      priority: clientFixed ? 'p0' : null,
+      client_fixed: clientFixed,
     }));
   }
   for (const e of fixtures || []) {
@@ -314,4 +334,6 @@ module.exports = {
   insertDecompressStrips,
   warnDrop,
   weeksFrom,
+  isZoomClientBooking,
+  blockTypeFromBusy,
 };

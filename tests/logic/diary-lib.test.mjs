@@ -110,6 +110,25 @@ describe('diary calendar feeds', () => {
     assert.equal(blocks.find((b) => /Composition/.test(b.title)).kind, 'lesson');
     assert.equal(blocks.find((b) => /Long Exposure/.test(b.title)).kind, 'workshop');
   });
+
+  it('Zoom 1-2-1 is purple client booking + locked P0 even on Lessons feed', () => {
+    const { busyToBlocks, isZoomClientBooking } = require('../../api/mc/diary-lib.js');
+    assert.equal(
+      isZoomClientBooking('Jo Galloway: Online 1-2-1 Tuition - Zoom'),
+      true,
+    );
+    const blocks = busyToBlocks([{
+      id: 'jo',
+      summary: 'Jo Galloway: Online 1-2-1 Tuition - Zoom',
+      start: '2026-08-12T14:00:00Z',
+      end: '2026-08-12T15:00:00Z',
+      _calendarId: 'nht93uaqhhd191kc3fg1kjs57k6bunhn@import.calendar.google.com',
+    }], []);
+    assert.equal(blocks[0].kind, 'workshop');
+    assert.equal(blocks[0].slot_pinned, true);
+    assert.equal(blocks[0].priority, 'p0');
+    assert.equal(blocks[0].client_fixed, true);
+  });
 });
 
 describe('gcal push related_id', () => {
