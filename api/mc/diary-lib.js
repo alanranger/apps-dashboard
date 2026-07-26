@@ -7,10 +7,25 @@ const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
 } = require('./habit-placer-lib');
-const { isForceBusyCalendar } = require('./gcal-lib');
+const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
 
 const DAY_START_MIN = 7 * 60;
 const DAY_END_MIN = 23 * 60;
+
+const WORKSHOP_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Workshops')?.id || '';
+const LESSON_CAL = EXPECTED_CALENDARS.find((c) => c.label === 'Lessons')?.id || '';
+
+function blockTypeFromBusy(ev) {
+  const cal = String(ev._calendarId || '');
+  if (!cal) return 'personal';
+  if (isForceBusyCalendar(cal)) return 'fixture';
+  if (WORKSHOP_CAL && cal === WORKSHOP_CAL) return 'workshop';
+  if (LESSON_CAL && cal === LESSON_CAL) return 'lesson';
+  // Fallback: Squarespace import feeds (stable id prefix)
+  if (cal.includes('ic364d06')) return 'workshop';
+  if (cal.includes('nht93uaq')) return 'lesson';
+  return 'personal';
+}
 
 function addDaysYmd(ymd, n) {
   const d = new Date(`${ymd}T12:00:00Z`);
@@ -22,14 +37,6 @@ function londonToday() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(new Date());
-}
-
-function blockTypeFromBusy(ev) {
-  const cal = String(ev._calendarId || '');
-  if (isForceBusyCalendar(cal)) return 'fixture';
-  if (cal.includes('ic364d06')) return 'workshop';
-  if (cal.includes('nht93uaq')) return 'lesson';
-  return 'personal';
 }
 
 const DONE_STATES = new Set(['done', 'done_claimed', 'verified', 'superseded', 'wont_do']);

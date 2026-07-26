@@ -406,13 +406,16 @@ function splitMcAndBusy(events, ruleMap = {}) {
     }
 
     if (e.start?.date) {
-      busy.push({ id: e.id, summary: e.summary, start: e.start, end: e.end });
+      busy.push({
+        id: e.id, summary: e.summary, start: e.start, end: e.end, _calendarId: e._calendarId,
+      });
     } else if (e.start?.dateTime || (typeof e.start === 'string' && String(e.start).includes('T'))) {
       busy.push({
         id: e.id,
         summary: e.summary,
         start: e.start?.dateTime || e.start,
         end: e.end?.dateTime || e.end,
+        _calendarId: e._calendarId,
       });
     }
   }

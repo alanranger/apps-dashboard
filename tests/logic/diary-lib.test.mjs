@@ -88,6 +88,30 @@ describe('diary buffers', () => {
   });
 });
 
+describe('diary calendar feeds', () => {
+  it('colours workshops vs lessons from calendar id', () => {
+    const { busyToBlocks } = require('../../api/mc/diary-lib.js');
+    const { splitMcAndBusy } = require('../../api/mc/rule-breach-lib.js');
+    const events = [
+      {
+        id: '1', summary: 'Composition Class x 3',
+        start: { dateTime: '2026-07-30T18:00:00Z' }, end: { dateTime: '2026-07-30T20:00:00Z' },
+        _calendarId: 'nht93uaqhhd191kc3fg1kjs57k6bunhn@import.calendar.google.com',
+      },
+      {
+        id: '2', summary: 'Long Exposure Workshop',
+        start: { dateTime: '2026-08-01T17:00:00Z' }, end: { dateTime: '2026-08-01T20:00:00Z' },
+        _calendarId: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
+      },
+    ];
+    const split = splitMcAndBusy(events);
+    assert.ok(split.busy[0]._calendarId, 'busy must keep _calendarId');
+    const blocks = busyToBlocks(split.busy, []);
+    assert.equal(blocks.find((b) => /Composition/.test(b.title)).kind, 'lesson');
+    assert.equal(blocks.find((b) => /Long Exposure/.test(b.title)).kind, 'workshop');
+  });
+});
+
 describe('gcal push related_id', () => {
   it('one net key per task/habit occurrence', () => {
     assert.equal(relatedIdForTask('abc'), 'gcal:task:abc');
