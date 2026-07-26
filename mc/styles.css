@@ -591,9 +591,10 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block.dy-expanded .dy-block-label { white-space:normal; }
 .dy-block.dy-edit { cursor:grab; }
 .dy-ro { opacity:0.9; }
-.dy-lock { flex-shrink:0; font-size:11px; }
+.dy-lock { flex-shrink:0; font-size:13px; line-height:1; }
 .dy-lock-hint { flex-shrink:0; font-size:11px; opacity:0; }
 .dy-block.dy-unlocked:hover .dy-lock-hint { opacity:0.45; }
+.dy-block.dy-client-fixed .dy-lock { filter: drop-shadow(0 0 1px rgba(0,0,0,0.8)); }
 .dy-pri {
   flex-shrink:0; font-size:9px; font-weight:700; padding:0 4px; border-radius:3px;
   line-height:14px; align-self:flex-start;
