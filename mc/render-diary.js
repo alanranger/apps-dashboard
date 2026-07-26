@@ -249,29 +249,41 @@ function priorityTag(p) {
   return '';
 }
 
+function stackClass(kind, isBuffer) {
+  if (isBuffer) return 'dy-z-buffer';
+  if (kind === 'personal' || kind === 'fixture') return 'dy-z-personal';
+  if (kind === 'travel') return 'dy-z-travel';
+  if (kind === 'workshop' || kind === 'lesson') return 'dy-z-client';
+  return 'dy-z-mc';
+}
+
 function renderBlock(b, axis) {
   const top = minsToTop(b.start_min, axis);
   const h = heightPct(b.duration_min || 30, axis);
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
   const icon = KIND_ICON[b.kind] || '•';
   const locked = !!(b.slot_pinned || b.client_fixed);
+  const isBuffer = !!(b.is_buffer || b.synthetic);
+  const tall = (b.duration_min || 30) >= 90 ? 'dy-tall' : '';
   const status = [
     b.overdue ? 'dy-overdue' : '',
     b.running_late ? 'dy-late' : '',
     locked ? 'dy-pinned' : '',
     b.editable && !locked ? 'dy-unlocked' : '',
     b.editable ? 'dy-edit' : 'dy-ro',
-    b.is_buffer || b.synthetic ? 'dy-buffer-strip' : '',
+    isBuffer ? 'dy-buffer-strip' : '',
     b.client_fixed ? 'dy-client-fixed' : '',
+    stackClass(b.kind, isBuffer),
+    tall,
   ].filter(Boolean).join(' ');
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : (b.editable ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
-  const drag = b.editable && !locked && !b.is_buffer ? 'draggable="true"' : '';
-  const doneBtn = (b.editable && (b.kind === 'mc_task' || b.kind === 'habit') && !b.is_buffer)
+  const drag = b.editable && !locked && !isBuffer ? 'draggable="true"' : '';
+  const doneBtn = (b.editable && (b.kind === 'mc_task' || b.kind === 'habit') && !isBuffer)
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
     : '';
-  const label = b.is_buffer || b.synthetic
+  const label = isBuffer
     ? `${KIND_ICON.buffer} decompress`
     : `<span class="dy-type-icon" aria-hidden="true">${icon}</span> ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
