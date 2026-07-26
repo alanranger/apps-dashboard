@@ -32,6 +32,12 @@ function blockTypeFromBusy(ev) {
   return 'personal';
 }
 
+const DONE_STATES = new Set(['done', 'done_claimed', 'verified', 'superseded', 'wont_do']);
+
+function isDoneTask(t) {
+  return DONE_STATES.has(t.state) || !!t.completed_on;
+}
+
 function toBlock(opts) {
   const start = opts.start;
   const end = opts.end;
@@ -55,27 +61,47 @@ function toBlock(opts) {
     ideal_date: opts.ideal_date || null,
     calendar_event_id: opts.calendar_event_id || null,
     read_only: !opts.editable,
+    priority: opts.priority || null,
+    due_date: opts.due_date || null,
+    state: opts.state || null,
+    overdue: !!opts.overdue,
+    running_late: !!opts.running_late,
+    is_buffer: opts.kind === 'buffer',
   };
 }
 
-function tasksToBlocks(tasks) {
-  return (tasks || []).filter((t) => t.scheduled_start && t.scheduled_end).map((t) => toBlock({
-    id: `task:${t.id}`,
-    kind: 'mc_task',
-    title: t.title || `MC-${t.display_id}`,
-    start: t.scheduled_start,
-    end: t.scheduled_end,
-    editable: true,
-    slot_pinned: !!t.slot_pinned,
-    display_id: t.display_id,
-    calendar_event_id: t.calendar_event_id || null,
-  }));
+function tasksToBlocks(tasks, todayYmd) {
+  const now = Date.now();
+  return (tasks || []).filter((t) => t.scheduled_start && t.scheduled_end).map((t) => {
+    const done = isDoneTask(t);
+    return toBlock({
+      id: `task:${t.id}`,
+      kind: 'mc_task',
+      title: t.title || `MC-${t.display_id}`,
+      start: t.scheduled_start,
+      end: t.scheduled_end,
+      editable: !done,
+      slot_pinned: !!t.slot_pinned,
+      display_id: t.display_id,
+      calendar_event_id: t.calendar_event_id || null,
+      priority: t.priority || null,
+      due_date: t.due_date || null,
+      state: t.state || null,
+      overdue: !done && t.due_date && t.due_date < todayYmd,
+      running_late: !done && Date.parse(t.scheduled_start) < now,
+    });
+  });
+}
+
+function travelKind(blockType) {
+  if (blockType === 'prep' || blockType === 'decompress') return 'buffer';
+  return 'travel';
 }
 
 function travelToBlocks(rows) {
   return (rows || []).map((b) => toBlock({
     id: `travel:${b.id}`,
-    kind: 'travel',
+    kind: travelKind(b.block_type),
     title: `${b.block_type}${b.venue_name ? ` · ${b.venue_name}` : ''}`,
     start: b.starts_at,
     end: b.ends_at,
@@ -120,8 +146,6 @@ function habitLogsToBlocks(logs, habitMap) {
     if (!day) continue;
     const dur = Number(habit.duration_min || 60);
     const hm = String(habit.ideal_time || '09:00').slice(0, 5);
-    const start = `${day}T${hm}:00`;
-    // Approximate London local as Z for grid; warn/move APIs use real ISO from client.
     const startMs = Date.parse(`${day}T${hm}:00.000Z`);
     const endIso = new Date(startMs + dur * 60000).toISOString();
     out.push(toBlock({
@@ -135,9 +159,69 @@ function habitLogsToBlocks(logs, habitMap) {
       habit_id: habit.id,
       ideal_date: log.ideal_date || day,
       calendar_event_id: log.calendar_event_id || null,
+      priority: habit.priority || null,
     }));
   }
   return out;
+}
+
+/** Monday-on-or-before (London YMD) — weeks are Mon–Sun. */
+function mondayOnOrBefore(ymd) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  const dow = d.getUTCDay(); // 0=Sun … 6=Sat
+  const back = dow === 0 ? 6 : dow - 1;
+  return addDaysYmd(ymd, -back);
+}
+
+/**
+ * Insert visible decompress strips after appointments (not buffers/fixtures).
+ * Uses decompress_after_task_min; skips where an explicit buffer already covers.
+ */
+function insertDecompressStrips(blocks, ruleMap) {
+  const gap = Number(ruleMap.decompress_after_task_min || 30);
+  const skipKinds = new Set(['buffer', 'fixture', 'away']);
+  const byDay = new Map();
+  for (const b of blocks || []) {
+    if (!b.day) continue;
+    if (!byDay.has(b.day)) byDay.set(b.day, []);
+    byDay.get(b.day).push(b);
+  }
+  const extras = [];
+  for (const [day, list] of byDay) {
+    const sorted = [...list].sort((a, b) => a.start_min - b.start_min);
+    for (let i = 0; i < sorted.length; i += 1) {
+      const cur = sorted[i];
+      if (skipKinds.has(cur.kind) || cur.is_buffer) continue;
+      const stripStart = cur.end_min;
+      let stripEnd = stripStart + gap;
+      const next = sorted[i + 1];
+      if (next && next.start_min < stripEnd) stripEnd = next.start_min;
+      if (stripEnd <= stripStart) {
+        // Butting edge — still show a thin visual break (8 min ≈ readable)
+        stripEnd = stripStart + 8;
+      }
+      const covered = sorted.some((x) => x.kind === 'buffer'
+        && x.start_min <= stripStart && x.end_min >= stripStart + 5);
+      if (covered) continue;
+      extras.push({
+        id: `buffer-gap:${cur.id}:${stripStart}`,
+        kind: 'buffer',
+        title: 'decompress',
+        day,
+        start: cur.end,
+        end: cur.end,
+        start_min: stripStart,
+        end_min: stripEnd,
+        duration_min: stripEnd - stripStart,
+        editable: false,
+        read_only: true,
+        slot_pinned: false,
+        is_buffer: true,
+        synthetic: true,
+      });
+    }
+  }
+  return [...(blocks || []), ...extras];
 }
 
 /** Drop warn-check — uses placer requiredGapMins + dayCapLimits + awaySpans. */
@@ -194,9 +278,10 @@ function warnDrop({
   return { ok: warnings.length === 0, blocked: false, warnings, suggest };
 }
 
+/** fromYmd must be a Monday; each week is Mon–Sun. */
 function weeksFrom(fromYmd, weekCount) {
   const weeks = [];
-  let cur = fromYmd;
+  let cur = mondayOnOrBefore(fromYmd);
   for (let w = 0; w < weekCount; w += 1) {
     const days = [];
     for (let d = 0; d < 7; d += 1) days.push(addDaysYmd(cur, d));
@@ -211,6 +296,7 @@ module.exports = {
   DAY_END_MIN,
   addDaysYmd,
   londonToday,
+  mondayOnOrBefore,
   ruleMapFromRows,
   splitMcAndBusy,
   awaySpansFromTravelBlocks,
@@ -218,6 +304,7 @@ module.exports = {
   travelToBlocks,
   busyToBlocks,
   habitLogsToBlocks,
+  insertDecompressStrips,
   warnDrop,
   weeksFrom,
 };

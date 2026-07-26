@@ -5,9 +5,9 @@
 const { envReady, json, cors, requireAuth, sb } = require('./_lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
-  londonToday, addDaysYmd, weeksFrom, ruleMapFromRows, splitMcAndBusy,
+  londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
   awaySpansFromTravelBlocks, tasksToBlocks, travelToBlocks, busyToBlocks,
-  habitLogsToBlocks, DAY_START_MIN, DAY_END_MIN,
+  habitLogsToBlocks, insertDecompressStrips, DAY_START_MIN, DAY_END_MIN,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
 
@@ -18,9 +18,11 @@ module.exports = async function handler(req, res) {
   const session = requireAuth(req, res);
   if (!session) return;
 
-  const from = String(req.query?.from || londonToday()).slice(0, 10);
+  const rawFrom = String(req.query?.from || londonToday()).slice(0, 10);
+  const from = mondayOnOrBefore(rawFrom);
   const weeks = Math.min(8, Math.max(1, Number(req.query?.weeks) || 4));
   const to = addDaysYmd(from, weeks * 7 - 1);
+  const today = londonToday();
 
   try {
     const rules = await sb('scheduling_rules?select=key,value');
@@ -31,9 +33,9 @@ module.exports = async function handler(req, res) {
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
     const [tasks, travel, habits, logs, pushOpen, backlog] = await Promise.all([
-      sb(`tasks?select=id,display_id,title,state,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
+      sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
-      sb('recurring_tasks?select=id,title,duration_min,ideal_time,active&active=eq.true'),
+      sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active&active=eq.true'),
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
       listOpenPush(sb),
       listAwaySpanBacklog(sb),
@@ -50,12 +52,13 @@ module.exports = async function handler(req, res) {
     }
 
     const awaySpans = awaySpansFromTravelBlocks(travel || []);
-    const blocks = [
-      ...tasksToBlocks(tasks),
+    const rawBlocks = [
+      ...tasksToBlocks(tasks, today),
       ...habitLogsToBlocks(logs, habitMap),
       ...travelToBlocks(travel),
       ...busyBlocks,
     ];
+    const blocks = insertDecompressStrips(rawBlocks, ruleMap);
 
     const awayDays = {};
     for (const span of awaySpans) {

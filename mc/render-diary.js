@@ -1,5 +1,5 @@
 /**
- * Diary tab — Outlook-style 4-week reschedule grid.
+ * Diary tab — Outlook-style 4-week reschedule grid (UI).
  * DB writes via /api/mc/diary-action; GCal flush via /api/mc/gcal-push (Claude).
  */
 import { api } from './api.js';
@@ -11,10 +11,23 @@ const KIND_CLASS = {
   mc_task: 'dy-task',
   habit: 'dy-habit',
   travel: 'dy-travel',
+  buffer: 'dy-buffer',
   fixture: 'dy-fixture',
   personal: 'dy-personal',
 };
 
+const KIND_ICON = {
+  workshop: '📷',
+  lesson: '🎓',
+  habit: '🔁',
+  mc_task: '☑️',
+  travel: '🚗',
+  buffer: '⏳',
+  fixture: '⚽',
+  personal: '•',
+};
+
+const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const MIN_BLOCK_PX = 28;
 let diaryState = { data: null, menu: null };
 
@@ -34,8 +47,17 @@ function fmtHm(min) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function fmtDayLabel(ymd) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+function weekdayIndex(ymd) {
+  const dow = new Date(`${ymd}T12:00:00Z`).getUTCDay();
+  return dow === 0 ? 6 : dow - 1; // Mon=0 … Sun=6
+}
+
 function londonYmdHmToIso(ymd, hm) {
-  // Client sends local London wall as offset-less; server interprets via London helpers on ISO.
   return `${ymd}T${hm}:00.000Z`;
 }
 
@@ -47,7 +69,7 @@ function closeMenu() {
 
 function showMenu(block, x, y, refresh) {
   closeMenu();
-  if (block.read_only) return;
+  if (block.read_only || block.is_buffer || block.synthetic) return;
   const menu = document.createElement('div');
   menu.id = 'dy-menu';
   menu.className = 'dy-menu';
@@ -88,10 +110,7 @@ async function runMenuAction(act, block, refresh) {
     } else if (act === 'lock' || act === 'unlock') {
       await api('/api/mc/diary-action', {
         method: 'POST',
-        body: {
-          action: act,
-          task_id: block.id.replace(/^task:/, ''),
-        },
+        body: { action: act, task_id: block.id.replace(/^task:/, '') },
       });
     } else if (act === 'dismiss') {
       if (!confirm('Dismiss this task (wont_do)?')) return;
@@ -117,12 +136,10 @@ async function runMenuAction(act, block, refresh) {
 }
 
 async function dropBlock(block, day, startHm, endHm, override, refresh) {
-  const newStart = londonYmdHmToIso(day, startHm);
-  const newEnd = londonYmdHmToIso(day, endHm);
   const body = {
     action: 'move',
-    new_start: newStart,
-    new_end: newEnd,
+    new_start: londonYmdHmToIso(day, startHm),
+    new_end: londonYmdHmToIso(day, endHm),
     title: block.title,
     override: !!override,
     calendar_event_id: block.calendar_event_id || undefined,
@@ -150,16 +167,23 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
 }
 
 function renderLegend() {
+  const items = [
+    ['dy-workshop', '📷', 'Client booking', 'workshop / shoot'],
+    ['dy-lesson', '🎓', 'Lesson', 'class / 1-2-1'],
+    ['dy-habit', '🔁', 'Recurring habit', ''],
+    ['dy-task', '☑️', 'Manual task', 'MC-nn'],
+    ['dy-travel', '🚗', 'Travel', ''],
+    ['dy-buffer', '⏳', 'Prep / decompress', 'buffer'],
+    ['dy-fixture', '⚽', 'Fixture', 'info'],
+    ['dy-personal', '•', 'Personal', ''],
+  ];
   return `
-    <div class="dy-legend">
-      <span class="dy-workshop">Workshop</span>
-      <span class="dy-lesson">Lesson</span>
-      <span class="dy-task">MC task</span>
-      <span class="dy-habit">Habit</span>
-      <span class="dy-travel">Travel</span>
-      <span class="dy-fixture">Fixture</span>
-      <span class="dy-personal">Personal</span>
-      <span class="dy-away-swatch">Away</span>
+    <div class="dy-legend card">
+      ${items.map(([cls, icon, label, hint]) => `
+        <div class="dy-leg-item">
+          <span class="dy-leg-swatch ${cls}">${icon}</span>
+          <span><strong>${label}</strong>${hint ? ` <span class="meta">(${hint})</span>` : ''}</span>
+        </div>`).join('')}
     </div>`;
 }
 
@@ -171,7 +195,7 @@ function renderToolbar(data) {
     <div class="dy-toolbar card">
       <div>
         <strong>Diary</strong>
-        <span class="meta"> · ${data.from} → ${data.to} · DB master · GCal read-only</span>
+        <span class="meta"> · Mon–Sun · ${data.from} → ${data.to} · DB master · GCal read-only</span>
       </div>
       <div class="dy-toolbar-actions">
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
@@ -184,10 +208,49 @@ function renderToolbar(data) {
       <p class="meta dy-push-hint">
         Open push queue: <strong>${push.open_count || 0}</strong>
         · Away-span backlog: <strong>${push.backlog_count || 0}</strong>
-        (same flush path). Warn-checks use placer
-        <code>requiredGapMins</code> / <code>dayCapLimits</code> / away spans.
       </p>
     </div>`;
+}
+
+function priorityTag(p) {
+  if (!p) return '';
+  const key = String(p).toLowerCase();
+  if (key === 'p0') return '<span class="dy-pri dy-pri-p0">P0</span>';
+  if (key === 'p1') return '<span class="dy-pri dy-pri-p1">P1</span>';
+  return '';
+}
+
+function renderBlock(b, axis) {
+  const top = minsToTop(b.start_min, axis);
+  const h = heightPct(b.duration_min || 30, axis);
+  const cls = KIND_CLASS[b.kind] || 'dy-personal';
+  const icon = KIND_ICON[b.kind] || '•';
+  const status = [
+    b.overdue ? 'dy-overdue' : '',
+    b.running_late ? 'dy-late' : '',
+    b.slot_pinned ? 'dy-pinned' : '',
+    b.editable && !b.slot_pinned ? 'dy-unlocked' : '',
+    b.editable ? 'dy-edit' : 'dy-ro',
+    b.is_buffer || b.synthetic ? 'dy-buffer-strip' : '',
+  ].filter(Boolean).join(' ');
+  const lock = b.slot_pinned
+    ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
+    : (b.editable ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
+  const drag = b.editable && !b.slot_pinned && !b.is_buffer ? 'draggable="true"' : '';
+  const label = b.is_buffer || b.synthetic
+    ? `${icon} decompress`
+    : `${icon} ${b.title}`;
+  return `<div class="dy-block ${cls} ${status}"
+    style="top:${top}%;height:${h}%"
+    data-block-id="${b.id}"
+    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})"
+    ${drag}>
+    <div class="dy-block-row">
+      <span class="dy-block-label">${label}</span>
+      ${priorityTag(b.priority)}
+      ${lock}
+    </div>
+  </div>`;
 }
 
 function renderDayColumn(day, blocks, away, axis) {
@@ -200,27 +263,17 @@ function renderDayColumn(day, blocks, away, axis) {
   for (let m = axis.start_min; m < axis.end_min; m += 60) {
     hours.push(`<div class="dy-hour" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`);
   }
-  const blocksHtml = dayBlocks.map((b) => {
-    const top = minsToTop(b.start_min, axis);
-    const h = heightPct(b.duration_min || 30, axis);
-    const cls = KIND_CLASS[b.kind] || 'dy-personal';
-    const pin = b.slot_pinned ? '🔒 ' : '';
-    const drag = b.editable && !b.slot_pinned ? 'draggable="true"' : '';
-    return `<div class="dy-block ${cls}${b.editable ? ' dy-edit' : ' dy-ro'}"
-      style="top:${top}%;height:${h}%"
-      data-block-id="${b.id}"
-      title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})"
-      ${drag}>
-      <span class="dy-block-label">${pin}${b.title}</span>
-    </div>`;
-  }).join('');
+  const wd = WEEKDAYS[weekdayIndex(day)];
   return `
     <div class="dy-day${awayCls}" data-day="${day}">
-      <div class="dy-day-head sticky">${day.slice(5)} <span class="meta">${day.slice(0, 4)}</span></div>
+      <div class="dy-day-head sticky">
+        <div class="dy-wd">${wd}</div>
+        <div class="dy-date meta">${fmtDayLabel(day)}</div>
+      </div>
       <div class="dy-day-grid" data-day="${day}">
         ${awayBanner}
         ${hours.join('')}
-        ${blocksHtml}
+        ${dayBlocks.map((b) => renderBlock(b, axis)).join('')}
       </div>
     </div>`;
 }
@@ -245,7 +298,7 @@ function wireDrag(root, data, refresh) {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const block = (data.blocks || []).find((b) => b.id === el.dataset.blockId);
-      if (!block) return;
+      if (!block || block.is_buffer || block.synthetic) return;
       if (el.classList.contains('dy-expanded')) {
         showMenu(block, e.clientX, e.clientY, refresh);
       } else {

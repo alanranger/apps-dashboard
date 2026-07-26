@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { warnDrop } = require('../../api/mc/diary-lib.js');
+const {
+  warnDrop, mondayOnOrBefore, weeksFrom, insertDecompressStrips, travelToBlocks,
+} = require('../../api/mc/diary-lib.js');
 const { relatedIdForTask, relatedIdForHabit } = require('../../api/mc/gcal-push-lib.js');
 
 describe('diary warnDrop', () => {
@@ -39,6 +41,50 @@ describe('diary warnDrop', () => {
       peers: [], ruleMap: {}, awaySpans: [], pinned: true,
     });
     assert.equal(r.blocked, true);
+  });
+});
+
+describe('diary weeks Mon-Sun', () => {
+  it('snaps Sunday to prior Monday', () => {
+    assert.equal(mondayOnOrBefore('2026-07-26'), '2026-07-20');
+  });
+  it('weeks start Monday end Sunday', () => {
+    const weeks = weeksFrom('2026-07-26', 1);
+    assert.equal(weeks[0].days[0], '2026-07-20');
+    assert.equal(weeks[0].days[6], '2026-07-26');
+  });
+});
+
+describe('diary buffers', () => {
+  it('prep/decompress travel becomes buffer kind', () => {
+    const blocks = travelToBlocks([
+      {
+        id: '1', block_type: 'decompress', starts_at: '2026-07-27T12:00:00Z',
+        ends_at: '2026-07-27T12:30:00Z', calendar_event_id: 'x',
+      },
+      {
+        id: '2', block_type: 'travel_out', starts_at: '2026-07-27T08:00:00Z',
+        ends_at: '2026-07-27T09:00:00Z', calendar_event_id: 'y',
+      },
+    ]);
+    assert.equal(blocks[0].kind, 'buffer');
+    assert.equal(blocks[1].kind, 'travel');
+  });
+
+  it('inserts decompress strips between appointments', () => {
+    const strips = insertDecompressStrips([
+      {
+        id: 'task:1', kind: 'mc_task', title: 'A', day: '2026-07-27',
+        start_min: 600, end_min: 660, start: 'x', end: 'y',
+      },
+      {
+        id: 'task:2', kind: 'mc_task', title: 'B', day: '2026-07-27',
+        start_min: 720, end_min: 780, start: 'x', end: 'y',
+      },
+    ], { decompress_after_task_min: '30' });
+    const gaps = strips.filter((b) => b.synthetic);
+    assert.ok(gaps.length >= 1);
+    assert.equal(gaps[0].kind, 'buffer');
   });
 });
 
