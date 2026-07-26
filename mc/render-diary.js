@@ -385,9 +385,54 @@ function stackClass(kind, isBuffer) {
   return 'dy-z-mc';
 }
 
-function renderBlock(b, axis) {
+/** Parallel columns for concurrent blocks (buffers stay full-width underneath). */
+function overlapLayout(dayBlocks) {
+  const map = new Map();
+  const timed = (dayBlocks || [])
+    .filter((b) => !b.is_buffer && !b.synthetic && (b.end_min || 0) > (b.start_min || 0))
+    .sort((a, b) => (a.start_min - b.start_min) || (b.end_min - a.end_min));
+  let cluster = [];
+  let clusterEnd = -1;
+  const flush = () => {
+    if (!cluster.length) return;
+    const colEnds = [];
+    const assigned = [];
+    for (const b of cluster) {
+      let c = colEnds.findIndex((e) => e <= b.start_min);
+      if (c < 0) {
+        c = colEnds.length;
+        colEnds.push(b.end_min);
+      } else {
+        colEnds[c] = b.end_min;
+      }
+      assigned.push(c);
+    }
+    const n = Math.max(1, colEnds.length);
+    cluster.forEach((b, i) => map.set(b.id, { col: assigned[i], cols: n }));
+    cluster = [];
+    clusterEnd = -1;
+  };
+  for (const b of timed) {
+    if (cluster.length && b.start_min >= clusterEnd) flush();
+    cluster.push(b);
+    clusterEnd = Math.max(clusterEnd, b.end_min);
+  }
+  flush();
+  return map;
+}
+
+function blockPositionStyle(b, axis, layout) {
   const top = minsToTop(b.start_min, axis);
   const h = heightPct(b.duration_min || 30, axis);
+  const lay = layout?.get(b.id);
+  if (!lay || lay.cols <= 1) return `top:${top}%;height:${h}%`;
+  const pad = 3;
+  const colW = (100 - pad * 2) / lay.cols;
+  const left = pad + lay.col * colW;
+  return `top:${top}%;height:${h}%;left:${left}%;width:calc(${colW}% - 2px);right:auto`;
+}
+
+function renderBlock(b, axis, layout) {
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
   const icon = KIND_ICON[b.kind] || '•';
   const locked = !!(b.slot_pinned || b.client_fixed);
@@ -436,7 +481,7 @@ function renderBlock(b, axis) {
       : `${KIND_ICON.buffer} decompress`)
     : `<span class="dy-type-icon" aria-hidden="true">${icon}</span> ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
-    style="top:${top}%;height:${h}%"
+    style="${blockPositionStyle(b, axis, layout)}"
     data-block-id="${b.id}"
     title="${tipBits.join(' · ')}"
     ${drag}>
@@ -453,6 +498,7 @@ function renderBlock(b, axis) {
 
 function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const dayBlocks = blocks.filter((b) => b.day === day);
+  const layout = overlapLayout(dayBlocks);
   const awayCls = away ? ' dy-away' : '';
   const bhCls = holidayTitle ? ' dy-bh' : '';
   const awayBanner = away
@@ -467,8 +513,6 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
     .join('');
   const hours = [];
   const step = axis.step_min || 30;
-  const gridPx = axis.grid_px || 1152;
-  const pxStep = axis.px_per_step || 36;
   for (let m = axis.start_min; m < axis.end_min; m += step) {
     const half = m % 60 !== 0;
     hours.push(
@@ -478,17 +522,17 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const wd = WEEKDAYS[weekdayIndex(day)];
   return `
     <div class="dy-day${awayCls}${bhCls}" data-day="${day}">
-      <div class="dy-day-head sticky">
+      <div class="dy-day-head">
         <div class="dy-wd">${wd}</div>
         <div class="dy-date">${fmtDayLabel(day)}</div>
         ${bhBadge}
       </div>
-      ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
       <div class="dy-day-grid" data-day="${day}"
-        style="height:${gridPx}px;--dy-step:${pxStep}px">
+        style="height:${axis.grid_px || 1152}px;--dy-step:${axis.px_per_step || 36}px">
+        ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
         ${awayBanner}
         ${hours.join('')}
-        ${dayBlocks.map((b) => renderBlock(b, axis)).join('')}
+        ${dayBlocks.map((b) => renderBlock(b, axis, layout)).join('')}
       </div>
     </div>`;
 }
@@ -524,11 +568,12 @@ function weekHumanTip(cap) {
   return `${freeH}h free (realistic)`;
 }
 
-function renderHorizonBoard(weeks) {
+function renderHorizonBoard(weeks, landIdx = 0) {
   const tiles = (weeks || []).map((w, i) => {
     const cap = w.capacity || {};
     const pct = Math.min(100, cap.pct || 0);
     const tone = cap.over || pct >= 95 ? 'dy-hz-hot' : pct >= 75 ? 'dy-hz-warm' : 'dy-hz-ok';
+    const land = i === landIdx ? ' dy-hz-land' : '';
     const start = w.days?.[0] || '';
     const end = w.days?.[6] || '';
     const tip = weekHumanTip(cap);
@@ -545,7 +590,7 @@ function renderHorizonBoard(weeks) {
       bh.buffer ? `Buffer ${bh.buffer}h` : '',
     ].filter(Boolean).join(' · ');
     return `
-      <button type="button" class="dy-hz-tile ${tone}" data-dy-jump-week="${i}"
+      <button type="button" class="dy-hz-tile ${tone}${land}" data-dy-jump-week="${i}"
         title="${cap.label || ''} — ${tip}">
         <div class="dy-hz-week">W${i + 1} · ${fmtDayLabel(start)}–${fmtDayLabel(end)}</div>
         <div class="dy-hz-pct">${pct}%</div>
@@ -725,6 +770,23 @@ function wireDiary(root, data, refresh) {
   });
 }
 
+/** Index of week to land on: current week, or next week from Fri–Sun (today-forward). */
+function landingWeekIndex(weeks, todayYmd) {
+  const weeksArr = weeks || [];
+  if (!weeksArr.length) return 0;
+  let idx = weeksArr.findIndex((w) => (w.days || []).includes(todayYmd));
+  if (idx < 0) idx = 0;
+  const days = weeksArr[idx]?.days || [];
+  const pos = days.indexOf(todayYmd); // 0=Mon … 6=Sun
+  if (pos >= 4 && weeksArr[idx + 1]) return idx + 1;
+  return idx;
+}
+
+function scrollToWeek(root, idx) {
+  const wraps = root.querySelectorAll('.dy-week-wrap');
+  wraps[idx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 export async function renderDiary() {
   const el = $('view-diary');
   if (!el) return;
@@ -733,10 +795,17 @@ export async function renderDiary() {
     const data = await api('/api/mc/diary?weeks=8');
     diaryState.data = data;
     const axis = data.day_axis;
+    const today = data.today || new Date().toISOString().slice(0, 10);
+    const landIdx = landingWeekIndex(data.weeks || [], today);
     el.innerHTML = `
       ${renderToolbar(data)}
       ${renderLegend()}
-      ${renderHorizonBoard(data.weeks || [])}
+      ${renderHorizonBoard(data.weeks || [], landIdx)}
+      <div class="dy-week-nav">
+        <button type="button" class="btn-secondary" data-dy-week-prev title="Previous week">‹ Prev week</button>
+        <span class="meta">Landing on actionable week · use tiles or arrows to page</span>
+        <button type="button" class="btn-secondary" data-dy-week-next title="Next week">Next week ›</button>
+      </div>
       <div class="dy-scroll">
         ${(data.weeks || []).map((w) => renderWeek(
           w, data.blocks || [], data.away_days || {}, axis,
@@ -744,13 +813,20 @@ export async function renderDiary() {
         )).join('')}
       </div>`;
     wireDiary(el, data, () => renderDiary());
-    el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const idx = Number(btn.getAttribute('data-dy-jump-week'));
-        const wraps = el.querySelectorAll('.dy-week-wrap');
-        wraps[idx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    let weekIdx = landIdx;
+    const jump = (idx) => {
+      weekIdx = Math.max(0, Math.min((data.weeks || []).length - 1, idx));
+      scrollToWeek(el, weekIdx);
+      el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
+        btn.classList.toggle('dy-hz-land', Number(btn.getAttribute('data-dy-jump-week')) === weekIdx);
       });
+    };
+    el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
+      btn.addEventListener('click', () => jump(Number(btn.getAttribute('data-dy-jump-week'))));
     });
+    el.querySelector('[data-dy-week-prev]')?.addEventListener('click', () => jump(weekIdx - 1));
+    el.querySelector('[data-dy-week-next]')?.addEventListener('click', () => jump(weekIdx + 1));
+    requestAnimationFrame(() => jump(landIdx));
   } catch (e) {
     el.innerHTML = `<div class="card"><p class="err">Diary failed: ${e.message || e}</p></div>`;
   }

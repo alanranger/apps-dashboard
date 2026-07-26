@@ -642,6 +642,11 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-hz-free { font-size:12px; font-weight:600; }
 .dy-hz-tip { font-size:11px; line-height:1.3; color:var(--text-faint,#d1d5db); }
 .dy-hz-bits { font-size:10px; line-height:1.25; margin-top:2px; }
+.dy-hz-land { outline:2px solid #38bdf8; outline-offset:1px; }
+.dy-week-nav {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+  margin:0 0 10px;
+}
 .dy-scroll { overflow:auto; max-height:calc(100vh - 260px); border:1px solid var(--border); border-radius:8px; }
 .dy-week { display:grid; grid-template-columns:repeat(7, minmax(120px, 1fr)); border-bottom:2px solid var(--border); min-width:980px; }
 .dy-week-wrap { min-width:980px; border-bottom:3px solid var(--border); }
@@ -740,12 +745,12 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   background:#166534; color:#bbf7d0; text-shadow:none;
 }
 .dy-ro { opacity:1; }
-/* Stacking: buffers under personal under travel under client under MC */
+/* Stacking order only — horizontal position comes from overlap columns */
 .dy-z-buffer { z-index:1; }
-.dy-z-personal { z-index:2; left:4px; right:36%; }
+.dy-z-personal { z-index:2; }
 .dy-z-travel { z-index:3; }
 .dy-z-client { z-index:4; }
-.dy-z-mc { z-index:5; left:10px; }
+.dy-z-mc { z-index:5; }
 .dy-lock { flex-shrink:0; font-size:13px; line-height:1; }
 .dy-lock-hint { flex-shrink:0; font-size:11px; opacity:0; }
 .dy-block.dy-unlocked:hover .dy-lock-hint { opacity:0.45; }

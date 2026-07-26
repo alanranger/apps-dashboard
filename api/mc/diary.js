@@ -117,6 +117,7 @@ module.exports = async function handler(req, res) {
     return json(res, 200, {
       from,
       to,
+      today,
       weeks: attachWeekCapacity(weeksFrom(from, weeks), blocks, awayDays, ruleMap),
       day_axis: {
         start_min: DAY_START_MIN,
