@@ -2,7 +2,7 @@
  * Diary assembly + drop warn-checks.
  * Warn-checks call habit-placer-lib exports (never a flat reimplemented gap).
  */
-const { isoToLondonDate, isoToLondonMinutes, ruleMapFromRows } = require('./scheduling-rules-lib');
+const { isoToLondonDate, isoToLondonMinutes, ruleMapFromRows, workingWindow, isSchedulableDay, bankHolidaySet } = require('./scheduling-rules-lib');
 const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
@@ -318,6 +318,50 @@ function weeksFrom(fromYmd, weekCount) {
   return weeks;
 }
 
+/**
+ * Week fuel gauge: filled minutes inside working windows / available working minutes.
+ * Away days contribute 0 available. Buffers/synthetic strips excluded from filled.
+ */
+function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
+  let available = 0;
+  let filled = 0;
+  const daySet = new Set(days || []);
+  for (const day of days || []) {
+    if (awayDays?.[day]) continue;
+    if (!isSchedulableDay(day, ruleMap, holidays)) continue;
+    const win = workingWindow(ruleMap, day);
+    const a0 = win.start_min ?? 0;
+    const a1 = win.end_min ?? 0;
+    const avail = Math.max(0, a1 - a0);
+    available += avail;
+    for (const b of blocks || []) {
+      if (b.day !== day || b.is_buffer || b.synthetic || b.kind === 'buffer') continue;
+      const start = Math.max(b.start_min || 0, a0);
+      const end = Math.min(b.end_min || 0, a1);
+      if (end > start) filled += end - start;
+    }
+  }
+  const pct = available > 0 ? Math.round((filled / available) * 100) : (filled > 0 ? 100 : 0);
+  return {
+    available_min: available,
+    filled_min: filled,
+    free_min: Math.max(0, available - filled),
+    pct: Math.min(pct, 999),
+    over: filled > available,
+    label: `${Math.min(pct, 999)}% · ${Math.round(filled / 60 * 10) / 10}h / ${Math.round(available / 60 * 10) / 10}h`,
+  };
+}
+
+function attachWeekCapacity(weeks, blocks, awayDays, ruleMap) {
+  const fromY = (weeks?.[0]?.days?.[0] || '').slice(0, 4);
+  const toY = (weeks?.[weeks.length - 1]?.days?.[6] || fromY).slice(0, 4);
+  const holidays = bankHolidaySet(Number(fromY) || 2026, Number(toY) || 2026);
+  return (weeks || []).map((w) => ({
+    ...w,
+    capacity: weekCapacity(w.days, blocks, awayDays, ruleMap, holidays),
+  }));
+}
+
 module.exports = {
   DAY_START_MIN,
   DAY_END_MIN,
@@ -334,6 +378,8 @@ module.exports = {
   insertDecompressStrips,
   warnDrop,
   weeksFrom,
+  weekCapacity,
+  attachWeekCapacity,
   isZoomClientBooking,
   blockTypeFromBusy,
 };

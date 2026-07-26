@@ -7,7 +7,7 @@ const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
   awaySpansFromTravelBlocks, tasksToBlocks, travelToBlocks, busyToBlocks,
-  habitLogsToBlocks, insertDecompressStrips, DAY_START_MIN, DAY_END_MIN,
+  habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, DAY_START_MIN, DAY_END_MIN,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
 
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
 
   const rawFrom = String(req.query?.from || londonToday()).slice(0, 10);
   const from = mondayOnOrBefore(rawFrom);
-  const weeks = Math.min(8, Math.max(1, Number(req.query?.weeks) || 4));
+  const weeks = Math.min(12, Math.max(1, Number(req.query?.weeks) || 8));
   const to = addDaysYmd(from, weeks * 7 - 1);
   const today = londonToday();
 
@@ -75,7 +75,7 @@ module.exports = async function handler(req, res) {
     return json(res, 200, {
       from,
       to,
-      weeks: weeksFrom(from, weeks),
+      weeks: attachWeekCapacity(weeksFrom(from, weeks), blocks, awayDays, ruleMap),
       day_axis: { start_min: DAY_START_MIN, end_min: DAY_END_MIN },
       blocks,
       away_days: awayDays,

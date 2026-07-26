@@ -561,6 +561,17 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 }
 .dy-scroll { overflow:auto; max-height:calc(100vh - 260px); border:1px solid var(--border); border-radius:8px; }
 .dy-week { display:grid; grid-template-columns:repeat(7, minmax(120px, 1fr)); border-bottom:2px solid var(--border); min-width:980px; }
+.dy-week-wrap { min-width:980px; border-bottom:3px solid var(--border); }
+.dy-fuel {
+  padding:8px 10px 10px; background:var(--panel-2); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:4;
+}
+.dy-week-wrap .dy-day-head { top:48px; } /* sit under sticky week fuel gauge */
+.dy-fuel-meta { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:baseline; margin-bottom:6px; font-size:13px; }
+.dy-fuel-track { height:10px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; border:1px solid var(--border); }
+.dy-fuel-fill { height:100%; border-radius:999px; background:#22c55e; transition:width .25s ease; }
+.dy-fuel-warm .dy-fuel-fill { background:#f59e0b; }
+.dy-fuel-hot .dy-fuel-fill { background:#ef4444; }
 .dy-day { border-right:1px solid var(--border); background:var(--panel); }
 .dy-day-head {
   padding:8px 8px 6px; background:var(--panel-2); border-bottom:1px solid var(--border);

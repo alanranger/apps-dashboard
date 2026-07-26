@@ -195,7 +195,7 @@ function renderToolbar(data) {
     <div class="dy-toolbar card">
       <div>
         <strong>Diary</strong>
-        <span class="meta"> · Mon–Sun · ${data.from} → ${data.to} · DB master · GCal read-only</span>
+        <span class="meta"> · Mon–Sun · rolling 8 weeks · ${data.from} → ${data.to} · DB master · GCal read-only</span>
       </div>
       <div class="dy-toolbar-actions">
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
@@ -284,10 +284,37 @@ function renderDayColumn(day, blocks, away, axis) {
     </div>`;
 }
 
+function fmtHours(mins) {
+  const h = Math.round((mins / 60) * 10) / 10;
+  return `${h}h`;
+}
+
+function renderWeekGauge(week) {
+  const cap = week.capacity || { pct: 0, filled_min: 0, available_min: 0, free_min: 0, over: false, label: '—' };
+  const pct = Math.min(100, cap.pct || 0);
+  const tone = cap.over || pct >= 95 ? 'dy-fuel-hot' : pct >= 75 ? 'dy-fuel-warm' : 'dy-fuel-ok';
+  const start = week.days?.[0] || '';
+  const end = week.days?.[6] || '';
+  return `
+    <div class="dy-fuel ${tone}" title="Filled time inside working windows ÷ available working minutes (away days excluded)">
+      <div class="dy-fuel-meta">
+        <strong>Week ${fmtDayLabel(start)} – ${fmtDayLabel(end)}</strong>
+        <span>${cap.label || `${pct}%`}</span>
+        <span class="meta">${fmtHours(cap.free_min || 0)} free</span>
+      </div>
+      <div class="dy-fuel-track" aria-hidden="true">
+        <div class="dy-fuel-fill" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+}
+
 function renderWeek(week, blocks, awayDays, axis) {
   return `
-    <div class="dy-week">
-      ${week.days.map((d) => renderDayColumn(d, blocks, awayDays[d], axis)).join('')}
+    <div class="dy-week-wrap">
+      ${renderWeekGauge(week)}
+      <div class="dy-week">
+        ${week.days.map((d) => renderDayColumn(d, blocks, awayDays[d], axis)).join('')}
+      </div>
     </div>`;
 }
 
@@ -359,7 +386,7 @@ export async function renderDiary() {
   if (!el) return;
   el.innerHTML = '<div class="card"><p class="meta">Loading diary…</p></div>';
   try {
-    const data = await api('/api/mc/diary?weeks=4');
+    const data = await api('/api/mc/diary?weeks=8');
     diaryState.data = data;
     const axis = data.day_axis;
     el.innerHTML = `
