@@ -7,6 +7,7 @@ const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
   awaySpansFromTravelBlocks, tasksToBlocks, travelToBlocks, busyToBlocks,
+  fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, DAY_START_MIN, DAY_END_MIN,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
@@ -32,23 +33,33 @@ module.exports = async function handler(req, res) {
     const timeMin = `${from}T00:00:00.000Z`;
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
-    const [tasks, travel, habits, logs, pushOpen, backlog] = await Promise.all([
+    const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows] = await Promise.all([
       sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active&active=eq.true'),
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
       listOpenPush(sb),
       listAwaySpanBacklog(sb),
+      sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
+      sb(`bank_holidays?select=holiday_date,title&holiday_date=gte.${from}&holiday_date=lte.${to}`),
     ]);
 
     const habitMap = new Map((habits || []).map((h) => [h.id, h]));
+    const holidays = holidayMapFromRows(bhRows);
     let busyBlocks = [];
+    let dayBanners = [];
     let gcalHealth = null;
     if (gcalConfigured()) {
       const { events, assessment } = await fetchHorizonEvents(timeMin, timeMax);
       gcalHealth = assessment;
       const split = splitMcAndBusy(events, ruleMap);
       busyBlocks = busyToBlocks(split.busy, split.fixtures);
+      dayBanners = allDayBannersFromBusy(split.busy);
+    }
+    for (const [day, title] of Object.entries(holidays)) {
+      if (!dayBanners.some((b) => b.day === day && /bank holiday/i.test(b.title))) {
+        dayBanners.push({ day, title, source: 'bank_holidays', id: `bh:${day}` });
+      }
     }
 
     const awaySpans = awaySpansFromTravelBlocks(travel || []);
@@ -57,6 +68,7 @@ module.exports = async function handler(req, res) {
       ...habitLogsToBlocks(logs, habitMap),
       ...travelToBlocks(travel),
       ...busyBlocks,
+      ...fixtureFlanksToBlocks(fixtureRows),
     ];
     const blocks = insertDecompressStrips(rawBlocks, ruleMap);
 
@@ -80,6 +92,8 @@ module.exports = async function handler(req, res) {
       blocks,
       away_days: awayDays,
       away_spans: awaySpans,
+      holidays,
+      day_banners: dayBanners,
       rules: {
         daily_task_cap_min: Number(ruleMap.daily_task_cap_min || 240),
         decompress_after_task_min: Number(ruleMap.decompress_after_task_min || 30),

@@ -284,7 +284,9 @@ function renderBlock(b, axis) {
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
     : '';
   const label = isBuffer
-    ? `${KIND_ICON.buffer} decompress`
+    ? (b.title && !/^decompress$/i.test(String(b.title).trim())
+      ? `<span class="dy-type-icon" aria-hidden="true">${KIND_ICON.buffer}</span> ${b.title}`
+      : `${KIND_ICON.buffer} decompress`)
     : `<span class="dy-type-icon" aria-hidden="true">${icon}</span> ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
     style="top:${top}%;height:${h}%"
@@ -300,23 +302,33 @@ function renderBlock(b, axis) {
   </div>`;
 }
 
-function renderDayColumn(day, blocks, away, axis) {
+function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const dayBlocks = blocks.filter((b) => b.day === day);
   const awayCls = away ? ' dy-away' : '';
+  const bhCls = holidayTitle ? ' dy-bh' : '';
   const awayBanner = away
     ? `<div class="dy-away-label" title="${away.summary || ''}">AWAY</div>`
     : '';
+  const bhBadge = holidayTitle
+    ? `<div class="dy-bh-badge" title="${holidayTitle}">BANK HOLIDAY</div>`
+    : '';
+  const dayBanners = (banners || [])
+    .filter((b) => b.day === day)
+    .map((b) => `<div class="dy-allday" title="${b.title}">${b.title}</div>`)
+    .join('');
   const hours = [];
   for (let m = axis.start_min; m < axis.end_min; m += 60) {
     hours.push(`<div class="dy-hour" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`);
   }
   const wd = WEEKDAYS[weekdayIndex(day)];
   return `
-    <div class="dy-day${awayCls}" data-day="${day}">
+    <div class="dy-day${awayCls}${bhCls}" data-day="${day}">
       <div class="dy-day-head sticky">
         <div class="dy-wd">${wd}</div>
         <div class="dy-date">${fmtDayLabel(day)}</div>
+        ${bhBadge}
       </div>
+      ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
       <div class="dy-day-grid" data-day="${day}">
         ${awayBanner}
         ${hours.join('')}
@@ -349,12 +361,14 @@ function renderWeekGauge(week) {
     </div>`;
 }
 
-function renderWeek(week, blocks, awayDays, axis) {
+function renderWeek(week, blocks, awayDays, axis, banners, holidays) {
   return `
     <div class="dy-week-wrap">
       ${renderWeekGauge(week)}
       <div class="dy-week">
-        ${week.days.map((d) => renderDayColumn(d, blocks, awayDays[d], axis)).join('')}
+        ${week.days.map((d) => renderDayColumn(
+    d, blocks, awayDays[d], axis, banners, holidays?.[d],
+  )).join('')}
       </div>
     </div>`;
 }
@@ -434,7 +448,10 @@ export async function renderDiary() {
       ${renderToolbar(data)}
       ${renderLegend()}
       <div class="dy-scroll">
-        ${(data.weeks || []).map((w) => renderWeek(w, data.blocks || [], data.away_days || {}, axis)).join('')}
+        ${(data.weeks || []).map((w) => renderWeek(
+          w, data.blocks || [], data.away_days || {}, axis,
+          data.day_banners || [], data.holidays || {},
+        )).join('')}
       </div>`;
     wireDrag(el, data, () => renderDiary());
   } catch (e) {

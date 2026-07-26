@@ -129,6 +129,33 @@ describe('diary calendar feeds', () => {
     assert.equal(blocks[0].priority, 'p0');
     assert.equal(blocks[0].client_fixed, true);
   });
+
+  it('fixture flanks become pre/post-match buffer blocks', () => {
+    const { fixtureFlanksToBlocks } = require('../../api/mc/diary-lib.js');
+    const blocks = fixtureFlanksToBlocks([{
+      fixture_event_id: 'fx1',
+      title: '⚽️ Ipswich Town vs Sunderland',
+      fixture_start: '2026-08-22T14:00:00.000Z',
+      fixture_end: '2026-08-22T16:00:00.000Z',
+      block_start: '2026-08-22T13:00:00.000Z',
+      block_end: '2026-08-22T17:00:00.000Z',
+    }]);
+    assert.equal(blocks.length, 2);
+    assert.equal(blocks[0].kind, 'buffer');
+    assert.match(blocks[0].title, /pre-match/);
+    assert.match(blocks[1].title, /post-match/);
+  });
+
+  it('all-day busy and bank_holidays map into banners', () => {
+    const { allDayBannersFromBusy, holidayMapFromRows } = require('../../api/mc/diary-lib.js');
+    const banners = allDayBannersFromBusy([{
+      id: '1', summary: 'August Bank Holiday (Regional Holiday); England',
+      start: { date: '2026-08-31' }, end: { date: '2026-09-01' },
+    }]);
+    assert.equal(banners[0].day, '2026-08-31');
+    const hol = holidayMapFromRows([{ holiday_date: '2026-08-31', title: 'Summer bank holiday' }]);
+    assert.equal(hol['2026-08-31'], 'Summer bank holiday');
+  });
 });
 
 describe('gcal push related_id', () => {

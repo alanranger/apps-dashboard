@@ -665,6 +665,17 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   border:1px solid #9ca3af;
 }
 .dy-away { background:repeating-linear-gradient(-45deg, rgba(127,29,29,0.18), rgba(127,29,29,0.18) 6px, rgba(127,29,29,0.06) 6px, rgba(127,29,29,0.06) 12px); }
+.dy-bh .dy-day-head { border-bottom:2px solid #f59e0b; }
+.dy-bh-badge {
+  margin-top:4px; font-size:10px; font-weight:800; letter-spacing:0.06em;
+  color:#fbbf24; text-transform:uppercase;
+}
+.dy-allday-stack { display:flex; flex-direction:column; gap:2px; padding:4px 4px 0; }
+.dy-allday {
+  font-size:11px; font-weight:600; line-height:1.2; padding:3px 6px; border-radius:3px;
+  background:#7c2d12; color:#ffedd5; border-left:3px solid #f59e0b;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 .dy-away-label {
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   font-weight:800; letter-spacing:0.12em; color:rgba(254,202,202,0.28);

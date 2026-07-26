@@ -130,6 +130,13 @@ function travelToBlocks(rows) {
   }));
 }
 
+function asIso(v) {
+  if (!v) return null;
+  if (typeof v === 'string' && v.includes('T')) return v;
+  const t = Date.parse(v);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
 function busyToBlocks(busy, fixtures) {
   const out = [];
   for (const e of busy || []) {
@@ -162,6 +169,69 @@ function busyToBlocks(busy, fixtures) {
     }));
   }
   return out;
+}
+
+/**
+ * Pre/post match flanks from fixture_blocks (DB). GCal MC ⚽ events are split
+ * into `mc` and never painted — this restores the visible Before/After strips.
+ */
+function fixtureFlanksToBlocks(rows) {
+  const out = [];
+  for (const r of rows || []) {
+    const label = String(r.title || 'Fixture').replace(/^⚽️\s*/, '').trim();
+    const fixStart = asIso(r.fixture_start);
+    const fixEnd = asIso(r.fixture_end);
+    const blockStart = asIso(r.block_start);
+    const blockEnd = asIso(r.block_end);
+    if (blockStart && fixStart) {
+      out.push(toBlock({
+        id: `fix-before:${r.fixture_event_id || r.id}`,
+        kind: 'buffer',
+        title: `pre-match · ${label}`,
+        start: blockStart,
+        end: fixStart,
+        editable: false,
+        is_buffer: true,
+      }));
+    }
+    if (fixEnd && blockEnd) {
+      out.push(toBlock({
+        id: `fix-after:${r.fixture_event_id || r.id}`,
+        kind: 'buffer',
+        title: `post-match · ${label}`,
+        start: fixEnd,
+        end: blockEnd,
+        editable: false,
+        is_buffer: true,
+      }));
+    }
+  }
+  return out;
+}
+
+/** All-day GCal events (Calendar Dates holidays, birthdays) → day banners. */
+function allDayBannersFromBusy(busy) {
+  const out = [];
+  for (const e of busy || []) {
+    const day = e.start?.date ? String(e.start.date).slice(0, 10) : null;
+    if (!day) continue;
+    out.push({
+      day,
+      title: e.summary || 'All-day',
+      source: 'gcal',
+      id: e.id || null,
+    });
+  }
+  return out;
+}
+
+function holidayMapFromRows(rows) {
+  const map = {};
+  for (const r of rows || []) {
+    const day = String(r.holiday_date).slice(0, 10);
+    map[day] = r.title || 'Bank holiday';
+  }
+  return map;
 }
 
 function habitLogsToBlocks(logs, habitMap) {
@@ -374,6 +444,9 @@ module.exports = {
   tasksToBlocks,
   travelToBlocks,
   busyToBlocks,
+  fixtureFlanksToBlocks,
+  allDayBannersFromBusy,
+  holidayMapFromRows,
   habitLogsToBlocks,
   insertDecompressStrips,
   warnDrop,
