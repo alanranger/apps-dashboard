@@ -16,7 +16,7 @@ const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib'
 async function loadPeers(fromIso, toIso) {
   const [tasks, habits, logs] = await Promise.all([
     sb(`tasks?select=id,display_id,title,scheduled_start,scheduled_end,slot_pinned,calendar_event_id&scheduled_start=gte.${fromIso}&scheduled_start=lt.${toIso}`),
-    sb('recurring_tasks?select=id,title,duration_min,ideal_time&active=eq.true'),
+    sb('recurring_tasks?select=id,title,duration_min,ideal_time,last_done&active=eq.true'),
     sb('recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.'
       + `${fromIso.slice(0, 10)}&scheduled_date=lte.${toIso.slice(0, 10)}`),
   ]);
@@ -277,22 +277,74 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'complete') {
-      const completedOn = body.completed_on || isoToLondonDate(new Date().toISOString());
+      const today = isoToLondonDate(new Date().toISOString());
       if (body.habit_id) {
-        await sb(`recurring_tasks?id=eq.${body.habit_id}`, {
+        const habitId = body.habit_id;
+        const scheduledDate = String(body.scheduled_date || body.completed_on || today).slice(0, 10);
+        const ideal = String(body.ideal_date || scheduledDate).slice(0, 10);
+        // last_done must cover the occurrence's ideal so drift/placer skip this cycle
+        const lastDone = ideal > scheduledDate ? ideal : scheduledDate;
+        const habit = (await sb(
+          `recurring_tasks?id=eq.${habitId}&select=id,title,last_done`,
+        ))?.[0];
+        if (!habit) return json(res, 404, { error: 'habit not found' });
+        await sb(`recurring_tasks?id=eq.${habitId}`, {
           method: 'PATCH', prefer: 'return=minimal',
-          body: { last_done: completedOn, updated_at: new Date().toISOString() },
+          body: {
+            last_done: lastDone,
+            rolls_used: 0,
+            updated_at: new Date().toISOString(),
+          },
         });
+        const existing = await sb(
+          `recurring_log?recurring_task_id=eq.${habitId}&scheduled_date=eq.${scheduledDate}`
+          + '&select=id&order=at.desc&limit=1',
+        );
+        const logBody = {
+          change: `completed ${lastDone}`,
+          roll_reason: 'diary_complete',
+          ideal_date: ideal,
+          scheduled_date: scheduledDate,
+        };
+        if (existing?.[0]?.id) {
+          await sb(`recurring_log?id=eq.${existing[0].id}`, {
+            method: 'PATCH', prefer: 'return=minimal', body: logBody,
+          });
+        } else {
+          await sb('recurring_log', {
+            method: 'POST', prefer: 'return=minimal',
+            body: {
+              recurring_task_id: habitId,
+              actor,
+              ...logBody,
+              calendar_event_id: body.calendar_event_id || null,
+              projection_key: `diary-complete:${habitId}:${ideal}`,
+            },
+          });
+        }
         await upsertPushRow(sb, {
-          related_id: relatedIdForHabit(body.habit_id, completedOn),
+          related_id: relatedIdForHabit(habitId, ideal),
           entity_type: 'habit',
           change_kind: 'complete',
-          summary: `Complete habit ${body.habit_id} on ${completedOn}`,
-          proposed_action: `Mark habit complete in GCal if an event exists; DB last_done=${completedOn}`,
-          payload: { habit_id: body.habit_id, completed_on: completedOn },
+          summary: `Complete habit ${habit.title} (occurrence ${ideal})`,
+          proposed_action: `Mark habit complete in GCal if an event exists; DB last_done=${lastDone} for ideal ${ideal}`,
+          payload: {
+            habit_id: habitId,
+            completed_on: lastDone,
+            ideal_date: ideal,
+            scheduled_date: scheduledDate,
+            calendar_event_id: body.calendar_event_id || null,
+          },
         });
-        return json(res, 200, { habit_id: body.habit_id, last_done: completedOn, calendar_writes: 0 });
+        return json(res, 200, {
+          habit_id: habitId,
+          last_done: lastDone,
+          ideal_date: ideal,
+          scheduled_date: scheduledDate,
+          calendar_writes: 0,
+        });
       }
+      const completedOn = body.completed_on || today;
       if (body.task_id || body.display_id) {
         const q = body.task_id
           ? `tasks?id=eq.${body.task_id}&select=id,display_id,title,calendar_event_id`

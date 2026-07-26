@@ -188,6 +188,31 @@ describe('diary calendar feeds', () => {
     assert.equal(blocks[0].start, '2026-08-10T13:00:00.000Z');
     assert.equal(blocks[0].editable, true);
   });
+
+  it('hides habit occurrence when last_done covers ideal or log completed', () => {
+    const { habitLogsToBlocks } = require('../../api/mc/diary-lib.js');
+    const habitId = 'h2';
+    const habitMap = new Map([[habitId, {
+      id: habitId, title: 'Schema', duration_min: 60, ideal_time: '09:00:00',
+      last_done: '2026-07-27',
+    }]]);
+    const hidden = habitLogsToBlocks([{
+      recurring_task_id: habitId,
+      scheduled_date: '2026-07-26',
+      ideal_date: '2026-07-27',
+      change: 'scheduled',
+    }], habitMap);
+    assert.equal(hidden.length, 0);
+    const skipped = habitLogsToBlocks([{
+      recurring_task_id: habitId,
+      scheduled_date: '2026-07-26',
+      ideal_date: '2026-07-27',
+      change: 'completed 2026-07-27',
+    }], new Map([[habitId, {
+      id: habitId, title: 'Schema', duration_min: 60, ideal_time: '09:00:00', last_done: null,
+    }]]));
+    assert.equal(skipped.length, 0);
+  });
 });
 
 describe('gcal push related_id', () => {

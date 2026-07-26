@@ -158,6 +158,10 @@ async function runMenuAction(act, block, refresh) {
           task_id: block.kind === 'mc_task' ? block.id.replace(/^task:/, '') : undefined,
           habit_id: block.habit_id || undefined,
           display_id: block.display_id || undefined,
+          completed_on: block.day || undefined,
+          scheduled_date: block.day || undefined,
+          ideal_date: block.ideal_date || block.day || undefined,
+          calendar_event_id: block.calendar_event_id || undefined,
         },
       });
     } else if (act === 'lock' || act === 'unlock') {

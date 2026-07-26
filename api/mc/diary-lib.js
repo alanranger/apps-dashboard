@@ -248,6 +248,7 @@ function habitLogsToBlocks(logs, habitMap) {
   const best = new Map();
   for (const log of logs || []) {
     if (!log.scheduled_date || !log.recurring_task_id) continue;
+    if (/^completed\b/i.test(String(log.change || ''))) continue;
     const key = `${log.recurring_task_id}:${log.scheduled_date}`;
     const prev = best.get(key);
     if (!prev) {
@@ -264,6 +265,9 @@ function habitLogsToBlocks(logs, habitMap) {
     const habit = habitMap.get(log.recurring_task_id);
     if (!habit) continue;
     const day = log.scheduled_date;
+    const ideal = log.ideal_date || day;
+    // Already done for this occurrence cycle — don't paint / invite re-complete
+    if (habit.last_done && String(habit.last_done) >= String(ideal)) continue;
     const dur = Number(habit.duration_min || 60);
     const pin = parseDiaryPin(log.change);
     let startIso;
@@ -286,7 +290,7 @@ function habitLogsToBlocks(logs, habitMap) {
       editable: true,
       slot_pinned: false,
       habit_id: habit.id,
-      ideal_date: log.ideal_date || day,
+      ideal_date: ideal,
       calendar_event_id: log.calendar_event_id || null,
       priority: habit.priority || null,
     }));
