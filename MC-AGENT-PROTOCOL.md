@@ -150,7 +150,7 @@ A validator that shares the placer’s busy-map assumption proves nothing (23 Ju
 
 ## Recurring tasks tab (Reclaim replacement)
 
-Google Calendar scheduling stays **Claude-only** (see Drive RESPONSE-2026-07-20-calendar-mc-protocol-ruling). Mission Control stores habits in `recurring_tasks`; **no Calendar API or OAuth in apps-dashboard**.
+Google Calendar **writes** stay **Claude-only**. Mission Control may **read** Calendar (diary-drift / Diary tab via `gcal-lib`) and stores habits in `recurring_tasks`. Apps-dashboard never performs Calendar writes.
 
 ### Diary booking horizon (Alan-ruled — updated 25 Jul)
 
