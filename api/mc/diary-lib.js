@@ -578,6 +578,10 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
   for (const [k, v] of Object.entries(breakdown)) {
     if (v > 0) breakdown_h[k] = Math.round((v / 60) * 10) / 10;
   }
+  const movableMin = (breakdown.habit || 0) + (breakdown.task || 0);
+  const fixedMin = Object.entries(breakdown)
+    .filter(([k]) => k !== 'habit' && k !== 'task')
+    .reduce((s, [, v]) => s + v, 0);
   return {
     available_min: available,
     filled_min: filled,
@@ -588,6 +592,10 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
     teaching_days: teachingDays,
     breakdown_min: breakdown,
     breakdown_h,
+    movable_min: movableMin,
+    fixed_min: fixedMin,
+    movable_h: Math.round((movableMin / 60) * 10) / 10,
+    fixed_h: Math.round((fixedMin / 60) * 10) / 10,
     label: `${Math.min(pct, 999)}% · ${filledH}h committed / ${availH}h realistic`,
   };
 }

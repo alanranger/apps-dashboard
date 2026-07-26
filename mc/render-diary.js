@@ -469,6 +469,77 @@ function fmtHours(mins) {
   return `${h}h`;
 }
 
+function weekHumanTip(cap) {
+  const pct = cap.pct || 0;
+  const freeH = Math.round(((cap.free_min || 0) / 60) * 10) / 10;
+  const mov = cap.movable_h || 0;
+  if (cap.over || pct >= 100) {
+    return mov > 0
+      ? `Maxed — move or skip ${mov}h of green/blue (habits/tasks)`
+      : 'Maxed — fixed load owns this week (away / teaching / calendar)';
+  }
+  if (pct >= 90) {
+    return mov > 0
+      ? `Nearly full — only shift habits/tasks (${mov}h movable)`
+      : 'Nearly full — little you can move; protect rest';
+  }
+  if (pct >= 75) {
+    return `Tight — ${freeH}h realistic free; don’t pack evenings`;
+  }
+  if ((cap.away_days || 0) >= 3) {
+    return `Heavy away week — keep post-residential Monday clear`;
+  }
+  if (freeH >= 8) {
+    return `Breathing room — ${freeH}h free for habits/tasks`;
+  }
+  return `${freeH}h free (realistic)`;
+}
+
+function renderHorizonBoard(weeks) {
+  const tiles = (weeks || []).map((w, i) => {
+    const cap = w.capacity || {};
+    const pct = Math.min(100, cap.pct || 0);
+    const tone = cap.over || pct >= 95 ? 'dy-hz-hot' : pct >= 75 ? 'dy-hz-warm' : 'dy-hz-ok';
+    const start = w.days?.[0] || '';
+    const end = w.days?.[6] || '';
+    const tip = weekHumanTip(cap);
+    const bh = cap.breakdown_h || {};
+    const bits = [
+      bh.habit ? `Habits ${bh.habit}h` : '',
+      bh.task ? `Tasks ${bh.task}h` : '',
+      bh.away ? `Away ${bh.away}h` : '',
+      bh.workshop ? `Client ${bh.workshop}h` : '',
+      bh.lesson ? `Lesson ${bh.lesson}h` : '',
+      bh.travel ? `Travel ${bh.travel}h` : '',
+      bh.fixture ? `Fixture ${bh.fixture}h` : '',
+      bh.personal ? `Personal ${bh.personal}h` : '',
+      bh.buffer ? `Buffer ${bh.buffer}h` : '',
+    ].filter(Boolean).join(' · ');
+    return `
+      <button type="button" class="dy-hz-tile ${tone}" data-dy-jump-week="${i}"
+        title="${cap.label || ''} — ${tip}">
+        <div class="dy-hz-week">W${i + 1} · ${fmtDayLabel(start)}–${fmtDayLabel(end)}</div>
+        <div class="dy-hz-pct">${pct}%</div>
+        <div class="dy-hz-bar"><span style="width:${pct}%"></span></div>
+        <div class="dy-hz-split">
+          <span class="dy-hz-fix" title="Away, workshops, lessons, travel, personal, fixtures, buffers">Fixed ${cap.fixed_h || 0}h</span>
+          <span class="dy-hz-move" title="Green habits + blue tasks — what you can still move">Movable ${cap.movable_h || 0}h</span>
+        </div>
+        <div class="dy-hz-free">${fmtHours(cap.free_min || 0)} free</div>
+        <div class="dy-hz-tip">${tip}</div>
+        ${bits ? `<div class="dy-hz-bits meta">${bits}</div>` : ''}
+      </button>`;
+  }).join('');
+  return `
+    <div class="dy-horizon card">
+      <div class="dy-horizon-head">
+        <strong>8-week capacity</strong>
+        <span class="meta">Committed vs realistic · Fixed = calendar/away · Movable = habits + tasks · click a week to jump</span>
+      </div>
+      <div class="dy-horizon-grid">${tiles}</div>
+    </div>`;
+}
+
 function renderWeekBreakdown(cap) {
   const rows = [
     ['away', 'Away', 'dy-travel'],
@@ -510,6 +581,8 @@ function renderWeekGauge(week) {
         <strong>Week ${fmtDayLabel(start)} – ${fmtDayLabel(end)}</strong>
         <span>${cap.label || `${pct}%`}</span>
         <span class="meta">${fmtHours(cap.free_min || 0)} free (realistic)</span>
+        <span class="meta" title="Locked calendar / away">Fixed ${cap.fixed_h || 0}h</span>
+        <span class="meta" title="Habits + tasks you can drag">Movable ${cap.movable_h || 0}h</span>
         ${awayN ? `<span class="meta">${awayN} away</span>` : ''}
         ${teachN ? `<span class="meta">${teachN} teaching</span>` : ''}
       </div>
@@ -634,6 +707,7 @@ export async function renderDiary() {
     el.innerHTML = `
       ${renderToolbar(data)}
       ${renderLegend()}
+      ${renderHorizonBoard(data.weeks || [])}
       <div class="dy-scroll">
         ${(data.weeks || []).map((w) => renderWeek(
           w, data.blocks || [], data.away_days || {}, axis,
@@ -641,6 +715,13 @@ export async function renderDiary() {
         )).join('')}
       </div>`;
     wireDiary(el, data, () => renderDiary());
+    el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.getAttribute('data-dy-jump-week'));
+        const wraps = el.querySelectorAll('.dy-week-wrap');
+        wraps[idx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
   } catch (e) {
     el.innerHTML = `<div class="card"><p class="err">Diary failed: ${e.message || e}</p></div>`;
   }
