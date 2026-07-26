@@ -20,7 +20,7 @@ const KIND_ICON = {
   workshop: '📷',
   lesson: '🎓',
   habit: '🔁',
-  mc_task: '☑️',
+  mc_task: '📋',
   travel: '🚗',
   buffer: '⏳',
   fixture: '⚽',
@@ -171,7 +171,7 @@ function renderLegend() {
     ['dy-workshop', '📷', 'Client booking', 'workshop / shoot / Zoom 1-2-1 — fixed P0'],
     ['dy-lesson', '🎓', 'Lesson', 'group class feed'],
     ['dy-habit', '🔁', 'Recurring habit', ''],
-    ['dy-task', '☑️', 'Manual task', 'MC-nn'],
+    ['dy-task', '📋', 'Manual task', 'MC-nn — use ☑ to complete'],
     ['dy-travel', '🚗', 'Travel', ''],
     ['dy-buffer', '⏳', 'Prep / decompress', 'buffer'],
     ['dy-fixture', '⚽', 'Fixture', 'info'],
@@ -239,15 +239,19 @@ function renderBlock(b, axis) {
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : (b.editable ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
   const drag = b.editable && !locked && !b.is_buffer ? 'draggable="true"' : '';
+  const doneBtn = (b.editable && (b.kind === 'mc_task' || b.kind === 'habit') && !b.is_buffer)
+    ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
+    : '';
   const label = b.is_buffer || b.synthetic
-    ? `${icon} decompress`
-    : `${icon} ${b.title}`;
+    ? `${KIND_ICON.buffer} decompress`
+    : `<span class="dy-type-icon" aria-hidden="true">${icon}</span> ${b.title}`;
   return `<div class="dy-block ${cls} ${status}"
     style="top:${top}%;height:${h}%"
     data-block-id="${b.id}"
-    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})${b.client_fixed ? ' · fixed client booking' : ''}"
+    title="${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})${b.client_fixed ? ' · fixed client booking' : ''} — click for actions"
     ${drag}>
     <div class="dy-block-row">
+      ${doneBtn}
       <span class="dy-block-label">${label}</span>
       ${priorityTag(b.priority)}
       ${lock}
@@ -293,20 +297,34 @@ function wireDrag(root, data, refresh) {
 
   root.querySelectorAll('.dy-block.dy-edit').forEach((el) => {
     el.addEventListener('dragstart', (e) => {
+      if (e.target.closest('[data-dy-done]')) {
+        e.preventDefault();
+        return;
+      }
       dragBlock = (data.blocks || []).find((b) => b.id === el.dataset.blockId);
       e.dataTransfer.setData('text/plain', el.dataset.blockId);
       e.dataTransfer.effectAllowed = 'move';
     });
-    el.addEventListener('click', (e) => {
+    el.addEventListener('click', async (e) => {
       e.stopPropagation();
       const block = (data.blocks || []).find((b) => b.id === el.dataset.blockId);
       if (!block || block.is_buffer || block.synthetic) return;
-      if (el.classList.contains('dy-expanded')) {
-        showMenu(block, e.clientX, e.clientY, refresh);
-      } else {
-        root.querySelectorAll('.dy-block.dy-expanded').forEach((x) => x.classList.remove('dy-expanded'));
-        el.classList.add('dy-expanded');
+
+      // ☑ = mark complete immediately (what Alan expected)
+      if (e.target.closest('[data-dy-done]')) {
+        e.preventDefault();
+        if (!confirm(`Mark complete: ${block.title}?`)) return;
+        try {
+          await runMenuAction('complete', block, refresh);
+        } catch (err) {
+          alert(err.message || 'Complete failed');
+        }
+        return;
       }
+
+      // Any other click → action menu (no expand-first dance)
+      el.classList.add('dy-expanded');
+      showMenu(block, e.clientX, e.clientY, refresh);
     });
   });
 

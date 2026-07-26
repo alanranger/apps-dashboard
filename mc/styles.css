@@ -586,6 +586,14 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   min-height:28px; cursor:default; z-index:1; color:#fff;
 }
 .dy-block-row { display:flex; align-items:flex-start; gap:4px; }
+.dy-done {
+  flex-shrink:0; width:18px; height:18px; padding:0; margin:0;
+  border:1px solid rgba(255,255,255,0.55); border-radius:3px;
+  background:rgba(0,0,0,0.25); color:#fff; font-size:12px; line-height:16px;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+}
+.dy-done:hover { background:rgba(255,255,255,0.25); border-color:#fff; }
+.dy-type-icon { opacity:0.9; }
 .dy-block-label { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dy-block.dy-expanded { z-index:3; min-height:48px; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
 .dy-block.dy-expanded .dy-block-label { white-space:normal; }
