@@ -6,6 +6,7 @@ import { renderHome } from './render-home.js';
 import { renderBoard } from './render-board.js';
 import { renderRecurring, openRecurringEdit, handleRecurringClick } from './render-recurring.js';
 import { renderScheduling, handleSchedulingClick } from './render-scheduling.js';
+import { renderDiary, handleDiaryClick } from './render-diary.js';
 import { openDrawer, closeDrawer } from './drawer.js';
 import { openNewTaskModal } from './modal.js';
 
@@ -33,6 +34,14 @@ async function paintScheduling() {
   }
 }
 
+async function paintDiary() {
+  try { await renderDiary(); }
+  catch (e) {
+    const el = $('view-diary');
+    if (el) el.innerHTML = `<div class="card"><p class="err">Diary tab failed: ${e.message || e}</p></div>`;
+  }
+}
+
 function setView(name) {
   document.querySelectorAll('.views').forEach((el) => el.classList.remove('active'));
   document.querySelectorAll('.view-btn').forEach((el) => {
@@ -46,12 +55,14 @@ function setView(name) {
     const labels = {
       board: 'You are on: <strong>Project board</strong> — kanban by stream',
       recurring: 'You are on: <strong>Recurring</strong> — habits &amp; cadence (Reclaim replacement)',
+      diary: 'You are on: <strong>Diary</strong> — 4-week reschedule grid (DB master; Claude flushes GCal)',
       scheduling: 'You are on: <strong>Scheduling</strong> — rules, drive times, hotels, pending diary proposals',
       home: 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner',
     };
     label.innerHTML = labels[name] || labels.home;
   }
   if (name === 'recurring') paintRecurring();
+  if (name === 'diary') paintDiary();
   if (name === 'scheduling') paintScheduling();
 }
 
@@ -64,6 +75,12 @@ function renderAll() {
     const rec = $('view-recurring');
     if (rec) rec.innerHTML = '<div class="card"><p class="meta">Open the Recurring tab to load habits.</p></div>';
   }
+  if (activeView() === 'diary') {
+    paintDiary();
+  } else {
+    const dy = $('view-diary');
+    if (dy) dy.innerHTML = '<div class="card"><p class="meta">Open the Diary tab to load the 4-week grid.</p></div>';
+  }
   if (activeView() === 'scheduling') {
     paintScheduling();
   } else {
@@ -71,6 +88,11 @@ function renderAll() {
     if (sch) sch.innerHTML = '<div class="card"><p class="meta">Open the Scheduling tab to load rules &amp; pending changes.</p></div>';
   }
   if (store.openTaskId) openDrawer(store.openTaskId, boot);
+}
+
+async function refreshDiary() {
+  setView('diary');
+  await paintDiary();
 }
 
 /** After mark-done / edit / toggle — refresh data and keep Recurring table visible. */
@@ -146,6 +168,7 @@ function wire() {
   });
   document.body.addEventListener('click', async (e) => {
     if (await handleRecurringClick(e, refreshRecurring)) return;
+    if (await handleDiaryClick(e, refreshDiary)) return;
     if (await handleSchedulingClick(e, refreshScheduling)) return;
     const uiToggle = e.target.closest('[data-ui-toggle]');
     if (uiToggle) {

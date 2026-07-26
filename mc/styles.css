@@ -548,3 +548,33 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .sched-sum-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px 14px; margin:12px 0; }
 .sched-sum-grid .meta { font-size:0.8rem; display:block; }
 .sched-sum-notes { margin:8px 0 0; padding-left:18px; font-size:12px; color:var(--text-dim, #6b7280); }
+
+/* —— Diary tab —— */
+.dy-toolbar { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.dy-toolbar-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.dy-push-hint { margin:0; }
+.dy-legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; font-size:12px; }
+.dy-legend > span { padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
+.dy-scroll { overflow:auto; max-height:calc(100vh - 220px); border:1px solid var(--border); border-radius:8px; }
+.dy-week { display:grid; grid-template-columns:repeat(7, minmax(120px, 1fr)); border-bottom:2px solid var(--border); min-width:900px; }
+.dy-day { border-right:1px solid var(--border); background:var(--panel); }
+.dy-day-head { padding:6px 8px; background:var(--panel-2); border-bottom:1px solid var(--border); font-weight:600; position:sticky; top:0; z-index:2; }
+.dy-day-grid { position:relative; height:640px; background:repeating-linear-gradient(to bottom, transparent 0, transparent 39px, rgba(255,255,255,0.04) 39px, rgba(255,255,255,0.04) 40px); }
+.dy-hour { position:absolute; left:2px; font-size:10px; color:var(--text-faint,#9ca3af); pointer-events:none; }
+.dy-block { position:absolute; left:4px; right:4px; overflow:hidden; border-radius:4px; padding:2px 4px; font-size:11px; line-height:1.2; border:1px solid rgba(0,0,0,0.25); min-height:28px; cursor:default; z-index:1; }
+.dy-block.dy-edit { cursor:grab; }
+.dy-block.dy-expanded { z-index:3; min-height:48px; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+.dy-block-label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dy-block.dy-expanded .dy-block-label { white-space:normal; }
+.dy-ro { opacity:0.85; cursor:default; }
+.dy-workshop { background:#1d4ed8; color:#fff; }
+.dy-lesson { background:#0f766e; color:#fff; }
+.dy-task { background:#7c3aed; color:#fff; }
+.dy-habit { background:#a16207; color:#fff; }
+.dy-travel { background:#b45309; color:#fff; }
+.dy-fixture { background:#334155; color:#e2e8f0; }
+.dy-personal { background:#475569; color:#fff; }
+.dy-away-swatch, .dy-away { background:repeating-linear-gradient(-45deg, rgba(127,29,29,0.25), rgba(127,29,29,0.25) 6px, rgba(127,29,29,0.1) 6px, rgba(127,29,29,0.1) 12px); }
+.dy-away-label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:0.12em; color:rgba(254,202,202,0.55); pointer-events:none; z-index:0; font-size:28px; }
+.dy-menu { position:fixed; z-index:50; background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:6px; display:flex; flex-direction:column; gap:4px; min-width:160px; box-shadow:0 8px 24px rgba(0,0,0,0.35); }
+.dy-menu button { text-align:left; padding:6px 10px; }

@@ -107,6 +107,19 @@ Per hotel booking: decision task due at the booking’s free-cancellation deadli
 
 **Cursor plans → Claude writes → Alan rules.** Claude does not pick slots to “make it fit.”
 
+### Diary tab (26 Jul 2026) — DB master + consolidated push
+
+Mission Control **Diary** tab (`/mission-control` → Diary): Outlook-style 4-week grid for reschedule without depending on live GCal writes.
+
+| Piece | Role |
+|-------|------|
+| `GET /api/mc/diary` | Busy map (GCal **READ**) + DB tasks/habits/travel/away |
+| `POST /api/mc/diary-action` | Drag/menu → DB + upsert `gcal_push_queue` (latest state wins per `related_id`) |
+| `GET/PATCH /api/mc/gcal-push` | Consolidated manifest; `mark_ready` when `gcal_writes_available=true` |
+| Warn-checks | `habit-placer-lib.requiredGapMins` / `dayCapLimits` / `awaySpansFromTravelBlocks` — never a flat reimplementation |
+
+**Push button does not write Google.** It marks the queue `ready` for Claude. While Anthropic GCal writes are down, `scheduling_rules.gcal_writes_available=false` and the button stays disabled. Away-span **37-row** backlog remains in `pending_diary_changes` and is listed beside the queue for the **same** Claude flush path.
+
 ### MC blocks are OUTPUT, never INPUT
 
 > **MC-generated blocks are never part of the busy map.**
