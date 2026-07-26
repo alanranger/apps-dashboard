@@ -48,6 +48,57 @@ function dayCapLimits(ruleMap) {
 }
 
 /**
+ * Multi-day residential away spans from travel_out + travel_back pairs.
+ * Hard-busy whole London days out→back (incl. travel days + middle).
+ * Same-day day-trips skipped (drive intervals already cover those).
+ * Pair by workshop_row_key or venue|workshop_start; else next unused back.
+ */
+function awaySpansFromTravelBlocks(blocks) {
+  const outs = [];
+  const backs = [];
+  for (const b of blocks || []) {
+    if (!b?.starts_at || !b?.ends_at) continue;
+    if (b.block_type === 'travel_out') outs.push(b);
+    else if (b.block_type === 'travel_back') backs.push(b);
+  }
+  outs.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+  backs.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+
+  const pairKey = (b) => b.workshop_row_key || `${b.venue_name || ''}|${b.workshop_start || ''}`;
+  const usedBack = new Set();
+  const spans = [];
+
+  for (const out of outs) {
+    const key = pairKey(out);
+    const outMs = Date.parse(out.starts_at);
+    let backIdx = backs.findIndex((bk, i) => !usedBack.has(i) && pairKey(bk) === key
+      && Date.parse(bk.starts_at) >= outMs);
+    if (backIdx < 0) {
+      backIdx = backs.findIndex((bk, i) => !usedBack.has(i) && Date.parse(bk.starts_at) >= outMs);
+    }
+    if (backIdx < 0) continue;
+    usedBack.add(backIdx);
+    const back = backs[backIdx];
+    const startDay = isoToLondonDate(out.starts_at);
+    const endDay = isoToLondonDate(back.ends_at);
+    if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
+    spans.push({
+      startDay,
+      endDay,
+      startMs: londonYmdHmToUtcMs(startDay, '00:00'),
+      endMs: londonYmdHmToUtcMs(endDay, '23:59') + 60000,
+      summary: `away:${out.venue_name || out.workshop_title || key}`,
+      kind: 'away_span',
+    });
+  }
+  return spans.sort((a, b) => a.startMs - b.startMs);
+}
+
+function dayInsideAwaySpan(day, spans) {
+  return (spans || []).some((s) => day >= s.startDay && day <= s.endDay);
+}
+
+/**
  * Busy intervals from mixed events. Strip MC (incl. MC ⚽).
  * Ipswich force-busy expanded by fixture_buffer_min.
  */
@@ -287,11 +338,13 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
         return '10:00';
       }
     })();
+    const awaySpans = (hardBusy || []).filter((b) => b.kind === 'away_span');
     const startDay = notBeforeDay || bump.habit_day || fromYmd;
     const days = [];
     for (let i = 0; i <= 14; i += 1) {
       const d = addDays(startDay, i);
-      if (d >= fromYmd && isSchedulableDay(d, ruleMap, holidays)) days.push(d);
+      if (d >= fromYmd && isSchedulableDay(d, ruleMap, holidays)
+        && !dayInsideAwaySpan(d, awaySpans)) days.push(d);
     }
 
     let slot = null;
@@ -380,9 +433,14 @@ function orderHabitsForPlacement(habits, deps) {
   return ordered;
 }
 
-function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays) {
+function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = []) {
   const w = Math.max(0, Number(windowDays) || 0);
   const days = [];
+  const cover = (awaySpans || []).find((s) => idealYmd >= s.startDay && idealYmd <= s.endDay);
+  // Ideal on an away day → jump past the whole span (before out / after back).
+  if (cover) {
+    days.push(addDays(cover.startDay, -1), addDays(cover.endDay, 1));
+  }
   if (timeCritical) {
     for (let i = w; i >= 0; i -= 1) days.push(addDays(idealYmd, -i));
     for (let i = 1; i <= w; i += 1) days.push(addDays(idealYmd, i));
@@ -393,7 +451,8 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays) {
       days.push(addDays(idealYmd, -i));
     }
   }
-  return [...new Set(days)].filter((d) => isSchedulableDay(d, ruleMap, holidays));
+  return [...new Set(days)].filter((d) => isSchedulableDay(d, ruleMap, holidays)
+    && !dayInsideAwaySpan(d, awaySpans));
 }
 
 /** Admin ticks get admin_gap_min; substantial (incl. Publish Blog) get decompress_after_task_min. */
@@ -495,11 +554,12 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
   const dayUsed = {};
   const placedByHabit = new Map();
   const busyWork = busy.slice();
+  const awaySpans = (busy || []).filter((b) => b.kind === 'away_span');
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
       const days = candidateDays(
-        ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays,
+        ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
       );
       let slot = null;
       for (const day of days) {
@@ -644,6 +704,8 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
 module.exports = {
   londonYmdHmToUtcMs,
   buildBusyIntervals,
+  awaySpansFromTravelBlocks,
+  dayInsideAwaySpan,
   datedTasksToIntervals,
   findTaskBumps,
   placeBumpedTasks,

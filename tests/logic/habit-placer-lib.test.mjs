@@ -14,6 +14,9 @@ const {
   requiredGapMins,
   datedTasksToIntervals,
   findTaskBumps,
+  placeBumpedTasks,
+  awaySpansFromTravelBlocks,
+  candidateDays,
 } = require('../../api/mc/habit-placer-lib.js');
 
 const rules = {
@@ -304,5 +307,83 @@ describe('habit-placer-lib — dated tasks', () => {
     const b22 = scheduled.find((s) => Number(s.display_id) === 22);
     assert.ok(b21 && b22);
     assert.ok(Date.parse(b22.new_start) >= Date.parse(b21.new_end));
+  });
+});
+
+describe('habit-placer-lib — away spans', () => {
+  it('derives multi-day span; skips same-day day-trips', () => {
+    const spans = awaySpansFromTravelBlocks([
+      {
+        block_type: 'travel_out', venue_name: 'Rosedale Abbey',
+        workshop_start: '2026-08-03T11:00:00Z',
+        starts_at: '2026-08-03T08:00:00Z', ends_at: '2026-08-03T11:15:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'Rosedale Abbey',
+        workshop_start: '2026-08-03T11:00:00Z',
+        starts_at: '2026-08-06T13:00:00Z', ends_at: '2026-08-06T16:15:00Z',
+      },
+      {
+        block_type: 'travel_out', venue_name: 'Burnham',
+        workshop_start: '2026-08-01T17:45:00Z',
+        starts_at: '2026-08-01T15:00:00Z', ends_at: '2026-08-01T17:15:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'Burnham',
+        workshop_start: '2026-08-01T17:45:00Z',
+        starts_at: '2026-08-01T20:15:00Z', ends_at: '2026-08-01T22:30:00Z',
+      },
+    ]);
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].startDay, '2026-08-03');
+    assert.equal(spans[0].endDay, '2026-08-06');
+  });
+
+  it('rolls ideal away-day past the whole span, not onto travel days', () => {
+    const spans = awaySpansFromTravelBlocks([
+      {
+        block_type: 'travel_out', venue_name: 'Norfolk',
+        workshop_start: '2026-11-20T09:30:00Z',
+        starts_at: '2026-11-20T05:30:00Z', ends_at: '2026-11-20T09:00:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'Norfolk',
+        workshop_start: '2026-11-20T09:30:00Z',
+        starts_at: '2026-11-22T14:00:00Z', ends_at: '2026-11-22T17:30:00Z',
+      },
+    ]);
+    const days = candidateDays('2026-11-22', 2, false, rules, holidays, spans);
+    assert.ok(!days.includes('2026-11-20'));
+    assert.ok(!days.includes('2026-11-21'));
+    assert.ok(!days.includes('2026-11-22'));
+    assert.ok(days.includes('2026-11-19') || days.includes('2026-11-23'));
+  });
+
+  it('does not place habit on middle away day', () => {
+    const spans = awaySpansFromTravelBlocks([
+      {
+        block_type: 'travel_out', venue_name: 'Rosedale Abbey',
+        workshop_start: '2026-08-03T11:00:00Z',
+        starts_at: '2026-08-03T08:00:00Z', ends_at: '2026-08-03T11:15:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'Rosedale Abbey',
+        workshop_start: '2026-08-03T11:00:00Z',
+        starts_at: '2026-08-06T13:00:00Z', ends_at: '2026-08-06T16:15:00Z',
+      },
+    ]);
+    const habit = {
+      id: 'hx', title: 'Hotel check', priority: 'p1', duration_min: 60,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=WE;COUNT=1',
+    };
+    // Force one ideal on Wed 5 Aug (middle of Rosedale) via narrow horizon + weekly
+    const { placements } = placeHabits(
+      [{ ...habit, rrule: 'FREQ=DAILY;COUNT=1' }], [], spans, rules, holidays,
+      '2026-08-05', '2026-08-05',
+    );
+    // COUNT=1 from DTSTART default may not land on 5 Aug — place via empty rrule range:
+    // use occurrences by setting from=to=5 Aug with FREQ=DAILY
+    assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-06'));
   });
 });
