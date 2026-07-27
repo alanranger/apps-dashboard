@@ -13,6 +13,7 @@ const { runHabitPlacerPropose } = require('../mc/habit-placer-propose-lib');
 const {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
+  runStaleTravelVsWorkshopScan,
   runHotelDeadlineGapScan,
   runHorizonEdgeScan,
   runPendingRetirement,
@@ -598,6 +599,15 @@ module.exports = async function handler(req, res) {
       calendarsHealth = assessment.label;
       notes.push(`gcal: fetched ${calEvents.length} events → ${blocks.length} MC / ${busyEvents.length} busy`);
       notes.push(`gcal_ids: ${health.map((h) => `${h.id}:${h.ok ? h.count : 'FAIL'}`).join(' | ')}`);
+      await runStaleTravelVsWorkshopScan({
+        sb,
+        existingPending,
+        inserted,
+        notes,
+        gcalEvents: calEvents,
+        ruleMap,
+        venues: drives,
+      });
       // Short busy map / empty calendar is a FAULT — never report as a clean pass.
       if (!assessment.ok) {
         const relatedId = `source_empty:calendars:${today}:${assessment.faults.join(',')}`;

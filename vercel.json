@@ -25,6 +25,7 @@
     { "source": "/api/mc/rule-breach-check.json", "destination": "/api/mc/rule-breach-check" },
     { "source": "/api/mc/reconcile-due-dates.json", "destination": "/api/mc/reconcile-due-dates" },
     { "source": "/api/mc/drive-time.json", "destination": "/api/mc/drive-time" },
+    { "source": "/api/mc/travel-regenerate.json", "destination": "/api/mc/travel-regenerate" },
     { "source": "/api/mc/diary.json", "destination": "/api/mc/diary" },
     { "source": "/api/mc/diary-action.json", "destination": "/api/mc/diary-action" },
     { "source": "/api/mc/gcal-push.json", "destination": "/api/mc/gcal-push" },

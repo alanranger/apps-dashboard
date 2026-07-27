@@ -289,9 +289,47 @@ async function runHorizonEdgeScan(ctx) {
   );
 }
 
+/**
+ * When GCal workshop times drift from stamped travel_blocks — propose regenerate.
+ */
+async function runStaleTravelVsWorkshopScan(ctx) {
+  const { sb, existingPending, inserted, notes, gcalEvents, ruleMap, venues } = ctx;
+  if (!gcalEvents?.length) {
+    notes.push('stale_travel_vs_workshop_scan: skipped (no gcal events)');
+    return;
+  }
+  let blocks = [];
+  try {
+    blocks = await sb('travel_blocks?select=*&order=starts_at.asc') || [];
+  } catch (e) {
+    notes.push(`stale_travel_vs_workshop_read_error: ${e.message}`);
+    return;
+  }
+  const { planTravelRegenerate } = require('./travel-regenerate-lib');
+  const plan = planTravelRegenerate(blocks, gcalEvents, ruleMap || {}, venues || []);
+  let n = 0;
+  for (const ch of plan.changes || []) {
+    if (!ch.out.times_changed && !ch.back.times_changed) continue;
+    const relatedId = `stale_travel:${ch.workshop_row_key || ch.out.id}`;
+    await insertPending(sb, existingPending, inserted, {
+      change_type: 'stale_travel_vs_workshop',
+      target_date: String(ch.workshop_live_start || '').slice(0, 10),
+      summary: `Travel drifted from workshop: ${ch.title}`,
+      proposed_action: `POST /api/mc/travel-regenerate apply=true (or fix ${ch.venue}). Live workshop ${ch.workshop_live_start}→${ch.workshop_live_end}; travel_out ${ch.out.from.starts_at}→${ch.out.to.starts_at}; travel_back ${ch.back.from.starts_at}→${ch.back.to.starts_at}.`,
+      reason: 'travel_blocks snapshot vs live GCal workshop start/end',
+      urgency: 'normal',
+      status: 'pending',
+      related_id: relatedId,
+    });
+    n += 1;
+  }
+  notes.push(`stale_travel_vs_workshop_scan: ${n} drift(s); linked=${plan.linked}; unmatched=${(plan.unmatched || []).length}`);
+}
+
 module.exports = {
   runMissingTravelBlockScan,
   runStaleDriveTimeScan,
+  runStaleTravelVsWorkshopScan,
   runHotelDeadlineGapScan,
   runHorizonEdgeScan,
   runPendingRetirement,
