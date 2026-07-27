@@ -92,8 +92,12 @@ module.exports = async function handler(req, res) {
 
     const awayDays = {};
     for (const span of awaySpans) {
-      let d = span.startDay;
-      while (d <= span.endDay) {
+      // Full AWAY column = middle days only; travel days stay open around the drive.
+      const from = span.middleStart || (span.partial_edges ? null : span.startDay);
+      const to = span.middleEnd || (span.partial_edges ? null : span.endDay);
+      if (!from || !to) continue;
+      let d = from;
+      while (d <= to) {
         awayDays[d] = {
           label: 'AWAY',
           summary: span.summary || null,

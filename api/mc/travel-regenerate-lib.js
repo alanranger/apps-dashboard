@@ -6,7 +6,9 @@ const {
   awaySpansFromTravelBlocks,
   isWorkshopCalendarEvent,
   isRestDaySourceEvent,
+  londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
+const { addDays } = require('./scheduling-rules-lib');
 
 function normTitle(s) {
   return String(s || '')
@@ -27,7 +29,12 @@ function titleScore(a, b) {
   if (!aw.size || !bw.length) return 0;
   let hit = 0;
   for (const w of bw) if (aw.has(w)) hit += 1;
-  return Math.round((hit / Math.max(aw.size, bw.length)) * 70);
+  let score = Math.round((hit / Math.max(aw.size, bw.length)) * 70);
+  // Shared distinctive phrases (guest workshops often rename Masterclass ↔ Workshop)
+  if (na.includes('david ward') && nb.includes('david ward')) score = Math.max(score, 70);
+  if (na.includes('post processing') && nb.includes('post processing')) score = Math.max(score, 60);
+  if (hit >= 3) score = Math.max(score, 55);
+  return score;
 }
 
 function eventBounds(e) {
@@ -107,15 +114,12 @@ function pickWorkshop(pair, workshops) {
 }
 
 function driveMinutesFor(pair, venues) {
-  if (pair.out.drive_minutes_used) return Number(pair.out.drive_minutes_used);
-  if (pair.back.drive_minutes_used) return Number(pair.back.drive_minutes_used);
   const venue = String(pair.out.venue_name || '').toLowerCase();
   const hit = (venues || []).find((v) => venue && String(v.venue_name || '').toLowerCase().includes(venue.split('/')[0].trim()));
-  return Number(hit?.minutes_from_home || 90);
-}
-
-function shiftIso(iso, deltaMs) {
-  return new Date(Date.parse(iso) + deltaMs).toISOString();
+  if (hit?.minutes_from_home) return Number(hit.minutes_from_home);
+  if (pair.out.drive_minutes_used) return Number(pair.out.drive_minutes_used);
+  if (pair.back.drive_minutes_used) return Number(pair.back.drive_minutes_used);
+  return 90;
 }
 
 function londonDay(iso) {
@@ -130,10 +134,11 @@ function londonDay(iso) {
 
 /**
  * Desired out/back around live workshop bounds.
- * Day-trip (same London day): absolute formula from start/end.
- * Multi-day residential: preserve trip shape — shift by workshop_start delta only.
+ * Day-trip: arrive_before_start_min before start, leave at end.
+ * Residential: arrive residential_arrive_hm (default 16:00) on the day before
+ * first workshop day; leave for home at workshop end + drive.
  */
-function desiredTravelTimes(bounds, driveMin, arriveMin, pair) {
+function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}) {
   const arrive = Math.max(0, Number(arriveMin) || 30);
   const drive = Math.max(15, Number(driveMin) || 90);
   const outDay = londonDay(pair.out.starts_at);
@@ -153,30 +158,26 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair) {
     };
   }
 
-  const oldWs = Date.parse(pair.out.workshop_start || pair.out.starts_at);
-  const delta = bounds.startMs - oldWs;
-  // Refuse huge jumps (wrong workshop match)
-  if (!Number.isFinite(delta) || Math.abs(delta) > 72 * 3600000) {
-    return {
-      out: { starts_at: new Date(pair.out.starts_at).toISOString(), ends_at: new Date(pair.out.ends_at).toISOString() },
-      back: { starts_at: new Date(pair.back.starts_at).toISOString(), ends_at: new Date(pair.back.ends_at).toISOString() },
-      workshop_start: bounds.startIso,
-      mode: 'residential_link_only',
-      delta_ms: delta,
-    };
-  }
+  const firstDay = londonDay(bounds.startIso);
+  const arriveHm = String(ruleMap.residential_arrive_hm || '16:00').slice(0, 5);
+  const travelArriveDay = addDays(firstDay, -1);
+  const outEndMs = londonYmdHmToUtcMs(travelArriveDay, arriveHm);
+  const outStartMs = outEndMs - drive * 60000;
+  const backStartMs = bounds.endMs;
+  const backEndMs = backStartMs + drive * 60000;
   return {
     out: {
-      starts_at: shiftIso(pair.out.starts_at, delta),
-      ends_at: shiftIso(pair.out.ends_at, delta),
+      starts_at: new Date(outStartMs).toISOString(),
+      ends_at: new Date(outEndMs).toISOString(),
     },
     back: {
-      starts_at: shiftIso(pair.back.starts_at, delta),
-      ends_at: shiftIso(pair.back.ends_at, delta),
+      starts_at: new Date(backStartMs).toISOString(),
+      ends_at: new Date(backEndMs).toISOString(),
     },
     workshop_start: bounds.startIso,
-    mode: 'residential_delta',
-    delta_ms: delta,
+    mode: 'residential_arrive',
+    arrive_hm: arriveHm,
+    travel_arrive_day: travelArriveDay,
   };
 }
 
@@ -205,7 +206,7 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     }
     const rowKey = `gcal:${match.event.id}`;
     const drive = driveMinutesFor(pair, venues);
-    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair);
+    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap);
     const timesOut = !isoClose(pair.out.starts_at, desired.out.starts_at)
       || !isoClose(pair.out.ends_at, desired.out.ends_at);
     const timesBack = !isoClose(pair.back.starts_at, desired.back.starts_at)

@@ -415,7 +415,7 @@ function warnDrop({
   if (dayBlockedForPlacement(day, awaySpans)) {
     const awayOnly = dayInsideAwaySpan(day, awaySpans);
     warnings.push(awayOnly
-      ? 'Away-span day (travel-out → travel-back inclusive)'
+      ? 'Away middle day (between travel-out and travel-back)'
       : 'Blocked day (post-residential rest — no habits/tasks)');
   }
   if ((peers || []).some((p) => p.day === day

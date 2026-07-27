@@ -182,7 +182,8 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
 }
 
 async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
-  const spans = awaySpansFromTravelBlocks(travel || []);
+  const spans = awaySpansFromTravelBlocks(travel || [])
+    .filter((s) => s.middleStart && s.middleEnd);
   const existing = await sb('away_day_blocks?status=eq.active&select=*') || [];
   const byKey = new Map(existing.map((r) => {
     const wk = r.workshop_row_key || `${r.venue_name || ''}|${r.start_date}`;
@@ -196,14 +197,22 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   for (const span of spans) {
     const venue = String(span.summary || '').replace(/^away:/, '');
     const workshopRowKey = venue;
-    const key = `${span.startDay}|${span.endDay}|${workshopRowKey}`;
+    // GCal/DB all-day AWAY covers middle days only (not travel-out / travel-back days).
+    const startDate = span.middleStart;
+    const endDate = span.middleEnd;
+    const key = `${startDate}|${endDate}|${workshopRowKey}`;
     keep.add(key);
     const title = awaySpanGcalTitle({ venue_name: venue });
-    const endExclusive = addDaysYmd(span.endDay, 1);
+    const endExclusive = addDaysYmd(endDate, 1);
     let row = byKey.get(key);
+    // Also match legacy rows that spanned full out→back dates
+    if (!row) {
+      const legacyKey = `${span.startDay}|${span.endDay}|${workshopRowKey}`;
+      row = byKey.get(legacyKey) || null;
+    }
     const body = {
-      start_date: span.startDay,
-      end_date: span.endDay,
+      start_date: startDate,
+      end_date: endDate,
       venue_name: venue,
       workshop_title: venue,
       workshop_row_key: workshopRowKey,
@@ -226,7 +235,7 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
       const linked = await ensureAllDayLinked({
         row,
         title,
-        startDate: span.startDay,
+        startDate,
         endExclusive,
         events,
         titlePrefixRe: /\bAWAY\b|🚫/,

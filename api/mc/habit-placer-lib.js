@@ -49,10 +49,9 @@ function dayCapLimits(ruleMap) {
 
 /**
  * Multi-day residential away spans from travel_out + travel_back pairs.
- * Hard-busy whole London days out→back (incl. travel days + middle).
+ * Busy interval = travel_out start → travel_back end (partial edges).
+ * Whole-day placement blocks apply only to middle days (see dayInsideAwaySpan).
  * Same-day day-trips skipped (drive intervals already cover those).
- * Pair by workshop_row_key or venue|workshop_start; else next unused back.
- * Rest days are NOT derived from travel — see restDaySpansFromWorkshopEvents.
  */
 function awaySpansFromTravelBlocks(blocks) {
   const outs = [];
@@ -83,12 +82,21 @@ function awaySpansFromTravelBlocks(blocks) {
     const startDay = isoToLondonDate(out.starts_at);
     const endDay = isoToLondonDate(back.ends_at);
     if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
+    const startMs = Date.parse(out.starts_at);
+    const endMs = Date.parse(back.ends_at);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+    // All-day AWAY banner / GCal master = middle days only (edges are travel blocks).
+    const middleStart = addDays(startDay, 1);
+    const middleEnd = addDays(endDay, -1);
     spans.push({
       startDay,
       endDay,
+      middleStart: middleStart <= middleEnd ? middleStart : null,
+      middleEnd: middleStart <= middleEnd ? middleEnd : null,
       restDay: null,
-      startMs: londonYmdHmToUtcMs(startDay, '00:00'),
-      endMs: londonYmdHmToUtcMs(endDay, '23:59') + 60000,
+      startMs,
+      endMs,
+      partial_edges: true,
       summary: `away:${out.venue_name || out.workshop_title || key}`,
       kind: 'away_span',
     });
@@ -193,16 +201,26 @@ function multidayWorkshopRestRows(events) {
     || a.title.localeCompare(b.title));
 }
 
-/** Travel-out → travel-back inclusive only (not the rest day). */
+/** Middle away days only when partial_edges (travel days stay schedulable outside drive). */
 function dayInsideAwaySpan(day, spans) {
-  return (spans || []).some((s) => s.kind !== 'teaching_day'
-    && day >= s.startDay && day <= s.endDay);
+  return (spans || []).some((s) => {
+    if (s.kind === 'teaching_day') return false;
+    if (s.kind === 'away_span' && s.partial_edges) {
+      if (!s.middleStart || !s.middleEnd) return false;
+      return day >= s.middleStart && day <= s.middleEnd;
+    }
+    return day >= s.startDay && day <= s.endDay;
+  });
 }
 
-/** Away days + post-residential rest day + teaching/client days — no habits/tasks. */
+/** Away middle days + post-residential rest + teaching — no habits/tasks. */
 function dayBlockedForPlacement(day, spans) {
   return (spans || []).some((s) => {
     if (s.kind === 'teaching_day') return day === s.startDay;
+    if (s.kind === 'away_span' && s.partial_edges) {
+      if (!s.middleStart || !s.middleEnd) return false;
+      return day >= s.middleStart && day <= s.middleEnd;
+    }
     if (day >= s.startDay && day <= s.endDay) return true;
     return !!(s.restDay && day === s.restDay);
   });
@@ -211,6 +229,10 @@ function dayBlockedForPlacement(day, spans) {
 function coveringBlockedSpan(day, spans) {
   return (spans || []).find((s) => {
     if (s.kind === 'teaching_day') return day === s.startDay;
+    if (s.kind === 'away_span' && s.partial_edges) {
+      if (!s.middleStart || !s.middleEnd) return false;
+      return day >= s.middleStart && day <= s.middleEnd;
+    }
     if (day >= s.startDay && day <= s.endDay) return true;
     return !!(s.restDay && day === s.restDay);
   }) || null;
