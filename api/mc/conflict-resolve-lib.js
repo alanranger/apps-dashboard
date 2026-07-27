@@ -5,6 +5,7 @@
 const { isoToLondonDate, isoToLondonMinutes, addDays, ruleMapFromRows } = require('./scheduling-rules-lib');
 const {
   awaySpansFromTravelBlocks, tasksToBlocks, habitLogsToBlocks, travelToBlocks, busyToBlocks,
+  indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks,
 } = require('./diary-lib');
 const {
   trySlotOnDay, londonYmdHmToUtcMs, dayBlockedForPlacement,
@@ -68,53 +69,30 @@ async function loadDaySnapshot(sb, day) {
   const ruleMap = ruleMapFromRows(rules || []);
   const habitMap = new Map((habits || []).map((h) => [h.id, h]));
   let busyBlocks = [];
-  let mcExtra = [];
+  let mcEvents = [];
+  let eventById = new Map();
+  const tied = new Set([
+    ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
+    ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
+    ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
+  ]);
   if (gcalConfigured()) {
     const { events } = await fetchHorizonEvents(timeMin, timeMax);
     const split = splitMcAndBusy(events || [], ruleMap);
-    const tied = new Set([
-      ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
-      ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
-      ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
-    ]);
+    mcEvents = split.mc || [];
+    eventById = indexGcalEventsById([...(split.mc || []), ...(split.busy || [])]);
     const busy = (split.busy || []).filter((e) => !e?.id || !tied.has(e.id));
     busyBlocks = busyToBlocks(busy, []);
-    const byEvt = new Set(
-      [...tasksToBlocks(tasks || [], day), ...habitLogsToBlocks(logs || [], habitMap), ...travelToBlocks(travel || [])]
-        .map((b) => b.calendar_event_id)
-        .filter(Boolean),
-    );
-    // MC GCal events on this London day (detector truth) — include even if DB log moved elsewhere.
-    for (const e of split.mc || []) {
-      if (!e?.id) continue;
-      const start = e.start?.dateTime || e.start;
-      const end = e.end?.dateTime || e.end;
-      if (!start || !String(start).includes('T')) continue;
-      if (isoToLondonDate(String(start)) !== day) continue;
-      if (byEvt.has(e.id)) continue;
-      mcExtra.push({
-        id: `gcal-mc:${e.id}`,
-        kind: /travel/i.test(e.summary || '') ? 'travel' : 'habit',
-        title: e.summary || 'MC block',
-        start,
-        end,
-        day,
-        start_min: isoToLondonMinutes(String(start)),
-        end_min: isoToLondonMinutes(String(end)),
-        editable: !/Travel out|Travel back|Travel —|Decompress|AWAY —|REST —|^MC 🚗|^MC ⏳|^MC 🚫|^MC 🛌/i
-          .test(e.summary || ''),
-        calendar_event_id: e.id,
-        done: false,
-      });
-    }
   }
-  const blocks = [
+  const dbBlocks = [
     ...tasksToBlocks(tasks || [], day),
     ...habitLogsToBlocks(logs || [], habitMap),
     ...travelToBlocks(travel || []),
     ...busyBlocks,
-    ...mcExtra,
-  ].filter((b) => b.day === day && !b.synthetic);
+  ];
+  const { blocks: baselined } = applyGcalBaselineTimes(dbBlocks, eventById);
+  const blocks = [...baselined, ...untiedMcBlocks(mcEvents, tied)]
+    .filter((b) => b.day === day && !b.synthetic);
 
   return { day, blocks, ruleMap, axis: { start_min: AXIS_START, end_min: AXIS_END } };
 }
@@ -158,9 +136,11 @@ function matchClashBlock(blocks, eventId, titleHint) {
 }
 
 function countsTowardCap(b) {
+  if (b.gcal_orphan && /decompress|buffer/i.test(b.title || '')) return false;
   const kind = String(b.kind || '');
   if (kind === 'travel' || kind === 'buffer' || kind === 'fixture' || kind === 'personal') return false;
   if (kind === 'workshop' || kind === 'lesson') return false;
+  if (/^MC ⏳|Decompress/i.test(b.title || '')) return false;
   return kind === 'habit' || kind === 'mc_task' || !!b.habit_id || b.display_id != null;
 }
 

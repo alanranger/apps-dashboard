@@ -919,6 +919,27 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 }
 .cf-load-row .meta { display:block; margin-top:2px; }
 .cf-empty { padding:24px 8px; text-align:center; }
+.cf-baseline-banner {
+  margin:0 0 10px; padding:8px 10px; border-radius:6px;
+  border:1px solid rgba(251,191,36,0.45); background:rgba(251,191,36,0.1);
+  font-size:13px; line-height:1.35;
+}
+.dy-oos-badge, .dy-orphan-badge {
+  font-size:9px; font-weight:800; letter-spacing:0.04em; padding:1px 4px;
+  border-radius:3px; flex-shrink:0;
+}
+.dy-oos-badge { background:#f59e0b; color:#111; }
+.dy-orphan-badge { background:#64748b; color:#fff; }
+.dy-block.dy-oos { outline:2px dashed #f59e0b; }
+.dy-block.dy-gcal-orphan { opacity:0.88; border-style:dashed; }
+.dy-drift-banner {
+  margin:8px 0; padding:8px 10px; border-radius:6px;
+  border:1px solid rgba(245,158,11,0.5); background:rgba(245,158,11,0.12);
+  font-size:13px;
+}
+.dy-day-oos-label {
+  margin-top:4px; font-size:10px; font-weight:800; letter-spacing:0.04em; color:#fbbf24;
+}
 .dy-teaching { background:rgba(124,45,18,0.12); }
 .dy-rest { background:repeating-linear-gradient(-45deg, rgba(30,58,138,0.16), rgba(30,58,138,0.16) 6px, rgba(30,58,138,0.05) 6px, rgba(30,58,138,0.05) 12px); }
 .dy-bh .dy-day-head { border-bottom:2px solid #f59e0b; }

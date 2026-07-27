@@ -329,21 +329,27 @@ function renderToolbar(data) {
   const autoOn = !!push.auto_sync_enabled;
   const signed = !!push.auto_sync_signed_off;
   const pushTone = !actionable ? 'dy-push-idle' : enabled ? 'dy-push-go' : 'dy-push-blocked';
+  const driftN = Number(data.gcal_drift_count || 0);
   const statusLabel = !enabled
     ? 'Cursor GCal not configured'
     : autoOn && signed
       ? (actionable ? 'Auto-sync on · writes waiting' : 'Auto-sync on · nothing to write')
       : (actionable ? 'Manual Push ready (auto-sync gated)' : 'Nothing actionable · auto-sync gated');
+  const driftNote = driftN > 0
+    ? `<p class="dy-drift-banner"><strong>${driftN} block${driftN === 1 ? '' : 's'} out of sync</strong> —
+        Diary shows <strong>Google</strong> times; DB pin differs (amber OUT OF SYNC). Drag here then Push to realign.</p>`
+    : `<p class="meta dy-edit-hint">Visual baseline = <strong>Google Calendar</strong> times for linked MC blocks. Drag blue/green to reschedule · Push writes Google.</p>`;
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
         <div>
           <strong>Diary</strong>
-          <span class="meta"> · Mon–Sun · 8 weeks · 30-min axis · ${data.from} → ${data.to}</span>
+          <span class="meta"> · Mon–Sun · 8 weeks · 30-min axis · ${data.from} → ${data.to}
+            · baseline Google</span>
         </div>
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
       </div>
-      <p class="meta dy-edit-hint">Editable: <strong>blue tasks</strong> &amp; <strong>green habits</strong> (grab cursor + ☑). Everything else is Google Calendar truth.</p>
+      ${driftNote}
       <div class="dy-push-panel ${pushTone}">
         <div class="dy-push-panel-head">
           <span class="dy-push-kicker">Google Calendar sync</span>
@@ -455,16 +461,21 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     isBuffer ? 'dy-buffer-strip' : '',
     b.client_fixed ? 'dy-client-fixed' : '',
     done ? 'dy-done-block' : '',
+    b.out_of_sync ? 'dy-oos' : '',
+    b.gcal_orphan ? 'dy-gcal-orphan' : '',
     stackClass(b.kind, isBuffer),
     conflict,
     tall,
     lane > 0 ? `dy-lane-${Math.min(lane, 2)}` : '',
   ].filter(Boolean).join(' ');
-  const canEdit = !!(b.editable && !isBuffer && !done);
+  const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
   // Allow drag even when pinned — drop will unlock. Client-fixed stays locked.
   const canDrag = !!(canEdit && !b.client_fixed);
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
+    b.gcal_baseline ? 'Time from Google Calendar' : '',
+    b.out_of_sync ? '⚠ DB pin differs from Google — showing Google' : '',
+    b.gcal_orphan ? 'On Google only (not linked in MC DB)' : '',
     conflict ? '⚠ Overlap — drag sideways lane to shuffle' : '',
     done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
     done && b.actual_minutes == null ? 'Completed · can’t move' : '',
@@ -489,6 +500,8 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     ? `<span class="dy-done-badge">DONE${b.actual_minutes != null ? ` ${b.actual_minutes}m` : ''}</span>`
     : '';
   const conflictBadge = conflict ? '<span class="dy-conflict-badge">CONFLICT</span>' : '';
+  const oosBadge = b.out_of_sync ? '<span class="dy-oos-badge" title="DB pin differs from Google">OUT OF SYNC</span>' : '';
+  const orphanBadge = b.gcal_orphan ? '<span class="dy-orphan-badge" title="Google only">GCAL</span>' : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())
       ? `<span class="dy-type-icon" aria-hidden="true">${KIND_ICON.buffer}</span> ${b.title}`
@@ -504,6 +517,8 @@ function renderBlock(b, axis, conflicts, lane = 0) {
       <span class="dy-block-label">${label}</span>
       ${editBadge}
       ${doneBadge}
+      ${oosBadge}
+      ${orphanBadge}
       ${conflictBadge}
       ${priorityTag(b.priority)}
       ${lock}
@@ -526,6 +541,7 @@ function renderAwayOverlays(day, overlays, away, axis) {
 
 function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlays) {
   const dayBlocks = blocks.filter((b) => b.day === day);
+  const dayDrift = dayBlocks.filter((b) => b.out_of_sync).length;
   const conflicts = conflictIds(dayBlocks);
   const lanes = conflictLanes(dayBlocks, conflicts);
   const kind = away?.kind || (away ? 'away_span' : null);
@@ -537,12 +553,16 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlay
     isRest ? 'dy-rest' : '',
     isTeaching ? 'dy-teaching' : '',
     holidayTitle ? 'dy-bh' : '',
+    dayDrift ? 'dy-day-oos' : '',
   ].filter(Boolean).map((c) => ` ${c}`).join('');
   const statusBanner = isAway
     ? `<div class="dy-away-label" title="${away.summary || ''}">AWAY</div>`
     : isRest
       ? `<div class="dy-rest-label" title="${away.summary || ''}">REST</div>`
       : '';
+  const oosBanner = dayDrift
+    ? `<div class="dy-day-oos-label" title="DB pin differs from Google">${dayDrift} out of sync</div>`
+    : '';
   const bhBadge = holidayTitle
     ? `<div class="dy-bh-badge" title="${holidayTitle}">BANK HOLIDAY</div>`
     : '';
@@ -565,6 +585,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlay
         <div class="dy-wd">${wd}</div>
         <div class="dy-date">${fmtDayLabel(day)}</div>
         ${bhBadge}
+        ${oosBanner}
       </div>
       <div class="dy-day-grid" data-day="${day}"
         style="height:${axis.grid_px || 1152}px;--dy-step:${axis.px_per_step || 36}px">

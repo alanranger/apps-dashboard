@@ -285,3 +285,77 @@ describe('gcal push related_id', () => {
     assert.equal(relatedIdForHabit('h1', '2026-08-15'), 'gcal:habit:h1:2026-08-15');
   });
 });
+
+describe('gcal visual baseline', () => {
+  const {
+    applyGcalBaselineTimes, indexGcalEventsById, untiedMcBlocks,
+  } = require('../../api/mc/diary-lib.js');
+
+  it('overrides tied block times from Google and flags drift', () => {
+    const eventById = indexGcalEventsById([{
+      id: 'evt1',
+      summary: 'MC habit',
+      start: { dateTime: '2026-07-28T11:00:00+01:00' },
+      end: { dateTime: '2026-07-28T12:00:00+01:00' },
+    }]);
+    const { blocks, drift_count } = applyGcalBaselineTimes([{
+      id: 'habit:1:2026-07-28',
+      kind: 'habit',
+      title: 'Publish',
+      day: '2026-07-28',
+      start: '2026-07-28T09:00:00.000Z',
+      end: '2026-07-28T10:00:00.000Z',
+      start_min: 10 * 60,
+      end_min: 11 * 60,
+      calendar_event_id: 'evt1',
+      editable: true,
+      done: false,
+    }], eventById);
+    assert.equal(blocks[0].gcal_baseline, true);
+    assert.equal(blocks[0].out_of_sync, true);
+    assert.equal(drift_count, 1);
+    assert.equal(blocks[0].start_min, 11 * 60);
+    assert.equal(blocks[0].end_min, 12 * 60);
+  });
+
+  it('paints untied MC orphans read-only', () => {
+    const orphans = untiedMcBlocks([{
+      id: 'orphan1',
+      summary: 'MC 🔁 Blog',
+      start: { dateTime: '2026-07-28T14:00:00+01:00' },
+      end: { dateTime: '2026-07-28T15:00:00+01:00' },
+    }], new Set());
+    assert.equal(orphans.length, 1);
+    assert.equal(orphans[0].gcal_orphan, true);
+    assert.equal(orphans[0].editable, false);
+  });
+});
+
+describe('habit_placement flush parse', () => {
+  const { planFromBacklogRow } = require('../../api/mc/gcal-flush-lib.js');
+  const hid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+  it('parses CREATE Primary block placer text', () => {
+    const plan = planFromBacklogRow({
+      id: 'p1',
+      related_id: `habit_place:${hid}:2026-10-08`,
+      proposed_action: `CREATE Primary block "Publish Blog Post" 2026-10-08 11:30–13:30. recurring_task_id=${hid}; ideal_date=2026-10-08.`,
+    });
+    assert.equal(plan.skip, undefined);
+    assert.equal(plan.action, 'insert');
+    assert.equal(plan.habit_id, hid);
+    assert.equal(plan.sync_recurring_log, true);
+    assert.ok(plan.insert?.startIso);
+  });
+
+  it('parses MOVE event placer text', () => {
+    const plan = planFromBacklogRow({
+      id: 'p2',
+      related_id: `habit_place:${hid}:2026-09-24`,
+      proposed_action: `MOVE event abc123XYZ to 2026-09-24 09:00–10:00 (was 2026-09-17 09:00–10:00). recurring_task_id=${hid}; ideal_date=2026-09-24.`,
+    });
+    assert.equal(plan.action, 'patch');
+    assert.equal(plan.event_id, 'abc123XYZ');
+    assert.equal(plan.sync_recurring_log, true);
+  });
+});

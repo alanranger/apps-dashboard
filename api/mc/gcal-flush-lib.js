@@ -144,6 +144,11 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
 
 function planFromBacklogRow(row) {
   const action = String(row.proposed_action || '');
+  const tie = /recurring_task_id=([0-9a-f-]{36}).*?ideal_date=(\d{4}-\d{2}-\d{2})/i.exec(action)
+    || /habit_place:([0-9a-f-]{36}):(\d{4}-\d{2}-\d{2})/i.exec(String(row.related_id || ''));
+  const habitId = tie?.[1] || null;
+  const idealDate = tie?.[2] || null;
+
   const del = /DELETE Primary event ([A-Za-z0-9_-]+)/i.exec(action);
   if (del) {
     return {
@@ -156,8 +161,55 @@ function planFromBacklogRow(row) {
       from: null,
       to: null,
       related_id: row.related_id,
+      habit_id: habitId,
+      ideal_date: idealDate,
+      sync_recurring_log: !!habitId,
     };
   }
+
+  const createHabit = /CREATE Primary block "([^"]+)" (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})[–-](\d{2}:\d{2})/i
+    .exec(action);
+  if (createHabit && habitId) {
+    const times = londonHmRangeToIso(createHabit[2], createHabit[3], createHabit[4]);
+    return {
+      source: 'pending_diary_changes',
+      source_id: row.id,
+      entity_type: 'habit',
+      action: 'insert',
+      event_id: null,
+      summary: null,
+      from: null,
+      to: { start: times.startIso, end: times.endIso, day: createHabit[2] },
+      insert: { summary: null, startIso: times.startIso, endIso: times.endIso },
+      related_id: row.related_id,
+      habit_id: habitId,
+      ideal_date: idealDate,
+      needs_habit_title: createHabit[1],
+      sync_recurring_log: true,
+    };
+  }
+
+  const moveEvt = /MOVE event ([A-Za-z0-9_-]+) to (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})[–-](\d{2}:\d{2})/i
+    .exec(action);
+  if (moveEvt) {
+    const times = londonHmRangeToIso(moveEvt[2], moveEvt[3], moveEvt[4]);
+    return {
+      source: 'pending_diary_changes',
+      source_id: row.id,
+      entity_type: 'habit',
+      action: 'patch',
+      event_id: moveEvt[1],
+      summary: null,
+      from: null,
+      to: { start: times.startIso, end: times.endIso, day: moveEvt[2] },
+      patch: { startIso: times.startIso, endIso: times.endIso },
+      related_id: row.related_id,
+      habit_id: habitId,
+      ideal_date: idealDate,
+      sync_recurring_log: !!habitId,
+    };
+  }
+
   const move = /MOVE MC-(\d+).*?event ([A-Za-z0-9_-]+) to (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})[–-](\d{2}:\d{2})/i
     .exec(action);
   if (move) {
@@ -190,7 +242,10 @@ function planFromBacklogRow(row) {
       to: { start: movePrimary[2], end: movePrimary[3] },
       patch: { startIso: movePrimary[2], endIso: movePrimary[3] },
       related_id: row.related_id,
+      habit_id: habitId,
+      ideal_date: idealDate,
       needs_habit_from_event: true,
+      sync_recurring_log: !!habitId,
     };
   }
   const moveHabit = /MOVE\/CREATE habit "([^"]+)" block to (\S+) [–-] (\S+)/i.exec(action);
@@ -208,7 +263,10 @@ function planFromBacklogRow(row) {
         to: { start: moveHabit[2], end: moveHabit[3] },
         patch: { startIso: moveHabit[2], endIso: moveHabit[3] },
         related_id: row.related_id,
+        habit_id: habitId,
+        ideal_date: idealDate,
         needs_habit_title: moveHabit[1],
+        sync_recurring_log: !!habitId,
       };
     }
   }
@@ -318,6 +376,7 @@ async function buildFlushPlan(sb) {
       const title = habitGcalTitle(plan.needs_habit_title, prefixes);
       plan.summary = title;
       plan.patch = { ...plan.patch, summary: title };
+      if (plan.insert) plan.insert = { ...plan.insert, summary: title };
     }
     fromBacklog.push(plan);
   }
@@ -345,6 +404,56 @@ async function buildFlushPlan(sb) {
   };
 }
 
+async function syncRecurringLogAfterFlush(sb, w, eventId) {
+  if (!w.sync_recurring_log || !w.habit_id || !w.ideal_date) return;
+  const startIso = w.patch?.startIso || w.insert?.startIso || w.to?.start || null;
+  const endIso = w.patch?.endIso || w.insert?.endIso || w.to?.end || null;
+  const existing = await sb(
+    `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${w.ideal_date}`
+    + '&select=id&order=at.desc&limit=1',
+  );
+  if (w.action === 'delete') {
+    if (existing?.[0]?.id) {
+      await sb(`recurring_log?id=eq.${existing[0].id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          change: `skipped ${w.ideal_date}|gcal_flush_delete`,
+          calendar_event_id: null,
+          roll_reason: 'gcal_flush_sync',
+        },
+      });
+    }
+    return;
+  }
+  if (!startIso || !endIso) return;
+  const day = String(w.to?.day || startIso).slice(0, 10);
+  const scheduled = /^\d{4}-\d{2}-\d{2}$/.test(day)
+    ? day
+    : new Date(startIso).toISOString().slice(0, 10);
+  const body = {
+    change: `diary_pin:${startIso}|${endIso}`,
+    scheduled_date: scheduled,
+    calendar_event_id: eventId || w.event_id || null,
+    roll_reason: 'gcal_flush_sync',
+    ideal_date: w.ideal_date,
+    projection_key: `diary:${w.habit_id}:${w.ideal_date}`,
+  };
+  if (existing?.[0]?.id) {
+    await sb(`recurring_log?id=eq.${existing[0].id}`, {
+      method: 'PATCH', prefer: 'return=minimal', body,
+    });
+  } else {
+    await sb('recurring_log', {
+      method: 'POST', prefer: 'return=minimal',
+      body: {
+        recurring_task_id: w.habit_id,
+        actor: 'cursor-flush',
+        ...body,
+      },
+    });
+  }
+}
+
 async function applyFlushPlan(sb, plan, actor) {
   const results = [];
   for (const w of plan.writes || []) {
@@ -364,6 +473,10 @@ async function applyFlushPlan(sb, plan, actor) {
           continue;
         }
       } else if (w.action === 'insert') {
+        if (!w.insert?.summary) {
+          results.push({ ...w, ok: false, error: 'insert_missing_title' });
+          continue;
+        }
         const created = await insertPrimaryEvent(w.insert);
         eventId = created.id;
         const v = await verifyPrimaryEvent(eventId, {
@@ -375,7 +488,7 @@ async function applyFlushPlan(sb, plan, actor) {
           results.push({ ...w, ok: false, error: 'readback_mismatch', event_id: eventId, verify: v });
           continue;
         }
-        if (w.habit_id && w.ideal_date) {
+        if (w.habit_id && w.ideal_date && !w.sync_recurring_log) {
           await sb(
             `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${w.ideal_date}`,
             {
@@ -394,6 +507,8 @@ async function applyFlushPlan(sb, plan, actor) {
         results.push({ ...w, ok: false, error: 'unknown_action' });
         continue;
       }
+
+      await syncRecurringLogAfterFlush(sb, w, eventId);
 
       if (w.source === 'gcal_push_queue' && w.source_id) {
         await markPushStatus(sb, [w.source_id], 'applied', actor || 'cursor-flush');
@@ -425,6 +540,7 @@ module.exports = {
   applyFlushPlan,
   planFromPushRow,
   planFromBacklogRow,
+  syncRecurringLogAfterFlush,
   dedupePlans,
   safeTitle,
 };

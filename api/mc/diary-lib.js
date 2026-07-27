@@ -340,6 +340,104 @@ function habitLogsToBlocks(logs, habitMap) {
   return out;
 }
 
+const GCAL_DRIFT_TOLERANCE_MIN = 5;
+
+/** Index Primary events by id for Diary visual baseline. */
+function indexGcalEventsById(events) {
+  const map = new Map();
+  for (const e of events || []) {
+    if (!e?.id) continue;
+    const start = e.start?.dateTime || e.start;
+    const end = e.end?.dateTime || e.end;
+    if (!start || !String(start).includes('T')) continue;
+    map.set(e.id, {
+      id: e.id,
+      start: String(start),
+      end: end ? String(end) : String(start),
+      summary: e.summary || null,
+    });
+  }
+  return map;
+}
+
+/**
+ * Paint tied DB blocks at live Google times (visual baseline).
+ * Keeps DB ids for edit/push; flags out_of_sync when pin differs.
+ */
+function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOLERANCE_MIN) {
+  let driftCount = 0;
+  const out = (blocks || []).map((b) => {
+    if (b.done || !b.calendar_event_id || !eventById?.has(b.calendar_event_id)) {
+      return { ...b, gcal_baseline: false, out_of_sync: false };
+    }
+    const g = eventById.get(b.calendar_event_id);
+    const dbStart = b.start;
+    const dbEnd = b.end;
+    const dbDay = b.day;
+    const startMs = Date.parse(g.start);
+    const endMs = Date.parse(g.end);
+    const dbStartMs = Date.parse(dbStart);
+    const dbEndMs = Date.parse(dbEnd || dbStart);
+    const driftStart = Number.isFinite(startMs) && Number.isFinite(dbStartMs)
+      ? Math.abs(startMs - dbStartMs) / 60000
+      : 0;
+    const driftEnd = Number.isFinite(endMs) && Number.isFinite(dbEndMs)
+      ? Math.abs(endMs - dbEndMs) / 60000
+      : 0;
+    const outOfSync = driftStart > toleranceMin || driftEnd > toleranceMin;
+    if (outOfSync) driftCount += 1;
+    const start_min = isoToLondonMinutes(g.start);
+    const end_min = isoToLondonMinutes(g.end);
+    return {
+      ...b,
+      start: g.start,
+      end: g.end,
+      day: isoToLondonDate(g.start),
+      start_min,
+      end_min,
+      duration_min: Math.max(0, end_min - start_min),
+      gcal_baseline: true,
+      out_of_sync: outOfSync,
+      db_start: dbStart,
+      db_end: dbEnd,
+      db_day: dbDay,
+    };
+  });
+  return { blocks: out, drift_count: driftCount };
+}
+
+/** Untied Primary MC events — visible read-only orphans. */
+function untiedMcBlocks(mcEvents, tiedIds) {
+  const fixedRe = /Travel out|Travel back|Travel —|Decompress|AWAY —|REST —|^MC 🚗|^MC ⏳|^MC 🚫|^MC 🛌/i;
+  const out = [];
+  for (const e of mcEvents || []) {
+    if (!e?.id || (tiedIds && tiedIds.has(e.id))) continue;
+    const start = e.start?.dateTime || e.start;
+    const end = e.end?.dateTime || e.end;
+    if (!start || !String(start).includes('T')) continue;
+    const title = e.summary || 'MC block';
+    const kind = /travel/i.test(title)
+      ? 'travel'
+      : (/decompress|buffer/i.test(title) ? 'buffer' : 'habit');
+    const block = toBlock({
+      id: `gcal-mc:${e.id}`,
+      kind,
+      title,
+      start: String(start),
+      end: end ? String(end) : String(start),
+      editable: false,
+      calendar_event_id: e.id,
+    });
+    block.gcal_orphan = true;
+    block.gcal_baseline = true;
+    block.read_only = true;
+    block.out_of_sync = false;
+    if (fixedRe.test(title)) block.client_fixed = false;
+    out.push(block);
+  }
+  return out;
+}
+
 /** Monday-on-or-before (London YMD) — weeks are Mon–Sun. */
 function mondayOnOrBefore(ymd) {
   const d = new Date(`${ymd}T12:00:00Z`);
@@ -668,6 +766,10 @@ module.exports = {
   parseDiaryPin,
   parseCompleteMeta,
   isSkippedChange,
+  indexGcalEventsById,
+  applyGcalBaselineTimes,
+  untiedMcBlocks,
+  GCAL_DRIFT_TOLERANCE_MIN,
   insertDecompressStrips,
   warnDrop,
   weeksFrom,

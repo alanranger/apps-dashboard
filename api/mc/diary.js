@@ -1,5 +1,6 @@
 /**
- * GET /api/mc/diary — 4-week diary feed (DB master + GCal READ for busy).
+ * GET /api/mc/diary — 8-week diary feed.
+ * Visual baseline: live Google times for tied MC events; DB keeps identity for edits.
  * calendar_writes: always 0
  */
 const { envReady, json, cors, requireAuth, sb } = require('./_lib');
@@ -10,6 +11,7 @@ const {
   tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, awayBusySegments,
+  indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
@@ -57,16 +59,20 @@ module.exports = async function handler(req, res) {
     let dayBanners = [];
     let gcalHealth = null;
     let busyEvents = [];
+    let mcEvents = [];
+    let eventById = new Map();
+    const tiedIds = new Set([
+      ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
+      ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
+      ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
+    ]);
     if (gcalConfigured()) {
       const { events, assessment } = await fetchHorizonEvents(timeMin, timeMax);
       gcalHealth = assessment;
       const split = splitMcAndBusy(events, ruleMap);
-      // DB already paints tasks/habits — drop their GCal twins or they stack as CONFLICT.
-      const tiedIds = new Set([
-        ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
-        ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
-        ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
-      ]);
+      mcEvents = split.mc || [];
+      eventById = indexGcalEventsById([...(split.mc || []), ...(split.busy || [])]);
+      // Drop tied twins from busy paint — DB/orphan path owns them.
       busyEvents = (split.busy || []).filter((e) => !e?.id || !tiedIds.has(e.id));
       const fixtures = (split.fixtures || []).filter((e) => !e?.id || !tiedIds.has(e.id));
       busyBlocks = busyToBlocks(busyEvents, fixtures);
@@ -81,23 +87,25 @@ module.exports = async function handler(req, res) {
     const awaySpans = awaySpansFromTravelBlocks(travel || []);
     const teachingSpans = teachingDaySpansFromEvents(busyEvents || [], ruleMap);
     const restSpans = restDaySpansFromWorkshopEvents(busyEvents || [], ruleMap);
-    const rawBlocks = [
+    const dbBlocks = [
       ...tasksToBlocks(tasks, today),
       ...habitLogsToBlocks(logs, habitMap),
       ...travelToBlocks(travel),
       ...busyBlocks,
       ...fixtureFlanksToBlocks(fixtureRows),
     ];
-    const blocks = insertDecompressStrips(rawBlocks, ruleMap);
+    const { blocks: baselined, drift_count: driftCount } = applyGcalBaselineTimes(dbBlocks, eventById);
+    const orphans = untiedMcBlocks(mcEvents, tiedIds);
+    const blocks = insertDecompressStrips([...baselined, ...orphans], ruleMap);
 
     const awayDays = {};
     for (const span of awaySpans) {
       // Full AWAY column = middle days; travel days use timed away_overlays.
-      const from = span.middleStart || (span.partial_edges ? null : span.startDay);
-      const to = span.middleEnd || (span.partial_edges ? null : span.endDay);
-      if (!from || !to) continue;
-      let d = from;
-      while (d <= to) {
+      const spanFrom = span.middleStart || (span.partial_edges ? null : span.startDay);
+      const spanTo = span.middleEnd || (span.partial_edges ? null : span.endDay);
+      if (!spanFrom || !spanTo) continue;
+      let d = spanFrom;
+      while (d <= spanTo) {
         awayDays[d] = {
           label: 'AWAY',
           summary: span.summary || null,
@@ -149,6 +157,8 @@ module.exports = async function handler(req, res) {
         grid_px: GRID_PX,
       },
       blocks,
+      gcal_drift_count: driftCount,
+      visual_baseline: 'google_calendar',
       away_days: awayDays,
       away_spans: awaySpans,
       away_overlays: awayBusySegments(awaySpans, DAY_START_MIN, DAY_END_MIN),

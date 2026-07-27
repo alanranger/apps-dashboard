@@ -57,15 +57,19 @@ function loadMeter(preview) {
   if (!preview?.ok || preview.kind !== 'cap') return '';
   const load = preview.load_min || 0;
   const cap = preview.cap_min || 270;
-  const over = preview.over_min || Math.max(0, load - cap);
-  const pct = Math.min(100, Math.round((load / Math.max(cap, 1)) * 100));
+  const over = preview.over_min != null ? preview.over_min : Math.max(0, load - cap);
+  const pct = Math.min(140, Math.round((load / Math.max(cap, 1)) * 100));
   const overCls = over > 0 ? ' cf-meter-over' : '';
+  const status = over > 0
+    ? `· <span class="cf-over">${over}m over</span>`
+    : '· at/under cap on live Google times';
   return `
     <div class="cf-meter${overCls}">
-      <div class="cf-meter-bar"><div class="cf-meter-fill" style="width:${pct}%"></div></div>
+      <div class="cf-meter-bar"><div class="cf-meter-fill" style="width:${Math.min(100, pct)}%"></div></div>
       <div class="cf-meter-label">
         <strong>${load}m</strong> used of <strong>${cap}m</strong> hard cap
-        ${over > 0 ? `· <span class="cf-over">${over}m over</span>` : '· under cap'}
+        ${status}
+        <span class="meta"> (Google baseline)</span>
       </div>
     </div>`;
 }
@@ -145,24 +149,22 @@ function loadBlockList(ex, preview) {
     return `<p class="meta">No movable MC work blocks found on this day yet — open Diary to inspect.</p>`;
   }
   return `
-    <p class="meta">Orange blocks count toward the daily cap. Move the longest/lowest-value ones off this day.</p>
-    <ul class="cf-load-list">${rows}</ul>
-    <div class="cf-actions">
-      <button type="button" class="btn-secondary" data-cf-diary="${esc(ex.date || '')}">Open in Diary</button>
-      <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
-    </div>`;
+    <p class="meta">Prefer <strong>Open in Diary</strong>. Orange = counts to cap on Google times. Moves here are last-resort.</p>
+    <ul class="cf-load-list">${rows}</ul>`;
 }
 
 function daySide(ex, preview) {
+  const diaryFirst = `
+    <div class="cf-actions" style="margin-top:0;margin-bottom:10px">
+      <button type="button" class="btn-verify" data-cf-diary="${esc(ex.date || '')}">Open in Diary (baseline)</button>
+      <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
+    </div>`;
   return `
+    ${diaryFirst}
     <p class="cf-clash">${esc(ex.clashing).replace(/\n/g, '<br>')}</p>
     <p class="meta">${esc(ex.why)}</p>
     ${ex.type === 'cap' ? loadMeter(preview) : ''}
-    ${ex.type === 'cap' ? loadBlockList(ex, preview) : `
-      <div class="cf-actions">
-        <button type="button" class="btn-secondary" data-cf-diary="${esc(ex.date || '')}">Open in Diary</button>
-        <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
-      </div>`}`;
+    ${ex.type === 'cap' ? loadBlockList(ex, preview) : ''}`;
 }
 
 function datedBody(ex, preview) {
@@ -238,8 +240,11 @@ export function buildConflictResolverPanel(pending) {
       <div>
         <h2><i class="ti ti-layout-sidebar"></i> Conflict day view
           <span class="pill sched-ex-count">${visible.length}</span></h2>
-        <p class="sched-exceptions-banner"><strong>See the day. Pick what moves.</strong>
-          Cap days show which blocks eat the budget. Moves save to Mission Control now; Google waits for Push.</p>
+        <p class="sched-exceptions-banner cf-baseline-banner">
+          <strong>Not the source of truth.</strong>
+          Diary mirrors <strong>Google Calendar</strong> times — open the day there, drag to fix, then Push.
+          This list is detector leftovers only.
+        </p>
       </div>
       <div class="cf-filters">${filters}</div>
     </div>
