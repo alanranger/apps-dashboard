@@ -433,15 +433,23 @@ describe('habit-placer-lib — away spans', () => {
     assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-06'));
   });
 
-  it('does not place habit on teaching/client day', () => {
+  it('does not place habit on teaching/client day when rule enabled', () => {
     const { teachingDaySpansFromEvents } = require('../../api/mc/habit-placer-lib.js');
+    const on = { teaching_day_whole_day_block: 'true' };
     const teaching = teachingDaySpansFromEvents([{
       summary: 'Landscape workshop',
       _calendarId: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
       start: { dateTime: '2026-09-10T10:00:00+01:00' },
       end: { dateTime: '2026-09-10T16:00:00+01:00' },
-    }]);
+    }], on);
     assert.equal(teaching[0].startDay, '2026-09-10');
+    const off = teachingDaySpansFromEvents([{
+      summary: 'Landscape workshop',
+      _calendarId: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
+      start: { dateTime: '2026-09-10T10:00:00+01:00' },
+      end: { dateTime: '2026-09-10T16:00:00+01:00' },
+    }], { teaching_day_whole_day_block: 'false' });
+    assert.equal(off.length, 0);
     const habit = {
       id: 'hy', title: 'BAU tick', priority: 'p2', duration_min: 30,
       ideal_time: '11:00', window_days: 0, time_critical: false,

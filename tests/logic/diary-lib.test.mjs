@@ -243,7 +243,8 @@ describe('week capacity — real load', () => {
         start_min: 7 * 60, end_min: 9 * 60, synthetic: false,
       },
     ];
-    const cap = weekCapacity(days, blocks, awayDays, rules, new Set());
+    const on = { ...rules, teaching_day_whole_day_block: 'true' };
+    const cap = weekCapacity(days, blocks, awayDays, on, new Set());
     assert.equal(cap.away_days, 2);
     assert.equal(cap.teaching_days, 1);
     assert.equal(cap.breakdown_h.away, 34); // 2 × 17h
@@ -252,6 +253,17 @@ describe('week capacity — real load', () => {
     assert.ok(cap.breakdown_h.travel > 0);
     // teaching day capacity == committed (no spare admin)
     assert.equal(cap.free_min, 0);
+  });
+
+  it('teaching whole-day capacity is off by default', () => {
+    const { weekCapacity } = require('../../api/mc/diary-lib.js');
+    const blocks = [{
+      day: '2026-08-07', kind: 'workshop', client_fixed: true,
+      start_min: 10 * 60, end_min: 12 * 60, synthetic: false,
+    }];
+    const cap = weekCapacity(['2026-08-07'], blocks, {}, rules, new Set());
+    assert.equal(cap.teaching_days, 0);
+    assert.ok(cap.free_min > 0);
   });
 
   it('normal day includes evening catch-up unless evening fixture', () => {

@@ -238,10 +238,19 @@ function isTeachingCalendarEvent(e) {
 }
 
 /**
- * Whole-day hard blocks for workshop / lesson / Zoom 1-2-1 days.
- * Alan: teaching day owns the day — no habits/tasks.
+ * Whole-day teaching/client block — DISABLED by default until baseline is stable.
+ * Toggle: scheduling_rules.teaching_day_whole_day_block (default false).
  */
-function teachingDaySpansFromEvents(events) {
+function teachingDayRuleEnabled(ruleMap = {}) {
+  return String(ruleMap.teaching_day_whole_day_block || 'false') === 'true';
+}
+
+/**
+ * Whole-day hard blocks for workshop / lesson / Zoom 1-2-1 days.
+ * Only when teaching_day_whole_day_block=true.
+ */
+function teachingDaySpansFromEvents(events, ruleMap = {}) {
+  if (!teachingDayRuleEnabled(ruleMap)) return [];
   const byDay = new Map();
   for (const e of events || []) {
     if (!isTeachingCalendarEvent(e)) continue;
@@ -890,6 +899,7 @@ module.exports = {
   dayInsideAwaySpan,
   dayBlockedForPlacement,
   coveringBlockedSpan,
+  teachingDayRuleEnabled,
   teachingDaySpansFromEvents,
   datedTasksToIntervals,
   findTaskBumps,

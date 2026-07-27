@@ -67,7 +67,7 @@ module.exports = async function handler(req, res) {
     }
 
     const awaySpans = awaySpansFromTravelBlocks(travel || []);
-    const teachingSpans = teachingDaySpansFromEvents(busyEvents || []);
+    const teachingSpans = teachingDaySpansFromEvents(busyEvents || [], ruleMap);
     const restSpans = restDaySpansFromWorkshopEvents(busyEvents || [], ruleMap);
     const rawBlocks = [
       ...tasksToBlocks(tasks, today),
@@ -147,6 +147,9 @@ module.exports = async function handler(req, res) {
           ruleMap.rest_day_after_multiday_workshop != null
             ? ruleMap.rest_day_after_multiday_workshop
             : 'true',
+        ) === 'true',
+        teaching_day_whole_day_block: String(
+          ruleMap.teaching_day_whole_day_block || 'false',
         ) === 'true',
       },
       push: {

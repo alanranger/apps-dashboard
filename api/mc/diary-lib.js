@@ -7,6 +7,7 @@ const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
   dayBlockedForPlacement, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
+  teachingDayRuleEnabled,
   londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
@@ -562,7 +563,9 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
     }
 
     // Teaching / client day (tagged or inferred from blocks).
-    if (dayKind === 'teaching_day' || dayIsTeaching(dayBlocks)) {
+    // Teaching/client whole-day ownership — only when rule enabled.
+    if (teachingDayRuleEnabled(ruleMap)
+      && (dayKind === 'teaching_day' || dayIsTeaching(dayBlocks))) {
       teachingDays += 1;
       const committed = mergedMins(dayBlocks);
       available += Math.max(committed, 1);
@@ -634,6 +637,7 @@ module.exports = {
   splitMcAndBusy,
   awaySpansFromTravelBlocks,
   teachingDaySpansFromEvents,
+  teachingDayRuleEnabled,
   restDaySpansFromWorkshopEvents,
   dayBlockedForPlacement,
   tasksToBlocks,
