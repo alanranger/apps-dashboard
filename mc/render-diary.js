@@ -182,14 +182,14 @@ async function runMenuAction(act, block, refresh) {
           task_id: block.kind === 'mc_task' ? block.id.replace(/^task:/, '') : undefined,
           habit_id: block.habit_id || undefined,
           display_id: block.display_id || undefined,
-          completed_on: block.day || undefined,
+          completed_at: new Date().toISOString(),
           scheduled_date: block.day || undefined,
           ideal_date: block.ideal_date || block.day || undefined,
           calendar_event_id: block.calendar_event_id || undefined,
           actual_minutes: actual,
         },
       });
-      toast(`Completed · ${actual}m actual · queued for Claude`);
+      toast(`Completed · ${actual}m actual · placed at completion time · queued for Claude`);
     } else if (act === 'lock' || act === 'unlock') {
       await api('/api/mc/diary-action', {
         method: 'POST',
@@ -391,10 +391,11 @@ function stackClass(kind, isBuffer) {
   return 'dy-z-mc';
 }
 
-/** Mark genuine time conflicts between non-buffer blocks (do NOT split into columns). */
+/** Mark genuine time conflicts between non-buffer, non-done blocks. */
 function conflictIds(dayBlocks) {
   const timed = (dayBlocks || [])
-    .filter((b) => !b.is_buffer && !b.synthetic && (b.end_min || 0) > (b.start_min || 0));
+    .filter((b) => !b.is_buffer && !b.synthetic && !b.done
+      && (b.end_min || 0) > (b.start_min || 0));
   const bad = new Set();
   for (let i = 0; i < timed.length; i += 1) {
     for (let j = i + 1; j < timed.length; j += 1) {

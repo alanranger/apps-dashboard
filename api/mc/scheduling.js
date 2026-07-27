@@ -93,6 +93,33 @@ async function resolvePending(id, status, actor) {
     err.status = 400;
     throw err;
   }
+  const cur = (await sb(`pending_diary_changes?id=eq.${id}&select=*`))?.[0];
+  if (!cur) {
+    const err = new Error('pending row not found');
+    err.status = 404;
+    throw err;
+  }
+  if (status === 'applied' && cur.change_type === 'task_bump') {
+    // Summary like: "Bump MC-14 → 2026-08-09 13:30–14:15"
+    const m = String(cur.summary || '').match(
+      /Bump MC-(\d+)\s*→\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})–(\d{2}:\d{2})/,
+    );
+    if (m) {
+      const { applyTaskBumpToDb } = require('./habit-placer-propose-lib');
+      const { londonYmdHmToUtcMs } = require('./habit-placer-lib');
+      const displayId = Number(m[1]);
+      const day = m[2];
+      const startIso = new Date(londonYmdHmToUtcMs(day, m[3])).toISOString();
+      const endIso = new Date(londonYmdHmToUtcMs(day, m[4])).toISOString();
+      await applyTaskBumpToDb(sb, {
+        display_id: displayId,
+        new_day: day,
+        new_start: startIso,
+        new_end: endIso,
+        reason: 'pending_apply',
+      });
+    }
+  }
   const rows = await sb(`pending_diary_changes?id=eq.${id}`, {
     method: 'PATCH',
     body: {

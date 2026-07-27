@@ -424,6 +424,7 @@ function findTaskBumps(placements, softTaskIntervals) {
           habit_day: p.day,
           habit_start: p.startIso,
           habit_end: p.endIso,
+          reason: 'habit_overlap',
           depends_on_display_id: task.depends_on_display_id,
           calendar_event_id: task.calendar_event_id,
         });
@@ -432,6 +433,77 @@ function findTaskBumps(placements, softTaskIntervals) {
     }
   }
   return expandBumpsWithDependents(bumps, softTaskIntervals);
+}
+
+/** Soft tasks sitting on rest/away/teaching blocked days. */
+function findBlockedDayTaskBumps(softTaskIntervals, blockedSpans) {
+  const bumps = [];
+  for (const task of softTaskIntervals || []) {
+    const day = isoToLondonDate(new Date(task.startMs).toISOString());
+    if (!day || !dayBlockedForPlacement(day, blockedSpans)) continue;
+    bumps.push({
+      display_id: task.display_id,
+      title: task.summary,
+      task_start: new Date(task.startMs).toISOString(),
+      task_end: new Date(task.endMs).toISOString(),
+      duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
+      habit_id: null,
+      habit_title: 'blocked day',
+      habit_day: day,
+      habit_start: null,
+      habit_end: null,
+      reason: 'on_blocked_day',
+      depends_on_display_id: task.depends_on_display_id,
+      calendar_event_id: task.calendar_event_id,
+    });
+  }
+  return bumps;
+}
+
+/** Soft tasks overlapping each other — bump the higher display_id. */
+function findSoftOverlapBumps(softTaskIntervals) {
+  const sorted = [...(softTaskIntervals || [])]
+    .sort((a, b) => Number(a.display_id) - Number(b.display_id));
+  const seen = new Set();
+  const bumps = [];
+  for (let i = 0; i < sorted.length; i += 1) {
+    for (let j = i + 1; j < sorted.length; j += 1) {
+      const a = sorted[i];
+      const b = sorted[j];
+      if (!overlaps(a.startMs, a.endMs, b.startMs, b.endMs)) continue;
+      const id = Number(b.display_id);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const day = isoToLondonDate(new Date(b.startMs).toISOString());
+      bumps.push({
+        display_id: id,
+        title: b.summary,
+        task_start: new Date(b.startMs).toISOString(),
+        task_end: new Date(b.endMs).toISOString(),
+        duration_min: Math.max(15, Math.round((b.endMs - b.startMs) / 60000)),
+        habit_id: null,
+        habit_title: `MC-${a.display_id}`,
+        habit_day: day,
+        habit_start: new Date(a.startMs).toISOString(),
+        habit_end: new Date(a.endMs).toISOString(),
+        reason: 'task_overlap',
+        depends_on_display_id: b.depends_on_display_id,
+        calendar_event_id: b.calendar_event_id,
+      });
+    }
+  }
+  return bumps;
+}
+
+function mergeTaskBumps(...lists) {
+  const byId = new Map();
+  for (const list of lists) {
+    for (const b of list || []) {
+      const id = Number(b.display_id);
+      if (!byId.has(id)) byId.set(id, b);
+    }
+  }
+  return [...byId.values()];
 }
 
 function orderBumpsByTaskDeps(bumps, softTaskIntervals) {
@@ -519,7 +591,10 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
         return '10:00';
       }
     })();
-    const awaySpans = (hardBusy || []).filter((b) => b.kind === 'away_span' || b.kind === 'teaching_day');
+    const awaySpans = (hardBusy || []).filter((b) => b.kind === 'away_span'
+      || b.kind === 'teaching_day'
+      || b.kind === 'rest_after_workshop'
+      || b.restDay);
     const startDay = notBeforeDay || bump.habit_day || fromYmd;
     const days = [];
     for (let i = 0; i <= 14; i += 1) {
@@ -903,6 +978,9 @@ module.exports = {
   teachingDaySpansFromEvents,
   datedTasksToIntervals,
   findTaskBumps,
+  findBlockedDayTaskBumps,
+  findSoftOverlapBumps,
+  mergeTaskBumps,
   placeBumpedTasks,
   findSharedCalendarEventFlags,
   orderHabitsForPlacement,

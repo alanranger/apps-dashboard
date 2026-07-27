@@ -3,10 +3,12 @@
  */
 const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
 const {
-  buildBusyIntervals, datedTasksToIntervals, findTaskBumps, placeBumpedTasks,
+  buildBusyIntervals, datedTasksToIntervals, findTaskBumps, findBlockedDayTaskBumps,
+  findSoftOverlapBumps, mergeTaskBumps, placeBumpedTasks,
   placeHabits, buildAmendments, provePlacement, awaySpansFromTravelBlocks,
   teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
 } = require('./habit-placer-lib');
+const { relatedIdForTask, upsertPushRow } = require('./gcal-push-lib');
 
 function londonHm(iso) {
   try {
@@ -132,6 +134,11 @@ function amendmentToPending(a) {
 
 function bumpToPending(b) {
   const bare = String(b.title || '').replace(/^MC-\d+\s*/, '');
+  const why = b.reason === 'on_blocked_day'
+    ? 'Task on rest/away day'
+    : b.reason === 'task_overlap'
+      ? 'Task overlaps another task'
+      : 'Habits outrank dated tasks (unpinned)';
   if (b.unplaced || !b.new_start) {
     return {
       change_type: 'task_bump',
@@ -139,8 +146,8 @@ function bumpToPending(b) {
       urgency: 'high',
       status: 'pending',
       related_id: `task_bump:MC-${b.display_id}:${b.habit_day}`,
-      summary: `UNPLACED bump MC-${b.display_id}: no legal slot (yields to "${b.habit_title}")`,
-      proposed_action: `FLAG MC-${b.display_id} ("${bare}") — cannot place within 14d under cap/window/gaps. Habit "${b.habit_title}" owns ${b.habit_day} ${londonHm(b.habit_start)}–${londonHm(b.habit_end)}. Alan rules.`,
+      summary: `UNPLACED bump MC-${b.display_id}: no legal slot (${why})`,
+      proposed_action: `FLAG MC-${b.display_id} ("${bare}") — cannot place within 14d under cap/window/gaps. ${why}.`,
       reason: 'Task bump UNPLACED — Cursor could not find a concrete slot',
     };
   }
@@ -151,11 +158,51 @@ function bumpToPending(b) {
     target_date: day,
     urgency: 'medium',
     status: 'pending',
-    related_id: `task_bump:MC-${b.display_id}:${b.habit_day}`,
+    related_id: `task_bump:MC-${b.display_id}:${b.habit_day || day}`,
     summary: `Bump MC-${b.display_id} → ${day} ${when}`,
-    proposed_action: `MOVE MC-${b.display_id} ("${bare}") to ${day} ${when} (was ${isoToLondonDate(b.task_start)} ${londonHm(b.task_start)}–${londonHm(b.task_end)}). Yields to habit "${b.habit_title}" ${b.habit_day} ${londonHm(b.habit_start)}–${londonHm(b.habit_end)}. Update tasks.scheduled_start/end.`,
-    reason: 'Habits outrank dated tasks (unpinned); concrete slot chosen by placer',
+    proposed_action: `MOVE MC-${b.display_id} ("${bare}") to ${day} ${when} (was ${isoToLondonDate(b.task_start)} ${londonHm(b.task_start)}–${londonHm(b.task_end)}). ${why}. Update tasks.scheduled_start/end.`,
+    reason: `${why}; concrete slot chosen by placer`,
   };
+}
+
+async function applyTaskBumpToDb(sb, bump) {
+  if (!bump?.new_start || bump.unplaced) return false;
+  const rows = await sb(
+    `tasks?display_id=eq.${Number(bump.display_id)}&select=id,display_id,title,calendar_event_id,scheduled_start,scheduled_end`,
+  );
+  const task = rows?.[0];
+  if (!task) return false;
+  if (task.scheduled_start === bump.new_start && task.scheduled_end === bump.new_end) return true;
+  await sb(`tasks?id=eq.${task.id}`, {
+    method: 'PATCH',
+    prefer: 'return=minimal',
+    body: {
+      scheduled_start: bump.new_start,
+      scheduled_end: bump.new_end,
+      last_activity_at: new Date().toISOString(),
+    },
+  });
+  await upsertPushRow(sb, {
+    related_id: relatedIdForTask(task.id),
+    entity_type: 'task',
+    change_kind: 'move',
+    summary: `Scheduler bump MC-${task.display_id} → ${bump.new_day || isoToLondonDate(bump.new_start)}`,
+    proposed_action: [
+      `MOVE MC-${task.display_id} ("${task.title}") to ${bump.new_start}–${bump.new_end}.`,
+      task.calendar_event_id ? `event_id=${task.calendar_event_id}` : 'create if missing',
+      `Reason: ${bump.reason || 'task_bump'}.`,
+    ].join(' '),
+    payload: {
+      task_id: task.id,
+      display_id: task.display_id,
+      new_start: bump.new_start,
+      new_end: bump.new_end,
+      from_start: bump.task_start || null,
+      reason: bump.reason || 'task_bump',
+      calendar_event_id: task.calendar_event_id || null,
+    },
+  });
+  return true;
 }
 
 /**
@@ -199,8 +246,8 @@ async function runHabitPlacerPropose(ctx) {
   const awaySpans = awaySpansFromTravelBlocks(travelBlocks || []);
   const teachingSpans = teachingDaySpansFromEvents(gcalEvents || [], ruleMap);
   const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap);
-  const hardBusy = clientBusy.concat(pinnedBusy).concat(awaySpans).concat(teachingSpans)
-    .concat(restSpans)
+  const blockedSpans = awaySpans.concat(teachingSpans).concat(restSpans);
+  const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
@@ -209,7 +256,11 @@ async function runHabitPlacerPropose(ctx) {
   const existing = enrichExistingFromGcalTitles(
     existingLog, habits || [], gcalEvents || [], placements,
   );
-  const bumpsRaw = findTaskBumps(placements, softTasks);
+  const bumpsRaw = mergeTaskBumps(
+    findTaskBumps(placements, softTasks),
+    findBlockedDayTaskBumps(softTasks, blockedSpans),
+    findSoftOverlapBumps(softTasks),
+  );
   const {
     scheduled: bumps, unplaced: bumpUnplaced, shared_calendar_flags: sharedFlags,
   } = placeBumpedTasks(
@@ -228,6 +279,7 @@ async function runHabitPlacerPropose(ctx) {
   const skippedPast = buildAmendments(placements, existing).length - amendments.length;
 
   let pendingWrote = 0;
+  let taskDbApplied = 0;
   if (writePending && proof.ok) {
     for (const a of amendments) {
       const row = amendmentToPending(a);
@@ -239,9 +291,25 @@ async function runHabitPlacerPropose(ctx) {
       if (id) pendingWrote += 1;
     }
     for (const b of allBumps) {
+      // Diary is DB-master: apply concrete bumps immediately + queue GCal.
+      if (!b.unplaced && b.new_start) {
+        try {
+          if (await applyTaskBumpToDb(sb, b)) taskDbApplied += 1;
+        } catch (e) {
+          /* keep pending row below so Alan still sees the intent */
+        }
+      }
       const row = bumpToPending(b);
       if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
-      const out = await sb('pending_diary_changes', { method: 'POST', body: row });
+      const out = await sb('pending_diary_changes', {
+        method: 'POST',
+        body: {
+          ...row,
+          status: (!b.unplaced && b.new_start) ? 'applied' : row.status,
+          resolved_at: (!b.unplaced && b.new_start) ? new Date().toISOString() : null,
+          resolved_by: (!b.unplaced && b.new_start) ? 'habit_placer_auto' : null,
+        },
+      });
       const id = Array.isArray(out) ? out[0]?.id : out?.id;
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
@@ -272,6 +340,7 @@ async function runHabitPlacerPropose(ctx) {
     task_bump_count: allBumps.length,
     task_bump_scheduled: bumps.length,
     task_bump_unplaced: bumpUnplaced.length,
+    task_db_applied: taskDbApplied,
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
     proof,
@@ -286,6 +355,7 @@ module.exports = {
   enrichExistingFromGcalTitles,
   amendmentToPending,
   bumpToPending,
+  applyTaskBumpToDb,
   runHabitPlacerPropose,
   ruleMapFromRows,
   bankHolidaySet,

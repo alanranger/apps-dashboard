@@ -395,7 +395,9 @@ module.exports = async function handler(req, res) {
           calendar_writes: 0,
         });
       }
-      const completedOn = body.completed_on || today;
+      const completedAt = body.completed_at || new Date().toISOString();
+      // Stamp on the moment of completion (UK calendar day), not the old planned day.
+      const completedOn = isoToLondonDate(completedAt) || body.completed_on || today;
       if (body.task_id || body.display_id) {
         const q = body.task_id
           ? `tasks?id=eq.${body.task_id}&select=id,display_id,title,calendar_event_id,scheduled_start,scheduled_end,est_minutes`
@@ -405,6 +407,7 @@ module.exports = async function handler(req, res) {
         const mins = Number.isFinite(actualMin) && actualMin > 0
           ? Math.round(actualMin)
           : Number(task.est_minutes || 30);
+        const startMs = Date.parse(completedAt);
         const patch = {
           completed_on: completedOn,
           actual_minutes: mins,
@@ -412,32 +415,32 @@ module.exports = async function handler(req, res) {
           slot_pinned: true,
           slot_pinned_at: new Date().toISOString(),
           last_activity_at: new Date().toISOString(),
+          scheduled_start: new Date(startMs).toISOString(),
+          scheduled_end: new Date(startMs + mins * 60000).toISOString(),
         };
-        if (task.scheduled_start) {
-          const startMs = Date.parse(task.scheduled_start);
-          if (Number.isFinite(startMs)) {
-            patch.scheduled_end = new Date(startMs + mins * 60000).toISOString();
-          }
-        }
         await sb(`tasks?id=eq.${task.id}`, { method: 'PATCH', prefer: 'return=minimal', body: patch });
-        await logChange(task.id, actor, `completed ${completedOn} via diary; actual ${mins}m`);
+        await logChange(task.id, actor, `completed ${completedOn} via diary at ${patch.scheduled_start}; actual ${mins}m`);
         await upsertPushRow(sb, {
           related_id: relatedIdForTask(task.id),
           entity_type: 'task',
           change_kind: 'complete',
-          summary: `Complete MC-${task.display_id} (${mins}m actual)`,
-          proposed_action: `Update/complete GCal event ${task.calendar_event_id || '(none)'} for MC-${task.display_id} to ${mins}m`,
+          summary: `Complete MC-${task.display_id} (${mins}m actual) @ ${completedOn}`,
+          proposed_action: `Move/complete GCal event ${task.calendar_event_id || '(none)'} for MC-${task.display_id} to ${patch.scheduled_start}–${patch.scheduled_end} (${mins}m)`,
           payload: {
             task_id: task.id,
             display_id: task.display_id,
             completed_on: completedOn,
+            completed_at: completedAt,
             actual_minutes: mins,
-            scheduled_end: patch.scheduled_end || null,
+            scheduled_start: patch.scheduled_start,
+            scheduled_end: patch.scheduled_end,
           },
         });
         return json(res, 200, {
           task_id: task.id,
           completed_on: completedOn,
+          scheduled_start: patch.scheduled_start,
+          scheduled_end: patch.scheduled_end,
           actual_minutes: mins,
           calendar_writes: 0,
         });
