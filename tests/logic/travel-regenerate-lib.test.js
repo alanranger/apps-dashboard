@@ -10,7 +10,10 @@ const bounds = {
   startIso: '2026-08-01T18:00:00.000Z',
   endIso: '2026-08-01T20:30:00.000Z',
 };
-const d = desiredTravelTimes(bounds, 135, 30);
+const d = desiredTravelTimes(bounds, 135, 30, {
+  out: { starts_at: '2026-08-01T15:00:00.000Z', ends_at: '2026-08-01T17:15:00.000Z' },
+  back: { starts_at: '2026-08-01T20:15:00.000Z', ends_at: '2026-08-01T22:30:00.000Z' },
+});
 assert(d.out.starts_at === '2026-08-01T15:15:00.000Z', `out start ${d.out.starts_at}`);
 assert(d.out.ends_at === '2026-08-01T17:30:00.000Z', `out end ${d.out.ends_at}`);
 assert(d.back.starts_at === '2026-08-01T20:30:00.000Z', `back start ${d.back.starts_at}`);

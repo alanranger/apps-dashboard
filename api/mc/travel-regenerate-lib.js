@@ -83,17 +83,21 @@ function pairTravelBlocks(blocks) {
 
 function pickWorkshop(pair, workshops) {
   const title = pair.out.workshop_title || pair.back.workshop_title;
-  const anchor = Date.parse(pair.out.workshop_start || pair.out.starts_at);
+  const anchorDay = londonDay(pair.out.workshop_start || pair.out.starts_at);
+  const outDay = londonDay(pair.out.starts_at);
   let best = null;
   let bestScore = -1;
   for (const w of workshops) {
     const b = eventBounds(w);
     if (!b) continue;
     const ts = titleScore(title, w.summary);
-    if (ts < 40) continue;
-    const dayDist = Math.abs(b.startMs - anchor) / 86400000;
-    if (dayDist > 14) continue;
-    const score = ts - dayDist * 2;
+    if (ts < 45) continue;
+    const evDay = londonDay(b.startIso);
+    const dayDist = Math.abs(Date.parse(`${evDay}T12:00:00Z`) - Date.parse(`${anchorDay}T12:00:00Z`)) / 86400000;
+    const outDist = Math.abs(Date.parse(`${evDay}T12:00:00Z`) - Date.parse(`${outDay}T12:00:00Z`)) / 86400000;
+    // Prefer events near stamped workshop_start / travel_out day (max 4 days).
+    if (Math.min(dayDist, outDist) > 4) continue;
+    const score = ts - Math.min(dayDist, outDist) * 8;
     if (score > bestScore) {
       bestScore = score;
       best = { event: w, bounds: b, score };
@@ -110,22 +114,69 @@ function driveMinutesFor(pair, venues) {
   return Number(hit?.minutes_from_home || 90);
 }
 
+function shiftIso(iso, deltaMs) {
+  return new Date(Date.parse(iso) + deltaMs).toISOString();
+}
+
+function londonDay(iso) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(iso));
+  } catch (e) {
+    return String(iso).slice(0, 10);
+  }
+}
+
 /**
  * Desired out/back around live workshop bounds.
- * Day-trip: out ends arrive_before before start; back starts at end.
- * Multi-day: same formula using first start / last end (bounds of matched event).
+ * Day-trip (same London day): absolute formula from start/end.
+ * Multi-day residential: preserve trip shape — shift by workshop_start delta only.
  */
-function desiredTravelTimes(bounds, driveMin, arriveMin) {
+function desiredTravelTimes(bounds, driveMin, arriveMin, pair) {
   const arrive = Math.max(0, Number(arriveMin) || 30);
   const drive = Math.max(15, Number(driveMin) || 90);
-  const outEndMs = bounds.startMs - arrive * 60000;
-  const outStartMs = outEndMs - drive * 60000;
-  const backStartMs = bounds.endMs;
-  const backEndMs = backStartMs + drive * 60000;
+  const outDay = londonDay(pair.out.starts_at);
+  const backDay = londonDay(pair.back.starts_at);
+  const dayTrip = outDay === backDay;
+
+  if (dayTrip) {
+    const outEndMs = bounds.startMs - arrive * 60000;
+    const outStartMs = outEndMs - drive * 60000;
+    const backStartMs = bounds.endMs;
+    const backEndMs = backStartMs + drive * 60000;
+    return {
+      out: { starts_at: new Date(outStartMs).toISOString(), ends_at: new Date(outEndMs).toISOString() },
+      back: { starts_at: new Date(backStartMs).toISOString(), ends_at: new Date(backEndMs).toISOString() },
+      workshop_start: bounds.startIso,
+      mode: 'day_trip_formula',
+    };
+  }
+
+  const oldWs = Date.parse(pair.out.workshop_start || pair.out.starts_at);
+  const delta = bounds.startMs - oldWs;
+  // Refuse huge jumps (wrong workshop match)
+  if (!Number.isFinite(delta) || Math.abs(delta) > 72 * 3600000) {
+    return {
+      out: { starts_at: new Date(pair.out.starts_at).toISOString(), ends_at: new Date(pair.out.ends_at).toISOString() },
+      back: { starts_at: new Date(pair.back.starts_at).toISOString(), ends_at: new Date(pair.back.ends_at).toISOString() },
+      workshop_start: bounds.startIso,
+      mode: 'residential_link_only',
+      delta_ms: delta,
+    };
+  }
   return {
-    out: { starts_at: new Date(outStartMs).toISOString(), ends_at: new Date(outEndMs).toISOString() },
-    back: { starts_at: new Date(backStartMs).toISOString(), ends_at: new Date(backEndMs).toISOString() },
+    out: {
+      starts_at: shiftIso(pair.out.starts_at, delta),
+      ends_at: shiftIso(pair.out.ends_at, delta),
+    },
+    back: {
+      starts_at: shiftIso(pair.back.starts_at, delta),
+      ends_at: shiftIso(pair.back.ends_at, delta),
+    },
     workshop_start: bounds.startIso,
+    mode: 'residential_delta',
+    delta_ms: delta,
   };
 }
 
@@ -154,7 +205,7 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     }
     const rowKey = `gcal:${match.event.id}`;
     const drive = driveMinutesFor(pair, venues);
-    const desired = desiredTravelTimes(match.bounds, drive, arriveMin);
+    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair);
     const timesOut = !isoClose(pair.out.starts_at, desired.out.starts_at)
       || !isoClose(pair.out.ends_at, desired.out.ends_at);
     const timesBack = !isoClose(pair.back.starts_at, desired.back.starts_at)
@@ -222,10 +273,12 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   return {
     workshop_events: workshops.length,
     pairs: pairs.length,
-    linked: linked.length,
+    linked,
+    linked_count: linked.length,
     unmatched,
     changes,
     changed_count: changes.length,
+    times_changed_count: changes.filter((c) => c.out.times_changed || c.back.times_changed).length,
     away_spans_before: beforeSpans.map((s) => ({ start: s.startDay, end: s.endDay, summary: s.summary })),
     away_spans_after: afterSpans.map((s) => ({ start: s.startDay, end: s.endDay, summary: s.summary })),
   };
