@@ -483,11 +483,21 @@ function renderBlock(b, axis, conflicts) {
 function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const dayBlocks = blocks.filter((b) => b.day === day);
   const conflicts = conflictIds(dayBlocks);
-  const awayCls = away ? ' dy-away' : '';
-  const bhCls = holidayTitle ? ' dy-bh' : '';
-  const awayBanner = away
+  const kind = away?.kind || (away ? 'away_span' : null);
+  const isAway = kind === 'away_span';
+  const isRest = kind === 'rest_after_workshop' || kind === 'rest_after_away';
+  const isTeaching = kind === 'teaching_day';
+  const dayCls = [
+    isAway ? 'dy-away' : '',
+    isRest ? 'dy-rest' : '',
+    isTeaching ? 'dy-teaching' : '',
+    holidayTitle ? 'dy-bh' : '',
+  ].filter(Boolean).map((c) => ` ${c}`).join('');
+  const statusBanner = isAway
     ? `<div class="dy-away-label" title="${away.summary || ''}">AWAY</div>`
-    : '';
+    : isRest
+      ? `<div class="dy-rest-label" title="${away.summary || ''}">REST</div>`
+      : '';
   const bhBadge = holidayTitle
     ? `<div class="dy-bh-badge" title="${holidayTitle}">BANK HOLIDAY</div>`
     : '';
@@ -505,7 +515,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   }
   const wd = WEEKDAYS[weekdayIndex(day)];
   return `
-    <div class="dy-day${awayCls}${bhCls}" data-day="${day}">
+    <div class="dy-day${dayCls}" data-day="${day}">
       <div class="dy-day-head">
         <div class="dy-wd">${wd}</div>
         <div class="dy-date">${fmtDayLabel(day)}</div>
@@ -514,7 +524,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
       <div class="dy-day-grid" data-day="${day}"
         style="height:${axis.grid_px || 1152}px;--dy-step:${axis.px_per_step || 36}px">
         ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
-        ${awayBanner}
+        ${statusBanner}
         ${hours.join('')}
         ${dayBlocks.map((b) => renderBlock(b, axis, conflicts)).join('')}
       </div>
