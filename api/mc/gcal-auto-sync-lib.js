@@ -177,7 +177,24 @@ async function reconcileReport(sb) {
   const mismatches = [];
   const checked = [];
   for (const m of masters || []) {
-    if (!m.old_event_id || !m.start || !m.end) continue;
+    if (!m.start || !m.end) continue;
+    // Placed in DB but no Google event id → mismatch (was a false ✓ blind-spot).
+    if (!m.old_event_id) {
+      const row = {
+        kind: m.kind,
+        title: m.title,
+        db_start: m.start,
+        db_end: m.end,
+        event_id: null,
+        reason: 'placed_missing_calendar_event_id',
+        titleOk: false,
+        startOk: false,
+        endOk: false,
+      };
+      checked.push(row);
+      mismatches.push(row);
+      continue;
+    }
     try {
       const live = await getPrimaryEvent(m.old_event_id);
       const liveStart = live?.start?.dateTime || live?.start?.date || null;
@@ -206,6 +223,16 @@ async function reconcileReport(sb) {
       });
     }
   }
+
+  // Managed Google orphans are engine-deletable — report separately, do not fail ✓.
+  const managed_orphans = (snap.to_delete || []).map((u) => ({
+    kind: 'google_orphan',
+    title: u.summary,
+    event_id: u.id,
+    gcal_start: u.start,
+    gcal_end: u.end,
+    reason: 'unplaced_or_unlinked_still_on_google',
+  }));
 
   const match = mismatches.length === 0;
   const statusLine = match
@@ -257,6 +284,8 @@ async function reconcileReport(sb) {
     checked_count: checked.length,
     mismatch_count: mismatches.length,
     mismatches: mismatches.slice(0, 50),
+    managed_orphans_count: managed_orphans.length,
+    managed_orphans_sample: managed_orphans.slice(0, 25),
     masters: masters.length,
     masters_missing_event_id: masters.filter((m) => !m.old_event_id).length,
     pending_flush_writes: plan.write_count,

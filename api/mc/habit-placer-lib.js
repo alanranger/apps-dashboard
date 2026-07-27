@@ -1118,7 +1118,8 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     || b.kind === 'teaching_day'
     || b.kind === 'rest_after_workshop'
     || b.restDay);
-  const foreignHabits = opts.existingHabitIntervals || [];
+  // opts.existingHabitIntervals must already be merged into `busy` with habit_id + ideal_date
+  // so self-strip below can KEEP/MOVE an occurrence without colliding with itself.
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
@@ -1126,10 +1127,10 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
         ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
         habit.rrule, true,
       );
-      // While re-placing this occurrence, ignore its own prior block so it can MOVE.
-      const busySansSelf = busyWork.concat(
-        foreignHabits.filter((f) => !(f.habit_id === habit.id && f.ideal_date === ideal)),
-      );
+      // While re-placing this occurrence, ignore its own prior block so it can KEEP/MOVE.
+      // existingHabitIntervals are already seeded into busyWork (with habit_id/ideal_date).
+      const busySansSelf = busyWork
+        .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
       let slot = null;
       for (const day of days) {
         if (dayBlockedForHabits(day, awaySpans)) continue;
@@ -1163,6 +1164,8 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
         startMs: Date.parse(slot.startIso),
         endMs: Date.parse(slot.endIso),
         summary: habit.title,
+        habit_id: habit.id,
+        ideal_date: ideal,
       });
     }
   }
@@ -1224,6 +1227,18 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
       continue;
     }
     const same = sameLondonSlot(e.startIso, p.startIso) && sameLondonSlot(e.endIso, p.endIso);
+    // Placed in DB but no Google link → must CREATE (KEEP previously hid this hole).
+    if (same && !e.calendar_event_id) {
+      out.push({
+        action: 'CREATE',
+        habit_id: p.habit_id,
+        title: p.title,
+        ideal_date: p.ideal_date,
+        startIso: p.startIso,
+        endIso: p.endIso,
+      });
+      continue;
+    }
     out.push({
       action: same ? 'KEEP' : 'MOVE',
       habit_id: p.habit_id,

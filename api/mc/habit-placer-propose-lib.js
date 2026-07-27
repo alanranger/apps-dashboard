@@ -587,11 +587,13 @@ async function runHabitPlacerPropose(ctx) {
     habit_id: e.habit_id,
     ideal_date: e.ideal_date,
   })).filter((b) => Number.isFinite(b.startMs) && Number.isFinite(b.endMs));
-  const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans).concat(existingHabitBusy)
+  const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans)
+    .concat(existingHabitBusy)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
     habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
+    // existingHabitIntervals: self-strip only (intervals already in hardBusy)
     { softTaskIntervals: softTasks, existingHabitIntervals: existingHabitBusy },
   );
   const existing = enrichExistingFromGcalTitles(
@@ -630,12 +632,14 @@ async function runHabitPlacerPropose(ctx) {
   const proofOk = !!proof?.ok;
   if (writePending) {
     for (const a of amendments) {
-      // Always persist plan times to recurring_log (KEEP can hide stale scheduled_date vs GCal).
-      const writeAction = (a.action === 'KEEP' && proofOk)
-        ? { ...a, action: 'MOVE', from_startIso: a.startIso, from_endIso: a.endIso }
+      // KEEP with no Google id → CREATE. Otherwise KEEP only syncs log (no thrash flush).
+      const writeAction = (a.action === 'KEEP' && proofOk && !a.calendar_event_id)
+        ? { ...a, action: 'CREATE' }
         : a;
-      const mayWrite = writeAction.action === 'DELETE'
-        || ((writeAction.action === 'MOVE' || writeAction.action === 'CREATE') && proofOk);
+      const recreateMissing = writeAction.action === 'CREATE' && !a.calendar_event_id;
+      const mayWrite = recreateMissing
+        || ((writeAction.action === 'DELETE' || writeAction.action === 'MOVE'
+          || writeAction.action === 'CREATE' || writeAction.action === 'KEEP') && proofOk);
       if (mayWrite) {
         try {
           if (await applyHabitAmendmentToDb(sb, writeAction)) habitDbApplied += 1;

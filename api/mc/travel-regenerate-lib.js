@@ -132,18 +132,35 @@ function londonDay(iso) {
   }
 }
 
+/** Latest end (ms) of another teaching event on a London calendar day; null if free. */
+function otherTeachingEndOnDay(day, teachingEvents, excludeEventId) {
+  let maxEnd = null;
+  for (const w of teachingEvents || []) {
+    if (!w || w.id === excludeEventId) continue;
+    if (!isWorkshopCalendarEvent(w)) continue;
+    const b = eventBounds(w);
+    if (!b || londonDay(b.startIso) !== day) continue;
+    if (maxEnd == null || b.endMs > maxEnd) maxEnd = b.endMs;
+  }
+  return maxEnd;
+}
+
 /**
  * Desired out/back around live workshop bounds.
  * Day-trip: arrive_before_start_min before start, leave at end.
  * Residential: arrive residential_arrive_hm (default 16:00) on the day before
  * first workshop day; leave for home at workshop end + drive.
+ * Never place residential travel_out on a day that already has another workshop —
+ * leave after that local teaching ends, or walk back to a free day.
  */
-function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}) {
+function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opts = {}) {
   const arrive = Math.max(0, Number(arriveMin) || 30);
   const drive = Math.max(15, Number(driveMin) || 90);
   const outDay = londonDay(pair.out.starts_at);
   const backDay = londonDay(pair.back.starts_at);
   const dayTrip = outDay === backDay;
+  const teaching = opts.teachingEvents || [];
+  const excludeId = opts.excludeEventId || null;
 
   if (dayTrip) {
     const outEndMs = bounds.startMs - arrive * 60000;
@@ -160,24 +177,81 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}) {
 
   const firstDay = londonDay(bounds.startIso);
   const arriveHm = String(ruleMap.residential_arrive_hm || '16:00').slice(0, 5);
-  const travelArriveDay = addDays(firstDay, -1);
-  const outEndMs = londonYmdHmToUtcMs(travelArriveDay, arriveHm);
-  const outStartMs = outEndMs - drive * 60000;
   const backStartMs = bounds.endMs;
   const backEndMs = backStartMs + drive * 60000;
+  const back = {
+    starts_at: new Date(backStartMs).toISOString(),
+    ends_at: new Date(backEndMs).toISOString(),
+  };
+
+  const idealDay = addDays(firstDay, -1);
+  const localEndIdeal = otherTeachingEndOnDay(idealDay, teaching, excludeId);
+  if (localEndIdeal == null) {
+    const outEndMs = londonYmdHmToUtcMs(idealDay, arriveHm);
+    const outStartMs = outEndMs - drive * 60000;
+    return {
+      out: {
+        starts_at: new Date(outStartMs).toISOString(),
+        ends_at: new Date(outEndMs).toISOString(),
+      },
+      back,
+      workshop_start: bounds.startIso,
+      mode: 'residential_arrive',
+      arrive_hm: arriveHm,
+      travel_arrive_day: idealDay,
+    };
+  }
+
+  // Same day already has teaching elsewhere — leave after it ends (overnight drive).
+  const leaveMs = localEndIdeal + Math.max(30, arrive) * 60000;
+  const arriveMs = leaveMs + drive * 60000;
+  if (arriveMs <= bounds.startMs - arrive * 60000) {
+    return {
+      out: {
+        starts_at: new Date(leaveMs).toISOString(),
+        ends_at: new Date(arriveMs).toISOString(),
+      },
+      back,
+      workshop_start: bounds.startIso,
+      mode: 'residential_after_local_teaching',
+      arrive_hm: arriveHm,
+      travel_arrive_day: idealDay,
+      deferred_for_local_teaching: true,
+    };
+  }
+
+  // Walk back for a free afternoon arrive day (max 4 days before workshop).
+  for (let step = 2; step <= 4; step += 1) {
+    const day = addDays(firstDay, -step);
+    if (otherTeachingEndOnDay(day, teaching, excludeId) != null) continue;
+    const outEndMs = londonYmdHmToUtcMs(day, arriveHm);
+    const outStartMs = outEndMs - drive * 60000;
+    return {
+      out: {
+        starts_at: new Date(outStartMs).toISOString(),
+        ends_at: new Date(outEndMs).toISOString(),
+      },
+      back,
+      workshop_start: bounds.startIso,
+      mode: 'residential_arrive_walkback',
+      arrive_hm: arriveHm,
+      travel_arrive_day: day,
+      deferred_for_local_teaching: true,
+    };
+  }
+
+  // Last resort: still leave after local teaching even if tight vs residential start.
   return {
     out: {
-      starts_at: new Date(outStartMs).toISOString(),
-      ends_at: new Date(outEndMs).toISOString(),
+      starts_at: new Date(leaveMs).toISOString(),
+      ends_at: new Date(arriveMs).toISOString(),
     },
-    back: {
-      starts_at: new Date(backStartMs).toISOString(),
-      ends_at: new Date(backEndMs).toISOString(),
-    },
+    back,
     workshop_start: bounds.startIso,
-    mode: 'residential_arrive',
+    mode: 'residential_after_local_teaching_tight',
     arrive_hm: arriveHm,
-    travel_arrive_day: travelArriveDay,
+    travel_arrive_day: idealDay,
+    deferred_for_local_teaching: true,
   };
 }
 
@@ -242,7 +316,10 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     }
     const rowKey = `gcal:${match.event.id}`;
     const drive = driveMinutesFor(pair, venues);
-    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap);
+    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap, {
+      teachingEvents: workshops,
+      excludeEventId: match.event.id,
+    });
     const timesOut = !isoClose(pair.out.starts_at, desired.out.starts_at)
       || !isoClose(pair.out.ends_at, desired.out.ends_at);
     const timesBack = !isoClose(pair.back.starts_at, desired.back.starts_at)
@@ -263,6 +340,9 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
       workshop_live_end: match.bounds.endIso,
       drive_minutes: drive,
       arrive_before_min: arriveMin,
+      mode: desired.mode,
+      deferred_for_local_teaching: !!desired.deferred_for_local_teaching,
+      travel_arrive_day: desired.travel_arrive_day || null,
       out: {
         id: pair.out.id,
         calendar_event_id: pair.out.calendar_event_id,
@@ -329,5 +409,6 @@ module.exports = {
   desiredTravelTimes,
   hasIntermediateTravelLegs,
   pickWorkshop,
+  otherTeachingEndOnDay,
   normTitle,
 };
