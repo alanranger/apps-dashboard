@@ -96,7 +96,7 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove('show'), 3200);
+  toast._t = setTimeout(() => el.classList.remove('show'), 5000);
 }
 
 function closeMenu() {
@@ -244,13 +244,13 @@ async function runMenuAction(act, block, refresh) {
       alert('No task/habit details to open for this block.');
       return;
     }
-    await refresh();
+    await refresh({ preserveScroll: true });
   } catch (err) {
     alert(err.message || 'Action failed');
   }
 }
 
-async function dropBlock(block, day, startHm, endHm, override, refresh) {
+async function dropBlock(block, day, startHm, endHm, override, refresh, destLabel) {
   if (dropBlock._busy) return;
   dropBlock._busy = true;
   try {
@@ -278,8 +278,9 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
       body.override = true;
       await api('/api/mc/diary-action', { method: 'POST', body });
     }
-    toast('Saved to DB · GCal change queued for Claude flush');
-    await refresh();
+    const where = destLabel || `${fmtDayLabel(day)} · ${startHm}–${endHm}`;
+    toast(`Moved to ${where} · saved to DB`);
+    await refresh({ preserveScroll: true });
   } finally {
     dropBlock._busy = false;
   }
@@ -703,17 +704,48 @@ function minsFromPointerY(grid, clientY, axis) {
   return Math.max(axis.start_min, Math.min(startMin, axis.end_min - step));
 }
 
+function dropSlot(grid, clientY, axis, durMin) {
+  const startMin = minsFromPointerY(grid, clientY, axis);
+  const endMin = Math.min(startMin + (durMin || 60), axis.end_min);
+  return { startMin, endMin, top: minsToTop(startMin, axis), height: heightPct(endMin - startMin, axis) };
+}
+
+function clearDropUi(root) {
+  root.querySelectorAll('.dy-drop-target').forEach((g) => g.classList.remove('dy-drop-target'));
+  root.querySelectorAll('.dy-drop-preview').forEach((p) => p.remove());
+}
+
+function showDropPreview(root, grid, clientY, axis, durMin) {
+  clearDropUi(root);
+  if (!grid) return null;
+  grid.classList.add('dy-drop-target');
+  const slot = dropSlot(grid, clientY, axis, durMin);
+  const preview = document.createElement('div');
+  preview.className = 'dy-drop-preview';
+  preview.style.top = `${slot.top}%`;
+  preview.style.height = `${slot.height}%`;
+  preview.innerHTML = `<span class="dy-drop-time">${fmtHm(slot.startMin)}–${fmtHm(slot.endMin)}</span>`;
+  grid.appendChild(preview);
+  return slot;
+}
+
 function wireDiary(root, data, refresh) {
   const axis = data.day_axis || { start_min: 420, end_min: 1380, step_min: 30 };
-  let dragBlock = null;
   let dragStarted = false;
-  let ptr = null; // pointer drag state
+  let ptr = null;
 
-  function clearPtrGhost() {
+  function clearDrag() {
     ptr?.ghost?.remove();
     if (ptr?.el) ptr.el.classList.remove('dy-drag-source');
+    clearDropUi(root);
     root.classList.remove('dy-dragging');
     ptr = null;
+  }
+
+  function positionGhost(clientX, clientY) {
+    if (!ptr?.ghost) return;
+    ptr.ghost.style.left = `${clientX - ptr.offX}px`;
+    ptr.ghost.style.top = `${clientY - ptr.offY}px`;
   }
 
   root.addEventListener('click', async (e) => {
@@ -749,8 +781,18 @@ function wireDiary(root, data, refresh) {
     if (!blockEl || !root.contains(blockEl)) return;
     const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
     if (!block || block.done || block.client_fixed || block.is_buffer) return;
+    const r = blockEl.getBoundingClientRect();
     ptr = {
-      block, el: blockEl, x0: e.clientX, y0: e.clientY, moved: false, ghost: null, pid: e.pointerId,
+      block,
+      el: blockEl,
+      x0: e.clientX,
+      y0: e.clientY,
+      offX: e.clientX - r.left,
+      offY: e.clientY - r.top,
+      moved: false,
+      ghost: null,
+      pid: e.pointerId,
+      slot: null,
     };
     try { blockEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
   });
@@ -763,43 +805,53 @@ function wireDiary(root, data, refresh) {
     if (!ptr.moved) {
       ptr.moved = true;
       dragStarted = true;
-      dragBlock = ptr.block;
       root.classList.add('dy-dragging');
       ptr.el.classList.add('dy-drag-source');
+      const r = ptr.el.getBoundingClientRect();
       const ghost = ptr.el.cloneNode(true);
       ghost.classList.add('dy-drag-ghost');
       ghost.removeAttribute('data-block-id');
-      const r = ptr.el.getBoundingClientRect();
+      ghost.style.position = 'fixed';
+      ghost.style.right = 'auto';
       ghost.style.width = `${r.width}px`;
       ghost.style.height = `${r.height}px`;
       document.body.appendChild(ghost);
       ptr.ghost = ghost;
+      positionGhost(e.clientX, e.clientY);
     }
-    if (ptr.ghost) {
-      ptr.ghost.style.transform = `translate(${e.clientX + 8}px, ${e.clientY + 8}px)`;
-    }
+    e.preventDefault();
+    positionGhost(e.clientX, e.clientY);
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const grid = under?.closest?.('.dy-day-grid') || null;
+    ptr.grid = grid;
+    ptr.day = grid?.getAttribute('data-day') || null;
+    const dur = ptr.block.duration_min || 60;
+    ptr.slot = showDropPreview(root, grid, e.clientY, axis, dur);
   });
 
   root.addEventListener('pointerup', async (e) => {
     if (!ptr || e.pointerId !== ptr.pid) return;
     const wasDrag = ptr.moved;
     const block = ptr.block;
-    // Resolve target while blocks still have pointer-events:none
-    const under = wasDrag ? document.elementFromPoint(e.clientX, e.clientY) : null;
-    const grid = under?.closest?.('.dy-day-grid');
-    const day = grid?.getAttribute('data-day');
-    clearPtrGhost();
-    dragBlock = null;
+    const slot = ptr.slot;
+    const day = ptr.day;
+    clearDrag();
     if (!wasDrag) return;
-    if (!grid || !day) {
+    setTimeout(() => { dragStarted = false; }, 0);
+    if (!day || !slot) {
       toast('Drop on a day column to reschedule');
       return;
     }
-    const startMin = minsFromPointerY(grid, e.clientY, axis);
-    const dur = block.duration_min || 60;
-    const endMin = Math.min(startMin + dur, axis.end_min);
     try {
-      await dropBlock(block, day, fmtHm(startMin), fmtHm(endMin), false, refresh);
+      await dropBlock(
+        block,
+        day,
+        fmtHm(slot.startMin),
+        fmtHm(slot.endMin),
+        false,
+        refresh,
+        `${fmtDayLabel(day)} · ${fmtHm(slot.startMin)}–${fmtHm(slot.endMin)}`,
+      );
     } catch (err) {
       alert(err.message || 'Drop failed');
     }
@@ -807,8 +859,8 @@ function wireDiary(root, data, refresh) {
 
   root.addEventListener('pointercancel', (e) => {
     if (!ptr || e.pointerId !== ptr.pid) return;
-    clearPtrGhost();
-    dragBlock = null;
+    clearDrag();
+    setTimeout(() => { dragStarted = false; }, 0);
   });
 }
 
@@ -829,20 +881,29 @@ function scrollToWeek(root, idx) {
   wraps[idx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-export async function renderDiary() {
-  const el = $('view-diary');
-  if (!el) return;
-  el.innerHTML = '<div class="card"><p class="meta">Loading diary…</p></div>';
-  try {
-    const data = await api('/api/mc/diary?weeks=8');
-    diaryState.data = data;
-    const axis = data.day_axis;
-    const today = data.today || new Date().toISOString().slice(0, 10);
-    const landIdx = landingWeekIndex(data.weeks || [], today);
-    el.innerHTML = `
+async function paintDiary(el, opts = {}) {
+  const preserveScroll = !!opts.preserveScroll;
+  const scrollEl = el.querySelector('.dy-scroll');
+  const prevScroll = preserveScroll && scrollEl ? scrollEl.scrollTop : null;
+  const keepWeekIdx = preserveScroll && diaryState.weekIdx != null ? diaryState.weekIdx : null;
+
+  if (!preserveScroll) {
+    el.innerHTML = '<div class="card"><p class="meta">Loading diary…</p></div>';
+  }
+
+  const data = await api('/api/mc/diary?weeks=8');
+  diaryState.data = data;
+  const axis = data.day_axis;
+  const today = data.today || new Date().toISOString().slice(0, 10);
+  const landIdx = landingWeekIndex(data.weeks || [], today);
+  let weekIdx = keepWeekIdx != null ? keepWeekIdx : landIdx;
+  weekIdx = Math.max(0, Math.min((data.weeks || []).length - 1, weekIdx));
+  diaryState.weekIdx = weekIdx;
+
+  el.innerHTML = `
       ${renderToolbar(data)}
       ${renderLegend()}
-      ${renderHorizonBoard(data.weeks || [], landIdx)}
+      ${renderHorizonBoard(data.weeks || [], weekIdx)}
       <div class="dy-week-nav">
         <button type="button" class="btn-secondary" data-dy-week-prev title="Previous week">‹ Prev week</button>
         <span class="meta">Landing on actionable week · use tiles or arrows to page</span>
@@ -850,25 +911,41 @@ export async function renderDiary() {
       </div>
       <div class="dy-scroll">
         ${(data.weeks || []).map((w) => renderWeek(
-          w, data.blocks || [], data.away_days || {}, axis,
-          data.day_banners || [], data.holidays || {},
-        )).join('')}
+    w, data.blocks || [], data.away_days || {}, axis,
+    data.day_banners || [], data.holidays || {},
+  )).join('')}
       </div>`;
-    wireDiary(el, data, () => renderDiary());
-    let weekIdx = landIdx;
-    const jump = (idx) => {
-      weekIdx = Math.max(0, Math.min((data.weeks || []).length - 1, idx));
-      scrollToWeek(el, weekIdx);
-      el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
-        btn.classList.toggle('dy-hz-land', Number(btn.getAttribute('data-dy-jump-week')) === weekIdx);
-      });
-    };
+  wireDiary(el, data, (refreshOpts) => paintDiary(el, refreshOpts));
+
+  const jump = (idx) => {
+    weekIdx = Math.max(0, Math.min((data.weeks || []).length - 1, idx));
+    diaryState.weekIdx = weekIdx;
+    scrollToWeek(el, weekIdx);
     el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
-      btn.addEventListener('click', () => jump(Number(btn.getAttribute('data-dy-jump-week'))));
+      btn.classList.toggle('dy-hz-land', Number(btn.getAttribute('data-dy-jump-week')) === weekIdx);
     });
-    el.querySelector('[data-dy-week-prev]')?.addEventListener('click', () => jump(weekIdx - 1));
-    el.querySelector('[data-dy-week-next]')?.addEventListener('click', () => jump(weekIdx + 1));
-    requestAnimationFrame(() => jump(landIdx));
+  };
+  el.querySelectorAll('[data-dy-jump-week]').forEach((btn) => {
+    btn.addEventListener('click', () => jump(Number(btn.getAttribute('data-dy-jump-week'))));
+  });
+  el.querySelector('[data-dy-week-prev]')?.addEventListener('click', () => jump(weekIdx - 1));
+  el.querySelector('[data-dy-week-next]')?.addEventListener('click', () => jump(weekIdx + 1));
+
+  requestAnimationFrame(() => {
+    const scroller = el.querySelector('.dy-scroll');
+    if (preserveScroll && prevScroll != null && scroller) {
+      scroller.scrollTop = prevScroll;
+    } else {
+      jump(weekIdx);
+    }
+  });
+}
+
+export async function renderDiary() {
+  const el = $('view-diary');
+  if (!el) return;
+  try {
+    await paintDiary(el);
   } catch (e) {
     el.innerHTML = `<div class="card"><p class="err">Diary failed: ${e.message || e}</p></div>`;
   }

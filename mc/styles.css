@@ -694,13 +694,35 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 }
 .dy-hour { position:absolute; left:2px; font-size:10px; color:var(--text-faint,#9ca3af); pointer-events:none; z-index:0; }
 .dy-hour-half { font-size:9px; opacity:0.55; }
+.dy-dragging { user-select:none; }
 .dy-dragging .dy-block { pointer-events:none !important; }
-.dy-dragging .dy-day-grid { outline:1px dashed rgba(96,165,250,0.45); }
-.dy-drag-source { opacity:0.35 !important; }
+.dy-dragging .dy-day-grid { outline:1px dashed rgba(96,165,250,0.35); }
+.dy-day-grid.dy-drop-target {
+  outline:2px solid #3b82f6 !important;
+  background-color:rgba(59,130,246,0.06);
+}
+.dy-drag-source { opacity:0.25 !important; }
 .dy-drag-ghost {
-  position:fixed; left:0; top:0; z-index:90; pointer-events:none;
-  opacity:0.9; box-shadow:0 8px 24px rgba(0,0,0,0.55);
-  margin:0; transform:translate(-9999px,-9999px);
+  position:fixed !important;
+  left:0; top:0;
+  z-index:90; pointer-events:none;
+  opacity:0.92;
+  margin:0 !important;
+  right:auto !important;
+  transform:none !important;
+  box-shadow:0 8px 24px rgba(0,0,0,0.55);
+}
+.dy-drop-preview {
+  position:absolute; left:4px; right:4px; z-index:20; pointer-events:none;
+  border:2px dashed #3b82f6; border-radius:4px;
+  background:rgba(59,130,246,0.22);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.15);
+}
+.dy-drop-time {
+  position:absolute; top:2px; left:4px; right:4px;
+  font-size:11px; font-weight:800; letter-spacing:0.02em;
+  color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.9);
+  text-align:center;
 }
 .dy-grab {
   flex-shrink:0; font-size:12px; line-height:14px; opacity:0.75;
