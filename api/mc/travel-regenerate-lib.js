@@ -185,6 +185,31 @@ function isoClose(a, b, tolMin = 2) {
   return Math.abs(Date.parse(a) - Date.parse(b)) <= tolMin * 60000;
 }
 
+/**
+ * Overnight hotel / multi-venue trips use travel_leg rows between out and back.
+ * Do not apply residential day-before / same-workshop back formulas to those pairs.
+ */
+function hasIntermediateTravelLegs(pair, blocks) {
+  const outMs = Date.parse(pair.out.starts_at);
+  const backMs = Date.parse(pair.back.starts_at);
+  if (!Number.isFinite(outMs) || !Number.isFinite(backMs)) return false;
+  const lo = Math.min(outMs, backMs) - 6 * 3600000;
+  const hi = Math.max(outMs, backMs) + 18 * 3600000;
+  return (blocks || []).some((b) => {
+    if (b.block_type !== 'travel_leg') return false;
+    const ms = Date.parse(b.starts_at);
+    if (!Number.isFinite(ms) || ms < lo || ms > hi) return false;
+    const score = Math.max(
+      titleScore(pair.out.workshop_title, b.workshop_title),
+      titleScore(pair.back.workshop_title, b.workshop_title),
+      titleScore(pair.out.venue_name, b.venue_name),
+      titleScore(pair.back.venue_name, b.venue_name),
+    );
+    return score >= 40
+      || /overnight|hotel|rudyard/i.test(`${b.workshop_title || ''} ${b.venue_name || ''}`);
+  });
+}
+
 function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const arriveMin = Number(ruleMap.arrive_before_start_min || 30);
   const workshops = (gcalEvents || []).filter(isTravelWorkshopEvent);
@@ -192,8 +217,19 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const changes = [];
   const linked = [];
   const unmatched = [];
+  const skipped_multileg = [];
 
   for (const pair of pairs) {
+    if (hasIntermediateTravelLegs(pair, blocks)) {
+      skipped_multileg.push({
+        venue: pair.out.venue_name,
+        title: pair.out.workshop_title,
+        out_id: pair.out.id,
+        back_id: pair.back.id,
+        reason: 'intermediate_travel_legs',
+      });
+      continue;
+    }
     const match = pickWorkshop(pair, workshops);
     if (!match) {
       unmatched.push({
@@ -277,6 +313,7 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     linked,
     linked_count: linked.length,
     unmatched,
+    skipped_multileg,
     changes,
     changed_count: changes.length,
     times_changed_count: changes.filter((c) => c.out.times_changed || c.back.times_changed).length,
@@ -290,5 +327,6 @@ module.exports = {
   pairTravelBlocks,
   isTravelWorkshopEvent,
   desiredTravelTimes,
+  hasIntermediateTravelLegs,
   normTitle,
 };
