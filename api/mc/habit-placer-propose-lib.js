@@ -4,11 +4,14 @@
 const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
 const {
   buildBusyIntervals, datedTasksToIntervals, findTaskBumps, findBlockedDayTaskBumps,
-  findSoftOverlapBumps, mergeTaskBumps, placeBumpedTasks,
+  findPastIncompleteTaskBumps, findSoftOverlapBumps, mergeTaskBumps, placeBumpedTasks,
   placeHabits, buildAmendments, provePlacement, awaySpansFromTravelBlocks,
   teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
+  trySlotOnDay, dayBlockedForPlacement,
 } = require('./habit-placer-lib');
-const { relatedIdForTask, upsertPushRow } = require('./gcal-push-lib');
+const { relatedIdForTask, relatedIdForHabit, upsertPushRow } = require('./gcal-push-lib');
+const { occurrencesInRange } = require('./rrule-core');
+const { computeMissedProposal } = require('./missed-habit-lib');
 
 function londonHm(iso) {
   try {
@@ -136,9 +139,11 @@ function bumpToPending(b) {
   const bare = String(b.title || '').replace(/^MC-\d+\s*/, '');
   const why = b.reason === 'on_blocked_day'
     ? 'Task on rest/away day'
-    : b.reason === 'task_overlap'
-      ? 'Task overlaps another task'
-      : 'Habits outrank dated tasks (unpinned)';
+    : b.reason === 'past_slot_incomplete'
+      ? 'Slot passed without Complete/Skip — roll to next free slot'
+      : b.reason === 'task_overlap'
+        ? 'Task overlaps another task'
+        : 'Habits outrank dated tasks (unpinned)';
   if (b.unplaced || !b.new_start) {
     return {
       change_type: 'task_bump',
@@ -205,6 +210,156 @@ async function applyTaskBumpToDb(sb, bump) {
   return true;
 }
 
+/** Past habit ideals with no Complete/Skip → concrete next-slot pin + GCal queue. */
+async function applyIncompleteHabitRolls(ctx) {
+  const {
+    sb, habits, ruleMap, holidays, hardBusy, placements, dayUsed, fromYmd, awaySpans,
+    existingPending, inserted, writePending = true,
+  } = ctx;
+  const today = fromYmd;
+  const lookback = addDays(today, -21);
+  let rolled = 0;
+  const busyWork = (hardBusy || []).slice();
+  for (const p of placements || []) {
+    busyWork.push({
+      startMs: Date.parse(p.startIso),
+      endMs: Date.parse(p.endIso),
+      summary: p.title,
+    });
+  }
+  const used = { ...(dayUsed || {}) };
+
+  for (const habit of habits || []) {
+    const ideals = occurrencesInRange(habit.rrule, lookback, addDays(today, -1), 40);
+    for (const ideal of ideals) {
+      if (habit.last_done && String(habit.last_done) >= String(ideal)) continue;
+      const skipRows = await sb(
+        `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
+        + `&change=like.${encodeURIComponent('skipped%')}&limit=1`,
+      );
+      if (skipRows?.[0]) continue;
+      const doneRows = await sb(
+        `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
+        + `&change=like.${encodeURIComponent('completed%')}&limit=1`,
+      );
+      if (doneRows?.[0]) continue;
+
+      const prop = computeMissedProposal({
+        habit, lastDue: ideal, today, ruleMap, holidays, maxRolls: Number(ruleMap.max_habit_rolls || 3),
+      });
+      if (/UNPLACEABLE/i.test(prop.proposed || '')) {
+        if (writePending && existingPending) {
+          const relatedId = `habit:${habit.id}:${ideal}`;
+          if (!(await existingPending('missed_habit', relatedId))) {
+            const out = await sb('pending_diary_changes', {
+              method: 'POST',
+              body: {
+                change_type: 'missed_habit',
+                target_date: ideal,
+                summary: `Missed habit: ${habit.title}`,
+                proposed_action: prop.proposed,
+                reason: prop.reason,
+                urgency: prop.urgency || 'high',
+                status: 'pending',
+                related_id: relatedId,
+              },
+            });
+            const id = Array.isArray(out) ? out[0]?.id : out?.id;
+            if (id && inserted) inserted.push(id);
+          }
+        }
+        continue;
+      }
+
+      let slot = null;
+      for (let i = 0; i < 14; i += 1) {
+        const day = addDays(today, i);
+        if (dayBlockedForPlacement(day, awaySpans || [])) continue;
+        const trial = trySlotOnDay(
+          day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
+          habit.title, busyWork, placements || [], used, ruleMap,
+        );
+        if (trial) { slot = trial; break; }
+      }
+      if (!slot) continue;
+
+      const pinChange = `diary_pin:${slot.startIso}|${slot.endIso}`;
+      const logRows = await sb(
+        `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
+        + '&select=id,calendar_event_id&order=at.desc&limit=1',
+      );
+      const keepId = logRows?.[0]?.id || null;
+      const evtId = logRows?.[0]?.calendar_event_id || null;
+      const logBody = {
+        change: pinChange,
+        scheduled_date: slot.day,
+        roll_reason: 'incomplete_auto_roll',
+        calendar_event_id: evtId,
+        ideal_date: ideal,
+        projection_key: `auto-roll:${habit.id}:${ideal}`,
+      };
+      if (keepId) {
+        await sb(`recurring_log?id=eq.${keepId}`, {
+          method: 'PATCH', prefer: 'return=minimal', body: logBody,
+        });
+      } else {
+        await sb('recurring_log', {
+          method: 'POST', prefer: 'return=minimal',
+          body: { recurring_task_id: habit.id, actor: 'cursor-auto-roll', ...logBody },
+        });
+      }
+      await sb(`recurring_tasks?id=eq.${habit.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          last_scheduled: slot.day,
+          scheduled_note: `${slot.day} auto-roll (incomplete ${ideal})`,
+          updated_at: new Date().toISOString(),
+        },
+      });
+      await upsertPushRow(sb, {
+        related_id: relatedIdForHabit(habit.id, ideal, evtId),
+        entity_type: 'habit',
+        change_kind: 'move',
+        summary: `Auto-roll habit ${habit.title} → ${slot.day}`,
+        proposed_action: [
+          `MOVE/CREATE habit "${habit.title}" block to ${slot.startIso} – ${slot.endIso}.`,
+          evtId ? `event_id=${evtId}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
+          `ideal_date=${ideal}; scheduled_date=${slot.day}. Incomplete slot — not Complete/Skip.`,
+        ].join(' '),
+        payload: {
+          habit_id: habit.id,
+          title: habit.title,
+          ideal_date: ideal,
+          new_start: slot.startIso,
+          new_end: slot.endIso,
+          calendar_event_id: evtId,
+        },
+      });
+      // Resolve any pending missed_habit for this ideal
+      await sb(
+        `pending_diary_changes?change_type=eq.missed_habit&related_id=eq.${encodeURIComponent(`habit:${habit.id}:${ideal}`)}&status=eq.pending`,
+        {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: {
+            status: 'applied',
+            resolved_at: new Date().toISOString(),
+            resolved_by: 'incomplete_auto_roll',
+            proposed_action: `AUTO-APPLIED → ${slot.day} ${londonHm(slot.startIso)}–${londonHm(slot.endIso)}`,
+          },
+        },
+      );
+      used[slot.day] = (used[slot.day] || 0) + slot.durationMin;
+      busyWork.push({
+        startMs: Date.parse(slot.startIso),
+        endMs: Date.parse(slot.endIso),
+        summary: habit.title,
+      });
+      rolled += 1;
+    }
+  }
+  return { rolled };
+}
+
 /**
  * Run placer + amendments; optionally insert pending rows (idempotent on related_id).
  * @returns summary for notes / spike JSON
@@ -216,14 +371,14 @@ async function runHabitPlacerPropose(ctx) {
   } = ctx;
 
   const [habits, deps, logs, taskRows, travelBlocks] = await Promise.all([
-    sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule&active=eq.true'),
+    sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule,last_done,rolls_used&active=eq.true'),
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
     sb(
       'tasks?select=display_id,title,state,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
       + 'depends_on:depends_on_task_id(display_id)'
       + '&scheduled_start=not.is.null'
-      + `&scheduled_start=gte.${fromYmd}T00:00:00Z`
+      + `&scheduled_start=gte.${addDays(fromYmd, -21)}T00:00:00Z`
       + `&scheduled_start=lte.${toYmd}T23:59:59Z`
       + '&state=not.in.(done,verified,wont_do,superseded)',
     ),
@@ -259,6 +414,7 @@ async function runHabitPlacerPropose(ctx) {
   const bumpsRaw = mergeTaskBumps(
     findTaskBumps(placements, softTasks),
     findBlockedDayTaskBumps(softTasks, blockedSpans),
+    findPastIncompleteTaskBumps(softTasks, Date.now()),
     findSoftOverlapBumps(softTasks),
   );
   const {
@@ -280,6 +436,7 @@ async function runHabitPlacerPropose(ctx) {
 
   let pendingWrote = 0;
   let taskDbApplied = 0;
+  let habitRolls = { rolled: 0 };
   if (writePending && proof.ok) {
     for (const a of amendments) {
       const row = amendmentToPending(a);
@@ -314,6 +471,23 @@ async function runHabitPlacerPropose(ctx) {
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
     }
+    try {
+      habitRolls = await applyIncompleteHabitRolls({
+        sb,
+        habits: habits || [],
+        ruleMap,
+        holidays,
+        hardBusy,
+        placements,
+        fromYmd,
+        awaySpans: blockedSpans,
+        existingPending,
+        inserted,
+        writePending,
+      });
+    } catch (e) {
+      habitRolls = { rolled: 0, error: e.message };
+    }
   }
 
   return {
@@ -341,6 +515,7 @@ async function runHabitPlacerPropose(ctx) {
     task_bump_scheduled: bumps.length,
     task_bump_unplaced: bumpUnplaced.length,
     task_db_applied: taskDbApplied,
+    habit_rolls: habitRolls,
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
     proof,
@@ -356,6 +531,7 @@ module.exports = {
   amendmentToPending,
   bumpToPending,
   applyTaskBumpToDb,
+  applyIncompleteHabitRolls,
   runHabitPlacerPropose,
   ruleMapFromRows,
   bankHolidaySet,

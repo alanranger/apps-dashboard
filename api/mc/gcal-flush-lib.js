@@ -11,7 +11,8 @@ const {
 } = require('./gcal-write-lib');
 const { ruleMapFromRows } = require('./scheduling-rules-lib');
 const {
-  taskGcalTitle, habitGcalTitle, travelGcalTitle, isChangelogTitle,
+  taskGcalTitle, habitGcalTitle, travelGcalTitle, travelGcalLocation, travelGcalDescription,
+  isChangelogTitle,
 } = require('./gcal-title-lib');
 
 const KIND_RANK = { complete: 0, skip: 1, move: 2, pin: 2, dismiss: 3 };
@@ -92,6 +93,21 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       return { skip: true, reason: 'move_missing_db_title', row };
     }
     if (evt) {
+      const patch = { startIso: p.new_start, endIso: p.new_end, summary: title };
+      if (p.location != null) patch.location = p.location;
+      if (p.description != null) patch.description = p.description;
+      if (row.entity_type === 'travel' && (p.block_type || p.leg_from || p.leg_to)) {
+        const tb = {
+          block_type: p.block_type,
+          venue_name: p.venue,
+          workshop_title: p.workshop_title,
+          leg_from: p.leg_from,
+          leg_to: p.leg_to,
+          drive_minutes_used: p.drive_minutes_used,
+        };
+        patch.location = p.location != null ? p.location : travelGcalLocation(tb);
+        patch.description = p.description != null ? p.description : travelGcalDescription(tb);
+      }
       return {
         source: 'gcal_push_queue',
         source_id: row.id,
@@ -101,9 +117,12 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         summary: title,
         from: null,
         to: { start: p.new_start, end: p.new_end },
-        patch: { startIso: p.new_start, endIso: p.new_end, summary: title },
+        patch,
       };
     }
+    const insert = { summary: title, startIso: p.new_start, endIso: p.new_end };
+    if (p.location) insert.location = p.location;
+    if (p.description) insert.description = p.description;
     return {
       source: 'gcal_push_queue',
       source_id: row.id,
@@ -113,7 +132,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       summary: title,
       from: null,
       to: { start: p.new_start, end: p.new_end },
-      insert: { summary: title, startIso: p.new_start, endIso: p.new_end },
+      insert,
       habit_id: p.habit_id || null,
       task_id: p.task_id || null,
       ideal_date: p.ideal_date || null,
@@ -238,9 +257,17 @@ async function resolveQueueTitle(sb, row, prefixes) {
     const bid = String(row.related_id || '').replace(/^gcal:travel:/, '') || p.block_id;
     if (bid) {
       const rows = await sb(
-        `travel_blocks?id=eq.${bid}&select=block_type,venue_name,workshop_title`,
+        `travel_blocks?id=eq.${bid}&select=block_type,venue_name,workshop_title,leg_from,leg_to,drive_minutes_used`,
       );
-      if (rows?.[0]) return travelGcalTitle(rows[0], prefixes);
+      if (rows?.[0]) {
+        p.block_type = p.block_type || rows[0].block_type;
+        p.venue = p.venue || rows[0].venue_name;
+        p.workshop_title = p.workshop_title || rows[0].workshop_title;
+        p.leg_from = p.leg_from || rows[0].leg_from;
+        p.leg_to = p.leg_to || rows[0].leg_to;
+        p.drive_minutes_used = p.drive_minutes_used ?? rows[0].drive_minutes_used;
+        return travelGcalTitle(rows[0], prefixes);
+      }
     }
     if (p.block_type) return travelGcalTitle(p, prefixes);
   }

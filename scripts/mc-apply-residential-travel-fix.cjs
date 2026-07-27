@@ -14,7 +14,7 @@ const { sb } = require('../api/mc/_lib');
 const { ruleMapFromRows } = require('../api/mc/scheduling-rules-lib');
 const { fetchHorizonEvents } = require('../api/mc/gcal-lib');
 const { patchPrimaryEvent, verifyPrimaryEvent } = require('../api/mc/gcal-write-lib');
-const { travelGcalTitle } = require('../api/mc/gcal-title-lib');
+const { travelGcalTitle, travelGcalLocation, travelGcalDescription } = require('../api/mc/gcal-title-lib');
 const { planTravelRegenerate } = require('../api/mc/travel-regenerate-lib');
 const { runRuleEventMasterSync } = require('../api/mc/rule-event-masters-lib');
 const { londonToday, addDaysYmd } = require('../api/mc/diary-lib');
@@ -78,20 +78,32 @@ async function main() {
       method: 'PATCH', prefer: 'return=minimal', body: backPatch,
     });
 
-    const outTitle = travelGcalTitle({
+    const outDb = (blocks || []).find((b) => b.id === row.out.id) || {};
+    const backDb = (blocks || []).find((b) => b.id === row.back.id) || {};
+    const outBlock = {
       block_type: 'travel_out',
       venue_name: row.venue,
       workshop_title: row.title,
-    }, prefixes);
-    const backTitle = travelGcalTitle({
+      leg_from: outDb.leg_from,
+      leg_to: outDb.leg_to,
+      drive_minutes_used: row.drive_minutes ?? outDb.drive_minutes_used,
+    };
+    const backBlock = {
       block_type: 'travel_back',
       venue_name: row.venue,
       workshop_title: row.title,
-    }, prefixes);
+      leg_from: backDb.leg_from,
+      leg_to: backDb.leg_to,
+      drive_minutes_used: row.drive_minutes ?? backDb.drive_minutes_used,
+    };
+    const outTitle = travelGcalTitle(outBlock, prefixes);
+    const backTitle = travelGcalTitle(backBlock, prefixes);
 
     if (row.out.calendar_event_id && row.out.times_changed) {
       await patchPrimaryEvent(row.out.calendar_event_id, {
         summary: outTitle,
+        location: travelGcalLocation(outBlock),
+        description: travelGcalDescription(outBlock),
         startIso: row.out.to.starts_at,
         endIso: row.out.to.ends_at,
       });
@@ -104,6 +116,8 @@ async function main() {
     if (row.back.calendar_event_id && row.back.times_changed) {
       await patchPrimaryEvent(row.back.calendar_event_id, {
         summary: backTitle,
+        location: travelGcalLocation(backBlock),
+        description: travelGcalDescription(backBlock),
         startIso: row.back.to.starts_at,
         endIso: row.back.to.ends_at,
       });

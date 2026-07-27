@@ -20,13 +20,17 @@ async function patchBlock(id, patch) {
 
 async function queueTravelMove(actor, blockMeta, to, venue, title, prefixes) {
   if (!blockMeta.calendar_event_id) return null;
-  const { travelGcalTitle } = require('./gcal-title-lib');
+  const { travelGcalTitle, travelGcalLocation, travelGcalDescription } = require('./gcal-title-lib');
   const related = `gcal:travel:${blockMeta.id}`;
-  const gcalTitle = travelGcalTitle({
+  const block = {
     block_type: blockMeta.block_type,
     venue_name: venue,
     workshop_title: title,
-  }, prefixes || {});
+    leg_from: blockMeta.leg_from,
+    leg_to: blockMeta.leg_to,
+    drive_minutes_used: blockMeta.drive_minutes_used,
+  };
+  const gcalTitle = travelGcalTitle(block, prefixes || {});
   await upsertPushRow(sb, {
     related_id: related,
     entity_type: 'travel',
@@ -45,6 +49,11 @@ async function queueTravelMove(actor, blockMeta, to, venue, title, prefixes) {
       venue,
       workshop_title: title,
       title: gcalTitle,
+      location: travelGcalLocation(block),
+      description: travelGcalDescription(block),
+      leg_from: blockMeta.leg_from || null,
+      leg_to: blockMeta.leg_to || null,
+      drive_minutes_used: blockMeta.drive_minutes_used ?? null,
       actor,
     },
   });
@@ -113,17 +122,25 @@ module.exports = async function handler(req, res) {
         await patchBlock(row.out.id, outPatch);
         await patchBlock(row.back.id, backPatch);
         if (row.out.times_changed) {
+          const outRow = (blocks || []).find((b) => b.id === row.out.id) || {};
           await queueTravelMove(actor, {
             id: row.out.id,
             calendar_event_id: row.out.calendar_event_id,
             block_type: 'travel_out',
+            leg_from: outRow.leg_from,
+            leg_to: outRow.leg_to,
+            drive_minutes_used: row.drive_minutes ?? outRow.drive_minutes_used,
           }, row.out.to, row.venue, row.title);
         }
         if (row.back.times_changed) {
+          const backRow = (blocks || []).find((b) => b.id === row.back.id) || {};
           await queueTravelMove(actor, {
             id: row.back.id,
             calendar_event_id: row.back.calendar_event_id,
             block_type: 'travel_back',
+            leg_from: backRow.leg_from,
+            leg_to: backRow.leg_to,
+            drive_minutes_used: row.drive_minutes ?? backRow.drive_minutes_used,
           }, row.back.to, row.venue, row.title);
         }
         if (row.out.times_changed || row.back.times_changed || row.out.changed || row.back.changed) {

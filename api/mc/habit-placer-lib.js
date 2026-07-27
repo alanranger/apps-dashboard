@@ -457,6 +457,31 @@ function findTaskBumps(placements, softTaskIntervals) {
   return expandBumpsWithDependents(bumps, softTaskIntervals);
 }
 
+/** Soft tasks whose slot already ended — still open, not assumed done. */
+function findPastIncompleteTaskBumps(softTaskIntervals, nowMs = Date.now()) {
+  const bumps = [];
+  for (const task of softTaskIntervals || []) {
+    if (task.slot_pinned) continue;
+    if (!(task.endMs < nowMs)) continue;
+    bumps.push({
+      display_id: task.display_id,
+      title: task.summary,
+      task_start: new Date(task.startMs).toISOString(),
+      task_end: new Date(task.endMs).toISOString(),
+      duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
+      habit_id: null,
+      habit_title: 'past incomplete slot',
+      habit_day: isoToLondonDate(new Date(nowMs).toISOString()),
+      habit_start: null,
+      habit_end: null,
+      reason: 'past_slot_incomplete',
+      depends_on_display_id: task.depends_on_display_id,
+      calendar_event_id: task.calendar_event_id,
+    });
+  }
+  return expandBumpsWithDependents(bumps, softTaskIntervals);
+}
+
 /** Soft tasks sitting on rest/away/teaching blocked days. */
 function findBlockedDayTaskBumps(softTaskIntervals, blockedSpans) {
   const bumps = [];
@@ -1029,6 +1054,7 @@ module.exports = {
   datedTasksToIntervals,
   findTaskBumps,
   findBlockedDayTaskBumps,
+  findPastIncompleteTaskBumps,
   findSoftOverlapBumps,
   mergeTaskBumps,
   placeBumpedTasks,

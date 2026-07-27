@@ -30,15 +30,17 @@ async function gcalFetch(method, path, body) {
   return data;
 }
 
-function timedEventBody({ summary, startIso, endIso, description }) {
-  return {
+function timedEventBody({ summary, startIso, endIso, description, location }) {
+  const body = {
     summary: summary || 'MC event',
-    description: description || undefined,
     start: { dateTime: startIso, timeZone: 'Europe/London' },
     end: { dateTime: endIso, timeZone: 'Europe/London' },
     colorId: '10',
     reminders: { useDefault: false, overrides: [] },
   };
+  if (description) body.description = description;
+  if (location) body.location = location;
+  return body;
 }
 
 /** All-day primary event. endDate is exclusive (Google all-day convention). */
@@ -65,6 +67,7 @@ async function patchPrimaryEvent(eventId, opts) {
   const body = {};
   if (opts.summary != null) body.summary = opts.summary;
   if (opts.description != null) body.description = opts.description;
+  if (opts.location != null) body.location = opts.location;
   if (opts.startIso && opts.endIso) {
     body.start = { dateTime: opts.startIso, timeZone: 'Europe/London' };
     body.end = { dateTime: opts.endIso, timeZone: 'Europe/London' };

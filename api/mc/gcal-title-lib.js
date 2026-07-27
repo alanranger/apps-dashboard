@@ -32,7 +32,39 @@ function travelGcalTitle(block, prefixes = {}) {
   if (type === 'prep') return `${buffer} Prep — ${workshop}`;
   if (type === 'decompress') return `${buffer} Decompress — ${workshop}`;
   if (type === 'travel_back') return `${travel} Travel back — ${workshop} → home`;
+  if (type === 'travel_leg') return `${travel} Travel — ${workshop}`;
   return `${travel} Travel out — ${workshop}`;
+}
+
+/** Destination-ish location for the GCal Location field. */
+function travelGcalLocation(block) {
+  const type = String(block.block_type || '');
+  const to = String(block.leg_to || '').trim();
+  const from = String(block.leg_from || '').trim();
+  const venue = String(block.venue_name || '').trim();
+  if (type === 'travel_back') return to || 'Home';
+  if (type === 'travel_out' || type === 'travel_leg') return to || venue || '';
+  return venue || to || '';
+}
+
+/** Body text: from → to, minutes, venue. */
+function travelGcalDescription(block) {
+  const type = String(block.block_type || '');
+  const from = String(block.leg_from || '').trim() || '—';
+  const to = String(block.leg_to || '').trim() || '—';
+  const mins = block.drive_minutes_used != null ? Number(block.drive_minutes_used) : null;
+  const venue = String(block.venue_name || '').trim();
+  const workshop = String(block.workshop_title || '').trim();
+  const lines = [];
+  if (type === 'prep' || type === 'decompress') {
+    lines.push(`${type === 'prep' ? 'Prep' : 'Decompress'} buffer for ${workshop || venue || 'workshop'}.`);
+  } else {
+    lines.push(`Driving from → to: ${from} → ${to}`);
+    if (mins != null && Number.isFinite(mins)) lines.push(`Drive time: ${mins} minutes`);
+    if (venue) lines.push(`Venue: ${venue}`);
+    if (workshop) lines.push(`Workshop: ${workshop}`);
+  }
+  return lines.join('\n');
 }
 
 function restDayGcalTitle(workshopTitle) {
@@ -64,6 +96,8 @@ module.exports = {
   taskGcalTitle,
   habitGcalTitle,
   travelGcalTitle,
+  travelGcalLocation,
+  travelGcalDescription,
   restDayGcalTitle,
   awaySpanGcalTitle,
   isChangelogTitle,

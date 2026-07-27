@@ -18,7 +18,10 @@ const {
   londonToday, addDaysYmd, mondayOnOrBefore, ruleMapFromRows,
   habitLogsToBlocks, tasksToBlocks,
 } = require('./diary-lib');
-const { taskGcalTitle, habitGcalTitle, travelGcalTitle, isChangelogTitle } = require('./gcal-title-lib');
+const {
+  taskGcalTitle, habitGcalTitle, travelGcalTitle, travelGcalLocation, travelGcalDescription,
+  isChangelogTitle,
+} = require('./gcal-title-lib');
 const { isFixtureBlock } = require('./rule-breach-lib');
 
 function isSkipped(change) {
@@ -60,7 +63,7 @@ async function loadDbMasters(sb, from, to) {
   const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
   const [tasks, travel, habits, logs, rules] = await Promise.all([
     sb(`tasks?select=id,display_id,title,priority,state,scheduled_start,scheduled_end,calendar_event_id,completed_on,actual_minutes,est_minutes,last_activity_at&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
-    sb(`travel_blocks?select=id,block_type,venue_name,workshop_title,starts_at,ends_at,calendar_event_id&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
+    sb(`travel_blocks?select=id,block_type,venue_name,workshop_title,starts_at,ends_at,calendar_event_id,leg_from,leg_to,drive_minutes_used&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
     sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
     sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
     sb('scheduling_rules?select=key,value'),
@@ -113,6 +116,8 @@ async function loadDbMasters(sb, from, to) {
       kind: 'travel',
       db_id: row.id,
       title: travelGcalTitle(row, prefixes),
+      location: travelGcalLocation(row),
+      description: travelGcalDescription(row),
       start: row.starts_at,
       end: row.ends_at,
       old_event_id: row.calendar_event_id || null,
@@ -174,6 +179,8 @@ async function recreateFromDb(sb, masters, { sleepMs = 80 } = {}) {
         summary: m.title,
         startIso: m.start,
         endIso: m.end,
+        location: m.location || undefined,
+        description: m.description || undefined,
       });
       const v = await verifyPrimaryEvent(ev.id, {
         summary: m.title,
