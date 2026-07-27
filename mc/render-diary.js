@@ -336,9 +336,9 @@ function renderToolbar(data) {
       ? (actionable ? 'Auto-sync on · writes waiting' : 'Auto-sync on · nothing to write')
       : (actionable ? 'Manual Push ready (auto-sync gated)' : 'Nothing actionable · auto-sync gated');
   const driftNote = driftN > 0
-    ? `<p class="dy-drift-banner"><strong>${driftN} block${driftN === 1 ? '' : 's'} out of sync</strong> —
-        Diary shows <strong>Google</strong> times; DB pin differs (amber OUT OF SYNC). Drag here then Push to realign.</p>`
-    : `<p class="meta dy-edit-hint">Visual baseline = <strong>Google Calendar</strong> times for linked MC blocks. Drag blue/green to reschedule · Push writes Google.</p>`;
+    ? `<p class="dy-drift-banner"><strong>${driftN} block${driftN === 1 ? '' : 's'} differ from Google</strong> —
+        Amber <strong>PUSH</strong> = you moved it here (hit Push). <strong>OUT OF SYNC</strong> = Google time shown until you pin/drag.</p>`
+    : `<p class="meta dy-edit-hint">Drag blue/green to move · then <strong>Push</strong> so Google matches. Diary keeps your move visible until then.</p>`;
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
@@ -474,7 +474,8 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
     b.gcal_baseline ? 'Time from Google Calendar' : '',
-    b.out_of_sync ? '⚠ DB pin differs from Google — showing Google' : '',
+    b.awaiting_push ? 'Moved in Diary — Push to update Google' : '',
+    b.out_of_sync && !b.awaiting_push ? '⚠ DB pin differs from Google — showing Google' : '',
     b.gcal_orphan ? 'On Google only (not linked in MC DB)' : '',
     conflict ? '⚠ Overlap — drag sideways lane to shuffle' : '',
     done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
@@ -500,7 +501,9 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     ? `<span class="dy-done-badge">DONE${b.actual_minutes != null ? ` ${b.actual_minutes}m` : ''}</span>`
     : '';
   const conflictBadge = conflict ? '<span class="dy-conflict-badge">CONFLICT</span>' : '';
-  const oosBadge = b.out_of_sync ? '<span class="dy-oos-badge" title="DB pin differs from Google">OUT OF SYNC</span>' : '';
+  const oosBadge = b.awaiting_push
+    ? '<span class="dy-oos-badge" title="Moved here — Push to update Google">PUSH</span>'
+    : (b.out_of_sync ? '<span class="dy-oos-badge" title="DB pin differs from Google">OUT OF SYNC</span>' : '');
   const orphanBadge = b.gcal_orphan ? '<span class="dy-orphan-badge" title="Google only">GCAL</span>' : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())

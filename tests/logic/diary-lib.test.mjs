@@ -291,13 +291,36 @@ describe('gcal visual baseline', () => {
     applyGcalBaselineTimes, indexGcalEventsById, untiedMcBlocks,
   } = require('../../api/mc/diary-lib.js');
 
-  it('overrides tied block times from Google and flags drift', () => {
-    const eventById = indexGcalEventsById([{
-      id: 'evt1',
-      summary: 'MC habit',
-      start: { dateTime: '2026-07-28T11:00:00+01:00' },
-      end: { dateTime: '2026-07-28T12:00:00+01:00' },
-    }]);
+  const eventById = indexGcalEventsById([{
+    id: 'evt1',
+    summary: 'MC habit',
+    start: { dateTime: '2026-07-28T11:00:00+01:00' },
+    end: { dateTime: '2026-07-28T12:00:00+01:00' },
+  }]);
+
+  it('pinned DB slot wins until Push (no snap-back)', () => {
+    const { blocks, drift_count } = applyGcalBaselineTimes([{
+      id: 'task:1',
+      kind: 'mc_task',
+      title: 'Rev-weighting',
+      day: '2026-08-11',
+      start: '2026-08-11T15:30:00.000Z',
+      end: '2026-08-11T18:00:00.000Z',
+      start_min: 16 * 60 + 30,
+      end_min: 19 * 60,
+      calendar_event_id: 'evt1',
+      slot_pinned: true,
+      editable: true,
+      done: false,
+    }], eventById);
+    assert.equal(blocks[0].awaiting_push, true);
+    assert.equal(blocks[0].gcal_baseline, false);
+    assert.equal(blocks[0].day, '2026-08-11');
+    assert.equal(blocks[0].start_min, 16 * 60 + 30);
+    assert.equal(drift_count, 1);
+  });
+
+  it('unpinned stale DB yields to Google times', () => {
     const { blocks, drift_count } = applyGcalBaselineTimes([{
       id: 'habit:1:2026-07-28',
       kind: 'habit',
@@ -308,11 +331,13 @@ describe('gcal visual baseline', () => {
       start_min: 10 * 60,
       end_min: 11 * 60,
       calendar_event_id: 'evt1',
+      slot_pinned: false,
       editable: true,
       done: false,
     }], eventById);
     assert.equal(blocks[0].gcal_baseline, true);
     assert.equal(blocks[0].out_of_sync, true);
+    assert.equal(blocks[0].awaiting_push, false);
     assert.equal(drift_count, 1);
     assert.equal(blocks[0].start_min, 11 * 60);
     assert.equal(blocks[0].end_min, 12 * 60);

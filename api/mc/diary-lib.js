@@ -328,7 +328,7 @@ function habitLogsToBlocks(logs, habitMap) {
       start: startIso,
       end: endIso,
       editable: !done,
-      slot_pinned: false,
+      slot_pinned: !!(pin && !done),
       habit_id: habit.id,
       ideal_date: ideal,
       calendar_event_id: log.calendar_event_id || null,
@@ -361,14 +361,14 @@ function indexGcalEventsById(events) {
 }
 
 /**
- * Paint tied DB blocks at live Google times (visual baseline).
- * Keeps DB ids for edit/push; flags out_of_sync when pin differs.
+ * Align tied blocks with Google when DB is not intentionally pinned.
+ * After a diary drag, slot_pinned / diary_pin means DB wins until Push.
  */
 function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOLERANCE_MIN) {
   let driftCount = 0;
   const out = (blocks || []).map((b) => {
     if (b.done || !b.calendar_event_id || !eventById?.has(b.calendar_event_id)) {
-      return { ...b, gcal_baseline: false, out_of_sync: false };
+      return { ...b, gcal_baseline: false, out_of_sync: false, awaiting_push: false };
     }
     const g = eventById.get(b.calendar_event_id);
     const dbStart = b.start;
@@ -385,7 +385,28 @@ function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOL
       ? Math.abs(endMs - dbEndMs) / 60000
       : 0;
     const outOfSync = driftStart > toleranceMin || driftEnd > toleranceMin;
-    if (outOfSync) driftCount += 1;
+    if (!outOfSync) {
+      return {
+        ...b,
+        gcal_baseline: true,
+        out_of_sync: false,
+        awaiting_push: false,
+      };
+    }
+    driftCount += 1;
+    // User moved / pinned in MC — keep DB slot visible; Push will update Google.
+    if (b.slot_pinned) {
+      return {
+        ...b,
+        gcal_baseline: false,
+        out_of_sync: true,
+        awaiting_push: true,
+        gcal_start: g.start,
+        gcal_end: g.end,
+        gcal_day: isoToLondonDate(g.start),
+      };
+    }
+    // DB is stale ideal — paint Google.
     const start_min = isoToLondonMinutes(g.start);
     const end_min = isoToLondonMinutes(g.end);
     return {
@@ -397,7 +418,8 @@ function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOL
       end_min,
       duration_min: Math.max(0, end_min - start_min),
       gcal_baseline: true,
-      out_of_sync: outOfSync,
+      out_of_sync: true,
+      awaiting_push: false,
       db_start: dbStart,
       db_end: dbEnd,
       db_day: dbDay,
