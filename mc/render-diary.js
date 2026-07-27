@@ -3,7 +3,7 @@
  * DB writes via /api/mc/diary-action; GCal flush via /api/mc/gcal-push (Claude).
  */
 import { api } from './api.js';
-import { $ } from './util.js';
+import { $, esc } from './util.js';
 import { openDrawer } from './drawer.js';
 import { openRecurringEdit } from './render-recurring.js';
 import { applyBootstrap } from './store.js';
@@ -968,22 +968,133 @@ export async function handleDiaryClick(e, refresh) {
   if (e.target.closest('[data-dy-push]')) {
     const btn = e.target.closest('[data-dy-push]');
     if (btn.disabled) {
-      alert('Google Calendar is not configured for Cursor writes yet.');
+      toast('Push disabled — nothing actionable or GCal not configured');
       return true;
     }
-    try {
-      const res = await api('/api/mc/gcal-auto-sync', {
-        method: 'POST',
-        body: { action: 'push' },
-      });
-      const f = res.flush || {};
-      alert(`Pushed to Google: ${f.applied || 0} applied, ${f.failed || 0} failed (of ${f.planned || 0} planned).`);
-      await refresh();
-    } catch (err) {
-      alert(err.message || 'Push failed');
-    }
+    await runPushToGoogleWithModal(btn, refresh);
     return true;
   }
   if (!e.target.closest('#dy-menu') && !e.target.closest('.dy-block')) closeMenu();
   return false;
+}
+
+function openPushProgressModal(plannedHint) {
+  const modal = $('modal');
+  const box = $('modalBox');
+  const ac = new AbortController();
+  const started = Date.now();
+  let tick = 0;
+  let timer = null;
+
+  const paint = () => {
+    const elapsed = Math.round((Date.now() - started) / 1000);
+    const pct = Math.min(90, 12 + tick * 8);
+    box.innerHTML = `
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Pushing to Google Calendar</h2>
+      <p class="meta">Cursor writer · titles from DB · read-back before applied
+        · Elapsed ${elapsed}s${plannedHint ? ` · ~${esc(String(plannedHint))} planned` : ''}</p>
+      <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
+      <ul class="sched-phase-list" style="margin-top:10px">
+        <li class="${tick >= 0 ? 'on' : ''}">Build flush plan</li>
+        <li class="${tick >= 1 ? 'on' : ''}">Write / patch / delete events</li>
+        <li class="${tick >= 2 ? 'on' : ''}">Read-back verify each write</li>
+        <li class="${tick >= 3 ? 'on' : ''}">Refresh rule masters (rest / away)</li>
+      </ul>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button type="button" class="btn-secondary" id="dyPushCancel">Cancel wait</button>
+      </div>
+      <p class="meta" style="margin-top:8px">Cancel only stops waiting in this browser. Server writes already started may still finish.</p>`;
+    const cancel = $('dyPushCancel');
+    if (cancel) {
+      cancel.onclick = () => {
+        ac.abort();
+        clearInterval(timer);
+        box.innerHTML = `
+          <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Push wait cancelled</h2>
+          <p class="meta">Stopped after ${Math.round((Date.now() - started) / 1000)}s. Refresh Diary to see if any writes landed.</p>
+          <button type="button" class="btn-verify" id="dyPushClose">Close</button>`;
+        $('dyPushClose').onclick = () => modal.classList.remove('open');
+      };
+    }
+  };
+
+  paint();
+  modal.classList.add('open');
+  timer = setInterval(() => {
+    tick += 1;
+    paint();
+  }, 2000);
+
+  return {
+    signal: ac.signal,
+    finish(res) {
+      clearInterval(timer);
+      const secs = Math.round((Date.now() - started) / 1000);
+      const f = res.flush || {};
+      const applied = Number(f.applied || 0);
+      const failed = Number(f.failed || 0);
+      const planned = Number(f.planned || 0);
+      const fails = (f.results || []).filter((r) => !r.ok).slice(0, 8);
+      const failHtml = fails.length
+        ? `<ul class="sched-sum-notes">${fails.map((r) => `<li class="err">${esc(r.summary || r.event_id || 'write')} — ${esc(r.error || 'failed')}</li>`).join('')}</ul>`
+        : '';
+      const rm = res.rule_masters;
+      const rmLine = rm && !rm.error
+        ? `<p class="meta">Rule masters: rest desired ${esc(String(rm.rest?.desired ?? '—'))}, away ${esc(String(rm.away?.desired ?? '—'))}, fixtures linked ${esc(String(rm.fixtures?.already_linked_live ?? '—'))}</p>`
+        : (rm?.error ? `<p class="err">Rule masters: ${esc(rm.error)}</p>` : '');
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Push complete</h2>
+        <p class="meta">Finished in ${secs}s</p>
+        <div class="sched-sum-grid" style="margin-top:10px">
+          <div><strong>${planned}</strong><span>planned</span></div>
+          <div><strong>${applied}</strong><span>applied</span></div>
+          <div><strong>${failed}</strong><span>failed</span></div>
+        </div>
+        ${rmLine}
+        ${failHtml}
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button type="button" class="btn-verify" id="dyPushClose">Close</button>
+        </div>`;
+      $('dyPushClose').onclick = () => modal.classList.remove('open');
+    },
+    fail(err) {
+      clearInterval(timer);
+      if (ac.signal.aborted) return;
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Push failed</h2>
+        <p class="err">${esc(err.message || String(err))}</p>
+        <button type="button" class="btn-verify" id="dyPushClose">Close</button>`;
+      $('dyPushClose').onclick = () => modal.classList.remove('open');
+    },
+  };
+}
+
+async function runPushToGoogleWithModal(btn, refresh) {
+  const plannedHint = (btn.textContent.match(/\d+/) || [])[0] || '';
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Pushing…';
+  toast('Push to Google started…');
+  const ui = openPushProgressModal(plannedHint);
+  try {
+    const res = await api('/api/mc/gcal-auto-sync', {
+      method: 'POST',
+      body: { action: 'push' },
+      signal: ui.signal,
+    });
+    ui.finish(res);
+    const f = res.flush || {};
+    toast(`Push done · ${f.applied || 0} applied · ${f.failed || 0} failed`);
+    await refresh();
+  } catch (err) {
+    if (ui.signal.aborted) {
+      toast('Push wait cancelled');
+    } else {
+      ui.fail(err);
+      toast(err.message || 'Push failed');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
 }
