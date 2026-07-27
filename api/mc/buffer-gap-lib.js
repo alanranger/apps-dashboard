@@ -38,9 +38,16 @@ function isTravelOrBufferTitle(t, ruleMap) {
     || t.includes('Prep —') || t.includes('Decompress —');
 }
 
+/** Only MC-managed diary work gets decompress strips — not Haircut/Cleaner/workshops. */
+function isMcManagedWorkTitle(t) {
+  const s = String(t || '');
+  return /^MC\b/i.test(s) || /^P\d\s*·\s*MC-/i.test(s);
+}
+
 function isNonWorkBlock(b, ruleMap) {
   const t = blockTitle(b);
   if (!b?.start || !String(b.start).includes('T')) return true;
+  if (!isMcManagedWorkTitle(t)) return true;
   if (t.includes(ruleMap.title_prefix_fixture || 'MC ⚽') || t.includes('⚽')) return true;
   if (t.includes(ruleMap.title_prefix_deadline || 'MC ⏰') || t.includes('⏰')) return true;
   if (isTravelOrBufferTitle(t, ruleMap)) return true;
@@ -55,9 +62,18 @@ function durationMin(b) {
   return Math.max(15, e - s);
 }
 
+/**
+ * home_only: no decompress on travel edge days either.
+ * dayInsideAwaySpan skips partial_edges middles-only (Peak 2-day trips have no middle),
+ * which wrongly painted decompress over travel/workshop days.
+ */
 function homeOnlySkip(day, ruleMap, awaySpans) {
   if (String(ruleMap.buffer_scope || 'home_only') !== 'home_only') return false;
-  return dayInsideAwaySpan(day, awaySpans || []);
+  if (dayInsideAwaySpan(day, awaySpans || [])) return true;
+  return (awaySpans || []).some((s) => {
+    if (!s?.startDay || !s?.endDay) return false;
+    return day >= s.startDay && day <= s.endDay;
+  });
 }
 
 /** Adjacent same-day work pairs with required decompress gap. */
