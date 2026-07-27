@@ -90,6 +90,7 @@ async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
         rest: rule_masters.rest,
         away: rule_masters.away,
         fixtures: rule_masters.fixtures,
+        gaps: rule_masters.gaps,
       }
       : null,
   };

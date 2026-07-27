@@ -1,6 +1,7 @@
 /**
  * Persist rule-driven calendar layers as DB masters + GCal mirror:
- *   rest_day_blocks, away_day_blocks, fixture_blocks (before/after link).
+ *   rest_day_blocks, away_day_blocks, fixture_blocks (before/after link),
+ *   gap_buffer_blocks (task→task decompress strips).
  * Idempotent upsert + prune; read-back verify before storing calendar_event_id.
  */
 const {
@@ -330,11 +331,24 @@ async function runRuleEventMasterSync(sb, opts = {}) {
   const away = await syncAwayDays(sb, travel || [], { writeGcal });
   const fixtures = await syncFixtureBuffers(sb, ruleMap, { writeGcal });
 
+  const { syncGapBuffers } = require('./buffer-gap-lib');
+  const gapBlocks = (gcal.events || []).map((e) => ({
+    id: e.id,
+    summary: e.summary,
+    start: e.start?.dateTime || e.start?.date || null,
+    end: e.end?.dateTime || e.end?.date || null,
+  }));
+  const gaps = await syncGapBuffers(sb, gapBlocks, ruleMap, {
+    writeGcal,
+    travelBlocks: travel || [],
+  });
+
   return {
     horizon: { timeMin, timeMax, weeks },
     rest,
     away,
     fixtures,
+    gaps,
     writeGcal,
   };
 }

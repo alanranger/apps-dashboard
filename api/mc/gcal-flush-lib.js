@@ -158,6 +158,22 @@ function planFromBacklogRow(row) {
       needs_task_title: true,
     };
   }
+  const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+)\s*[–-]\s*(\S+)/i.exec(action);
+  if (movePrimary) {
+    return {
+      source: 'pending_diary_changes',
+      source_id: row.id,
+      entity_type: 'habit',
+      action: 'patch',
+      event_id: movePrimary[1],
+      summary: null,
+      from: null,
+      to: { start: movePrimary[2], end: movePrimary[3] },
+      patch: { startIso: movePrimary[2], endIso: movePrimary[3] },
+      related_id: row.related_id,
+      needs_habit_from_event: true,
+    };
+  }
   const moveHabit = /MOVE\/CREATE habit "([^"]+)" block to (\S+) [–-] (\S+)/i.exec(action);
   if (moveHabit) {
     const evt = /event_id=([A-Za-z0-9_-]+)/i.exec(action);

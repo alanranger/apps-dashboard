@@ -349,12 +349,11 @@ function mondayOnOrBefore(ymd) {
 }
 
 /**
- * Insert visible decompress strips after appointments (not buffers/fixtures).
- * Uses decompress_after_task_min; skips where an explicit buffer already covers.
+ * Insert visible decompress strips after work blocks (not buffers/fixtures/travel).
+ * Uses placer requiredGapMins (admin 15 / substantial 30); skips where buffer covers.
  */
 function insertDecompressStrips(blocks, ruleMap) {
-  const gap = Number(ruleMap.decompress_after_task_min || 30);
-  const skipKinds = new Set(['buffer', 'fixture', 'away']);
+  const skipKinds = new Set(['buffer', 'fixture', 'away', 'travel']);
   const byDay = new Map();
   for (const b of blocks || []) {
     if (!b.day) continue;
@@ -367,14 +366,15 @@ function insertDecompressStrips(blocks, ruleMap) {
     for (let i = 0; i < sorted.length; i += 1) {
       const cur = sorted[i];
       if (skipKinds.has(cur.kind) || cur.is_buffer) continue;
+      const nextWork = sorted.slice(i + 1).find((x) => !skipKinds.has(x.kind) && !x.is_buffer);
+      const need = nextWork
+        ? requiredGapMins(cur.title || '', nextWork.title || '', ruleMap)
+        : Number(ruleMap.decompress_after_task_min || 30);
       const stripStart = cur.end_min;
-      let stripEnd = stripStart + gap;
+      let stripEnd = stripStart + need;
       const next = sorted[i + 1];
       if (next && next.start_min < stripEnd) stripEnd = next.start_min;
-      if (stripEnd <= stripStart) {
-        // Butting edge — still show a thin visual break (8 min ≈ readable)
-        stripEnd = stripStart + 8;
-      }
+      if (stripEnd <= stripStart) stripEnd = stripStart + 8;
       const covered = sorted.some((x) => x.kind === 'buffer'
         && x.start_min <= stripStart && x.end_min >= stripStart + 5);
       if (covered) continue;

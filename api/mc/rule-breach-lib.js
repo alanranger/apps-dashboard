@@ -327,16 +327,10 @@ function collectWindowProposals(mcBlocks, ruleMap, holidays, pinnedIds, byDay, b
   return out;
 }
 
-function collectGapProposals(mcBlocks, gapMin, pinnedIds) {
-  const out = [];
-  const sorted = [...mcBlocks]
-    .filter((b) => b.start && String(b.start).includes('T'))
-    .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
-  for (let i = 0; i < sorted.length - 1; i += 1) {
-    const gp = gapProposal(sorted[i], sorted[i + 1], gapMin, pinnedIds);
-    if (gp) out.push(gp);
-  }
-  return out;
+function collectGapProposals(mcBlocks, ruleMap, pinnedIds) {
+  // Lazy require avoids circular load with habit-placer → rule-breach.
+  const { collectEnforcedGapProposals } = require('./buffer-gap-lib');
+  return collectEnforcedGapProposals(mcBlocks, ruleMap, pinnedIds);
 }
 
 function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, busyEvents = []) {
@@ -345,7 +339,6 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
     tolMin: Number(ruleMap.daily_task_cap_tolerance_min || 0),
   };
   cap.breachMin = cap.capMin + cap.tolMin;
-  const gapMin = Number(ruleMap.decompress_after_task_min || 30);
   const holidays = resolveHolidays(injectedHolidays);
   const byDay = {};
   const mcBlocks = normalizeMcBlocks(blocks, ruleMap);
@@ -356,7 +349,7 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
     if (cp) proposals.push(cp);
   }
 
-  proposals.push(...collectGapProposals(mcBlocks, gapMin, pinnedIds));
+  proposals.push(...collectGapProposals(mcBlocks, ruleMap, pinnedIds));
   proposals.push(...collectOverlapProposals(mcBlocks, pinnedIds));
   proposals.push(...collectResidentialProposals(mcBlocks, busyEvents, ruleMap, pinnedIds));
   // Fixtures are INFORMATIONAL — they never flag or displace MC work, so no

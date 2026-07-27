@@ -6,8 +6,9 @@
  *     OR title is a known changelog corruption string
  *   NEVER delete: MC ⏰ deadlines, non-MC primary events,
  *     or colorId-10 events that do not match the rules above (listed as left_uncertain).
- *   Rest/away (MC 🛌 / MC 🚫) and fixture flanks (MC ⚽) are managed masters when
- *   present in rest_day_blocks / away_day_blocks / fixture_blocks.
+ *   Rest/away (MC 🛌 / MC 🚫), fixture flanks (MC ⚽), and gap buffers (MC ⏳)
+ *   are managed masters when present in rest_day_blocks / away_day_blocks /
+ *   fixture_blocks / gap_buffer_blocks.
  */
 const {
   insertPrimaryEvent, deletePrimaryEvent, verifyPrimaryEvent,
