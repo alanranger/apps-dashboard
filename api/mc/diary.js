@@ -13,6 +13,7 @@ const {
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
+const { buildFlushPlan } = require('./gcal-flush-lib');
 
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
@@ -38,7 +39,7 @@ module.exports = async function handler(req, res) {
     const timeMin = `${from}T00:00:00.000Z`;
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
-    const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows] = await Promise.all([
+    const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows, flushPlan] = await Promise.all([
       sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,last_activity_at,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
@@ -47,6 +48,7 @@ module.exports = async function handler(req, res) {
       listAwaySpanBacklog(sb),
       sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
       sb(`bank_holidays?select=holiday_date,title&holiday_date=gte.${from}&holiday_date=lte.${to}`),
+      buildFlushPlan(sb).catch(() => ({ write_count: 0, skipped_count: 0 })),
     ]);
 
     const habitMap = new Map((habits || []).map((h) => [h.id, h]));
@@ -169,6 +171,8 @@ module.exports = async function handler(req, res) {
         open_count: (pushOpen || []).length,
         backlog_count: (backlog || []).length,
         backlog_filter: BACKLOG_SQL_HINT,
+        actionable_count: Number(flushPlan.write_count || 0),
+        skipped_count: Number(flushPlan.skipped_count || 0),
         writes_available: cursorWrites,
         cursor_writes_available: cursorWrites,
         anthropic_writes_available: writesAvailable,

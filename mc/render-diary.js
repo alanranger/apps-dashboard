@@ -322,16 +322,18 @@ function renderToolbar(data) {
   const push = data.push || {};
   const openN = push.open_count || 0;
   const backlogN = push.backlog_count || 0;
-  const n = openN + backlogN;
+  const actionable = Number(push.actionable_count != null ? push.actionable_count : openN);
+  const skipped = Number(push.skipped_count || 0);
+  const rawTotal = openN + backlogN;
   const enabled = !!push.cursor_writes_available || !!push.writes_available;
   const autoOn = !!push.auto_sync_enabled;
   const signed = !!push.auto_sync_signed_off;
-  const pushTone = !n ? 'dy-push-idle' : enabled ? 'dy-push-go' : 'dy-push-blocked';
+  const pushTone = !actionable ? 'dy-push-idle' : enabled ? 'dy-push-go' : 'dy-push-blocked';
   const statusLabel = !enabled
     ? 'Cursor GCal not configured'
     : autoOn && signed
-      ? (n ? 'Auto-sync on · queue waiting' : 'Auto-sync on · queue clear')
-      : (n ? 'Manual Push ready (auto-sync gated)' : 'Queue clear · auto-sync gated');
+      ? (actionable ? 'Auto-sync on · writes waiting' : 'Auto-sync on · nothing to write')
+      : (actionable ? 'Manual Push ready (auto-sync gated)' : 'Nothing actionable · auto-sync gated');
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
@@ -350,29 +352,31 @@ function renderToolbar(data) {
         <div class="dy-push-panel-body">
           <div class="dy-push-counts">
             <div class="dy-push-count">
-              <strong>${n}</strong>
-              <span>total waiting</span>
+              <strong>${actionable}</strong>
+              <span>will write</span>
             </div>
             <div class="dy-push-count">
               <strong>${openN}</strong>
               <span>diary edits</span>
             </div>
             <div class="dy-push-count">
-              <strong>${backlogN}</strong>
-              <span>away-span backlog</span>
+              <strong>${skipped}</strong>
+              <span>skipped (stale/unparsed)</span>
             </div>
           </div>
-          <button type="button" class="dy-push-btn" data-dy-push ${enabled && n ? '' : 'disabled'}
+          <button type="button" class="dy-push-btn" data-dy-push ${enabled && actionable ? '' : 'disabled'}
             title="${enabled
-    ? 'Flush pending DB→Google now (Cursor writer, read-back verified). Works even when auto-sync is off.'
+    ? 'Flush actionable DB→Google writes now (Cursor writer, read-back verified). Stale backlog rows are not counted here.'
     : 'Blocked until Google Calendar OAuth is configured.'}">
-            ${enabled ? `Push ${n || 0} to Google` : `Blocked · ${n} waiting`}
+            ${enabled
+    ? (actionable ? `Push ${actionable} to Google` : 'Nothing to push')
+    : `Blocked · ${actionable} actionable`}
           </button>
         </div>
         <p class="dy-push-explain">
-          Diary edits save to DB first. <strong>Push to Google</strong> writes Calendar via Cursor
-          (titles from DB, read-back before applied). Auto-sync:
-          ${autoOn ? 'enabled' : 'OFF'} · sign-off: ${signed ? 'yes' : 'pending dry-run approval'}.
+          Button count = <strong>actionable flush plan</strong> (not raw queue size).
+          Raw queue ${rawTotal} (edits ${openN} + backlog ${backlogN}); ${skipped} skipped as unparsed/stale.
+          Auto-sync: ${autoOn ? 'enabled' : 'OFF'} · sign-off: ${signed ? 'yes' : 'pending dry-run approval'}.
         </p>
       </div>
     </div>`;
