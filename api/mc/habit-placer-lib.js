@@ -689,6 +689,16 @@ function orderHabitsForPlacement(habits, deps) {
   return ordered;
 }
 
+/** First schedulable non-blocked day on/after ymd (skips chained away/rest). */
+function firstOpenOnOrAfter(ymd, ruleMap, holidays, awaySpans, maxSteps = 14) {
+  let d = ymd;
+  for (let i = 0; i < maxSteps; i += 1) {
+    if (isSchedulableDay(d, ruleMap, holidays) && !dayBlockedForPlacement(d, awaySpans)) return d;
+    d = addDays(d, 1);
+  }
+  return null;
+}
+
 function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = [], rrule = '') {
   const w = Math.max(0, Number(windowDays) || 0);
   const mode = criticalRollMode(rrule, timeCritical === true);
@@ -699,11 +709,16 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
     const after = addDays(cover.restDay || cover.endDay, 1);
     const before = addDays(cover.startDay, -1);
     if (mode === 'forward') {
-      if (after >= idealYmd) days.push(after);
+      const open = firstOpenOnOrAfter(
+        after >= idealYmd ? after : idealYmd, ruleMap, holidays, awaySpans,
+      );
+      if (open) days.push(open);
     } else if (mode === 'backward') {
       if (before <= idealYmd) days.push(before);
     } else {
       days.push(before, after);
+      const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans);
+      if (open) days.push(open);
     }
   }
   if (mode === 'forward') {
