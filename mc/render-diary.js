@@ -287,8 +287,8 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
 
 function renderLegend() {
   const editable = [
-    ['dy-task', '📋', 'Manual task', 'drag · ☑ · amend'],
-    ['dy-habit', '🔁', 'Recurring habit', 'drag · ☑ · amend'],
+    ['dy-task', '📋', 'Manual task', 'drag · ☐ complete · amend'],
+    ['dy-habit', '🔁', 'Recurring habit', 'drag · ☐ complete · amend'],
   ];
   const readonly = [
     ['dy-workshop', '📷', 'Client booking', 'Zoom / workshop — locked'],
@@ -465,13 +465,15 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   ].filter(Boolean);
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
-    : (canEdit ? '<span class="dy-lock-hint" aria-hidden="true">🔒</span>' : '');
-  const drag = canDrag ? 'draggable="true"' : '';
+    : '';
   const doneBtn = canEdit && (b.kind === 'mc_task' || b.kind === 'habit')
-    ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☑</button>`
+    ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☐</button>`
+    : '';
+  const grab = canDrag
+    ? '<span class="dy-grab" title="Drag to move" aria-hidden="true">⠿</span>'
     : '';
   const editBadge = canDrag
-    ? '<span class="dy-edit-badge" title="Editable">EDIT</span>'
+    ? '<span class="dy-edit-badge" title="Editable — drag to move">DRAG</span>'
     : '';
   const doneBadge = done
     ? `<span class="dy-done-badge">DONE${b.actual_minutes != null ? ` ${b.actual_minutes}m` : ''}</span>`
@@ -485,9 +487,9 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   return `<div class="dy-block ${cls} ${status}"
     style="top:${top}%;height:${h}%"
     data-block-id="${b.id}"
-    title="${tipBits.join(' · ')}"
-    ${drag}>
+    title="${tipBits.join(' · ')}">
     <div class="dy-block-row">
+      ${grab}
       ${doneBtn}
       <span class="dy-block-label">${label}</span>
       ${editBadge}
@@ -693,10 +695,26 @@ function renderWeek(week, blocks, awayDays, axis, banners, holidays) {
     </div>`;
 }
 
+function minsFromPointerY(grid, clientY, axis) {
+  const rect = grid.getBoundingClientRect();
+  const span = axis.end_min - axis.start_min;
+  const step = axis.step_min || 30;
+  let startMin = Math.round((axis.start_min + ((clientY - rect.top) / rect.height) * span) / step) * step;
+  return Math.max(axis.start_min, Math.min(startMin, axis.end_min - step));
+}
+
 function wireDiary(root, data, refresh) {
   const axis = data.day_axis || { start_min: 420, end_min: 1380, step_min: 30 };
   let dragBlock = null;
   let dragStarted = false;
+  let ptr = null; // pointer drag state
+
+  function clearPtrGhost() {
+    ptr?.ghost?.remove();
+    if (ptr?.el) ptr.el.classList.remove('dy-drag-source');
+    root.classList.remove('dy-dragging');
+    ptr = null;
+  }
 
   root.addEventListener('click', async (e) => {
     const blockEl = e.target.closest('.dy-block');
@@ -710,7 +728,7 @@ function wireDiary(root, data, refresh) {
     const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
     if (!block || block.is_buffer || block.synthetic) return;
 
-      if (e.target.closest('[data-dy-done]')) {
+    if (e.target.closest('[data-dy-done]')) {
       if (!block.editable || block.done) return;
       try {
         await runMenuAction('complete', block, refresh);
@@ -724,63 +742,72 @@ function wireDiary(root, data, refresh) {
     showMenu(block, e.clientX, e.clientY, refresh);
   });
 
-  root.addEventListener('dragstart', (e) => {
+  root.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('[data-dy-done], .dy-menu, a, input, textarea, select')) return;
     const blockEl = e.target.closest('.dy-block.dy-edit');
-    if (!blockEl) {
-      e.preventDefault();
-      return;
-    }
-    if (e.target.closest('[data-dy-done]')) {
-      e.preventDefault();
-      return;
-    }
-    dragBlock = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
-    if (!dragBlock || dragBlock.client_fixed) {
-      e.preventDefault();
-      dragBlock = null;
-      return;
-    }
-    dragStarted = true;
-    root.classList.add('dy-dragging');
-    e.dataTransfer.setData('text/plain', blockEl.dataset.blockId);
-    e.dataTransfer.effectAllowed = 'move';
+    if (!blockEl || !root.contains(blockEl)) return;
+    const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
+    if (!block || block.done || block.client_fixed || block.is_buffer) return;
+    ptr = {
+      block, el: blockEl, x0: e.clientX, y0: e.clientY, moved: false, ghost: null, pid: e.pointerId,
+    };
+    try { blockEl.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
   });
 
-  root.addEventListener('dragend', () => {
-    root.classList.remove('dy-dragging');
-    setTimeout(() => { dragStarted = false; }, 0);
+  root.addEventListener('pointermove', (e) => {
+    if (!ptr || e.pointerId !== ptr.pid) return;
+    const dx = e.clientX - ptr.x0;
+    const dy = e.clientY - ptr.y0;
+    if (!ptr.moved && (dx * dx + dy * dy) < 36) return;
+    if (!ptr.moved) {
+      ptr.moved = true;
+      dragStarted = true;
+      dragBlock = ptr.block;
+      root.classList.add('dy-dragging');
+      ptr.el.classList.add('dy-drag-source');
+      const ghost = ptr.el.cloneNode(true);
+      ghost.classList.add('dy-drag-ghost');
+      ghost.removeAttribute('data-block-id');
+      const r = ptr.el.getBoundingClientRect();
+      ghost.style.width = `${r.width}px`;
+      ghost.style.height = `${r.height}px`;
+      document.body.appendChild(ghost);
+      ptr.ghost = ghost;
+    }
+    if (ptr.ghost) {
+      ptr.ghost.style.transform = `translate(${e.clientX + 8}px, ${e.clientY + 8}px)`;
+    }
+  });
+
+  root.addEventListener('pointerup', async (e) => {
+    if (!ptr || e.pointerId !== ptr.pid) return;
+    const wasDrag = ptr.moved;
+    const block = ptr.block;
+    clearPtrGhost();
     dragBlock = null;
+    if (!wasDrag) return;
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const grid = under?.closest?.('.dy-day-grid');
+    const day = grid?.getAttribute('data-day');
+    if (!grid || !day) {
+      toast('Drop on a day column to reschedule');
+      return;
+    }
+    const startMin = minsFromPointerY(grid, e.clientY, axis);
+    const dur = block.duration_min || 60;
+    const endMin = Math.min(startMin + dur, axis.end_min);
+    try {
+      await dropBlock(block, day, fmtHm(startMin), fmtHm(endMin), false, refresh);
+    } catch (err) {
+      alert(err.message || 'Drop failed');
+    }
   });
 
-  root.querySelectorAll('.dy-day-grid').forEach((grid) => {
-    grid.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    });
-    grid.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const day = grid.getAttribute('data-day');
-      if (!dragBlock || !day) {
-        toast('Nothing to drop — drag a green habit or blue task');
-        return;
-      }
-      const rect = grid.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const span = axis.end_min - axis.start_min;
-      const step = axis.step_min || 30;
-      let startMin = Math.round((axis.start_min + (y / rect.height) * span) / step) * step;
-      startMin = Math.max(axis.start_min, Math.min(startMin, axis.end_min - step));
-      const dur = dragBlock.duration_min || 60;
-      const endMin = Math.min(startMin + dur, axis.end_min);
-      try {
-        await dropBlock(dragBlock, day, fmtHm(startMin), fmtHm(endMin), false, refresh);
-      } catch (err) {
-        alert(err.message || 'Drop failed');
-      }
-      dragBlock = null;
-      root.classList.remove('dy-dragging');
-    });
+  root.addEventListener('pointercancel', (e) => {
+    if (!ptr || e.pointerId !== ptr.pid) return;
+    clearPtrGhost();
+    dragBlock = null;
   });
 }
 
