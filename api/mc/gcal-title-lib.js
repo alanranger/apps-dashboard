@@ -35,6 +35,16 @@ function travelGcalTitle(block, prefixes = {}) {
   return `${travel} Travel out — ${workshop}`;
 }
 
+function restDayGcalTitle(workshopTitle) {
+  const bare = String(workshopTitle || 'workshop').trim();
+  return `MC 🛌 REST — after ${bare}`;
+}
+
+function awaySpanGcalTitle({ venue_name, workshop_title }) {
+  const bare = String(venue_name || workshop_title || 'trip').trim();
+  return `MC 🚫 AWAY — ${bare}`;
+}
+
 /** Queue/changelog strings that must never become Calendar titles. */
 function isChangelogTitle(s) {
   const t = String(s || '');
@@ -54,6 +64,8 @@ module.exports = {
   taskGcalTitle,
   habitGcalTitle,
   travelGcalTitle,
+  restDayGcalTitle,
+  awaySpanGcalTitle,
   isChangelogTitle,
   priorityToken,
 };

@@ -4,9 +4,10 @@
  *   DELETE if event id is referenced by tasks/recurring_log/travel_blocks
  *     OR title matches MC task/habit/travel/buffer patterns
  *     OR title is a known changelog corruption string
- *   NEVER delete: MC ⚽ fixtures, MC ⏰ deadlines, non-MC primary events,
+ *   NEVER delete: MC ⏰ deadlines, non-MC primary events,
  *     or colorId-10 events that do not match the rules above (listed as left_uncertain).
- */
+ *   Rest/away (MC 🛌 / MC 🚫) and fixture flanks (MC ⚽) are managed masters when
+ *   present in rest_day_blocks / away_day_blocks / fixture_blocks.
 const {
   insertPrimaryEvent, deletePrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
@@ -29,9 +30,10 @@ function isDeadlineTitle(t, ruleMap) {
 
 function isManagedTitle(summary, ruleMap) {
   const t = String(summary || '');
-  if (isFixtureBlock({ summary: t }, ruleMap)) return false;
   if (isDeadlineTitle(t, ruleMap)) return false;
   if (isChangelogTitle(t)) return true;
+  if (/MC 🛌|MC 🚫|REST —|AWAY —/.test(t)) return true;
+  if (isFixtureBlock({ summary: t }, ruleMap)) return true;
   const habit = ruleMap.title_prefix_recurring || 'MC 🔁';
   const travel = ruleMap.title_prefix_travel || 'MC 🚗';
   const buffer = ruleMap.title_prefix_buffer || 'MC ⏳';
@@ -45,7 +47,7 @@ function classifyEvent(e, referencedIds, ruleMap) {
   const id = e.id;
   const summary = e.summary || '';
   if (referencedIds.has(id)) return 'delete_db_ref';
-  if (isFixtureBlock(e, ruleMap) || isDeadlineTitle(summary, ruleMap)) return 'leave_protected';
+  if (isDeadlineTitle(summary, ruleMap)) return 'leave_protected';
   if (isManagedTitle(summary, ruleMap)) return 'delete_pattern';
   if (e.colorId === '10' || /^MC\s/i.test(summary)) return 'leave_uncertain';
   return 'leave_other';

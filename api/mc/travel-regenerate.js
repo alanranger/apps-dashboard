@@ -139,6 +139,13 @@ module.exports = async function handler(req, res) {
           });
         }
       }
+      // Re-derive away + rest masters when trips move (fixtures unchanged here).
+      try {
+        const { runRuleEventMasterSync } = require('./rule-event-masters-lib');
+        await runRuleEventMasterSync(sb, { writeGcal: true, weeks });
+      } catch (e) {
+        applied.push({ rule_master_sync_error: e.message });
+      }
     }
 
     return json(res, 200, {

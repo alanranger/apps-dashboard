@@ -41,8 +41,24 @@ function timedEventBody({ summary, startIso, endIso, description }) {
   };
 }
 
+/** All-day primary event. endDate is exclusive (Google all-day convention). */
+function allDayEventBody({ summary, startDate, endDateExclusive, description }) {
+  return {
+    summary: summary || 'MC event',
+    description: description || undefined,
+    start: { date: startDate },
+    end: { date: endDateExclusive },
+    colorId: '10',
+    reminders: { useDefault: false, overrides: [] },
+  };
+}
+
 async function insertPrimaryEvent(opts) {
   return gcalFetch('POST', `/calendars/${encodeURIComponent(PRIMARY)}/events`, timedEventBody(opts));
+}
+
+async function insertPrimaryAllDayEvent(opts) {
+  return gcalFetch('POST', `/calendars/${encodeURIComponent(PRIMARY)}/events`, allDayEventBody(opts));
 }
 
 async function patchPrimaryEvent(eventId, opts) {
@@ -97,8 +113,16 @@ async function verifyPrimaryEvent(eventId, expect) {
   const liveStart = eventWallIso(live, 'start');
   const liveEnd = eventWallIso(live, 'end');
   const titleOk = expect.summary == null || String(live.summary || '') === String(expect.summary);
-  const startOk = expect.startIso == null || closeEnough(liveStart, expect.startIso);
-  const endOk = expect.endIso == null || closeEnough(liveEnd, expect.endIso);
+  let startOk = true;
+  let endOk = true;
+  if (expect.startDate) {
+    startOk = String(live.start?.date || '') === String(expect.startDate);
+    endOk = expect.endDateExclusive == null
+      || String(live.end?.date || '') === String(expect.endDateExclusive);
+  } else {
+    startOk = expect.startIso == null || closeEnough(liveStart, expect.startIso);
+    endOk = expect.endIso == null || closeEnough(liveEnd, expect.endIso);
+  }
   const ok = !!(titleOk && startOk && endOk);
   return {
     ok,
@@ -150,10 +174,12 @@ async function testWriteRoundTrip() {
 module.exports = {
   PRIMARY,
   insertPrimaryEvent,
+  insertPrimaryAllDayEvent,
   patchPrimaryEvent,
   deletePrimaryEvent,
   getPrimaryEvent,
   verifyPrimaryEvent,
   testWriteRoundTrip,
   timedEventBody,
+  allDayEventBody,
 };
