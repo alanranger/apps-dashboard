@@ -29,6 +29,7 @@
     { "source": "/api/mc/diary.json", "destination": "/api/mc/diary" },
     { "source": "/api/mc/diary-action.json", "destination": "/api/mc/diary-action" },
     { "source": "/api/mc/gcal-push.json", "destination": "/api/mc/gcal-push" },
+    { "source": "/api/mc/gcal-flush.json", "destination": "/api/mc/gcal-flush" },
     { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },
     { "source": "/handoff", "destination": "/handoff.html" },

@@ -1,30 +1,51 @@
 #!/usr/bin/env node
 /**
- * ONE-OFF: mint a Google Calendar OAuth refresh token for Mission Control diary-drift.
- * Scope: calendar.readonly only. Client nickname: mc-diary-drift-readonly.
+ * Mint a Google Calendar OAuth refresh token for Mission Control.
+ * Scope: full calendar (read + write) — Cursor flush path.
  *
  * Usage (from apps-dashboard root):
+ *   node scripts/gcal-mint-refresh-token.cjs
  *   node scripts/gcal-mint-refresh-token.cjs "C:\path\to\client_secret_....json"
  *
+ * Without a JSON path, loads GCAL_CLIENT_ID / GCAL_CLIENT_SECRET from .env.local.
  * Prints the refresh token to THIS terminal only — never writes to disk/Drive/repo.
- * Paste into Vercel env (see Alan steps in the handoff RESPONSE).
  */
 const fs = require('fs');
 const http = require('http');
+const path = require('path');
 const { URL } = require('url');
 const { exec } = require('child_process');
 
-const SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+const SCOPE = 'https://www.googleapis.com/auth/calendar';
 const PORT = 53683;
 const REDIRECT = `http://127.0.0.1:${PORT}/oauth2callback`;
 
-function loadClient(path) {
-  const raw = JSON.parse(fs.readFileSync(path, 'utf8'));
-  const block = raw.installed || raw.web;
-  if (!block?.client_id || !block?.client_secret) {
-    throw new Error('JSON must contain installed/web.client_id and client_secret');
+function loadEnvLocal() {
+  const p = path.join(__dirname, '..', '.env.local');
+  if (!fs.existsSync(p)) return;
+  for (const line of fs.readFileSync(p, 'utf8').split(/\r?\n/)) {
+    const m = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line.trim());
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
   }
-  return block;
+}
+
+function loadClient(jsonPath) {
+  if (jsonPath) {
+    const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    const block = raw.installed || raw.web;
+    if (!block?.client_id || !block?.client_secret) {
+      throw new Error('JSON must contain installed/web.client_id and client_secret');
+    }
+    return block;
+  }
+  loadEnvLocal();
+  if (!process.env.GCAL_CLIENT_ID || !process.env.GCAL_CLIENT_SECRET) {
+    throw new Error('Pass client_secret.json OR set GCAL_CLIENT_ID + GCAL_CLIENT_SECRET in .env.local');
+  }
+  return {
+    client_id: process.env.GCAL_CLIENT_ID,
+    client_secret: process.env.GCAL_CLIENT_SECRET,
+  };
 }
 
 function openBrowser(url) {
@@ -56,12 +77,15 @@ async function exchangeCode(client, code) {
 
 function main() {
   const jsonPath = process.argv[2];
-  if (!jsonPath || !fs.existsSync(jsonPath)) {
-    console.error('Usage: node scripts/gcal-mint-refresh-token.cjs <path-to-client-secret.json>');
+  if (jsonPath && !fs.existsSync(jsonPath)) {
+    console.error('Usage: node scripts/gcal-mint-refresh-token.cjs [path-to-client-secret.json]');
     process.exit(1);
   }
 
-  const client = loadClient(jsonPath);
+  let client;
+  try { client = loadClient(jsonPath || null); }
+  catch (e) { console.error(e.message); process.exit(1); }
+
   const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   auth.searchParams.set('client_id', client.client_id);
   auth.searchParams.set('redirect_uri', REDIRECT);
@@ -95,10 +119,10 @@ function main() {
       res.end('<h1>OK — return to the terminal.</h1><p>You can close this tab.</p>');
 
       console.log('');
-      console.log('=== SUCCESS — copy into Vercel (apps-dashboard) ===');
+      console.log('=== SUCCESS — paste into .env.local AND Vercel (apps-dashboard) ===');
       console.log('GCAL_CLIENT_ID=' + client.client_id);
-      console.log('GCAL_CLIENT_SECRET=(from your JSON — not re-printed here)');
       console.log('GCAL_USER=info@alanranger.com');
+      console.log('Scope=https://www.googleapis.com/auth/calendar (read+write)');
       if (tokens.refresh_token) {
         console.log('GCAL_REFRESH_TOKEN=' + tokens.refresh_token);
       } else {
@@ -116,7 +140,7 @@ function main() {
 
   server.listen(PORT, '127.0.0.1', () => {
     console.log(`Listening on ${REDIRECT}`);
-    console.log('Opening browser for consent (calendar.readonly only)…');
+    console.log('Opening browser for consent (calendar READ+WRITE)…');
     console.log('If the browser does not open, paste this URL manually:');
     console.log(auth.toString());
     console.log('');
