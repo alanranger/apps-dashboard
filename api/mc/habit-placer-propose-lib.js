@@ -212,34 +212,43 @@ async function applyTaskBumpToDb(sb, bump) {
   return true;
 }
 
-/** Apply placer MOVE/CREATE/DELETE to recurring_log + gcal_push_queue (DB master → auto-sync). */
+/** Apply placer MOVE/CREATE/DELETE/KEEP(pin-sync) to recurring_log + gcal_push_queue. */
 async function applyHabitAmendmentToDb(sb, a) {
-  if (!a || a.action === 'KEEP') return false;
-  if (!a.habit_id || !a.ideal_date) return false;
+  if (!a || !a.habit_id || !a.ideal_date) return false;
   const logRows = await sb(
     `recurring_log?recurring_task_id=eq.${a.habit_id}&ideal_date=eq.${a.ideal_date}`
-    + '&select=id,calendar_event_id,scheduled_date&order=at.desc&limit=1',
+    + '&select=id,calendar_event_id,scheduled_date,change&order=at.desc&limit=1',
   );
   const keepId = logRows?.[0]?.id || null;
   const evtId = a.calendar_event_id || logRows?.[0]?.calendar_event_id || null;
+  const log = logRows?.[0] || null;
+
+  // KEEP: Google may already match plan while recurring_log pin/scheduled_date is stale.
+  if (a.action === 'KEEP') {
+    if (!a.startIso || !a.endIso || !keepId) return false;
+    const day = isoToLondonDate(a.startIso) || a.ideal_date;
+    const pinChange = `diary_pin:${a.startIso}|${a.endIso}`;
+    if (log?.scheduled_date === day && log?.change === pinChange && log?.calendar_event_id === evtId) {
+      return false;
+    }
+    await sb(`recurring_log?id=eq.${keepId}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        change: pinChange,
+        scheduled_date: day,
+        roll_reason: 'habit_placer_keep_sync',
+        calendar_event_id: evtId,
+        ideal_date: a.ideal_date,
+        projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
+      },
+    });
+    return true;
+  }
 
   // Unplaced / dropped: never leave a dated scheduled_date (esp. on rest/away).
+  // Queue Google delete BEFORE clearing calendar_event_id so the id is never lost.
   if (a.action === 'DELETE') {
-    if (keepId) {
-      await sb(`recurring_log?id=eq.${keepId}`, {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: {
-          change: `unplaced ${a.ideal_date}|habit_placer`,
-          scheduled_date: null,
-          roll_reason: 'habit_placer_unplace',
-          calendar_event_id: null,
-          ideal_date: a.ideal_date,
-          projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
-        },
-      });
-    }
     if (evtId) {
-      // Queue uses change_kind=skip (check constraint: complete|move|skip) → flush deletes GCal.
       await upsertPushRow(sb, {
         related_id: relatedIdForHabit(a.habit_id, a.ideal_date, evtId),
         entity_type: 'habit',
@@ -255,6 +264,19 @@ async function applyHabitAmendmentToDb(sb, a) {
           ideal_date: a.ideal_date,
           calendar_event_id: evtId,
           action: 'delete_event',
+        },
+      });
+    }
+    if (keepId) {
+      await sb(`recurring_log?id=eq.${keepId}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          change: `unplaced ${a.ideal_date}|habit_placer`,
+          scheduled_date: null,
+          roll_reason: 'habit_placer_unplace',
+          calendar_event_id: null,
+          ideal_date: a.ideal_date,
+          projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
         },
       });
     }
@@ -557,12 +579,20 @@ async function runHabitPlacerPropose(ctx) {
   const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap)
     .concat(restDaySpansFromDbRows(restDb || []));
   const blockedSpans = awaySpans.concat(teachingSpans).concat(restSpans);
-  const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans)
+  // Existing habit blocks must occupy the busy map (buildBusyIntervals skips MC titles).
+  const existingHabitBusy = (existingLog || []).map((e) => ({
+    startMs: Date.parse(e.startIso),
+    endMs: Date.parse(e.endIso),
+    summary: e.title,
+    habit_id: e.habit_id,
+    ideal_date: e.ideal_date,
+  })).filter((b) => Number.isFinite(b.startMs) && Number.isFinite(b.endMs));
+  const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans).concat(existingHabitBusy)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
     habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
-    { softTaskIntervals: softTasks },
+    { softTaskIntervals: softTasks, existingHabitIntervals: existingHabitBusy },
   );
   const existing = enrichExistingFromGcalTitles(
     existingLog, habits || [], gcalEvents || [], placements,
@@ -597,24 +627,31 @@ async function runHabitPlacerPropose(ctx) {
   let taskDbApplied = 0;
   let habitDbApplied = 0;
   let habitRolls = { rolled: 0 };
+  const proofOk = !!proof?.ok;
   if (writePending) {
     for (const a of amendments) {
-      if (a.action === 'MOVE' || a.action === 'CREATE' || a.action === 'DELETE') {
+      // Always persist plan times to recurring_log (KEEP can hide stale scheduled_date vs GCal).
+      const writeAction = (a.action === 'KEEP' && proofOk)
+        ? { ...a, action: 'MOVE', from_startIso: a.startIso, from_endIso: a.endIso }
+        : a;
+      const mayWrite = writeAction.action === 'DELETE'
+        || ((writeAction.action === 'MOVE' || writeAction.action === 'CREATE') && proofOk);
+      if (mayWrite) {
         try {
-          if (await applyHabitAmendmentToDb(sb, a)) habitDbApplied += 1;
+          if (await applyHabitAmendmentToDb(sb, writeAction)) habitDbApplied += 1;
         } catch (_) { /* pending row still written below */ }
       }
       const row = amendmentToPending(a);
       if (!row) continue;
       if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
-      const applied = a.action === 'MOVE' || a.action === 'CREATE' || a.action === 'DELETE';
+      const applied = mayWrite && a.action !== 'KEEP';
       const out = await sb('pending_diary_changes', {
         method: 'POST',
         body: {
           ...row,
-          status: applied ? 'applied' : row.status,
-          resolved_at: applied ? new Date().toISOString() : null,
-          resolved_by: applied ? 'habit_placer_enforce' : null,
+          status: applied ? 'applied' : (a.action === 'KEEP' ? 'applied' : row.status),
+          resolved_at: (applied || a.action === 'KEEP') ? new Date().toISOString() : null,
+          resolved_by: (applied || a.action === 'KEEP') ? 'habit_placer_enforce' : null,
         },
       });
       const id = Array.isArray(out) ? out[0]?.id : out?.id;

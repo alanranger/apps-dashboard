@@ -328,5 +328,6 @@ module.exports = {
   isTravelWorkshopEvent,
   desiredTravelTimes,
   hasIntermediateTravelLegs,
+  pickWorkshop,
   normTitle,
 };

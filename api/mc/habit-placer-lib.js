@@ -1118,6 +1118,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     || b.kind === 'teaching_day'
     || b.kind === 'rest_after_workshop'
     || b.restDay);
+  const foreignHabits = opts.existingHabitIntervals || [];
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
@@ -1125,12 +1126,16 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
         ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
         habit.rrule, true,
       );
+      // While re-placing this occurrence, ignore its own prior block so it can MOVE.
+      const busySansSelf = busyWork.concat(
+        foreignHabits.filter((f) => !(f.habit_id === habit.id && f.ideal_date === ideal)),
+      );
       let slot = null;
       for (const day of days) {
         if (dayBlockedForHabits(day, awaySpans)) continue;
         const trial = trySlotOnDay(
           day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
-          habit.title, busyWork, placements, dayUsed, ruleMap,
+          habit.title, busySansSelf, placements, dayUsed, ruleMap,
         );
         if (!trial || !depOk(habit, trial, placedByHabit, deps)) continue;
         slot = trial;
@@ -1161,7 +1166,41 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
       });
     }
   }
+  cullPackedDayPlacements(placements, unplaced, dayUsed, ruleMap);
   return { placements, unplaced };
+}
+
+/** Final pass: drop lower-priority / later placements that still gap/overlap. */
+function cullPackedDayPlacements(placements, unplaced, dayUsed, ruleMap) {
+  const kept = [];
+  const sorted = placements.slice().sort((a, b) => {
+    const pr = priorityRank(a.priority) - priorityRank(b.priority);
+    if (pr !== 0) return pr;
+    return Date.parse(a.startIso) - Date.parse(b.startIso);
+  });
+  for (const p of sorted) {
+    const aS = Date.parse(p.startIso);
+    const aE = Date.parse(p.endIso);
+    const conflict = kept.some((k) => {
+      if (k.day !== p.day) return false;
+      const kS = Date.parse(k.startIso);
+      const kE = Date.parse(k.endIso);
+      if (overlaps(aS, aE, kS, kE)) return true;
+      const gap = aE <= kS ? (kS - aE) / 60000 : (aS - kE) / 60000;
+      if (gap < 0) return true;
+      return gap < requiredGapMins(k.title, p.title, ruleMap);
+    });
+    if (conflict) {
+      unplaced.push({
+        habit_id: p.habit_id, title: p.title, ideal_date: p.ideal_date,
+        reason: 'cull_overlap_gap',
+      });
+      continue;
+    }
+    kept.push(p);
+  }
+  placements.length = 0;
+  for (const p of kept) placements.push(p);
 }
 
 function sameLondonSlot(aIso, bIso) {
@@ -1205,7 +1244,9 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
     });
   }
   if (!fromYmd) return out;
+  // Never drop DELETE that still has a live calendar_event_id — past days must still unplace Google.
   return out.filter((a) => {
+    if (a.action === 'DELETE' && a.calendar_event_id) return true;
     const day = isoToLondonDate(a.startIso) || a.ideal_date;
     return day >= fromYmd;
   });
@@ -1218,6 +1259,10 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
   const softTasks = opts.softTaskIntervals || [];
   const bumps = opts.bumps || findTaskBumps(placements, softTasks);
   const bumpedIds = new Set(bumps.map((b) => Number(b.display_id)));
+
+  // Cap includes soft tasks that remain (not bumped) — packed days must not exceed hard.
+  // Do NOT seed away/rest banners or multi-day busy spans into the cap meter.
+  seedDayUsed(dayUsed, softTasks.filter((t) => !bumpedIds.has(Number(t.display_id))), null, null);
 
   for (let i = 0; i < placements.length; i += 1) {
     const a = placements[i];
