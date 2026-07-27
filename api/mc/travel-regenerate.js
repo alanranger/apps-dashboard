@@ -18,9 +18,15 @@ async function patchBlock(id, patch) {
   });
 }
 
-async function queueTravelMove(actor, blockMeta, to, venue, title) {
+async function queueTravelMove(actor, blockMeta, to, venue, title, prefixes) {
   if (!blockMeta.calendar_event_id) return null;
+  const { travelGcalTitle } = require('./gcal-title-lib');
   const related = `gcal:travel:${blockMeta.id}`;
+  const gcalTitle = travelGcalTitle({
+    block_type: blockMeta.block_type,
+    venue_name: venue,
+    workshop_title: title,
+  }, prefixes || {});
   await upsertPushRow(sb, {
     related_id: related,
     entity_type: 'travel',
@@ -38,6 +44,7 @@ async function queueTravelMove(actor, blockMeta, to, venue, title) {
       new_end: to.ends_at,
       venue,
       workshop_title: title,
+      title: gcalTitle,
       actor,
     },
   });

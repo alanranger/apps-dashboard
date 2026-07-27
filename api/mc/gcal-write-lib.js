@@ -6,6 +6,7 @@ const { getAccessToken, gcalConfigured } = require('./gcal-lib');
 
 const CAL_API = 'https://www.googleapis.com/calendar/v3';
 const PRIMARY = 'primary';
+const TOL_MS = 2 * 60 * 1000;
 
 async function gcalFetch(method, path, body) {
   const token = await getAccessToken();
@@ -35,6 +36,8 @@ function timedEventBody({ summary, startIso, endIso, description }) {
     description: description || undefined,
     start: { dateTime: startIso, timeZone: 'Europe/London' },
     end: { dateTime: endIso, timeZone: 'Europe/London' },
+    colorId: '10',
+    reminders: { useDefault: false, overrides: [] },
   };
 }
 
@@ -50,6 +53,8 @@ async function patchPrimaryEvent(eventId, opts) {
     body.start = { dateTime: opts.startIso, timeZone: 'Europe/London' };
     body.end = { dateTime: opts.endIso, timeZone: 'Europe/London' };
   }
+  if (opts.colorId != null) body.colorId = opts.colorId;
+  if (opts.reminders != null) body.reminders = opts.reminders;
   return gcalFetch(
     'PATCH',
     `/calendars/${encodeURIComponent(PRIMARY)}/events/${encodeURIComponent(eventId)}`,
@@ -58,10 +63,52 @@ async function patchPrimaryEvent(eventId, opts) {
 }
 
 async function deletePrimaryEvent(eventId) {
+  try {
+    return await gcalFetch(
+      'DELETE',
+      `/calendars/${encodeURIComponent(PRIMARY)}/events/${encodeURIComponent(eventId)}`,
+    );
+  } catch (e) {
+    if (e.status === 404 || e.status === 410) return { deleted: false, missing: true };
+    throw e;
+  }
+}
+
+async function getPrimaryEvent(eventId) {
   return gcalFetch(
-    'DELETE',
+    'GET',
     `/calendars/${encodeURIComponent(PRIMARY)}/events/${encodeURIComponent(eventId)}`,
   );
+}
+
+function eventWallIso(ev, which) {
+  const node = which === 'end' ? ev?.end : ev?.start;
+  return node?.dateTime || (node?.date ? `${node.date}T00:00:00.000Z` : null);
+}
+
+function closeEnough(a, b) {
+  if (!a || !b) return false;
+  return Math.abs(Date.parse(a) - Date.parse(b)) <= TOL_MS;
+}
+
+/** Read-back: title + times must match before a write may be marked applied. */
+async function verifyPrimaryEvent(eventId, expect) {
+  const live = await getPrimaryEvent(eventId);
+  const liveStart = eventWallIso(live, 'start');
+  const liveEnd = eventWallIso(live, 'end');
+  const titleOk = expect.summary == null || String(live.summary || '') === String(expect.summary);
+  const startOk = expect.startIso == null || closeEnough(liveStart, expect.startIso);
+  const endOk = expect.endIso == null || closeEnough(liveEnd, expect.endIso);
+  const ok = !!(titleOk && startOk && endOk);
+  return {
+    ok,
+    event_id: eventId,
+    live: { summary: live.summary, start: liveStart, end: liveEnd, colorId: live.colorId },
+    expect,
+    titleOk,
+    startOk,
+    endOk,
+  };
 }
 
 /** Create then delete a throwaway primary event — proves write scope. */
@@ -105,6 +152,8 @@ module.exports = {
   insertPrimaryEvent,
   patchPrimaryEvent,
   deletePrimaryEvent,
+  getPrimaryEvent,
+  verifyPrimaryEvent,
   testWriteRoundTrip,
   timedEventBody,
 };
