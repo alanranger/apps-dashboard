@@ -102,18 +102,27 @@ function tasksToBlocks(tasks, todayYmd) {
   const now = Date.now();
   return (tasks || []).filter((t) => t.scheduled_start && t.scheduled_end).map((t) => {
     const done = isDoneTask(t);
+    const mins = Number(t.actual_minutes || t.est_minutes || 30);
+    let start = t.scheduled_start;
     let end = t.scheduled_end;
-    if (done && t.actual_minutes && t.scheduled_start) {
-      const startMs = Date.parse(t.scheduled_start);
-      if (Number.isFinite(startMs)) {
-        end = new Date(startMs + Number(t.actual_minutes) * 60000).toISOString();
+    // Done work sits at the moment it was marked done, not the old plan.
+    if (done) {
+      const doneAt = t.last_activity_at || t.completed_at || null;
+      if (doneAt && Number.isFinite(Date.parse(doneAt))) {
+        start = new Date(doneAt).toISOString();
+        end = new Date(Date.parse(doneAt) + Math.max(15, mins) * 60000).toISOString();
+      } else if (t.actual_minutes && t.scheduled_start) {
+        const startMs = Date.parse(t.scheduled_start);
+        if (Number.isFinite(startMs)) {
+          end = new Date(startMs + Number(t.actual_minutes) * 60000).toISOString();
+        }
       }
     }
     return toBlock({
       id: `task:${t.id}`,
       kind: 'mc_task',
       title: t.title || `MC-${t.display_id}`,
-      start: t.scheduled_start,
+      start,
       end,
       editable: !done,
       slot_pinned: !!t.slot_pinned,

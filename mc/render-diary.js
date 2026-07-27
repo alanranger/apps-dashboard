@@ -264,10 +264,7 @@ async function dropBlock(block, day, startHm, endHm, override, refresh) {
     };
     if (block.kind === 'mc_task') {
       body.task_id = block.id.replace(/^task:/, '');
-      if (block.slot_pinned) {
-        alert('Pinned — unlock before dragging');
-        return;
-      }
+      body.unlock_if_pinned = true;
     } else if (block.kind === 'habit') {
       body.habit_id = block.habit_id;
       body.ideal_date = block.ideal_date || block.day;
@@ -410,7 +407,26 @@ function conflictIds(dayBlocks) {
   return bad;
 }
 
-function renderBlock(b, axis, conflicts) {
+/** Side lanes so overlapping editable blocks stay grabbable. */
+function conflictLanes(dayBlocks, conflictSet) {
+  const lanes = new Map();
+  const timed = (dayBlocks || [])
+    .filter((b) => conflictSet?.has(b.id) && (b.kind === 'mc_task' || b.kind === 'habit'))
+    .sort((a, b) => (a.start_min - b.start_min) || (a.end_min - b.end_min)
+      || String(a.id).localeCompare(String(b.id)));
+  for (const b of timed) {
+    let lane = 0;
+    for (;; lane += 1) {
+      const hit = timed.some((o) => o !== b && lanes.get(o.id) === lane
+        && o.start_min < b.end_min && b.start_min < o.end_min);
+      if (!hit) break;
+    }
+    lanes.set(b.id, lane);
+  }
+  return lanes;
+}
+
+function renderBlock(b, axis, conflicts, lane = 0) {
   const top = minsToTop(b.start_min, axis);
   const h = heightPct(b.duration_min || 30, axis);
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
@@ -432,17 +448,19 @@ function renderBlock(b, axis, conflicts) {
     stackClass(b.kind, isBuffer),
     conflict,
     tall,
+    lane > 0 ? `dy-lane-${Math.min(lane, 2)}` : '',
   ].filter(Boolean).join(' ');
   const canEdit = !!(b.editable && !isBuffer && !done);
-  const canDrag = !!(canEdit && !locked);
+  // Allow drag even when pinned — drop will unlock. Client-fixed stays locked.
+  const canDrag = !!(canEdit && !b.client_fixed);
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
-    conflict ? '⚠ Time conflict with another block — reschedule one' : '',
+    conflict ? '⚠ Overlap — drag sideways lane to shuffle' : '',
     done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
     done && b.actual_minutes == null ? 'Completed · can’t move' : '',
     b.client_fixed ? 'Fixed client booking · can’t move' : '',
     canDrag ? 'Drag to reschedule · click for menu' : '',
-    canEdit && locked ? 'Pinned · unlock in menu before dragging' : '',
+    canEdit && locked ? 'Pinned — drag still moves (unlocks)' : '',
     !canEdit && !done && !b.client_fixed ? 'From Google Calendar · not editable here' : '',
   ].filter(Boolean);
   const lock = locked
@@ -484,6 +502,7 @@ function renderBlock(b, axis, conflicts) {
 function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
   const dayBlocks = blocks.filter((b) => b.day === day);
   const conflicts = conflictIds(dayBlocks);
+  const lanes = conflictLanes(dayBlocks, conflicts);
   const kind = away?.kind || (away ? 'away_span' : null);
   const isAway = kind === 'away_span';
   const isRest = kind === 'rest_after_workshop' || kind === 'rest_after_away';
@@ -527,7 +546,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
         ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
         ${statusBanner}
         ${hours.join('')}
-        ${dayBlocks.map((b) => renderBlock(b, axis, conflicts)).join('')}
+        ${dayBlocks.map((b) => renderBlock(b, axis, conflicts, lanes.get(b.id) || 0)).join('')}
       </div>
     </div>`;
 }
@@ -716,7 +735,7 @@ function wireDiary(root, data, refresh) {
       return;
     }
     dragBlock = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
-    if (!dragBlock || dragBlock.slot_pinned || dragBlock.client_fixed) {
+    if (!dragBlock || dragBlock.client_fixed) {
       e.preventDefault();
       dragBlock = null;
       return;

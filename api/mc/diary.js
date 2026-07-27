@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
     const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows] = await Promise.all([
-      sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
+      sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,last_activity_at,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
@@ -56,9 +56,16 @@ module.exports = async function handler(req, res) {
       const { events, assessment } = await fetchHorizonEvents(timeMin, timeMax);
       gcalHealth = assessment;
       const split = splitMcAndBusy(events, ruleMap);
-      busyEvents = split.busy || [];
-      busyBlocks = busyToBlocks(split.busy, split.fixtures);
-      dayBanners = allDayBannersFromBusy(split.busy);
+      // DB already paints tasks/habits — drop their GCal twins or they stack as CONFLICT.
+      const tiedIds = new Set([
+        ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
+        ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
+        ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
+      ]);
+      busyEvents = (split.busy || []).filter((e) => !e?.id || !tiedIds.has(e.id));
+      const fixtures = (split.fixtures || []).filter((e) => !e?.id || !tiedIds.has(e.id));
+      busyBlocks = busyToBlocks(busyEvents, fixtures);
+      dayBanners = allDayBannersFromBusy(busyEvents);
     }
     for (const [day, title] of Object.entries(holidays)) {
       if (!dayBanners.some((b) => b.day === day && /bank holiday/i.test(b.title))) {

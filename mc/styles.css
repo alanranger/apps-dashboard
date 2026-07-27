@@ -731,6 +731,8 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block.dy-expanded .dy-block-label { white-space:normal; -webkit-line-clamp:unset; display:block; }
 .dy-block.dy-edit { cursor:grab; outline:1px solid rgba(255,255,255,0.35); }
 .dy-block.dy-edit:active { cursor:grabbing; }
+.dy-block.dy-lane-1 { left:42% !important; right:4px !important; z-index:6 !important; }
+.dy-block.dy-lane-2 { left:22% !important; right:22% !important; z-index:7 !important; }
 .dy-block.dy-ro { cursor:default; opacity:0.92; }
 .dy-edit-badge {
   flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:0.04em;

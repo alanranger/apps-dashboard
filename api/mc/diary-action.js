@@ -32,7 +32,7 @@ async function moveTask(body, actor) {
     err.status = 404;
     throw err;
   }
-  if (task.slot_pinned && body.action === 'move') {
+  if (task.slot_pinned && !body.unlock_if_pinned) {
     const err = new Error('Pinned — unlock before dragging');
     err.status = 409;
     err.blocked = true;
@@ -47,7 +47,8 @@ async function moveTask(body, actor) {
     last_activity_at: new Date().toISOString(),
   };
   await sb(`tasks?id=eq.${task.id}`, { method: 'PATCH', prefer: 'return=minimal', body: patch });
-  await logChange(task.id, actor, `diary move: ${task.scheduled_start || '?'} → ${body.new_start}`);
+  await logChange(task.id, actor,
+    `diary move: ${task.scheduled_start || '?'} → ${body.new_start}${task.slot_pinned && body.unlock_if_pinned ? ' (was pinned)' : ''}`);
   const day = isoToLondonDate(body.new_start);
   const action = [
     `MOVE GCal event for MC-${task.display_id} (${task.title})`,
