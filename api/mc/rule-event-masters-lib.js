@@ -190,6 +190,7 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
     return [`${r.start_date}|${r.end_date}|${wk}`, r];
   }));
   const keep = new Set();
+  const keepIds = new Set();
   const created = [];
   const updated = [];
   const failed = [];
@@ -223,6 +224,7 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
     if (!writeGcal) {
       if (row) {
         await sb(`away_day_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
+        keepIds.add(row.id);
         updated.push(row.id);
       } else {
         await sb('away_day_blocks', { method: 'POST', prefer: 'return=minimal', body });
@@ -232,6 +234,14 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
     }
 
     try {
+      // Revive retired row with same unique key if present (avoids duplicate-key on re-sync).
+      if (!row) {
+        const prior = await sb(
+          `away_day_blocks?start_date=eq.${startDate}&end_date=eq.${endDate}`
+          + `&workshop_row_key=eq.${encodeURIComponent(workshopRowKey)}&select=*&limit=1`,
+        );
+        if (prior?.[0]) row = prior[0];
+      }
       const linked = await ensureAllDayLinked({
         row,
         title,
@@ -243,9 +253,12 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
       body.calendar_event_id = linked.eventId;
       if (row) {
         await sb(`away_day_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
+        keepIds.add(row.id);
         updated.push(row.id);
       } else {
-        await sb('away_day_blocks', { method: 'POST', prefer: 'return=minimal', body });
+        const inserted = await sb('away_day_blocks', { method: 'POST', prefer: 'return=representation', body });
+        const id = Array.isArray(inserted) ? inserted[0]?.id : inserted?.id;
+        if (id) keepIds.add(id);
         created.push(key);
       }
       await sleep(40);
@@ -256,6 +269,7 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
 
   let pruned = 0;
   for (const row of existing) {
+    if (keepIds.has(row.id)) continue;
     const wk = row.workshop_row_key || `${row.venue_name || ''}|${row.start_date}`;
     const key = `${row.start_date}|${row.end_date}|${wk}`;
     if (keep.has(key)) continue;
