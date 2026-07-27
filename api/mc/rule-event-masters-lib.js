@@ -22,6 +22,73 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function allDayMatches(e, startDate, endExclusive, title) {
+  if (!e?.start?.date) return false;
+  if (e.start.date !== startDate) return false;
+  if ((e.end?.date || '') !== endExclusive) return false;
+  return String(e.summary || '') === String(title);
+}
+
+/** Delete other primary all-day clones for the same slot (Push race leftovers). */
+async function purgeSiblingAllDay(events, {
+  startDate, endExclusive, keepId, titlePrefixRe,
+}) {
+  let purged = 0;
+  for (const e of events || []) {
+    if (e._calendarId && e._calendarId !== 'primary') continue;
+    if (!e.start?.date || e.id === keepId) continue;
+    if (e.start.date !== startDate) continue;
+    if ((e.end?.date || '') !== endExclusive) continue;
+    const t = String(e.summary || '');
+    if (titlePrefixRe && !titlePrefixRe.test(t)) continue;
+    try {
+      await deletePrimaryEvent(e.id);
+      purged += 1;
+      await sleep(40);
+    } catch (_) { /* ignore */ }
+  }
+  return purged;
+}
+
+/**
+ * Link existing live all-day if ok; only insert when missing.
+ * Never delete+recreate a healthy master (that race created triple AWAYs).
+ */
+async function ensureAllDayLinked({
+  row, title, startDate, endExclusive, events, titlePrefixRe,
+}) {
+  const expect = { summary: title, startDate, endDateExclusive: endExclusive };
+  if (row?.calendar_event_id) {
+    const v = await verifyPrimaryEvent(row.calendar_event_id, expect);
+    if (v.ok) {
+      const purged = await purgeSiblingAllDay(events, {
+        startDate, endExclusive, keepId: row.calendar_event_id, titlePrefixRe,
+      });
+      return { eventId: row.calendar_event_id, created: false, purged };
+    }
+  }
+  const live = (events || []).find((e) => allDayMatches(e, startDate, endExclusive, title));
+  if (live?.id) {
+    const purged = await purgeSiblingAllDay(events, {
+      startDate, endExclusive, keepId: live.id, titlePrefixRe,
+    });
+    return { eventId: live.id, created: false, purged };
+  }
+  const ev = await insertPrimaryAllDayEvent({
+    summary: title, startDate, endDateExclusive: endExclusive,
+  });
+  const v = await verifyPrimaryEvent(ev.id, expect);
+  if (!v.ok) {
+    const err = new Error('readback_mismatch');
+    err.verify = v;
+    throw err;
+  }
+  const purged = await purgeSiblingAllDay(events, {
+    startDate, endExclusive, keepId: ev.id, titlePrefixRe,
+  });
+  return { eventId: ev.id, created: true, purged };
+}
+
 async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
   const raw = restDayRuleEnabled(ruleMap) ? multidayWorkshopRestRows(events) : [];
   const byRest = new Map();
@@ -73,24 +140,15 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
     }
 
     try {
-      if (row?.calendar_event_id) {
-        try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
-      }
-      const ev = await insertPrimaryAllDayEvent({
-        summary: title,
+      const linked = await ensureAllDayLinked({
+        row,
+        title,
         startDate: span.restDay,
-        endDateExclusive: endExclusive,
+        endExclusive,
+        events,
+        titlePrefixRe: /\bREST\b|🛌/,
       });
-      const v = await verifyPrimaryEvent(ev.id, {
-        summary: title,
-        startDate: span.restDay,
-        endDateExclusive: endExclusive,
-      });
-      if (!v.ok) {
-        failed.push({ key, error: 'readback_mismatch', verify: v });
-        continue;
-      }
-      body.calendar_event_id = ev.id;
+      body.calendar_event_id = linked.eventId;
       if (row) {
         await sb(`rest_day_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
         updated.push(row.id);
@@ -98,7 +156,7 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
         await sb('rest_day_blocks', { method: 'POST', prefer: 'return=minimal', body });
         created.push(key);
       }
-      await sleep(60);
+      await sleep(40);
     } catch (e) {
       failed.push({ key, error: e.message });
     }
@@ -123,7 +181,7 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
   };
 }
 
-async function syncAwayDays(sb, travel, { writeGcal = true } = {}) {
+async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   const spans = awaySpansFromTravelBlocks(travel || []);
   const existing = await sb('away_day_blocks?status=eq.active&select=*') || [];
   const byKey = new Map(existing.map((r) => {
@@ -165,24 +223,15 @@ async function syncAwayDays(sb, travel, { writeGcal = true } = {}) {
     }
 
     try {
-      if (row?.calendar_event_id) {
-        try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
-      }
-      const ev = await insertPrimaryAllDayEvent({
-        summary: title,
+      const linked = await ensureAllDayLinked({
+        row,
+        title,
         startDate: span.startDay,
-        endDateExclusive: endExclusive,
+        endExclusive,
+        events,
+        titlePrefixRe: /\bAWAY\b|🚫/,
       });
-      const v = await verifyPrimaryEvent(ev.id, {
-        summary: title,
-        startDate: span.startDay,
-        endDateExclusive: endExclusive,
-      });
-      if (!v.ok) {
-        failed.push({ key, error: 'readback_mismatch', verify: v });
-        continue;
-      }
-      body.calendar_event_id = ev.id;
+      body.calendar_event_id = linked.eventId;
       if (row) {
         await sb(`away_day_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
         updated.push(row.id);
@@ -190,7 +239,7 @@ async function syncAwayDays(sb, travel, { writeGcal = true } = {}) {
         await sb('away_day_blocks', { method: 'POST', prefer: 'return=minimal', body });
         created.push(key);
       }
-      await sleep(60);
+      await sleep(40);
     } catch (e) {
       failed.push({ key, error: e.message });
     }
@@ -328,7 +377,7 @@ async function runRuleEventMasterSync(sb, opts = {}) {
   const ruleMap = ruleMapFromRows(rules || []);
 
   const rest = await syncRestDays(sb, gcal.events || [], ruleMap, { writeGcal });
-  const away = await syncAwayDays(sb, travel || [], { writeGcal });
+  const away = await syncAwayDays(sb, travel || [], gcal.events || [], { writeGcal });
   const fixtures = await syncFixtureBuffers(sb, ruleMap, { writeGcal });
 
   const { syncGapBuffers } = require('./buffer-gap-lib');

@@ -1040,8 +1040,11 @@ function openPushProgressModal(plannedHint) {
         : '';
       const rm = res.rule_masters;
       const rmLine = rm && !rm.error
-        ? `<p class="meta">Rule masters: rest desired ${esc(String(rm.rest?.desired ?? '—'))}, away ${esc(String(rm.away?.desired ?? '—'))}, fixtures linked ${esc(String(rm.fixtures?.already_linked_live ?? '—'))}</p>`
+        ? `<p class="meta">Rule masters: rest ${esc(String(rm.rest?.desired ?? '—'))}, away ${esc(String(rm.away?.desired ?? '—'))}, fixtures ${esc(String(rm.fixtures?.already_linked_live ?? '—'))}, gaps created ${esc(String(rm.gaps?.created ?? '—'))}</p>`
         : (rm?.error ? `<p class="err">Rule masters: ${esc(rm.error)}</p>` : '');
+      const emptyNote = planned === 0
+        ? `<p class="meta" style="margin-top:8px">No diary queue writes this time (schedule already matched Google, or nothing pending). Rule masters still refreshed.</p>`
+        : '';
       box.innerHTML = `
         <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Push complete</h2>
         <p class="meta">Finished in ${secs}s</p>
@@ -1050,6 +1053,7 @@ function openPushProgressModal(plannedHint) {
           <div><strong>${applied}</strong><span>applied</span></div>
           <div><strong>${failed}</strong><span>failed</span></div>
         </div>
+        ${emptyNote}
         ${rmLine}
         ${failHtml}
         <div style="display:flex;gap:8px;margin-top:14px">
@@ -1069,9 +1073,16 @@ function openPushProgressModal(plannedHint) {
   };
 }
 
+let pushInFlight = false;
+
 async function runPushToGoogleWithModal(btn, refresh) {
+  if (pushInFlight) {
+    toast('Push already running — wait for the modal to finish');
+    return;
+  }
   const plannedHint = (btn.textContent.match(/\d+/) || [])[0] || '';
   const label = btn.textContent;
+  pushInFlight = true;
   btn.disabled = true;
   btn.textContent = 'Pushing…';
   toast('Push to Google started…');
@@ -1094,6 +1105,7 @@ async function runPushToGoogleWithModal(btn, refresh) {
       toast(err.message || 'Push failed');
     }
   } finally {
+    pushInFlight = false;
     btn.disabled = false;
     btn.textContent = label;
   }

@@ -59,6 +59,44 @@ async function dryRunSync(sb) {
   };
 }
 
+async function acquirePushLock(sb) {
+  const key = 'gcal_push_inflight_until';
+  const now = Date.now();
+  const rows = await sb(`scheduling_rules?key=eq.${encodeURIComponent(key)}&select=key,value`);
+  const cur = rows?.[0];
+  const until = Number(cur?.value || 0);
+  if (until > now) {
+    const err = new Error('PUSH_ALREADY_IN_PROGRESS — wait for the current Push to finish');
+    err.status = 409;
+    throw err;
+  }
+  const body = {
+    key,
+    value: String(now + 4 * 60 * 1000),
+    value_type: 'string',
+    description: 'Epoch ms — Push lock expires; prevents duplicate REST/AWAY creates',
+    updated_at: new Date().toISOString(),
+  };
+  if (cur) {
+    await sb(`scheduling_rules?key=eq.${encodeURIComponent(key)}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { value: body.value, updated_at: body.updated_at },
+    });
+  } else {
+    await sb('scheduling_rules', { method: 'POST', prefer: 'return=minimal', body });
+  }
+}
+
+async function releasePushLock(sb) {
+  const key = 'gcal_push_inflight_until';
+  try {
+    await sb(`scheduling_rules?key=eq.${encodeURIComponent(key)}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { value: '0', updated_at: new Date().toISOString() },
+    });
+  } catch (_) { /* ignore */ }
+}
+
 async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
   const flags = await loadFlags(sb);
   if (!flags.cursor_writes_available) {
@@ -66,34 +104,39 @@ async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
     err.status = 503;
     throw err;
   }
-  const plan = await buildFlushPlan(sb);
-  const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push');
-  let rule_masters = null;
-  if (includeRuleMasters) {
-    try {
-      rule_masters = await runRuleEventMasterSync(sb, { writeGcal: true, weeks: 52 });
-    } catch (e) {
-      rule_masters = { error: e.message };
-    }
-  }
-  return {
-    mode: 'manual_push',
-    flags,
-    flush: {
-      planned: plan.write_count,
-      applied: flush.applied,
-      failed: flush.failed,
-      results: flush.results,
-    },
-    rule_masters: rule_masters
-      ? {
-        rest: rule_masters.rest,
-        away: rule_masters.away,
-        fixtures: rule_masters.fixtures,
-        gaps: rule_masters.gaps,
+  await acquirePushLock(sb);
+  try {
+    const plan = await buildFlushPlan(sb);
+    const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push');
+    let rule_masters = null;
+    if (includeRuleMasters) {
+      try {
+        rule_masters = await runRuleEventMasterSync(sb, { writeGcal: true, weeks: 52 });
+      } catch (e) {
+        rule_masters = { error: e.message };
       }
-      : null,
-  };
+    }
+    return {
+      mode: 'manual_push',
+      flags,
+      flush: {
+        planned: plan.write_count,
+        applied: flush.applied,
+        failed: flush.failed,
+        results: flush.results,
+      },
+      rule_masters: rule_masters
+        ? {
+          rest: rule_masters.rest,
+          away: rule_masters.away,
+          fixtures: rule_masters.fixtures,
+          gaps: rule_masters.gaps,
+        }
+        : null,
+    };
+  } finally {
+    await releasePushLock(sb);
+  }
 }
 
 /** Unattended auto-sync — only when kill switch on AND Alan signed off dry-run. */

@@ -199,6 +199,15 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
 
     try {
       if (row?.calendar_event_id) {
+        const v = await verifyPrimaryEvent(row.calendar_event_id, {
+          summary: title, startIso, endIso,
+        });
+        if (v.ok) {
+          body.calendar_event_id = row.calendar_event_id;
+          await sb(`gap_buffer_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
+          updated.push(row.id);
+          continue;
+        }
         try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
       }
       const ev = await insertPrimaryEvent({ summary: title, startIso, endIso });
