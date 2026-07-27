@@ -8,7 +8,8 @@ const {
   indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks,
 } = require('./diary-lib');
 const {
-  trySlotOnDay, londonYmdHmToUtcMs, dayBlockedForPlacement,
+  trySlotOnDay, londonYmdHmToUtcMs, dayBlockedForPlacement, dayBlockedForHabits,
+  restDaySpansFromDbRows,
 } = require('./habit-placer-lib');
 const { relatedIdForTask, relatedIdForHabit, upsertPushRow, supersedeSiblingHabitRows } = require('./gcal-push-lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
@@ -263,13 +264,23 @@ function pickLower(a, b, targetA, targetB) {
   return 'b';
 }
 
-async function findSlot(sb, day, durationMin, title, excludeBlockId, ruleMap) {
-  const travel = await sb('travel_blocks?select=*&block_type=in.(travel_out,travel_back)');
-  const awaySpans = awaySpansFromTravelBlocks(travel || []);
+async function findSlot(sb, day, durationMin, title, excludeBlockId, ruleMap, opts = {}) {
+  const forHabits = opts.forHabits === true;
+  const blockedFn = forHabits ? dayBlockedForHabits : dayBlockedForPlacement;
+  const toYmd = addDays(day, 21);
+  const [travel, restDb] = await Promise.all([
+    sb('travel_blocks?select=*&block_type=in.(travel_out,travel_back)'),
+    sb(
+      `rest_day_blocks?status=eq.active&rest_date=gte.${day}&rest_date=lte.${toYmd}`
+      + '&select=rest_date,workshop_title',
+    ),
+  ]);
+  const awaySpans = awaySpansFromTravelBlocks(travel || [])
+    .concat(restDaySpansFromDbRows(restDb || []));
 
   for (let step = 0; step < 14; step += 1) {
     const d = addDays(day, step);
-    if (dayBlockedForPlacement(d, awaySpans)) continue;
+    if (blockedFn(d, awaySpans)) continue;
     const snap = await loadDaySnapshot(sb, d);
     const peers = snap.blocks.filter((b) => b.id !== excludeBlockId);
     const busy = peers.map((b) => ({
@@ -424,7 +435,10 @@ async function resolveOverlap(sb, pendingRow, which, actor) {
   const durationMin = Math.max(15, (block.end_min || 0) - (block.start_min || 0) || 60);
   const rules = await sb('scheduling_rules?select=key,value');
   const ruleMap = ruleMapFromRows(rules || []);
-  const slot = await findSlot(sb, day, durationMin, block.title || 'block', block.id, ruleMap);
+  const slot = await findSlot(
+    sb, day, durationMin, block.title || 'block', block.id, ruleMap,
+    { forHabits: target.type === 'habit' },
+  );
   if (!slot) {
     const err = new Error('No free legal slot in the next 14 days');
     err.status = 409;
@@ -474,6 +488,7 @@ async function resolveDayBlock(sb, pendingRow, blockId, actor) {
   // Prefer next day onward so we actually reduce this day's load
   const slot = await findSlot(
     sb, addDays(preview.day, 1), durationMin, block.title || 'block', block.id, ruleMap,
+    { forHabits: target.type === 'habit' },
   );
   if (!slot) {
     const err = new Error('No free legal slot in the next 14 days');

@@ -52,6 +52,7 @@ const { pushSync, reconcileReport, loadFlags } = require('../api/mc/gcal-auto-sy
     amendment_counts: result.amendment_counts,
     habit_db_applied: result.habit_db_applied,
     task_db_applied: result.task_db_applied,
+    blocked_day_cleared: result.blocked_day_cleared || [],
     task_bump_scheduled: result.task_bump_scheduled,
     task_bump_unplaced: result.task_bump_unplaced,
     unplaced_habits: result.unplaced,
@@ -76,6 +77,7 @@ const { pushSync, reconcileReport, loadFlags } = require('../api/mc/gcal-auto-sy
   console.log('proof.ok', result.proof?.ok, 'fails', (result.proof?.fails || []).slice(0, 20));
   console.log('amendments', result.amendment_counts);
   console.log('habit_db_applied', result.habit_db_applied, 'task_db_applied', result.task_db_applied);
+  console.log('blocked_day_cleared', JSON.stringify(result.blocked_day_cleared || [], null, 2));
   console.log('changes', report.changes.length);
 
   // If proof failed, still try flush of whatever was queued from partial apply

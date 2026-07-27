@@ -569,6 +569,7 @@ async function syncRecurringLogAfterFlush(sb, w, eventId) {
         body: {
           change: `skipped ${w.ideal_date}|gcal_flush_delete`,
           calendar_event_id: null,
+          scheduled_date: null,
           roll_reason: 'gcal_flush_sync',
         },
       });

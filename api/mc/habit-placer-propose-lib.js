@@ -212,18 +212,59 @@ async function applyTaskBumpToDb(sb, bump) {
   return true;
 }
 
-/** Apply placer MOVE/CREATE to recurring_log + gcal_push_queue (DB master → auto-sync). */
+/** Apply placer MOVE/CREATE/DELETE to recurring_log + gcal_push_queue (DB master → auto-sync). */
 async function applyHabitAmendmentToDb(sb, a) {
-  if (!a || a.action === 'KEEP' || a.action === 'DELETE') return false;
-  if (!a.habit_id || !a.ideal_date || !a.startIso || !a.endIso) return false;
-  const pinChange = `diary_pin:${a.startIso}|${a.endIso}`;
-  const day = isoToLondonDate(a.startIso) || a.ideal_date;
+  if (!a || a.action === 'KEEP') return false;
+  if (!a.habit_id || !a.ideal_date) return false;
   const logRows = await sb(
     `recurring_log?recurring_task_id=eq.${a.habit_id}&ideal_date=eq.${a.ideal_date}`
-    + '&select=id,calendar_event_id&order=at.desc&limit=1',
+    + '&select=id,calendar_event_id,scheduled_date&order=at.desc&limit=1',
   );
   const keepId = logRows?.[0]?.id || null;
   const evtId = a.calendar_event_id || logRows?.[0]?.calendar_event_id || null;
+
+  // Unplaced / dropped: never leave a dated scheduled_date (esp. on rest/away).
+  if (a.action === 'DELETE') {
+    if (keepId) {
+      await sb(`recurring_log?id=eq.${keepId}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          change: `unplaced ${a.ideal_date}|habit_placer`,
+          scheduled_date: null,
+          roll_reason: 'habit_placer_unplace',
+          calendar_event_id: null,
+          ideal_date: a.ideal_date,
+          projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
+        },
+      });
+    }
+    if (evtId) {
+      // Queue uses change_kind=skip (check constraint: complete|move|skip) → flush deletes GCal.
+      await upsertPushRow(sb, {
+        related_id: relatedIdForHabit(a.habit_id, a.ideal_date, evtId),
+        entity_type: 'habit',
+        change_kind: 'skip',
+        summary: `Placer unplace: ${a.title} (${a.ideal_date})`,
+        proposed_action: [
+          `DELETE Primary event ${evtId} for habit "${a.title}".`,
+          `ideal_date=${a.ideal_date}; scheduled_date=null (no legal slot / blocked day).`,
+        ].join(' '),
+        payload: {
+          habit_id: a.habit_id,
+          title: a.title,
+          ideal_date: a.ideal_date,
+          calendar_event_id: evtId,
+          action: 'delete_event',
+        },
+      });
+    }
+    return true;
+  }
+
+  if (a.action !== 'MOVE' && a.action !== 'CREATE') return false;
+  if (!a.startIso || !a.endIso) return false;
+  const pinChange = `diary_pin:${a.startIso}|${a.endIso}`;
+  const day = isoToLondonDate(a.startIso) || a.ideal_date;
   const logBody = {
     change: pinChange,
     scheduled_date: day,
@@ -262,6 +303,64 @@ async function applyHabitAmendmentToDb(sb, a) {
     },
   });
   return true;
+}
+
+/**
+ * Belt-and-suspenders: any habit still dated on rest/away/teaching must MOVE to
+ * placement day or be unplaced (scheduled_date null). Blocked day is never valid.
+ */
+async function clearHabitsDatedOnBlockedDays(sb, blockedSpans, fromYmd, toYmd, placements) {
+  const placeByKey = new Map(
+    (placements || []).map((p) => [`${p.habit_id}|${p.ideal_date}`, p]),
+  );
+  const logs = await sb(
+    `recurring_log?scheduled_date=gte.${fromYmd}&scheduled_date=lte.${toYmd}`
+    + '&select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,at'
+    + '&order=at.desc&limit=5000',
+  );
+  const seen = new Set();
+  const cleared = [];
+  for (const row of logs || []) {
+    if (!row?.recurring_task_id || !row.scheduled_date) continue;
+    const ideal = row.ideal_date || String(row.scheduled_date).slice(0, 10);
+    const k = `${row.recurring_task_id}|${ideal}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const day = String(row.scheduled_date).slice(0, 10);
+    if (!dayBlockedForHabits(day, blockedSpans)) continue;
+    const p = placeByKey.get(k);
+    try {
+      if (p?.startIso && p?.endIso && p.day && !dayBlockedForHabits(p.day, blockedSpans)) {
+        const ok = await applyHabitAmendmentToDb(sb, {
+          action: 'MOVE',
+          habit_id: row.recurring_task_id,
+          title: p.title || 'habit',
+          ideal_date: ideal,
+          startIso: p.startIso,
+          endIso: p.endIso,
+          calendar_event_id: row.calendar_event_id || null,
+          from_startIso: null,
+        });
+        if (ok) cleared.push({ title: p.title, from: day, to: p.day, action: 'MOVE' });
+        continue;
+      }
+      const ok = await applyHabitAmendmentToDb(sb, {
+        action: 'DELETE',
+        habit_id: row.recurring_task_id,
+        title: p?.title || 'habit',
+        ideal_date: ideal,
+        startIso: null,
+        endIso: null,
+        calendar_event_id: row.calendar_event_id || null,
+      });
+      if (ok) cleared.push({ title: p?.title || ideal, from: day, to: null, action: 'UNPLACE' });
+    } catch (e) {
+      cleared.push({
+        title: p?.title || ideal, from: day, to: null, action: 'ERROR', error: e.message,
+      });
+    }
+  }
+  return cleared;
 }
 
 /** Past habit ideals with no Complete/Skip → concrete next-slot pin + GCal queue. */
@@ -500,7 +599,7 @@ async function runHabitPlacerPropose(ctx) {
   let habitRolls = { rolled: 0 };
   if (writePending) {
     for (const a of amendments) {
-      if (a.action === 'MOVE' || a.action === 'CREATE') {
+      if (a.action === 'MOVE' || a.action === 'CREATE' || a.action === 'DELETE') {
         try {
           if (await applyHabitAmendmentToDb(sb, a)) habitDbApplied += 1;
         } catch (_) { /* pending row still written below */ }
@@ -508,7 +607,7 @@ async function runHabitPlacerPropose(ctx) {
       const row = amendmentToPending(a);
       if (!row) continue;
       if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
-      const applied = a.action === 'MOVE' || a.action === 'CREATE';
+      const applied = a.action === 'MOVE' || a.action === 'CREATE' || a.action === 'DELETE';
       const out = await sb('pending_diary_changes', {
         method: 'POST',
         body: {
@@ -565,6 +664,18 @@ async function runHabitPlacerPropose(ctx) {
     }
   }
 
+  let blockedCleared = [];
+  if (writePending) {
+    try {
+      blockedCleared = await clearHabitsDatedOnBlockedDays(
+        sb, blockedSpans, fromYmd, toYmd, placements,
+      );
+      habitDbApplied += blockedCleared.length;
+    } catch (e) {
+      blockedCleared = [{ error: e.message }];
+    }
+  }
+
   return {
     placements,
     unplaced,
@@ -591,6 +702,7 @@ async function runHabitPlacerPropose(ctx) {
     task_bump_unplaced: bumpUnplaced.length,
     task_db_applied: taskDbApplied,
     habit_db_applied: habitDbApplied,
+    blocked_day_cleared: blockedCleared,
     habit_rolls: habitRolls,
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
@@ -608,6 +720,7 @@ module.exports = {
   bumpToPending,
   applyTaskBumpToDb,
   applyHabitAmendmentToDb,
+  clearHabitsDatedOnBlockedDays,
   applyIncompleteHabitRolls,
   runHabitPlacerPropose,
   ruleMapFromRows,
