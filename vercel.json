@@ -3,7 +3,9 @@
   "functions": {
     "api/cron/diary-drift.js": { "maxDuration": 60 },
     "api/cron/hotel-source-reconcile.js": { "maxDuration": 300 },
-    "api/mc/diary.js": { "maxDuration": 60 }
+    "api/cron/gcal-auto-sync.js": { "maxDuration": 120 },
+    "api/mc/diary.js": { "maxDuration": 60 },
+    "api/mc/gcal-auto-sync.js": { "maxDuration": 120 }
   },
   "crons": [
     {
@@ -13,6 +15,10 @@
     {
       "path": "/api/cron/hotel-source-reconcile",
       "schedule": "30 6 * * 1"
+    },
+    {
+      "path": "/api/cron/gcal-auto-sync",
+      "schedule": "*/15 * * * *"
     }
   ],
   "rewrites": [
@@ -30,6 +36,7 @@
     { "source": "/api/mc/diary-action.json", "destination": "/api/mc/diary-action" },
     { "source": "/api/mc/gcal-push.json", "destination": "/api/mc/gcal-push" },
     { "source": "/api/mc/gcal-flush.json", "destination": "/api/mc/gcal-flush" },
+    { "source": "/api/mc/gcal-auto-sync.json", "destination": "/api/mc/gcal-auto-sync" },
     { "source": "/", "destination": "/mission-control.html" },
     { "source": "/mission-control", "destination": "/mission-control.html" },
     { "source": "/handoff", "destination": "/handoff.html" },

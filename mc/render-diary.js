@@ -323,11 +323,15 @@ function renderToolbar(data) {
   const openN = push.open_count || 0;
   const backlogN = push.backlog_count || 0;
   const n = openN + backlogN;
-  const enabled = !!push.writes_available;
+  const enabled = !!push.cursor_writes_available || !!push.writes_available;
+  const autoOn = !!push.auto_sync_enabled;
+  const signed = !!push.auto_sync_signed_off;
   const pushTone = !n ? 'dy-push-idle' : enabled ? 'dy-push-go' : 'dy-push-blocked';
-  const statusLabel = enabled
-    ? (n ? 'Ready to hand to Claude' : 'Queue clear')
-    : 'Writes blocked (Anthropic) — queue still building';
+  const statusLabel = !enabled
+    ? 'Cursor GCal not configured'
+    : autoOn && signed
+      ? (n ? 'Auto-sync on · queue waiting' : 'Auto-sync on · queue clear')
+      : (n ? 'Manual Push ready (auto-sync gated)' : 'Queue clear · auto-sync gated');
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
@@ -340,7 +344,7 @@ function renderToolbar(data) {
       <p class="meta dy-edit-hint">Editable: <strong>blue tasks</strong> &amp; <strong>green habits</strong> (grab cursor + ☑). Everything else is Google Calendar truth.</p>
       <div class="dy-push-panel ${pushTone}">
         <div class="dy-push-panel-head">
-          <span class="dy-push-kicker">Google Calendar flush</span>
+          <span class="dy-push-kicker">Google Calendar sync</span>
           <span class="dy-push-status">${statusLabel}</span>
         </div>
         <div class="dy-push-panel-body">
@@ -360,14 +364,15 @@ function renderToolbar(data) {
           </div>
           <button type="button" class="dy-push-btn" data-dy-push ${enabled && n ? '' : 'disabled'}
             title="${enabled
-    ? 'Marks the queue READY for Claude. Does not write Google itself.'
-    : 'Blocked until Anthropic GCal writes recover. Edits still save to DB + queue.'}">
-            ${enabled ? `Hand ${n || 0} to Claude → Google` : `Blocked · ${n} waiting`}
+    ? 'Flush pending DB→Google now (Cursor writer, read-back verified). Works even when auto-sync is off.'
+    : 'Blocked until Google Calendar OAuth is configured.'}">
+            ${enabled ? `Push ${n || 0} to Google` : `Blocked · ${n} waiting`}
           </button>
         </div>
         <p class="dy-push-explain">
-          Diary edits already save to DB and update the push queue (latest state per task/habit wins).
-          This button only marks them <strong>ready</strong> for Claude — Claude then writes Google and clears the queue.
+          Diary edits save to DB first. <strong>Push to Google</strong> writes Calendar via Cursor
+          (titles from DB, read-back before applied). Auto-sync:
+          ${autoOn ? 'enabled' : 'OFF'} · sign-off: ${signed ? 'yes' : 'pending dry-run approval'}.
         </p>
       </div>
     </div>`;
@@ -959,15 +964,16 @@ export async function handleDiaryClick(e, refresh) {
   if (e.target.closest('[data-dy-push]')) {
     const btn = e.target.closest('[data-dy-push]');
     if (btn.disabled) {
-      alert('Google Calendar writes are still down (gcal_writes_available=false). Manifest stays pending.');
+      alert('Google Calendar is not configured for Cursor writes yet.');
       return true;
     }
     try {
-      const res = await api('/api/mc/gcal-push', {
-        method: 'PATCH',
-        body: { action: 'mark_ready' },
+      const res = await api('/api/mc/gcal-auto-sync', {
+        method: 'POST',
+        body: { action: 'push' },
       });
-      alert(`Marked ${res.marked_ready} ready for Claude flush. Backlog still pending: ${res.backlog_still_pending}`);
+      const f = res.flush || {};
+      alert(`Pushed to Google: ${f.applied || 0} applied, ${f.failed || 0} failed (of ${f.planned || 0} planned).`);
       await refresh();
     } catch (err) {
       alert(err.message || 'Push failed');

@@ -1,6 +1,6 @@
 /**
- * POST /api/mc/diary-action — move/complete/skip/pin/unlock; DB + push queue only.
- * Never writes Google Calendar.
+ * POST /api/mc/diary-action — move/complete/skip/pin/unlock; DB + push queue.
+ * Google writes only when Phase 3 auto_sync_enabled + auto_sync_signed_off.
  */
 const {
   envReady, json, cors, readBody, requireAuth, actorFromSession, sb, logChange,
@@ -12,6 +12,18 @@ const {
   relatedIdForTask, relatedIdForHabit, upsertPushRow, supersedeSiblingHabitRows,
 } = require('./gcal-push-lib');
 const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
+const { autoSyncIfAllowed } = require('./gcal-auto-sync-lib');
+
+async function respondAfterChange(res, payload, actor) {
+  let calendar_sync = { skipped: true, reason: 'not_attempted' };
+  try {
+    calendar_sync = await autoSyncIfAllowed(sb, actor || 'diary-action');
+  } catch (e) {
+    calendar_sync = { skipped: true, error: e.message };
+  }
+  const writes = calendar_sync.skipped ? 0 : Number(calendar_sync.flush?.applied || 0);
+  return json(res, 200, { ...payload, calendar_writes: writes, calendar_sync });
+}
 
 async function loadPeers(fromIso, toIso) {
   const [tasks, habits, logs] = await Promise.all([
@@ -301,19 +313,19 @@ module.exports = async function handler(req, res) {
         return json(res, 200, { needs_override: true, ...warn, calendar_writes: 0 });
       }
       const moved = await moveTask(body, actor);
-      return json(res, 200, { ...moved, warnings: warn.warnings, calendar_writes: 0 });
+      return respondAfterChange(res, { ...moved, warnings: warn.warnings }, actor);
     }
 
     if (action === 'move' && body.habit_id) {
       const moved = await moveHabit(body, actor);
-      return json(res, 200, { ...moved, calendar_writes: 0 });
+      return respondAfterChange(res, { ...moved }, actor);
     }
 
     if (action === 'unlock' && body.task_id) {
-      return json(res, 200, { ...(await setPin(body.task_id, false, actor)), calendar_writes: 0 });
+      return respondAfterChange(res, { ...(await setPin(body.task_id, false, actor)) }, actor);
     }
     if (action === 'lock' && body.task_id) {
-      return json(res, 200, { ...(await setPin(body.task_id, true, actor)), calendar_writes: 0 });
+      return respondAfterChange(res, { ...(await setPin(body.task_id, true, actor)) }, actor);
     }
 
     if (action === 'complete') {
@@ -389,12 +401,11 @@ module.exports = async function handler(req, res) {
           scheduledDate: scheduledDate,
           actor,
         });
-        return json(res, 200, {
+        return respondAfterChange(res, {
           habit_id: habitId,
           last_done: lastDone,
           actual_minutes: mins,
-          calendar_writes: 0,
-        });
+        }, actor);
       }
       const completedAt = body.completed_at || new Date().toISOString();
       // Stamp on the moment of completion (UK calendar day), not the old planned day.
@@ -437,14 +448,13 @@ module.exports = async function handler(req, res) {
             scheduled_end: patch.scheduled_end,
           },
         });
-        return json(res, 200, {
+        return respondAfterChange(res, {
           task_id: task.id,
           completed_on: completedOn,
           scheduled_start: patch.scheduled_start,
           scheduled_end: patch.scheduled_end,
           actual_minutes: mins,
-          calendar_writes: 0,
-        });
+        }, actor);
       }
     }
 
@@ -504,13 +514,12 @@ module.exports = async function handler(req, res) {
         scheduledDate: scheduledDate,
         actor,
       });
-      return json(res, 200, {
+      return respondAfterChange(res, {
         habit_id: habitId,
         skipped: true,
         ideal_date: ideal,
         scheduled_date: scheduledDate,
-        calendar_writes: 0,
-      });
+      }, actor);
     }
 
     if (action === 'dismiss' && body.task_id) {
@@ -528,7 +537,7 @@ module.exports = async function handler(req, res) {
         proposed_action: `Delete or cancel GCal event for MC-${task.display_id} if present`,
         payload: { task_id: task.id, display_id: task.display_id },
       });
-      return json(res, 200, { task_id: task.id, state: 'wont_do', calendar_writes: 0 });
+      return respondAfterChange(res, { task_id: task.id, state: 'wont_do' }, actor);
     }
 
     return json(res, 400, { error: 'action required: warn|move|lock|unlock|complete|skip|dismiss' });

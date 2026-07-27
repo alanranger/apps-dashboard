@@ -31,6 +31,9 @@ module.exports = async function handler(req, res) {
     const rules = await sb('scheduling_rules?select=key,value');
     const ruleMap = ruleMapFromRows(rules);
     const writesAvailable = String(ruleMap.gcal_writes_available || 'false') === 'true';
+    const cursorWrites = gcalConfigured();
+    const autoSyncEnabled = String(ruleMap.auto_sync_enabled || 'false') === 'true';
+    const autoSyncSignedOff = String(ruleMap.auto_sync_signed_off || 'false') === 'true';
 
     const timeMin = `${from}T00:00:00.000Z`;
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
@@ -150,6 +153,9 @@ module.exports = async function handler(req, res) {
         decompress_after_task_min: Number(ruleMap.decompress_after_task_min || 30),
         buffer_scope: ruleMap.buffer_scope || 'home_only',
         gcal_writes_available: writesAvailable,
+        cursor_writes_available: cursorWrites,
+        auto_sync_enabled: autoSyncEnabled,
+        auto_sync_signed_off: autoSyncSignedOff,
         rest_day_after_multiday_workshop: String(
           ruleMap.rest_day_after_multiday_workshop != null
             ? ruleMap.rest_day_after_multiday_workshop
@@ -163,7 +169,11 @@ module.exports = async function handler(req, res) {
         open_count: (pushOpen || []).length,
         backlog_count: (backlog || []).length,
         backlog_filter: BACKLOG_SQL_HINT,
-        writes_available: writesAvailable,
+        writes_available: cursorWrites,
+        cursor_writes_available: cursorWrites,
+        anthropic_writes_available: writesAvailable,
+        auto_sync_enabled: autoSyncEnabled,
+        auto_sync_signed_off: autoSyncSignedOff,
       },
       gcal_health: gcalHealth,
       calendar_writes: 0,

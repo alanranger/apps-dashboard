@@ -8,6 +8,7 @@
  *     or colorId-10 events that do not match the rules above (listed as left_uncertain).
  *   Rest/away (MC 🛌 / MC 🚫) and fixture flanks (MC ⚽) are managed masters when
  *   present in rest_day_blocks / away_day_blocks / fixture_blocks.
+ */
 const {
   insertPrimaryEvent, deletePrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
