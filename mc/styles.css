@@ -800,6 +800,8 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   border:1px solid #9ca3af;
 }
 .dy-away { background:repeating-linear-gradient(-45deg, rgba(127,29,29,0.18), rgba(127,29,29,0.18) 6px, rgba(127,29,29,0.06) 6px, rgba(127,29,29,0.06) 12px); }
+.dy-teaching { background:rgba(124,45,18,0.12); }
+.dy-rest { background:repeating-linear-gradient(-45deg, rgba(30,58,138,0.16), rgba(30,58,138,0.16) 6px, rgba(30,58,138,0.05) 6px, rgba(30,58,138,0.05) 12px); }
 .dy-bh .dy-day-head { border-bottom:2px solid #f59e0b; }
 .dy-bh-badge {
   margin-top:4px; font-size:10px; font-weight:800; letter-spacing:0.06em;
@@ -811,11 +813,13 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   background:#7c2d12; color:#ffedd5; border-left:3px solid #f59e0b;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.dy-away-label {
+.dy-away-label,
+.dy-rest-label {
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  font-weight:800; letter-spacing:0.12em; color:rgba(254,202,202,0.28);
-  pointer-events:none; z-index:0; font-size:28px;
+  font-weight:800; letter-spacing:0.12em; pointer-events:none; z-index:0; font-size:28px;
 }
+.dy-away-label { color:rgba(254,202,202,0.28); }
+.dy-rest-label { color:rgba(191,219,254,0.30); }
 .dy-menu {
   position:fixed; z-index:50; background:var(--panel-2); border:1px solid var(--border);
   border-radius:8px; padding:6px; display:flex; flex-direction:column; gap:4px;
