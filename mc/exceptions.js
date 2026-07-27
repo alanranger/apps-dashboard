@@ -103,9 +103,9 @@ function enrichException(p) {
     return {
       ...base,
       date: day,
-      clashing: `${over} of MC work on ${day} (hard limit 270m = 240 + 30 tolerance)`,
-      why: 'Day is over the hard cap. Spreading needs a target day/slots the placer has not chosen yet.',
-      options: 'Open Diary and move lowest-priority blocks · or Dismiss',
+      clashing: `${over} of MC work booked on ${day}`,
+      why: 'Hard cap is 270m (240 + 30). Orange blocks count. Move enough off this day to clear the overload.',
+      options: 'Move blocks off this day · or Dismiss',
     };
   }
 

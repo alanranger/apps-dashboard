@@ -157,38 +157,70 @@ function matchClashBlock(blocks, eventId, titleHint) {
   return bestScore >= 40 ? best : null;
 }
 
+function countsTowardCap(b) {
+  const kind = String(b.kind || '');
+  if (kind === 'travel' || kind === 'buffer' || kind === 'fixture' || kind === 'personal') return false;
+  if (kind === 'workshop' || kind === 'lesson') return false;
+  return kind === 'habit' || kind === 'mc_task' || !!b.habit_id || b.display_id != null;
+}
+
+function blockMinutes(b) {
+  return Math.max(0, (b.end_min || 0) - (b.start_min || 0));
+}
+
 async function previewConflict(sb, pendingRow) {
   const ids = parseOverlapRelated(pendingRow.related_id);
-  const day = ids?.day || pendingRow.target_date;
-  if (!day) {
+  const day = ids?.day || String(pendingRow.target_date || '').slice(0, 10);
+  if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
     return { ok: false, error: 'no_day', pending_id: pendingRow.id };
   }
   const snap = await loadDaySnapshot(sb, day);
+  const isOverlap = /mc_vs_mc_overlap/i.test(pendingRow.reason || '')
+    || /Move one of the overlapping/i.test(pendingRow.proposed_action || '');
+  const isCap = /breach:cap:/.test(pendingRow.related_id || '')
+    || /hard limit|over.*cap|MC work on/i.test(pendingRow.summary || '');
+
   const pair = String(pendingRow.summary || '').match(
     /Rule breach:\s*(.+?)\s+overlaps\s+(.+?)(?:\s+by\s+\d+m)?(?:\s+on\s+\d{4}-\d{2}-\d{2})?$/i,
   );
   const titleA = pair?.[1]?.trim() || null;
   const titleB = pair?.[2]?.trim() || null;
-  const blockA = matchClashBlock(snap.blocks, ids?.idA, titleA);
-  const blockB = matchClashBlock(snap.blocks, ids?.idB, titleB);
+  const blockA = isOverlap ? matchClashBlock(snap.blocks, ids?.idA, titleA) : null;
+  const blockB = isOverlap ? matchClashBlock(snap.blocks, ids?.idB, titleB) : null;
 
   const painted = snap.blocks.map((b) => {
     let hl = null;
     if (blockA && b.id === blockA.id) hl = 'a';
-    if (blockB && b.id === blockB.id) hl = 'b';
-    return slimBlock(b, hl);
+    else if (blockB && b.id === blockB.id) hl = 'b';
+    else if (isCap && countsTowardCap(b)) hl = 'load';
+    const slim = slimBlock(b, hl);
+    slim.duration_min = blockMinutes(b);
+    slim.counts_toward_cap = countsTowardCap(b);
+    return slim;
   });
+
+  const loadBlocks = painted.filter((b) => b.counts_toward_cap);
+  const loadMin = loadBlocks.reduce((n, b) => n + b.duration_min, 0);
+  const capMin = Number(snap.ruleMap.daily_task_cap_min || 240)
+    + Number(snap.ruleMap.daily_task_cap_tolerance_min || 30);
 
   return {
     ok: true,
     pending_id: pendingRow.id,
+    kind: isOverlap ? 'overlap' : (isCap ? 'cap' : 'day'),
     day,
     axis: snap.axis,
     blocks: painted,
-    pair: {
+    load_min: loadMin,
+    cap_min: capMin,
+    over_min: Math.max(0, loadMin - capMin),
+    load_blocks: loadBlocks
+      .slice()
+      .sort((a, b) => b.duration_min - a.duration_min),
+    pair: isOverlap ? {
       a: blockA ? slimBlock(blockA, 'a') : { title: titleA, highlight: 'a', movable: false },
       b: blockB ? slimBlock(blockB, 'b') : { title: titleB, highlight: 'b', movable: false },
-    },
+    } : null,
   };
 }
 
@@ -388,6 +420,11 @@ async function resolveOverlap(sb, pendingRow, which, actor) {
     err.status = 400;
     throw err;
   }
+  if (!preview.pair) {
+    const err = new Error('Not an overlap — pick a block from the list to move');
+    err.status = 400;
+    throw err;
+  }
   const { pair, day } = preview;
   const targetA = pair.a?.movable ? await lookupMoveTarget(sb, pair.a) : null;
   const targetB = pair.b?.movable ? await lookupMoveTarget(sb, pair.b) : null;
@@ -426,11 +463,79 @@ async function resolveOverlap(sb, pendingRow, which, actor) {
   return { ...moved, side, pending_id: pendingRow.id, preview_day: day };
 }
 
+/** Move one listed day block (cap / general) off the overloaded day. */
+async function resolveDayBlock(sb, pendingRow, blockId, actor) {
+  const preview = await previewConflict(sb, pendingRow);
+  if (!preview.ok) {
+    const err = new Error(preview.error || 'preview failed');
+    err.status = 400;
+    throw err;
+  }
+  const block = (preview.blocks || []).find((b) => b.id === blockId);
+  if (!block) {
+    const err = new Error('Block not found on that day');
+    err.status = 404;
+    throw err;
+  }
+  if (!block.movable) {
+    const err = new Error('That block cannot be moved from here');
+    err.status = 409;
+    throw err;
+  }
+  const target = await lookupMoveTarget(sb, block);
+  if (!target) {
+    const err = new Error('Block is not linked to a habit/task in DB');
+    err.status = 409;
+    throw err;
+  }
+  const durationMin = Math.max(15, block.duration_min || 60);
+  const rules = await sb('scheduling_rules?select=key,value');
+  const ruleMap = ruleMapFromRows(rules || []);
+  // Prefer next day onward so we actually reduce this day's load
+  const slot = await findSlot(
+    sb, addDays(preview.day, 1), durationMin, block.title || 'block', block.id, ruleMap,
+  );
+  if (!slot) {
+    const err = new Error('No free legal slot in the next 14 days');
+    err.status = 409;
+    throw err;
+  }
+  const moved = await applyMove(sb, target, slot, actor);
+  // Cap may need several moves — only mark applied when under cap after move
+  const again = await previewConflict(sb, pendingRow);
+  if (again.ok && again.kind === 'cap' && again.over_min > 0) {
+    return {
+      ...moved,
+      pending_id: pendingRow.id,
+      preview_day: preview.day,
+      still_over: true,
+      over_min: again.over_min,
+      load_min: again.load_min,
+      cap_min: again.cap_min,
+    };
+  }
+  await sb(`pending_diary_changes?id=eq.${pendingRow.id}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: {
+      status: 'applied',
+      resolved_at: new Date().toISOString(),
+      resolved_by: actor || 'conflict-resolver',
+    },
+  });
+  return {
+    ...moved,
+    pending_id: pendingRow.id,
+    preview_day: preview.day,
+    still_over: false,
+  };
+}
+
 module.exports = {
   parseOverlapRelated,
   loadDaySnapshot,
   previewConflict,
   resolveOverlap,
+  resolveDayBlock,
   AXIS_START,
   AXIS_END,
 };

@@ -180,12 +180,21 @@ module.exports = async function handler(req, res) {
         const result = await resolveOverlap(sb, row, body.which, actor);
         return json(res, 200, { result, calendar_writes: 0 });
       }
+      if (body.entity === 'resolve_block') {
+        if (!body.id || !body.block_id) return json(res, 400, { error: 'id and block_id required' });
+        const row = (await sb(`pending_diary_changes?id=eq.${body.id}&select=*`))?.[0];
+        if (!row) return json(res, 404, { error: 'pending row not found' });
+        if (row.status !== 'pending') return json(res, 409, { error: 'already resolved' });
+        const { resolveDayBlock } = require('./conflict-resolve-lib');
+        const result = await resolveDayBlock(sb, row, body.block_id, actor);
+        return json(res, 200, { result, calendar_writes: 0 });
+      }
       if (body.entity === 'run_check') {
         const scope = body.scope === 'full' ? 'full' : '8w';
         return json(res, 200, { run: await runDiaryCheck(scope) });
       }
       return json(res, 400, {
-        error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|run_check',
+        error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|resolve_block|run_check',
       });
     }
 

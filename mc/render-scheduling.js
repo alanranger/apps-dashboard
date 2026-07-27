@@ -1,6 +1,6 @@
 import { api } from './api.js';
 import { $, esc, fmtDate } from './util.js';
-import { buildExceptions } from './exceptions.js';
+import { buildExceptions, isException } from './exceptions.js';
 import {
   buildConflictResolverPanel, ensureConflictPreview, handleConflictResolverClick,
 } from './conflict-resolver.js';
@@ -143,12 +143,14 @@ export async function renderScheduling() {
     ).join('')}<p class="meta">Source of truth: GitHub <code>alanranger/alan-shared-resources</code>, <code>csv/</code> path. Freshness badge = the latest commit touching that file (auto-pushed every ~10 min, but only when the export actually changes — so the date is content-driven, never a copy asserting itself fresh). Amber &gt;7 days, red &gt;14 days. Local dev may override with <code>MC_SCHEDULE_CSV_DIR</code>.</p></div>`
     : '<div class="sched-sources"><span class="sched-src sched-src-red">Schedule CSVs: not loaded</span></div>';
 
-  const pendingEmpty = pending.length
+  // Exceptions (overlap/cap/gap/unplaceable) live in Conflict day view — keep this table for concrete proposals only.
+  const proposalPending = pending.filter((p) => !isException(p));
+  const pendingEmpty = proposalPending.length
     ? null
-    : `<tr><td colspan="4" class="meta">No pending proposals. Detector always names CSV sources + ages in the run log — never a silent “all clear”.</td></tr>`;
+    : `<tr><td colspan="4" class="meta">No concrete proposals left. Decision clashes are above in Conflict day view.</td></tr>`;
 
-  const pendingRows = pending.length
-    ? pending.map((p) => `<tr class="${urgencyClass(p.urgency)}">
+  const pendingRows = proposalPending.length
+    ? proposalPending.map((p) => `<tr class="${urgencyClass(p.urgency)}">
         <td><span class="pill">${esc(displayChangeType(p.change_type))}</span></td>
         <td>${p.target_date ? fmtDate(p.target_date) : '—'}</td>
         <td><strong>${esc(displaySummary(p))}</strong><div class="meta">${esc(p.proposed_action)}</div></td>
@@ -201,11 +203,12 @@ export async function renderScheduling() {
       <div class="rec-head">
         <div>
           <h2><i class="ti ti-calendar-time"></i> Pending diary changes
-            ${pending.length ? `<span class="pill">${pending.length}</span>` : ''}</h2>
-          <p class="sched-worklist-banner"><strong>Proposed changes — NOT yet applied to your calendar.</strong> This is a worklist of problems + proposed fixes. Press <strong>Apply</strong> to enact each one (or Dismiss). Nothing has changed your diary until you do.</p>
-          <p class="meta">Detector proposes · you or Claude apply. <strong>Zero Calendar writes from cron.</strong>
-            Overlaps that need a human choice are handled above in <strong>Conflict day view</strong>
-            (${exceptions.length} exception${exceptions.length === 1 ? '' : 's'}).</p>
+            ${proposalPending.length ? `<span class="pill">${proposalPending.length}</span>` : ''}</h2>
+          <p class="sched-worklist-banner"><strong>Concrete proposals only</strong> (habit places with a target slot, travel fixes, etc.).
+            Overlaps / cap / gap decisions are handled above in <strong>Conflict day view</strong>
+            (${exceptions.length} exception${exceptions.length === 1 ? '' : 's'}).
+            Press <strong>Apply</strong> to enact each proposal (or Dismiss). Nothing hits Google until Push.</p>
+          <p class="meta">Detector proposes · you or Claude apply. <strong>Zero Calendar writes from cron.</strong></p>
         </div>
         <button type="button" class="btn-verify" id="schedCopyAll" ${pending.length ? '' : 'disabled'}>Copy all as instruction</button>
       </div>

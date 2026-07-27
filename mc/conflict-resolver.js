@@ -1,5 +1,6 @@
 /**
  * Visual conflict day resolver UI (Scheduling tab).
+ * Every dated clash shows the live diary day + concrete move actions.
  */
 import { api } from './api.js';
 import { esc, fmtDate } from './util.js';
@@ -52,6 +53,23 @@ function fmtHm(min) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function loadMeter(preview) {
+  if (!preview?.ok || preview.kind !== 'cap') return '';
+  const load = preview.load_min || 0;
+  const cap = preview.cap_min || 270;
+  const over = preview.over_min || Math.max(0, load - cap);
+  const pct = Math.min(100, Math.round((load / Math.max(cap, 1)) * 100));
+  const overCls = over > 0 ? ' cf-meter-over' : '';
+  return `
+    <div class="cf-meter${overCls}">
+      <div class="cf-meter-bar"><div class="cf-meter-fill" style="width:${pct}%"></div></div>
+      <div class="cf-meter-label">
+        <strong>${load}m</strong> used of <strong>${cap}m</strong> hard cap
+        ${over > 0 ? `· <span class="cf-over">${over}m over</span>` : '· under cap'}
+      </div>
+    </div>`;
+}
+
 function renderTimeline(preview) {
   if (!preview?.ok) {
     return `<div class="cf-empty meta">${esc(preview?.error || 'Could not load day timeline')}</div>`;
@@ -67,8 +85,11 @@ function renderTimeline(preview) {
     const h = heightPct(b.end_min - b.start_min, axis);
     const hl = b.highlight ? ` cf-hl-${b.highlight}` : ' cf-muted';
     const cls = KIND_CLASS[b.kind] || 'dy-personal';
-    return `<div class="cf-block ${cls}${hl}" style="top:${top}%;height:${h}%" title="${esc(b.title)}">
+    const mins = b.duration_min != null ? b.duration_min : (b.end_min - b.start_min);
+    return `<div class="cf-block ${cls}${hl}" style="top:${top}%;height:${h}%"
+      title="${esc(b.title)} · ${mins}m">
       <span>${esc(b.title)}</span>
+      <em>${mins}m</em>
     </div>`;
   }).join('');
 
@@ -79,7 +100,7 @@ function renderTimeline(preview) {
     </div>`;
 }
 
-function pairButtons(ex, preview) {
+function overlapSide(ex, preview) {
   const a = preview?.pair?.a;
   const b = preview?.pair?.b;
   const labelA = esc(ex.shortA || a?.title || 'Block A');
@@ -87,6 +108,11 @@ function pairButtons(ex, preview) {
   const moveA = a?.movable !== false && (a?.movable || ex.eventIdA);
   const moveB = b?.movable !== false && (b?.movable || ex.eventIdB);
   return `
+    <div class="cf-pair">
+      <div class="cf-chip cf-chip-a">A · ${labelA}</div>
+      <div class="cf-chip cf-chip-b">B · ${labelB}</div>
+    </div>
+    <p class="meta">${esc(ex.why)}</p>
     <div class="cf-actions">
       <button type="button" class="btn-verify" data-cf-move="lower" data-cf-id="${ex.id}"
         ${!(moveA || moveB) ? 'disabled' : ''}>Move lower priority</button>
@@ -99,21 +125,74 @@ function pairButtons(ex, preview) {
     </div>`;
 }
 
-function nonOverlapCard(ex) {
-  return `
-    <div class="cf-card">
-      <div class="cf-card-head">
-        <div>
-          <span class="pill">${esc(ex.typeLabel)}</span>
-          <strong>${ex.date ? fmtDate(ex.date) : '—'}</strong>
-        </div>
+function loadBlockList(ex, preview) {
+  const rows = (preview?.load_blocks || []).map((b) => {
+    const when = `${fmtHm(b.start_min)}–${fmtHm(b.end_min)}`;
+    const moveBtn = b.movable
+      ? `<button type="button" class="btn-verify" data-cf-block="${esc(b.id)}" data-cf-id="${ex.id}">
+           Move off day (${b.duration_min}m)</button>`
+      : '<span class="meta">fixed</span>';
+    return `<li class="cf-load-row">
+      <div>
+        <strong>${esc(b.title)}</strong>
+        <span class="meta">${when} · ${b.duration_min}m</span>
       </div>
-      <p class="cf-clash">${esc(ex.clashing).replace(/\n/g, '<br>')}</p>
-      <p class="meta">${esc(ex.why)}</p>
+      ${moveBtn}
+    </li>`;
+  }).join('');
+
+  if (!rows) {
+    return `<p class="meta">No movable MC work blocks found on this day yet — open Diary to inspect.</p>`;
+  }
+  return `
+    <p class="meta">Orange blocks count toward the daily cap. Move the longest/lowest-value ones off this day.</p>
+    <ul class="cf-load-list">${rows}</ul>
+    <div class="cf-actions">
+      <button type="button" class="btn-secondary" data-cf-diary="${esc(ex.date || '')}">Open in Diary</button>
+      <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
+    </div>`;
+}
+
+function daySide(ex, preview) {
+  return `
+    <p class="cf-clash">${esc(ex.clashing).replace(/\n/g, '<br>')}</p>
+    <p class="meta">${esc(ex.why)}</p>
+    ${ex.type === 'cap' ? loadMeter(preview) : ''}
+    ${ex.type === 'cap' ? loadBlockList(ex, preview) : `
       <div class="cf-actions">
         <button type="button" class="btn-secondary" data-cf-diary="${esc(ex.date || '')}">Open in Diary</button>
         <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
+      </div>`}`;
+}
+
+function datedBody(ex, preview) {
+  const side = ex.type === 'overlap'
+    ? overlapSide(ex, preview)
+    : daySide(ex, preview);
+  const timelineReady = preview && preview.pending_id === ex.id;
+  return `
+    <div class="cf-layout">
+      <div class="cf-side">
+        ${resolverState.loading ? '<p class="meta">Loading day…</p>' : ''}
+        ${resolverState.message ? `<p class="cf-msg">${esc(resolverState.message)}</p>` : ''}
+        ${side}
       </div>
+      <div class="cf-timeline-wrap">
+        <div class="cf-day-label">${fmtDate(ex.date)} · live diary day
+          ${preview?.kind === 'cap' ? ' · orange = counts to cap' : ''}
+          ${preview?.kind === 'overlap' ? ' · A/B highlighted' : ''}
+        </div>
+        ${timelineReady ? renderTimeline(preview) : '<div class="cf-empty meta">Loading timeline…</div>'}
+      </div>
+    </div>`;
+}
+
+function undatedBody(ex) {
+  return `
+    <p class="cf-clash">${esc(ex.clashing).replace(/\n/g, '<br>')}</p>
+    <p class="meta">${esc(ex.why)}</p>
+    <div class="cf-actions">
+      <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
     </div>`;
 }
 
@@ -152,34 +231,15 @@ export function buildConflictResolverPanel(pending) {
     </div>`;
   }
 
-  const body = ex.type === 'overlap'
-    ? `
-      <div class="cf-layout">
-        <div class="cf-side">
-          <div class="cf-pair">
-            <div class="cf-chip cf-chip-a">A · ${esc(ex.shortA || 'Block A')}</div>
-            <div class="cf-chip cf-chip-b">B · ${esc(ex.shortB || 'Block B')}</div>
-          </div>
-          <p class="meta">${esc(ex.why)}</p>
-          ${resolverState.loading ? '<p class="meta">Loading day…</p>' : ''}
-          ${resolverState.message ? `<p class="cf-msg">${esc(resolverState.message)}</p>` : ''}
-          ${pairButtons(ex, preview)}
-        </div>
-        <div class="cf-timeline-wrap">
-          <div class="cf-day-label">${fmtDate(ex.date)} · live diary day</div>
-          ${preview && preview.pending_id === ex.id ? renderTimeline(preview) : '<div class="cf-empty meta">Loading timeline…</div>'}
-        </div>
-      </div>`
-    : nonOverlapCard(ex);
+  const body = ex.date ? datedBody(ex, preview) : undatedBody(ex);
 
   return `<div class="card sched-exceptions cf-resolver" data-cf-current="${ex.id}">
     <div class="rec-head">
       <div>
         <h2><i class="ti ti-layout-sidebar"></i> Conflict day view
           <span class="pill sched-ex-count">${visible.length}</span></h2>
-        <p class="sched-exceptions-banner"><strong>See the clash. Pick which block moves.</strong>
-          Moves save to Mission Control DB now; Google waits for Push.
-          Far-future rows stay hidden until you widen the filter.</p>
+        <p class="sched-exceptions-banner"><strong>See the day. Pick what moves.</strong>
+          Cap days show which blocks eat the budget. Moves save to Mission Control now; Google waits for Push.</p>
       </div>
       <div class="cf-filters">${filters}</div>
     </div>
@@ -202,7 +262,7 @@ export async function ensureConflictPreview(pending) {
   const all = buildExceptions(pending);
   const { visible } = filterExceptionsByHorizon(all, resolverState.horizon, londonTodayYmd());
   const ex = visible[resolverState.index];
-  if (!ex || ex.type !== 'overlap') {
+  if (!ex?.date) {
     resolverState.preview = null;
     return;
   }
@@ -251,6 +311,33 @@ export async function handleConflictResolverClick(e, pending, refresh) {
     document.querySelector('.view-btn[data-view="diary"]')?.click();
     return true;
   }
+  const blockMove = e.target.closest('[data-cf-block]');
+  if (blockMove) {
+    const id = blockMove.getAttribute('data-cf-id');
+    const blockId = blockMove.getAttribute('data-cf-block');
+    blockMove.disabled = true;
+    resolverState.message = 'Moving off day…';
+    try {
+      const data = await api('/api/mc/scheduling', {
+        method: 'PATCH',
+        body: { entity: 'resolve_block', id, block_id: blockId },
+      });
+      const r = data.result || {};
+      const when = `${String(r.start || '').slice(11, 16)}–${String(r.end || '').slice(11, 16)}`;
+      if (r.still_over) {
+        resolverState.message = `Moved to ${r.day || ''} ${when}. Still ${r.over_min}m over — move another.`;
+      } else {
+        resolverState.message = `Moved to ${r.day || ''} ${when} (DB). Day now under cap.`;
+      }
+      resolverState.preview = null;
+      await refresh();
+    } catch (err) {
+      resolverState.message = err.message || 'Move failed';
+      blockMove.disabled = false;
+      await refresh();
+    }
+    return true;
+  }
   const move = e.target.closest('[data-cf-move]');
   if (move) {
     const id = move.getAttribute('data-cf-id');
@@ -265,7 +352,6 @@ export async function handleConflictResolverClick(e, pending, refresh) {
       const r = data.result || {};
       resolverState.message = `Moved to ${r.day || ''} ${String(r.start || '').slice(11, 16)}–${String(r.end || '').slice(11, 16)} (DB). Push later for Google.`;
       resolverState.preview = null;
-      // stay on same index — list shrinks
       await refresh();
     } catch (err) {
       resolverState.message = err.message || 'Move failed';
