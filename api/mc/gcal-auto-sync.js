@@ -59,8 +59,12 @@ module.exports = async function handler(req, res) {
       return json(res, 200, await dryRunSync(sb));
     }
     if (action === 'push') {
+      // Default: diary edits only (queue). Backlog + rule masters timeout Vercel.
+      const includeBacklog = body.include_backlog === true;
+      const includeRuleMasters = body.include_rule_masters === true;
       return json(res, 200, await pushSync(sb, actor, {
-        includeRuleMasters: body.include_rule_masters !== false,
+        includeRuleMasters,
+        includeBacklog,
       }));
     }
     if (action === 'reconcile') {

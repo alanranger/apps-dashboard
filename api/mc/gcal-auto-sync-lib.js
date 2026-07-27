@@ -97,7 +97,10 @@ async function releasePushLock(sb) {
   } catch (_) { /* ignore */ }
 }
 
-async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
+async function pushSync(sb, actor, {
+  includeRuleMasters = true,
+  includeBacklog = false,
+} = {}) {
   const flags = await loadFlags(sb);
   if (!flags.cursor_writes_available) {
     const err = new Error('GCAL_NOT_CONFIGURED');
@@ -106,7 +109,8 @@ async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
   }
   await acquirePushLock(sb);
   try {
-    const plan = await buildFlushPlan(sb);
+    // Diary Push = gcal_push_queue only. Habit-placement backlog is separate (too big for one request).
+    const plan = await buildFlushPlan(sb, { includeBacklog: !!includeBacklog });
     const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push');
     let rule_masters = null;
     if (includeRuleMasters) {
@@ -124,6 +128,8 @@ async function pushSync(sb, actor, { includeRuleMasters = true } = {}) {
         applied: flush.applied,
         failed: flush.failed,
         results: flush.results,
+        include_backlog: !!includeBacklog,
+        backlog_rows: plan.backlog_rows || 0,
       },
       rule_masters: rule_masters
         ? {

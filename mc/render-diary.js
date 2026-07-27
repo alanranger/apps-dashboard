@@ -372,17 +372,17 @@ function renderToolbar(data) {
           </div>
           <button type="button" class="dy-push-btn" data-dy-push ${enabled && actionable ? '' : 'disabled'}
             title="${enabled
-    ? 'Flush actionable DB→Google writes now (Cursor writer, read-back verified). Stale backlog rows are not counted here.'
+    ? 'Push your Diary edits to Google only (not the old detector backlog).'
     : 'Blocked until Google Calendar OAuth is configured.'}">
             ${enabled
-    ? (actionable ? `Push ${actionable} to Google` : 'Nothing to push')
+    ? (actionable ? `Push ${actionable} diary edit${actionable === 1 ? '' : 's'} to Google` : 'Nothing to push')
     : `Blocked · ${actionable} actionable`}
           </button>
         </div>
         <p class="dy-push-explain">
-          Button count = <strong>actionable flush plan</strong> (not raw queue size).
-          Raw queue ${rawTotal} (edits ${openN} + backlog ${backlogN}); ${skipped} skipped as unparsed/stale.
-          Auto-sync: ${autoOn ? 'enabled' : 'OFF'} · sign-off: ${signed ? 'yes' : 'pending dry-run approval'}.
+          Push = <strong>your Diary moves</strong> in the write queue (not hundreds of detector proposals).
+          Raw detector leftovers sit on Scheduling until dismissed.
+          Auto-sync: ${autoOn ? 'ON' : 'OFF'} · sign-off: ${signed ? 'done' : 'pending dry-run approval'}.
         </p>
       </div>
     </div>`;

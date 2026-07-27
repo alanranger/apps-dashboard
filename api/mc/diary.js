@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
       listAwaySpanBacklog(sb),
       sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
       sb(`bank_holidays?select=holiday_date,title&holiday_date=gte.${from}&holiday_date=lte.${to}`),
-      buildFlushPlan(sb).catch(() => ({ write_count: 0, skipped_count: 0 })),
+      buildFlushPlan(sb, { includeBacklog: false }).catch(() => ({ write_count: 0, skipped_count: 0 })),
     ]);
 
     const habitMap = new Map((habits || []).map((h) => [h.id, h]));

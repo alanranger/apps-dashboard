@@ -332,7 +332,8 @@ async function resolveQueueTitle(sb, row, prefixes) {
   return safeTitle(p.title, null);
 }
 
-async function buildFlushPlan(sb) {
+async function buildFlushPlan(sb, opts = {}) {
+  const includeBacklog = opts.includeBacklog !== false;
   const rules = await sb('scheduling_rules?select=key,value');
   const ruleMap = ruleMapFromRows(rules || []);
   const prefixes = {
@@ -354,31 +355,35 @@ async function buildFlushPlan(sb) {
     else fromQueue.push(plan);
   }
 
-  const backlog = await listAwaySpanBacklog(sb);
   const fromBacklog = [];
-  for (const row of backlog || []) {
-    const plan = planFromBacklogRow(row);
-    if (plan.skip) {
-      skipped.push(plan);
-      continue;
-    }
-    if (plan.needs_task_title && plan.display_id) {
-      const tasks = await sb(
-        `tasks?display_id=eq.${plan.display_id}&select=display_id,title,priority`,
-      );
-      if (tasks?.[0]) {
-        const title = taskGcalTitle(tasks[0]);
+  let backlogRows = 0;
+  if (includeBacklog) {
+    const backlog = await listAwaySpanBacklog(sb);
+    backlogRows = (backlog || []).length;
+    for (const row of backlog || []) {
+      const plan = planFromBacklogRow(row);
+      if (plan.skip) {
+        skipped.push(plan);
+        continue;
+      }
+      if (plan.needs_task_title && plan.display_id) {
+        const tasks = await sb(
+          `tasks?display_id=eq.${plan.display_id}&select=display_id,title,priority`,
+        );
+        if (tasks?.[0]) {
+          const title = taskGcalTitle(tasks[0]);
+          plan.summary = title;
+          plan.patch = { ...plan.patch, summary: title };
+        }
+      }
+      if (plan.needs_habit_title) {
+        const title = habitGcalTitle(plan.needs_habit_title, prefixes);
         plan.summary = title;
         plan.patch = { ...plan.patch, summary: title };
+        if (plan.insert) plan.insert = { ...plan.insert, summary: title };
       }
+      fromBacklog.push(plan);
     }
-    if (plan.needs_habit_title) {
-      const title = habitGcalTitle(plan.needs_habit_title, prefixes);
-      plan.summary = title;
-      plan.patch = { ...plan.patch, summary: title };
-      if (plan.insert) plan.insert = { ...plan.insert, summary: title };
-    }
-    fromBacklog.push(plan);
   }
 
   const writes = dedupePlans(fromQueue.concat(fromBacklog));
@@ -390,9 +395,10 @@ async function buildFlushPlan(sb) {
 
   return {
     dry_run: true,
+    include_backlog: includeBacklog,
     queue_raw: (open || []).length,
     queue_collapsed: collapsed.length,
-    backlog_rows: (backlog || []).length,
+    backlog_rows: backlogRows,
     write_count: writes.length,
     skipped_count: skipped.length,
     writes,
@@ -447,7 +453,7 @@ async function syncRecurringLogAfterFlush(sb, w, eventId) {
       method: 'POST', prefer: 'return=minimal',
       body: {
         recurring_task_id: w.habit_id,
-        actor: 'cursor-flush',
+        actor: 'cursor',
         ...body,
       },
     });
@@ -456,6 +462,9 @@ async function syncRecurringLogAfterFlush(sb, w, eventId) {
 
 async function applyFlushPlan(sb, plan, actor) {
   const results = [];
+  const actorSafe = ['alan', 'claude', 'cursor', 'external', 'system'].includes(actor)
+    ? actor
+    : 'cursor';
   for (const w of plan.writes || []) {
     try {
       let eventId = w.event_id || null;
@@ -511,7 +520,7 @@ async function applyFlushPlan(sb, plan, actor) {
       await syncRecurringLogAfterFlush(sb, w, eventId);
 
       if (w.source === 'gcal_push_queue' && w.source_id) {
-        await markPushStatus(sb, [w.source_id], 'applied', actor || 'cursor-flush');
+        await markPushStatus(sb, [w.source_id], 'applied', actorSafe);
       }
       if (w.source === 'pending_diary_changes' && w.source_id) {
         await sb(`pending_diary_changes?id=eq.${w.source_id}`, {
@@ -519,7 +528,7 @@ async function applyFlushPlan(sb, plan, actor) {
           body: {
             status: 'applied',
             resolved_at: new Date().toISOString(),
-            resolved_by: actor || 'cursor-flush',
+            resolved_by: actorSafe,
           },
         });
       }
