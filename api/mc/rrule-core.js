@@ -143,6 +143,32 @@ function lastDueOnOrBefore(rrule, today) {
   return last;
 }
 
+/**
+ * Month-day / ordinal weekday anchors (BYMONTHDAY=n, BYDAY=1MO / -1FR):
+ * floor = ideal; never roll earlier than the rrule occurrence.
+ */
+function isForwardAnchoredRrule(rrule) {
+  const p = parseRrule(rrule);
+  if (p.BYMONTHDAY) return true;
+  if (!p.BYDAY) return false;
+  return String(p.BYDAY).split(',').some((tok) => /^-?\d+[A-Z]{2}$/i.test(String(tok).trim()));
+}
+
+/** forward | backward | flexible — how the placer searches around ideal. */
+function criticalRollMode(rrule, timeCritical) {
+  if (isForwardAnchoredRrule(rrule)) return 'forward';
+  if (timeCritical) return 'backward';
+  return 'flexible';
+}
+
 module.exports = {
-  occurrencesInRange, nextDueFromRrule, lastDueOnOrBefore, toYmd, fromYmd, addDays,
+  parseRrule,
+  occurrencesInRange,
+  nextDueFromRrule,
+  lastDueOnOrBefore,
+  toYmd,
+  fromYmd,
+  addDays,
+  isForwardAnchoredRrule,
+  criticalRollMode,
 };

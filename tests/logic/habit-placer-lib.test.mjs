@@ -461,3 +461,39 @@ describe('habit-placer-lib — away spans', () => {
     assert.ok(placements.every((p) => p.day !== '2026-09-10'));
   });
 });
+
+describe('habit-placer-lib — anchor roll direction', () => {
+  const weekdays = {
+    ...rules,
+    working_days: 'mon,tue,wed,thu,fri',
+    exclude_bank_holidays: 'false',
+  };
+
+  it('forward-anchored time_critical never offers days before ideal', () => {
+    // Aug 1 2026 Sat → candidates only Aug 1..3, filtered to working days → Mon 3
+    const days = candidateDays(
+      '2026-08-01', 2, true, weekdays, holidays, [], 'FREQ=MONTHLY;BYMONTHDAY=1',
+    );
+    assert.ok(!days.some((d) => d < '2026-08-01'));
+    assert.ok(days.includes('2026-08-03'));
+    assert.ok(!days.includes('2026-07-30'));
+    assert.ok(!days.includes('2026-07-31'));
+  });
+
+  it('deadline time_critical rolls earlier only', () => {
+    const days = candidateDays(
+      '2026-08-07', 2, true, weekdays, holidays, [], 'FREQ=WEEKLY;BYDAY=FR',
+    );
+    assert.ok(days.includes('2026-08-07'));
+    assert.ok(days.includes('2026-08-06') || days.includes('2026-08-05'));
+    assert.ok(!days.some((d) => d > '2026-08-07'));
+  });
+
+  it('ordinal BYDAY Monthly Accounts is forward even if not time_critical', () => {
+    const days = candidateDays(
+      '2026-10-05', 2, false, weekdays, holidays, [], 'FREQ=MONTHLY;BYDAY=1MO',
+    );
+    assert.ok(!days.some((d) => d < '2026-10-05'));
+    assert.ok(days.includes('2026-10-05'));
+  });
+});

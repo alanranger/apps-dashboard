@@ -5,7 +5,7 @@
 const {
   workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays,
 } = require('./scheduling-rules-lib');
-const { occurrencesInRange } = require('./rrule-core');
+const { occurrencesInRange, criticalRollMode } = require('./rrule-core');
 const { priorityRank } = require('./priority-lib');
 const { isMcBlock, isFixtureBlock } = require('./rule-breach-lib');
 const { isForceBusyCalendar } = require('./gcal-lib');
@@ -689,18 +689,27 @@ function orderHabitsForPlacement(habits, deps) {
   return ordered;
 }
 
-function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = []) {
+function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = [], rrule = '') {
   const w = Math.max(0, Number(windowDays) || 0);
+  const mode = criticalRollMode(rrule, timeCritical === true);
   const days = [];
   const cover = coveringBlockedSpan(idealYmd, awaySpans);
   // Ideal on away / rest / teaching → jump past the whole blocked run.
   if (cover) {
     const after = addDays(cover.restDay || cover.endDay, 1);
-    days.push(addDays(cover.startDay, -1), after);
+    const before = addDays(cover.startDay, -1);
+    if (mode === 'forward') {
+      if (after >= idealYmd) days.push(after);
+    } else if (mode === 'backward') {
+      if (before <= idealYmd) days.push(before);
+    } else {
+      days.push(before, after);
+    }
   }
-  if (timeCritical) {
-    for (let i = w; i >= 0; i -= 1) days.push(addDays(idealYmd, -i));
-    for (let i = 1; i <= w; i += 1) days.push(addDays(idealYmd, i));
+  if (mode === 'forward') {
+    for (let i = 0; i <= w; i += 1) days.push(addDays(idealYmd, i));
+  } else if (mode === 'backward') {
+    for (let i = 0; i <= w; i += 1) days.push(addDays(idealYmd, -i));
   } else {
     days.push(idealYmd);
     for (let i = 1; i <= w; i += 1) {
@@ -708,8 +717,11 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
       days.push(addDays(idealYmd, -i));
     }
   }
-  return [...new Set(days)].filter((d) => isSchedulableDay(d, ruleMap, holidays)
-    && !dayBlockedForPlacement(d, awaySpans));
+  return [...new Set(days)].filter((d) => {
+    if (mode === 'forward' && d < idealYmd) return false;
+    if (mode === 'backward' && d > idealYmd) return false;
+    return isSchedulableDay(d, ruleMap, holidays) && !dayBlockedForPlacement(d, awaySpans);
+  });
 }
 
 /** Admin ticks get admin_gap_min; substantial (incl. Publish Blog) get decompress_after_task_min. */
@@ -820,6 +832,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
       const days = candidateDays(
         ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
+        habit.rrule,
       );
       let slot = null;
       for (const day of days) {
@@ -988,6 +1001,7 @@ module.exports = {
   buildAmendments,
   provePlacement,
   candidateDays,
+  criticalRollMode,
   dayCapLimits,
   habitGapTier,
   gapMinsForTitle,

@@ -48,7 +48,10 @@ describe('missed-habit-lib — directional make-up', () => {
   it('time-critical past miss is UNPLACEABLE, never forward-rolled', () => {
     const prop = computeMissedProposal({
       ...base,
-      habit: { title: 'Send Out Joining Details', ideal_time: '09:00', rolls_used: 0, time_critical: true },
+      habit: {
+        title: 'Send Out Joining Details', ideal_time: '09:00', rolls_used: 0,
+        time_critical: true, rrule: 'FREQ=WEEKLY;BYDAY=FR', window_days: 2,
+      },
       lastDue: '2026-07-17',
     });
     assert.equal(prop.rollsDelta, 0);
@@ -57,17 +60,37 @@ describe('missed-habit-lib — directional make-up', () => {
     assert.equal(prop.urgency, 'high');
   });
 
-  it('time-critical with a legal prior slot rolls BACK', () => {
+  it('deadline time-critical with a legal prior slot rolls BACK', () => {
     // ideal Tue 09-01, today 08-27 → prior legal skipping holiday Mon 31 = Fri 28
     const prop = computeMissedProposal({
       today: '2026-08-27',
       ruleMap: rules,
       holidays,
       maxRolls: 3,
-      habit: { title: 'Booking Sheet, Month End Update', ideal_time: '09:00', rolls_used: 0, time_critical: true },
+      habit: {
+        title: 'Send Out Joining Details', ideal_time: '09:00', rolls_used: 0,
+        time_critical: true, rrule: 'FREQ=WEEKLY;BYDAY=FR', window_days: 2,
+      },
       lastDue: '2026-09-01',
     });
     assert.ok(prop.proposed.includes('Roll BACK to nearest prior legal slot 2026-08-28'));
+  });
+
+  it('forward-anchored Booking Sheet never rolls before the 1st', () => {
+    const prop = computeMissedProposal({
+      today: '2026-08-03',
+      ruleMap: rules,
+      holidays,
+      maxRolls: 3,
+      habit: {
+        title: 'Booking Sheet, Month End Update', ideal_time: '09:00', rolls_used: 0,
+        time_critical: true, rrule: 'FREQ=MONTHLY;BYMONTHDAY=1', window_days: 2,
+      },
+      lastDue: '2026-08-01',
+    });
+    assert.ok(prop.proposed.includes('Roll FORWARD'));
+    assert.ok(!prop.proposed.includes('Roll BACK'));
+    assert.ok(!/2026-07-3[01]/.test(prop.proposed));
   });
 });
 

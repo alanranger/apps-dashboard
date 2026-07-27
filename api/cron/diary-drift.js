@@ -96,7 +96,7 @@ async function reevalPendingMissedHabits(ctx) {
   let habits = [];
   try {
     pending = await sb('pending_diary_changes?status=eq.pending&change_type=eq.missed_habit&select=id,related_id,proposed_action') || [];
-    habits = await sb('recurring_tasks?select=id,title,ideal_time,rolls_used,time_critical') || [];
+    habits = await sb('recurring_tasks?select=id,title,ideal_time,rolls_used,time_critical,rrule,window_days') || [];
   } catch (e) {
     notes.push(`missed_habit_reeval_read_error: ${e.message}`);
     return;
