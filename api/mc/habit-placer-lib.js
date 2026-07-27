@@ -282,6 +282,41 @@ function dayBlockedForPlacement(day, spans) {
   });
 }
 
+/**
+ * Habits: rest + teaching + FULL away span (travel edge days included).
+ * Peak-style 2-day trips have no middle — tasks may use edge mornings; habits may not.
+ */
+function dayBlockedForHabits(day, spans) {
+  return (spans || []).some((s) => {
+    if (s.kind === 'teaching_day') return day === s.startDay;
+    if (s.kind === 'away_span') {
+      return !!(s.startDay && s.endDay && day >= s.startDay && day <= s.endDay);
+    }
+    if (s.kind === 'rest_after_workshop' || s.restDay) {
+      return day === String(s.restDay || s.startDay);
+    }
+    if (s.startDay && s.endDay && day >= s.startDay && day <= s.endDay) return true;
+    return false;
+  });
+}
+
+/** DB rest_day_blocks → same shape as workshop-derived rest spans. */
+function restDaySpansFromDbRows(rows) {
+  return (rows || []).filter((r) => r?.rest_date).map((r) => {
+    const restDay = String(r.rest_date).slice(0, 10);
+    return {
+      startDay: restDay,
+      endDay: restDay,
+      restDay,
+      kind: 'rest_after_workshop',
+      summary: `rest after multi-day: ${r.workshop_title || restDay}`,
+      workshop_title: r.workshop_title || null,
+      startMs: londonYmdHmToUtcMs(restDay, '00:00'),
+      endMs: londonYmdHmToUtcMs(restDay, '23:59') + 60000,
+    };
+  });
+}
+
 function coveringBlockedSpan(day, spans) {
   return (spans || []).find((s) => {
     if (s.kind === 'teaching_day') return day === s.startDay;
@@ -592,6 +627,76 @@ function findAwayIntervalTaskBumps(softTaskIntervals, awaySpans) {
   return bumps;
 }
 
+/** Adjacent soft tasks with gap < admin/decompress need — bump the later one. */
+function findAdminGapTaskBumps(softTaskIntervals, ruleMap) {
+  const byDay = new Map();
+  for (const t of softTaskIntervals || []) {
+    const day = isoToLondonDate(new Date(t.startMs).toISOString());
+    if (!day) continue;
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(t);
+  }
+  const bumps = [];
+  const seen = new Set();
+  for (const [day, list] of byDay) {
+    list.sort((a, b) => a.startMs - b.startMs);
+    for (let i = 0; i < list.length - 1; i += 1) {
+      const a = list[i];
+      const b = list[i + 1];
+      const gap = (b.startMs - a.endMs) / 60000;
+      const need = requiredGapMins(a.summary || '', b.summary || '', ruleMap);
+      if (gap >= need) continue;
+      if (seen.has(Number(b.display_id))) continue;
+      seen.add(Number(b.display_id));
+      bumps.push({
+        display_id: b.display_id,
+        title: b.summary,
+        task_start: new Date(b.startMs).toISOString(),
+        task_end: new Date(b.endMs).toISOString(),
+        duration_min: Math.max(15, Math.round((b.endMs - b.startMs) / 60000)),
+        habit_id: null,
+        habit_title: `MC-${a.display_id}`,
+        habit_day: day,
+        habit_start: new Date(a.startMs).toISOString(),
+        habit_end: new Date(a.endMs).toISOString(),
+        reason: `admin_gap_${gap}m_need_${need}m`,
+        depends_on_display_id: b.depends_on_display_id,
+        calendar_event_id: b.calendar_event_id,
+      });
+    }
+  }
+  return bumps;
+}
+
+/** Unpinned soft tasks ending after working window — bump. */
+function findAfterHoursTaskBumps(softTaskIntervals, ruleMap) {
+  const bumps = [];
+  for (const t of softTaskIntervals || []) {
+    if (t.slot_pinned) continue;
+    const day = isoToLondonDate(new Date(t.startMs).toISOString());
+    if (!day) continue;
+    const win = workingWindow(ruleMap, day);
+    const endMin = isoToLondonMinutes(new Date(t.endMs).toISOString());
+    if (endMin == null || endMin <= win.end_min) continue;
+    bumps.push({
+      display_id: t.display_id,
+      title: t.summary,
+      task_start: new Date(t.startMs).toISOString(),
+      task_end: new Date(t.endMs).toISOString(),
+      duration_min: Math.max(15, Math.round((t.endMs - t.startMs) / 60000)),
+      habit_id: null,
+      habit_title: 'after_hours',
+      habit_day: day,
+      habit_start: null,
+      habit_end: null,
+      reason: 'after_working_hours',
+      depends_on_display_id: t.depends_on_display_id,
+      calendar_event_id: t.calendar_event_id,
+    });
+  }
+  return bumps;
+}
+
 /** Soft tasks overlapping each other — bump the higher display_id. */
 function findSoftOverlapBumps(softTaskIntervals) {
   const sorted = [...(softTaskIntervals || [])]
@@ -688,6 +793,8 @@ function placeBumpedTasks(bumps, softTaskIntervals, hardBusy, placements, ruleMa
   const occupying = (softTaskIntervals || [])
     .filter((t) => !bumpedIds.has(Number(t.display_id)))
     .map((t) => ({ startMs: t.startMs, endMs: t.endMs, summary: t.summary }));
+  seedDayUsed(dayUsed, hardBusy || [], fromYmd, null);
+  seedDayUsed(dayUsed, occupying, fromYmd, null);
 
   const busyBase = (hardBusy || []).concat(occupying);
   for (const p of placements || []) {
@@ -822,34 +929,39 @@ function orderHabitsForPlacement(habits, deps) {
 }
 
 /** First schedulable non-blocked day on/after ymd (skips chained away/rest). */
-function firstOpenOnOrAfter(ymd, ruleMap, holidays, awaySpans, maxSteps = 14) {
+function firstOpenOnOrAfter(ymd, ruleMap, holidays, awaySpans, maxSteps = 14, forHabits = false) {
+  const blockedFn = forHabits ? dayBlockedForHabits : dayBlockedForPlacement;
   let d = ymd;
   for (let i = 0; i < maxSteps; i += 1) {
-    if (isSchedulableDay(d, ruleMap, holidays) && !dayBlockedForPlacement(d, awaySpans)) return d;
+    if (isSchedulableDay(d, ruleMap, holidays) && !blockedFn(d, awaySpans)) return d;
     d = addDays(d, 1);
   }
   return null;
 }
 
-function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = [], rrule = '') {
+function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, awaySpans = [], rrule = '', forHabits = false) {
+  const blockedFn = forHabits ? dayBlockedForHabits : dayBlockedForPlacement;
   const w = Math.max(0, Number(windowDays) || 0);
   const mode = criticalRollMode(rrule, timeCritical === true);
   const days = [];
-  const cover = coveringBlockedSpan(idealYmd, awaySpans);
+  const cover = coveringBlockedSpan(idealYmd, awaySpans)
+    || (forHabits && dayBlockedForHabits(idealYmd, awaySpans)
+      ? (awaySpans || []).find((s) => dayBlockedForHabits(idealYmd, [s]))
+      : null);
   // Ideal on away / rest / teaching → jump past the whole blocked run.
   if (cover) {
     const after = addDays(cover.restDay || cover.endDay, 1);
     const before = addDays(cover.startDay, -1);
     if (mode === 'forward') {
       const open = firstOpenOnOrAfter(
-        after >= idealYmd ? after : idealYmd, ruleMap, holidays, awaySpans,
+        after >= idealYmd ? after : idealYmd, ruleMap, holidays, awaySpans, 14, forHabits,
       );
       if (open) days.push(open);
     } else if (mode === 'backward') {
       if (before <= idealYmd) days.push(before);
     } else {
       days.push(before, after);
-      const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans);
+      const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans, 14, forHabits);
       if (open) days.push(open);
     }
   }
@@ -867,7 +979,7 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
   return [...new Set(days)].filter((d) => {
     if (mode === 'forward' && d < idealYmd) return false;
     if (mode === 'backward' && d > idealYmd) return false;
-    return isSchedulableDay(d, ruleMap, holidays) && !dayBlockedForPlacement(d, awaySpans);
+    return isSchedulableDay(d, ruleMap, holidays) && !blockedFn(d, awaySpans);
   });
 }
 
@@ -917,6 +1029,35 @@ function decompressOk(startMs, endMs, title, placed, ruleMap) {
   return true;
 }
 
+/** Busy intervals (tasks/events) as decompress neighbors — skip away/rest banners. */
+function busyAsGapNeighbors(busy, day) {
+  const out = [];
+  for (const b of busy || []) {
+    if (b.kind === 'away_span' || b.kind === 'teaching_day' || b.kind === 'rest_after_workshop') continue;
+    const title = b.summary || b.title;
+    if (!title) continue;
+    const bd = isoToLondonDate(new Date(b.startMs).toISOString());
+    if (bd !== day) continue;
+    out.push({
+      day: bd,
+      startIso: new Date(b.startMs).toISOString(),
+      endIso: new Date(b.endMs).toISOString(),
+      title,
+    });
+  }
+  return out;
+}
+
+function seedDayUsed(dayUsed, intervals, fromYmd, toYmd) {
+  for (const b of intervals || []) {
+    if (b.kind === 'away_span' || b.kind === 'teaching_day' || b.kind === 'rest_after_workshop') continue;
+    if (!Number.isFinite(b.startMs) || !Number.isFinite(b.endMs)) continue;
+    const day = isoToLondonDate(new Date(b.startMs).toISOString());
+    if (!day || (fromYmd && day < fromYmd) || (toYmd && day > toYmd)) continue;
+    dayUsed[day] = (dayUsed[day] || 0) + Math.max(0, Math.round((b.endMs - b.startMs) / 60000));
+  }
+}
+
 function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, ruleMap) {
   const win = workingWindow(ruleMap, day);
   const { hard } = dayCapLimits(ruleMap);
@@ -927,12 +1068,13 @@ function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, r
   for (let m = idealMin; m + durationMin <= win.end_min; m += 15) starts.push(m);
   for (let m = idealMin - 15; m >= win.start_min; m -= 15) starts.push(m);
 
+  const neighbors = (placed || []).concat(busyAsGapNeighbors(busy, day));
   for (const startMin of starts) {
     if (startMin < win.start_min || startMin + durationMin > win.end_min) continue;
     const startMs = londonYmdHmToUtcMs(day, hmLabel(startMin));
     const endMs = londonYmdHmToUtcMs(day, hmLabel(startMin + durationMin));
     if (busy.some((b) => overlaps(startMs, endMs, b.startMs, b.endMs))) continue;
-    if (!decompressOk(startMs, endMs, title, placed, ruleMap)) continue;
+    if (!decompressOk(startMs, endMs, title, neighbors, ruleMap)) continue;
     return {
       day,
       startIso: new Date(startMs).toISOString(),
@@ -963,11 +1105,13 @@ function depOk(habit, slot, placedByHabit, deps) {
   return true;
 }
 
-function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
+function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts = {}) {
   const ordered = orderHabitsForPlacement(habits, deps);
   const placements = [];
   const unplaced = [];
   const dayUsed = {};
+  seedDayUsed(dayUsed, busy, fromYmd, toYmd);
+  seedDayUsed(dayUsed, opts.softTaskIntervals || [], fromYmd, toYmd);
   const placedByHabit = new Map();
   const busyWork = busy.slice();
   const awaySpans = (busy || []).filter((b) => b.kind === 'away_span'
@@ -979,10 +1123,11 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
       const days = candidateDays(
         ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
-        habit.rrule,
+        habit.rrule, true,
       );
       let slot = null;
       for (const day of days) {
+        if (dayBlockedForHabits(day, awaySpans)) continue;
         const trial = trySlotOnDay(
           day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
           habit.title, busyWork, placements, dayUsed, ruleMap,
@@ -1133,6 +1278,8 @@ module.exports = {
   isRestDaySourceEvent,
   dayInsideAwaySpan,
   dayBlockedForPlacement,
+  dayBlockedForHabits,
+  restDaySpansFromDbRows,
   coveringBlockedSpan,
   awayBusySegments,
   partialAwayMinsOnDay,
@@ -1143,6 +1290,8 @@ module.exports = {
   findTaskBumps,
   findBlockedDayTaskBumps,
   findAwayIntervalTaskBumps,
+  findAdminGapTaskBumps,
+  findAfterHoursTaskBumps,
   findPastIncompleteTaskBumps,
   findSoftOverlapBumps,
   mergeTaskBumps,

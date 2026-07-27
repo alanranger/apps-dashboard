@@ -4,11 +4,12 @@
 const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
 const {
   buildBusyIntervals, datedTasksToIntervals, findTaskBumps, findBlockedDayTaskBumps,
-  findAwayIntervalTaskBumps, findPastIncompleteTaskBumps, findSoftOverlapBumps,
+  findAwayIntervalTaskBumps, findAdminGapTaskBumps, findAfterHoursTaskBumps,
+  findPastIncompleteTaskBumps, findSoftOverlapBumps,
   mergeTaskBumps, placeBumpedTasks,
   placeHabits, buildAmendments, provePlacement, awaySpansFromTravelBlocks,
-  teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
-  trySlotOnDay, dayBlockedForPlacement,
+  teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents, restDaySpansFromDbRows,
+  trySlotOnDay, dayBlockedForPlacement, dayBlockedForHabits,
 } = require('./habit-placer-lib');
 const { relatedIdForTask, relatedIdForHabit, upsertPushRow } = require('./gcal-push-lib');
 const { occurrencesInRange } = require('./rrule-core');
@@ -211,6 +212,58 @@ async function applyTaskBumpToDb(sb, bump) {
   return true;
 }
 
+/** Apply placer MOVE/CREATE to recurring_log + gcal_push_queue (DB master → auto-sync). */
+async function applyHabitAmendmentToDb(sb, a) {
+  if (!a || a.action === 'KEEP' || a.action === 'DELETE') return false;
+  if (!a.habit_id || !a.ideal_date || !a.startIso || !a.endIso) return false;
+  const pinChange = `diary_pin:${a.startIso}|${a.endIso}`;
+  const day = isoToLondonDate(a.startIso) || a.ideal_date;
+  const logRows = await sb(
+    `recurring_log?recurring_task_id=eq.${a.habit_id}&ideal_date=eq.${a.ideal_date}`
+    + '&select=id,calendar_event_id&order=at.desc&limit=1',
+  );
+  const keepId = logRows?.[0]?.id || null;
+  const evtId = a.calendar_event_id || logRows?.[0]?.calendar_event_id || null;
+  const logBody = {
+    change: pinChange,
+    scheduled_date: day,
+    roll_reason: 'habit_placer_enforce',
+    calendar_event_id: evtId,
+    ideal_date: a.ideal_date,
+    projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
+  };
+  if (keepId) {
+    await sb(`recurring_log?id=eq.${keepId}`, {
+      method: 'PATCH', prefer: 'return=minimal', body: logBody,
+    });
+  } else {
+    await sb('recurring_log', {
+      method: 'POST', prefer: 'return=minimal',
+      body: { recurring_task_id: a.habit_id, actor: 'cursor', ...logBody },
+    });
+  }
+  await upsertPushRow(sb, {
+    related_id: relatedIdForHabit(a.habit_id, a.ideal_date, evtId),
+    entity_type: 'habit',
+    change_kind: 'move',
+    summary: `Placer ${a.action}: ${a.title} → ${day}`,
+    proposed_action: [
+      `MOVE/CREATE habit "${a.title}" block to ${a.startIso} – ${a.endIso}.`,
+      evtId ? `event_id=${evtId}` : 'Create Primary event',
+      `ideal_date=${a.ideal_date}; scheduled_date=${day}.`,
+    ].join(' '),
+    payload: {
+      habit_id: a.habit_id,
+      title: a.title,
+      ideal_date: a.ideal_date,
+      new_start: a.startIso,
+      new_end: a.endIso,
+      calendar_event_id: evtId,
+    },
+  });
+  return true;
+}
+
 /** Past habit ideals with no Complete/Skip → concrete next-slot pin + GCal queue. */
 async function applyIncompleteHabitRolls(ctx) {
   const {
@@ -275,7 +328,7 @@ async function applyIncompleteHabitRolls(ctx) {
       let slot = null;
       for (let i = 0; i < 14; i += 1) {
         const day = addDays(today, i);
-        if (dayBlockedForPlacement(day, awaySpans || [])) continue;
+        if (dayBlockedForHabits(day, awaySpans || [])) continue;
         const trial = trySlotOnDay(
           day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
           habit.title, busyWork, placements || [], used, ruleMap,
@@ -371,7 +424,7 @@ async function runHabitPlacerPropose(ctx) {
     existingPending, inserted, writePending = true,
   } = ctx;
 
-  const [habits, deps, logs, taskRows, travelBlocks] = await Promise.all([
+  const [habits, deps, logs, taskRows, travelBlocks, restDb] = await Promise.all([
     sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule,last_done,rolls_used&active=eq.true'),
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
@@ -389,6 +442,7 @@ async function runHabitPlacerPropose(ctx) {
       + `&starts_at=gte.${fromYmd}T00:00:00Z`
       + `&starts_at=lte.${toYmd}T23:59:59Z`,
     ),
+    sb(`rest_day_blocks?status=eq.active&rest_date=gte.${fromYmd}&rest_date=lte.${toYmd}&select=rest_date,workshop_title`),
   ]);
 
   const taskRowsNorm = (taskRows || []).map((t) => ({
@@ -401,13 +455,15 @@ async function runHabitPlacerPropose(ctx) {
   const softTasks = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false });
   const awaySpans = awaySpansFromTravelBlocks(travelBlocks || []);
   const teachingSpans = teachingDaySpansFromEvents(gcalEvents || [], ruleMap);
-  const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap);
+  const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap)
+    .concat(restDaySpansFromDbRows(restDb || []));
   const blockedSpans = awaySpans.concat(teachingSpans).concat(restSpans);
   const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
     habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
+    { softTaskIntervals: softTasks },
   );
   const existing = enrichExistingFromGcalTitles(
     existingLog, habits || [], gcalEvents || [], placements,
@@ -416,6 +472,8 @@ async function runHabitPlacerPropose(ctx) {
     findTaskBumps(placements, softTasks),
     findBlockedDayTaskBumps(softTasks, blockedSpans),
     findAwayIntervalTaskBumps(softTasks, awaySpans),
+    findAdminGapTaskBumps(softTasks, ruleMap),
+    findAfterHoursTaskBumps(softTasks, ruleMap),
     findPastIncompleteTaskBumps(softTasks, Date.now()),
     findSoftOverlapBumps(softTasks),
   );
@@ -438,13 +496,28 @@ async function runHabitPlacerPropose(ctx) {
 
   let pendingWrote = 0;
   let taskDbApplied = 0;
+  let habitDbApplied = 0;
   let habitRolls = { rolled: 0 };
-  if (writePending && proof.ok) {
+  if (writePending) {
     for (const a of amendments) {
+      if (a.action === 'MOVE' || a.action === 'CREATE') {
+        try {
+          if (await applyHabitAmendmentToDb(sb, a)) habitDbApplied += 1;
+        } catch (_) { /* pending row still written below */ }
+      }
       const row = amendmentToPending(a);
       if (!row) continue;
       if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
-      const out = await sb('pending_diary_changes', { method: 'POST', body: row });
+      const applied = a.action === 'MOVE' || a.action === 'CREATE';
+      const out = await sb('pending_diary_changes', {
+        method: 'POST',
+        body: {
+          ...row,
+          status: applied ? 'applied' : row.status,
+          resolved_at: applied ? new Date().toISOString() : null,
+          resolved_by: applied ? 'habit_placer_enforce' : null,
+        },
+      });
       const id = Array.isArray(out) ? out[0]?.id : out?.id;
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
@@ -517,6 +590,7 @@ async function runHabitPlacerPropose(ctx) {
     task_bump_scheduled: bumps.length,
     task_bump_unplaced: bumpUnplaced.length,
     task_db_applied: taskDbApplied,
+    habit_db_applied: habitDbApplied,
     habit_rolls: habitRolls,
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
@@ -533,6 +607,7 @@ module.exports = {
   amendmentToPending,
   bumpToPending,
   applyTaskBumpToDb,
+  applyHabitAmendmentToDb,
   applyIncompleteHabitRolls,
   runHabitPlacerPropose,
   ruleMapFromRows,
