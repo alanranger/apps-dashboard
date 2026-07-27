@@ -1,5 +1,5 @@
 /**
- * Scheduling-tab "Needs your decision" view — display enrichment only.
+ * Scheduling-tab "Needs your decision" view — display enrichment + queue helpers.
  * Filters pending_diary_changes to unresolved exceptions (no single concrete slot).
  * Does not mutate data or write Calendar.
  */
@@ -13,7 +13,6 @@ export function isException(p) {
   if (/mc_vs_mc_overlap/i.test(reason) || /Move one of the overlapping/i.test(action)) return true;
   if (/breach:cap:/.test(p.related_id || '') || /Spread blocks across following/i.test(action)) return true;
   if (/decompress_after_task_min/i.test(reason) || /Add \d+m gap or move/i.test(action)) {
-    // Unresolved when target is unidentified or no concrete slot given.
     return /MC-\?/.test(summary) || /MC-\?/.test(action) || !/Move to \d{4}-\d{2}-\d{2}/i.test(action);
   }
   return false;
@@ -30,10 +29,19 @@ function exceptionKind(p) {
 }
 
 /** Pull "A overlaps B" titles from the summary when present. */
-function parseOverlapPair(summary) {
-  const m = String(summary).match(/Rule breach:\s*(.+?)\s+overlaps\s+(.+?)(?:\s+by\s+\d+m)?$/i);
+export function parseOverlapPair(summary) {
+  const m = String(summary).match(/Rule breach:\s*(.+?)\s+overlaps\s+(.+?)(?:\s+by\s+\d+m)?(?:\s+on\s+\d{4}-\d{2}-\d{2})?$/i);
   if (!m) return null;
   return { a: m[1].trim(), b: m[2].trim() };
+}
+
+/** related_id = breach:overlap:eventA:eventB:YYYY-MM-DD */
+export function parseOverlapRelated(relatedId) {
+  const m = String(relatedId || '').match(
+    /^breach:overlap:([^:]+):([^:]+):(\d{4}-\d{2}-\d{2})$/,
+  );
+  if (!m) return null;
+  return { idA: m[1], idB: m[2], day: m[3] };
 }
 
 function parseCapDay(summary, relatedId, targetDate) {
@@ -43,11 +51,20 @@ function parseCapDay(summary, relatedId, targetDate) {
   return { minutes: null, day: id?.[1] || targetDate || '—' };
 }
 
+function shortTitle(s) {
+  const t = String(s || '');
+  const parts = t.split(' · ');
+  const last = parts[parts.length - 1] || t;
+  return last.length > 48 ? `${last.slice(0, 45)}…` : last;
+}
+
 function enrichException(p) {
   const kind = exceptionKind(p);
+  const pair = kind === 'overlap' ? parseOverlapPair(p.summary) : null;
+  const overlapIds = kind === 'overlap' ? parseOverlapRelated(p.related_id) : null;
   const base = {
     id: p.id,
-    date: p.target_date || null,
+    date: p.target_date || overlapIds?.day || null,
     type: kind,
     typeLabel: {
       overlap: 'Overlap',
@@ -58,20 +75,25 @@ function enrichException(p) {
     }[kind],
     urgency: p.urgency,
     raw: p,
+    titleA: pair?.a || null,
+    titleB: pair?.b || null,
+    shortA: pair ? shortTitle(pair.a) : null,
+    shortB: pair ? shortTitle(pair.b) : null,
+    eventIdA: overlapIds?.idA || null,
+    eventIdB: overlapIds?.idB || null,
   };
 
   if (kind === 'overlap') {
-    const pair = parseOverlapPair(p.summary);
     const clash = pair
       ? `${pair.a}\n↔ ${pair.b}`
       : String(p.summary || '').replace(/^Rule breach:\s*/i, '');
     return {
       ...base,
       clashing: clash,
-      why: 'Two MC blocks share the same time. Rules prefer lower priority to give way, but the detector does not auto-pick which one moves when priorities tie or both are pinned-adjacent.',
+      why: 'Two MC blocks share the same time — pick which one moves.',
       options: pair
-        ? `Move “${shortTitle(pair.a)}” to the next free legal slot · or move “${shortTitle(pair.b)}” · or keep both and Dismiss if intentional`
-        : 'Pick one block to move to the next free legal slot · or Dismiss if intentional',
+        ? `Move “${shortTitle(pair.a)}” · or move “${shortTitle(pair.b)}” · or Dismiss`
+        : 'Pick one block to move · or Dismiss',
     };
   }
 
@@ -83,7 +105,7 @@ function enrichException(p) {
       date: day,
       clashing: `${over} of MC work on ${day} (hard limit 270m = 240 + 30 tolerance)`,
       why: 'Day is over the hard cap. Spreading needs a target day/slots the placer has not chosen yet.',
-      options: 'Move the lowest-priority block(s) on that day to the next legal day with spare capacity · or accept the over-cap and Dismiss · or split a long block',
+      options: 'Open Diary and move lowest-priority blocks · or Dismiss',
     };
   }
 
@@ -96,11 +118,9 @@ function enrichException(p) {
         ? `Two adjacent MC blocks on ${p.target_date || 'that day'} (titles not resolved — shown as MC-?)`
         : String(p.summary || '').replace(/^Rule breach:\s*/i, ''),
       why: unnamed
-        ? `Decompress gap under ${gapM}m, but one or both block IDs were missing from the calendar event — cannot name which to move.`
+        ? `Decompress gap under ${gapM}m, but block IDs were missing.`
         : `Gap under the ${gapM}m decompress rule; no concrete new slot proposed.`,
-      options: unnamed
-        ? 'Open the diary on that date, identify the pair, add the decompress gap or move the later block · or Dismiss'
-        : 'Add the missing decompress gap · or move the later block later the same day · or Dismiss',
+      options: 'Open Diary and add gap / move later block · or Dismiss',
     };
   }
 
@@ -110,8 +130,8 @@ function enrichException(p) {
     return {
       ...base,
       clashing: `${habit} (ideal ${ideal})`,
-      why: 'Time-critical habit — must roll earlier, not later. Ideal day has passed and no legal earlier slot remains open.',
-      options: 'Do it ASAP today (then Mark done on Recurring) · or Skip this occurrence · or Dismiss if already handled outside MC',
+      why: 'Time-critical habit — must roll earlier, not later.',
+      options: 'Do ASAP · Skip · or Dismiss',
     };
   }
 
@@ -123,14 +143,51 @@ function enrichException(p) {
   };
 }
 
-function shortTitle(s) {
-  const t = String(s || '');
-  // Prefer the human title after the last " · "
-  const parts = t.split(' · ');
-  const last = parts[parts.length - 1] || t;
-  return last.length > 48 ? `${last.slice(0, 45)}…` : last;
-}
-
 export function buildExceptions(pending) {
   return (pending || []).filter(isException).map(enrichException);
+}
+
+/** Sort soonest first; undated last. */
+export function sortExceptions(exceptions) {
+  return [...(exceptions || [])].sort((a, b) => {
+    const da = a.date || '9999-99-99';
+    const db = b.date || '9999-99-99';
+    if (da !== db) return da.localeCompare(db);
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+
+/**
+ * @param {object[]} exceptions
+ * @param {'4w'|'8w'|'all'} horizon
+ * @param {string} todayYmd London YMD
+ */
+export function filterExceptionsByHorizon(exceptions, horizon, todayYmd) {
+  const sorted = sortExceptions(exceptions);
+  if (horizon === 'all') {
+    return { visible: sorted, total: sorted.length, horizon };
+  }
+  const weeks = horizon === '8w' ? 8 : 4;
+  const end = addDaysYmd(todayYmd, weeks * 7 - 1);
+  const visible = sorted.filter((ex) => {
+    if (!ex.date) return true;
+    return ex.date >= todayYmd && ex.date <= end;
+  });
+  return { visible, total: sorted.length, horizon, from: todayYmd, to: end };
+}
+
+function addDaysYmd(ymd, n) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+export function londonTodayYmd() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+  } catch (e) {
+    return new Date().toISOString().slice(0, 10);
+  }
 }

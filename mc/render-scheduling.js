@@ -1,6 +1,9 @@
 import { api } from './api.js';
 import { $, esc, fmtDate } from './util.js';
 import { buildExceptions } from './exceptions.js';
+import {
+  buildConflictResolverPanel, ensureConflictPreview, handleConflictResolverClick,
+} from './conflict-resolver.js';
 
 let cache = null;
 
@@ -132,6 +135,8 @@ export async function renderScheduling() {
   const hotels = cache.hotels || [];
   const sources = cache.sources || [];
 
+  await ensureConflictPreview(pending);
+
   const sourceBanner = sources.length
     ? `<div class="sched-sources">${sources.map((s) =>
       `<span class="sched-src sched-src-${esc(s.tone || 'red')}">${esc(s.display || s.label)}</span>`,
@@ -186,37 +191,7 @@ export async function renderScheduling() {
     </tr>`).join('');
 
   const exceptions = buildExceptions(pending);
-  const exceptionRows = exceptions.length
-    ? exceptions.map((ex) => `<tr class="${urgencyClass(ex.urgency)}">
-        <td>${ex.date ? fmtDate(ex.date) : '—'}</td>
-        <td><span class="pill">${esc(ex.typeLabel)}</span></td>
-        <td class="sched-ex-clash">${esc(ex.clashing).replace(/\n/g, '<br>')}</td>
-        <td class="meta">${esc(ex.why)}</td>
-        <td class="meta">${esc(ex.options)}</td>
-        <td class="rec-actions">
-          <button type="button" class="btn-verify" data-sched-apply="${ex.id}">Apply</button>
-          <button type="button" class="btn-secondary" data-sched-dismiss="${ex.id}">Dismiss</button>
-        </td>
-      </tr>`).join('')
-    : `<tr><td colspan="6" class="meta">None — every pending proposal currently resolves to a concrete slot (or there are no pending rows).</td></tr>`;
-
-  const exceptionsPanel = `<div class="card sched-exceptions">
-      <div class="rec-head">
-        <div>
-          <h2><i class="ti ti-alert-triangle"></i> Needs your decision
-            ${exceptions.length ? `<span class="pill sched-ex-count">${exceptions.length}</span>` : ''}</h2>
-          <p class="sched-exceptions-banner"><strong>These rows have no single computed slot yet.</strong>
-            Overlaps, cap overloads, unnamed gaps, and unplaceable time-critical habits need you to pick.
-            Everything else in the worklist below already has a concrete destination — ready to Apply.</p>
-        </div>
-      </div>
-      <div class="rec-table-wrap"><table class="rec-table sched-ex-table">
-        <thead><tr>
-          <th>Date</th><th>Type</th><th>What's clashing</th><th>Why unresolved</th><th>Options</th><th></th>
-        </tr></thead>
-        <tbody>${exceptionRows}</tbody>
-      </table></div>
-    </div>`;
+  const exceptionsPanel = buildConflictResolverPanel(pending);
 
   el.innerHTML = `
     ${sourceBanner}
@@ -229,7 +204,8 @@ export async function renderScheduling() {
             ${pending.length ? `<span class="pill">${pending.length}</span>` : ''}</h2>
           <p class="sched-worklist-banner"><strong>Proposed changes — NOT yet applied to your calendar.</strong> This is a worklist of problems + proposed fixes. Press <strong>Apply</strong> to enact each one (or Dismiss). Nothing has changed your diary until you do.</p>
           <p class="meta">Detector proposes · you or Claude apply. <strong>Zero Calendar writes from cron.</strong>
-            Rows that need a human choice are also listed above under <strong>Needs your decision</strong>.</p>
+            Overlaps that need a human choice are handled above in <strong>Conflict day view</strong>
+            (${exceptions.length} exception${exceptions.length === 1 ? '' : 's'}).</p>
         </div>
         <button type="button" class="btn-verify" id="schedCopyAll" ${pending.length ? '' : 'disabled'}>Copy all as instruction</button>
       </div>
@@ -424,6 +400,12 @@ async function startDiaryCheckWithModal(runBtn) {
 }
 
 export async function handleSchedulingClick(e, onSave) {
+  if (await handleConflictResolverClick(e, cache?.pending || [], async () => {
+    if (onSave) await onSave();
+    else await renderScheduling();
+  })) {
+    return true;
+  }
   const apply = e.target.closest('[data-sched-apply]');
   if (apply) {
     await api('/api/mc/scheduling', {

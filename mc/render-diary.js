@@ -920,6 +920,12 @@ async function paintDiary(el, opts = {}) {
   const today = data.today || new Date().toISOString().slice(0, 10);
   const landIdx = landingWeekIndex(data.weeks || [], today);
   let weekIdx = keepWeekIdx != null ? keepWeekIdx : landIdx;
+  const jumpDay = sessionStorage.getItem('mc_jump_day');
+  if (jumpDay && !preserveScroll) {
+    sessionStorage.removeItem('mc_jump_day');
+    const jumpWeek = (data.weeks || []).findIndex((w) => (w.days || []).includes(jumpDay));
+    if (jumpWeek >= 0) weekIdx = jumpWeek;
+  }
   weekIdx = Math.max(0, Math.min((data.weeks || []).length - 1, weekIdx));
   diaryState.weekIdx = weekIdx;
 

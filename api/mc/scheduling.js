@@ -161,11 +161,32 @@ module.exports = async function handler(req, res) {
         if (!body.id || !body.status) return json(res, 400, { error: 'id and status required' });
         return json(res, 200, { pending: await resolvePending(body.id, body.status, actor) });
       }
+      if (body.entity === 'conflict_preview') {
+        if (!body.id) return json(res, 400, { error: 'id required' });
+        const row = (await sb(`pending_diary_changes?id=eq.${body.id}&select=*`))?.[0];
+        if (!row) return json(res, 404, { error: 'pending row not found' });
+        const { previewConflict } = require('./conflict-resolve-lib');
+        return json(res, 200, { preview: await previewConflict(sb, row) });
+      }
+      if (body.entity === 'resolve_overlap') {
+        if (!body.id || !body.which) return json(res, 400, { error: 'id and which required' });
+        if (!['a', 'b', 'lower'].includes(body.which)) {
+          return json(res, 400, { error: 'which must be a|b|lower' });
+        }
+        const row = (await sb(`pending_diary_changes?id=eq.${body.id}&select=*`))?.[0];
+        if (!row) return json(res, 404, { error: 'pending row not found' });
+        if (row.status !== 'pending') return json(res, 409, { error: 'already resolved' });
+        const { resolveOverlap } = require('./conflict-resolve-lib');
+        const result = await resolveOverlap(sb, row, body.which, actor);
+        return json(res, 200, { result, calendar_writes: 0 });
+      }
       if (body.entity === 'run_check') {
         const scope = body.scope === 'full' ? 'full' : '8w';
         return json(res, 200, { run: await runDiaryCheck(scope) });
       }
-      return json(res, 400, { error: 'entity required: rule|drive|hotel|pending|run_check' });
+      return json(res, 400, {
+        error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|run_check',
+      });
     }
 
     return json(res, 405, { error: 'method not allowed' });
