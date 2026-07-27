@@ -51,10 +51,55 @@ function nextDue(task) {
   }
 }
 
+function matchPresetId(rrule) {
+  const r = String(rrule || '');
+  const exact = RRULE_PRESETS.find((p) => p.rrule === r);
+  if (exact) return exact.id;
+  if (/FREQ=MONTHLY;INTERVAL=3;BYDAY=/i.test(r)) return 'quarterly-nth';
+  if (/FREQ=MONTHLY;INTERVAL=2;BYDAY=/i.test(r)) return 'monthly-nth-bi';
+  if (/FREQ=MONTHLY;BYDAY=/i.test(r)) return 'monthly-nth';
+  if (/FREQ=MONTHLY;BYMONTHDAY=/i.test(r)) return 'monthly-dom';
+  if (/FREQ=WEEKLY/i.test(r)) return 'weekly';
+  return 'custom';
+}
+
 function presetOptions(selectedRrule) {
+  const sel = matchPresetId(selectedRrule);
   return RRULE_PRESETS.map((p) =>
-    `<option value="${esc(p.id)}" ${p.rrule === selectedRrule ? 'selected' : ''}>${esc(p.label)}</option>`,
+    `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.label)}</option>`,
   ).join('');
+}
+
+/** London wall-clock ymd+HH:MM → ISO (same correction as diary). */
+function londonYmdHmToIso(ymd, hm) {
+  const want = Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
+  let t = Date.parse(`${ymd}T${hm}:00.000Z`);
+  for (let i = 0; i < 48; i += 1) {
+    const d = new Date(t);
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).formatToParts(d);
+    const get = (type) => parts.find((p) => p.type === type)?.value;
+    const day = `${get('year')}-${get('month')}-${get('day')}`;
+    const got = Number(get('hour')) * 60 + Number(get('minute'));
+    if (day !== ymd) {
+      t += (ymd > day ? 1 : -1) * 3600000;
+      continue;
+    }
+    if (got === want) return d.toISOString();
+    t += (want - got) * 60000;
+  }
+  return `${ymd}T${hm}:00.000Z`;
+}
+
+function fmtOccDay(ymd) {
+  if (!ymd) return '—';
+  const d = new Date(`${ymd}T12:00:00Z`);
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
 }
 
 function wirePreset(prefix) {
@@ -229,11 +274,18 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
     ? String(occurrence.end_hm || '').slice(0, 5)
     : '';
   const occDay = occurrence?.day || '';
+  const idealDay = occurrence?.ideal_date || occDay;
   const occBlock = occurrence ? `
-    <div class="inset" style="margin-bottom:12px">
-      <h3 style="font-size:14px;margin:0 0 8px">This diary occurrence</h3>
-      <p class="meta">Read the habit notes below, then set the slot for <strong>${esc(occDay)}</strong>.</p>
-      <label>Date<input id="reOccDay" type="date" value="${esc(occDay)}" /></label>
+    <div class="inset" style="margin-bottom:12px;border:1px solid #3b82f6;padding:10px;border-radius:8px">
+      <h3 style="font-size:14px;margin:0 0 8px">Move this diary occurrence</h3>
+      <p class="meta" style="margin:0 0 8px">
+        RRULE ideal: <strong>${esc(fmtOccDay(idealDay))}</strong>
+        ${idealDay !== occDay ? ` · currently on <strong>${esc(fmtOccDay(occDay))}</strong> (manual pin)` : ''}
+      </p>
+      <p class="meta" style="margin:0 0 8px">
+        Drag only works inside the week you’re viewing. Change <strong>Date</strong> here to move across weeks, then Save.
+      </p>
+      <label>Date (this occurrence)<input id="reOccDay" type="date" value="${esc(occDay)}" /></label>
       <label>Start<input id="reOccStart" type="time" value="${esc(occStart)}" /></label>
       <label>End<input id="reOccEnd" type="time" value="${esc(occEnd)}" /></label>
     </div>` : '';
@@ -241,7 +293,7 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
     ${occBlock}
     ${formFields('re', t)}
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button type="button" id="reSave">Save</button>
+      <button type="button" id="reSave">${occurrence ? 'Save habit + move occurrence' : 'Save'}</button>
       <button type="button" id="reCancel" class="btn-secondary">Cancel</button>
     </div>`;
   wirePreset('re');
@@ -253,17 +305,15 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
     const startEl = $('reOccStart');
     const endEl = $('reOccEnd');
     if (dayEl && startEl && endEl && dayEl.value && startEl.value && endEl.value) {
-      const newStart = `${dayEl.value}T${startEl.value}:00.000Z`;
-      const newEnd = `${dayEl.value}T${endEl.value}:00.000Z`;
       await api('/api/mc/diary-action', {
         method: 'POST',
         body: {
           action: 'move',
           habit_id: t.id,
           title: t.title,
-          ideal_date: occurrence?.ideal_date || dayEl.value,
-          new_start: newStart,
-          new_end: newEnd,
+          ideal_date: idealDay,
+          new_start: londonYmdHmToIso(dayEl.value, startEl.value),
+          new_end: londonYmdHmToIso(dayEl.value, endEl.value),
           override: true,
           calendar_event_id: occurrence?.calendar_event_id || undefined,
         },
