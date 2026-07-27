@@ -311,7 +311,7 @@ describe('habit-placer-lib — dated tasks', () => {
 });
 
 describe('habit-placer-lib — away spans', () => {
-  it('derives multi-day span; skips same-day day-trips', () => {
+  it('derives multi-day span; skips same-day day-trips; no travel-based rest', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Rosedale Abbey',
@@ -337,11 +337,47 @@ describe('habit-placer-lib — away spans', () => {
     assert.equal(spans.length, 1);
     assert.equal(spans[0].startDay, '2026-08-03');
     assert.equal(spans[0].endDay, '2026-08-06');
-    assert.equal(spans[0].restDay, null); // Thu return — no auto rest (Sunday-return only)
+    assert.equal(spans[0].restDay, null);
   });
 
-  it('rolls ideal away-day past the whole span including Sunday-return Monday rest', () => {
-    const spans = awaySpansFromTravelBlocks([
+  it('rest day = day after last day of multi-day workshop event (not travel/Sunday)', () => {
+    const {
+      restDaySpansFromWorkshopEvents, multidayWorkshopRestRows, dayBlockedForPlacement,
+    } = require('../../api/mc/habit-placer-lib.js');
+    const events = [
+      {
+        id: 'ward',
+        summary: 'Post Processing Masterclass - David Ward',
+        _calendarId: 'primary',
+        start: { dateTime: '2026-08-04T08:00:00Z' },
+        end: { dateTime: '2026-08-06T16:00:00Z' },
+      },
+      {
+        id: 'macro',
+        summary: 'Abstract and Macro',
+        _calendarId: 'ic364d06abc@group.calendar.google.com',
+        start: { dateTime: '2026-08-23T09:30:00Z' },
+        end: { dateTime: '2026-08-23T11:30:00Z' },
+      },
+    ];
+    const rows = multidayWorkshopRestRows(events);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].lastDay, '2026-08-06');
+    assert.equal(rows[0].restDay, '2026-08-07');
+    const rests = restDaySpansFromWorkshopEvents(events, {
+      rest_day_after_multiday_workshop: 'true',
+    });
+    assert.equal(rests.length, 1);
+    assert.equal(rests[0].restDay, '2026-08-07');
+    assert.equal(dayBlockedForPlacement('2026-08-07', rests), true);
+    assert.equal(dayBlockedForPlacement('2026-08-24', rests), false);
+  });
+
+  it('rolls ideal away-day past multi-day workshop rest day', () => {
+    const {
+      restDaySpansFromWorkshopEvents, awaySpansFromTravelBlocks, candidateDays,
+    } = require('../../api/mc/habit-placer-lib.js');
+    const away = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Norfolk',
         workshop_start: '2026-11-20T09:30:00Z',
@@ -352,17 +388,27 @@ describe('habit-placer-lib — away spans', () => {
         workshop_start: '2026-11-20T09:30:00Z',
         starts_at: '2026-11-22T14:00:00Z', ends_at: '2026-11-22T17:30:00Z',
       },
-    ], { rest_day_after_sunday_return: 'true' });
-    assert.equal(spans[0].restDay, '2026-11-23'); // Sun 22 → Mon 23
+    ]);
+    assert.equal(away[0].restDay, null); // travel no longer invents rest
+    const rests = restDaySpansFromWorkshopEvents([
+      {
+        summary: 'Blakeney Norfolk',
+        _calendarId: 'ic364d06abc@group.calendar.google.com',
+        start: { date: '2026-11-20' },
+        end: { date: '2026-11-23' }, // exclusive → last Sun 22
+      },
+    ], { rest_day_after_multiday_workshop: 'true' });
+    assert.equal(rests[0].restDay, '2026-11-23');
+    const spans = away.concat(rests);
     const days = candidateDays('2026-11-22', 2, false, rules, holidays, spans);
     assert.ok(!days.includes('2026-11-20'));
     assert.ok(!days.includes('2026-11-21'));
     assert.ok(!days.includes('2026-11-22'));
-    assert.ok(!days.includes('2026-11-23')); // rest after Sunday return
+    assert.ok(!days.includes('2026-11-23'));
     assert.ok(days.includes('2026-11-19') || days.includes('2026-11-24'));
   });
 
-  it('does not place habit on middle away day; non-Sunday return has no rest day', () => {
+  it('does not place habit on middle away day; non-Sunday return has no travel rest day', () => {
     const spans = awaySpansFromTravelBlocks([
       {
         block_type: 'travel_out', venue_name: 'Rosedale Abbey',

@@ -3,7 +3,7 @@
  * Busy map frozen first → habits by dep-topology then hardest-first → amendments.
  */
 const {
-  workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays, dayName,
+  workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays,
 } = require('./scheduling-rules-lib');
 const { occurrencesInRange } = require('./rrule-core');
 const { priorityRank } = require('./priority-lib');
@@ -52,17 +52,9 @@ function dayCapLimits(ruleMap) {
  * Hard-busy whole London days out→back (incl. travel days + middle).
  * Same-day day-trips skipped (drive intervals already cover those).
  * Pair by workshop_row_key or venue|workshop_start; else next unused back.
- *
- * Rest day (Alan 26 Jul): ONLY when travel_back ends on a London Sunday,
- * following Monday is blocked — controlled by scheduling_rules
- * rest_day_after_sunday_return (default true). No rest invent for other return weekdays.
+ * Rest days are NOT derived from travel — see restDaySpansFromWorkshopEvents.
  */
-function awaySpansFromTravelBlocks(blocks, ruleMap = {}) {
-  const restAfterSunday = String(
-    ruleMap.rest_day_after_sunday_return != null
-      ? ruleMap.rest_day_after_sunday_return
-      : 'true',
-  ) === 'true';
+function awaySpansFromTravelBlocks(blocks) {
   const outs = [];
   const backs = [];
   for (const b of blocks || []) {
@@ -91,13 +83,10 @@ function awaySpansFromTravelBlocks(blocks, ruleMap = {}) {
     const startDay = isoToLondonDate(out.starts_at);
     const endDay = isoToLondonDate(back.ends_at);
     if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
-    const sundayReturn = dayName(endDay) === 'sun';
-    const restDay = (restAfterSunday && sundayReturn) ? addDays(endDay, 1) : null;
     spans.push({
       startDay,
       endDay,
-      restDay,
-      sunday_return: sundayReturn,
+      restDay: null,
       startMs: londonYmdHmToUtcMs(startDay, '00:00'),
       endMs: londonYmdHmToUtcMs(endDay, '23:59') + 60000,
       summary: `away:${out.venue_name || out.workshop_title || key}`,
@@ -105,6 +94,103 @@ function awaySpansFromTravelBlocks(blocks, ruleMap = {}) {
     });
   }
   return spans.sort((a, b) => a.startMs - b.startMs);
+}
+
+/** Editable toggle — day after last day of each multi-day workshop event. */
+function restDayRuleEnabled(ruleMap = {}) {
+  if (ruleMap.rest_day_after_multiday_workshop != null) {
+    return String(ruleMap.rest_day_after_multiday_workshop) === 'true';
+  }
+  return true;
+}
+
+function isWorkshopCalendarEvent(e) {
+  const cal = String(e?._calendarId || e?.calendarId || '');
+  return cal.includes('ic364d06');
+}
+
+/**
+ * Events that can mint a rest day: Workshops calendar, plus non-MC
+ * workshop/masterclass events on other calendars (e.g. guest David Ward on primary).
+ */
+function isRestDaySourceEvent(e) {
+  if (isWorkshopCalendarEvent(e)) return true;
+  const title = String(e?.summary || '');
+  if (!title || /^MC\b/i.test(title)) return false;
+  return /workshop|masterclass/i.test(title);
+}
+
+/** London first/last day of one GCal event (all-day end is exclusive). */
+function workshopEventDayRange(e) {
+  if (e.start?.date && !e.start?.dateTime) {
+    const firstDay = e.start.date;
+    const endEx = e.end?.date || addDays(firstDay, 1);
+    if (!firstDay || endEx <= firstDay) return null;
+    return { firstDay, lastDay: addDays(endEx, -1) };
+  }
+  const startRaw = e.start?.dateTime || (typeof e.start === 'string' ? e.start : null);
+  const endRaw = e.end?.dateTime || (typeof e.end === 'string' ? e.end : null);
+  if (!startRaw) return null;
+  const firstDay = isoToLondonDate(String(startRaw));
+  if (!firstDay) return null;
+  let lastDay = endRaw ? isoToLondonDate(String(endRaw)) : firstDay;
+  if (!lastDay) lastDay = firstDay;
+  if (endRaw && lastDay > firstDay && isoToLondonMinutes(String(endRaw)) === 0) {
+    lastDay = addDays(lastDay, -1);
+  }
+  if (lastDay < firstDay) lastDay = firstDay;
+  return { firstDay, lastDay };
+}
+
+/**
+ * Rest day = day AFTER last day of each multi-day (2+ London days) workshop event.
+ * Per-event ranges only — never group by title. Travel is irrelevant.
+ * Toggle: scheduling_rules.rest_day_after_multiday_workshop (default true).
+ */
+function restDaySpansFromWorkshopEvents(events, ruleMap = {}) {
+  if (!restDayRuleEnabled(ruleMap)) return [];
+  const byRest = new Map();
+  for (const e of events || []) {
+    if (!isRestDaySourceEvent(e)) continue;
+    const range = workshopEventDayRange(e);
+    if (!range || range.lastDay <= range.firstDay) continue;
+    const restDay = addDays(range.lastDay, 1);
+    const title = e.summary || 'workshop';
+    const row = {
+      startDay: restDay,
+      endDay: restDay,
+      restDay,
+      firstDay: range.firstDay,
+      lastDay: range.lastDay,
+      startMs: londonYmdHmToUtcMs(restDay, '00:00'),
+      endMs: londonYmdHmToUtcMs(restDay, '23:59') + 60000,
+      summary: `rest after multi-day: ${title}`,
+      workshop_title: title,
+      kind: 'rest_after_workshop',
+    };
+    const prev = byRest.get(restDay);
+    if (!prev || range.lastDay > prev.lastDay) byRest.set(restDay, row);
+  }
+  return [...byRest.values()].sort((a, b) => a.startMs - b.startMs);
+}
+
+/** Reporting rows (ignores toggle) — one per multi-day workshop event. */
+function multidayWorkshopRestRows(events) {
+  const rows = [];
+  for (const e of events || []) {
+    if (!isRestDaySourceEvent(e)) continue;
+    const range = workshopEventDayRange(e);
+    if (!range || range.lastDay <= range.firstDay) continue;
+    rows.push({
+      title: e.summary || 'workshop',
+      firstDay: range.firstDay,
+      lastDay: range.lastDay,
+      restDay: addDays(range.lastDay, 1),
+      event_id: e.id || null,
+    });
+  }
+  return rows.sort((a, b) => a.firstDay.localeCompare(b.firstDay)
+    || a.title.localeCompare(b.title));
 }
 
 /** Travel-out → travel-back inclusive only (not the rest day). */
@@ -641,7 +727,10 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd) {
   const dayUsed = {};
   const placedByHabit = new Map();
   const busyWork = busy.slice();
-  const awaySpans = (busy || []).filter((b) => b.kind === 'away_span' || b.kind === 'teaching_day');
+  const awaySpans = (busy || []).filter((b) => b.kind === 'away_span'
+    || b.kind === 'teaching_day'
+    || b.kind === 'rest_after_workshop'
+    || b.restDay);
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
@@ -792,6 +881,12 @@ module.exports = {
   londonYmdHmToUtcMs,
   buildBusyIntervals,
   awaySpansFromTravelBlocks,
+  restDayRuleEnabled,
+  restDaySpansFromWorkshopEvents,
+  multidayWorkshopRestRows,
+  workshopEventDayRange,
+  isWorkshopCalendarEvent,
+  isRestDaySourceEvent,
   dayInsideAwaySpan,
   dayBlockedForPlacement,
   coveringBlockedSpan,
@@ -810,4 +905,5 @@ module.exports = {
   gapMinsForTitle,
   requiredGapMins,
   sameLondonSlot,
+  trySlotOnDay,
 };

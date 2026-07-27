@@ -5,7 +5,7 @@ const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('.
 const {
   buildBusyIntervals, datedTasksToIntervals, findTaskBumps, placeBumpedTasks,
   placeHabits, buildAmendments, provePlacement, awaySpansFromTravelBlocks,
-  teachingDaySpansFromEvents,
+  teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
 } = require('./habit-placer-lib');
 
 function londonHm(iso) {
@@ -196,9 +196,11 @@ async function runHabitPlacerPropose(ctx) {
   const clientBusy = buildBusyIntervals(gcalEvents || [], ruleMap);
   const pinnedBusy = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: true });
   const softTasks = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false });
-  const awaySpans = awaySpansFromTravelBlocks(travelBlocks || [], ruleMap);
+  const awaySpans = awaySpansFromTravelBlocks(travelBlocks || []);
   const teachingSpans = teachingDaySpansFromEvents(gcalEvents || []);
+  const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap);
   const hardBusy = clientBusy.concat(pinnedBusy).concat(awaySpans).concat(teachingSpans)
+    .concat(restSpans)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
@@ -259,6 +261,11 @@ async function runHabitPlacerPropose(ctx) {
       startDay: s.startDay, endDay: s.endDay, restDay: s.restDay, summary: s.summary,
     })),
     away_span_count: awaySpans.length,
+    rest_days: restSpans.map((s) => ({
+      restDay: s.restDay, firstDay: s.firstDay, lastDay: s.lastDay,
+      workshop_title: s.workshop_title, summary: s.summary,
+    })),
+    rest_day_count: restSpans.length,
     teaching_days: teachingSpans.map((s) => s.startDay),
     teaching_day_count: teachingSpans.length,
     task_bumps: allBumps,

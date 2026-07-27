@@ -6,7 +6,7 @@ const { isoToLondonDate, isoToLondonMinutes, ruleMapFromRows, workingWindow, isS
 const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
-  dayBlockedForPlacement, teachingDaySpansFromEvents,
+  dayBlockedForPlacement, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
   londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
@@ -548,8 +548,8 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
       else breakdown.other += v;
     }
 
-    // Post-residential rest: protected — no admin capacity (not 05–22 residential fill).
-    if (dayKind === 'rest_after_away') continue;
+    // Rest day after multi-day workshop: protected — no admin capacity.
+    if (dayKind === 'rest_after_workshop' || dayKind === 'rest_after_away') continue;
 
     // Residential / bank holiday away.
     if (dayKind === 'away_span' || (!dayKind && holidays && holidays.has(day))) {
@@ -634,6 +634,7 @@ module.exports = {
   splitMcAndBusy,
   awaySpansFromTravelBlocks,
   teachingDaySpansFromEvents,
+  restDaySpansFromWorkshopEvents,
   dayBlockedForPlacement,
   tasksToBlocks,
   travelToBlocks,

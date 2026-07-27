@@ -6,7 +6,8 @@ const { envReady, json, cors, requireAuth, sb } = require('./_lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
-  awaySpansFromTravelBlocks, teachingDaySpansFromEvents, tasksToBlocks, travelToBlocks, busyToBlocks,
+  awaySpansFromTravelBlocks, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
+  tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
@@ -65,8 +66,9 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const awaySpans = awaySpansFromTravelBlocks(travel || [], ruleMap);
+    const awaySpans = awaySpansFromTravelBlocks(travel || []);
     const teachingSpans = teachingDaySpansFromEvents(busyEvents || []);
+    const restSpans = restDaySpansFromWorkshopEvents(busyEvents || [], ruleMap);
     const rawBlocks = [
       ...tasksToBlocks(tasks, today),
       ...habitLogsToBlocks(logs, habitMap),
@@ -87,16 +89,20 @@ module.exports = async function handler(req, res) {
         };
         d = addDaysYmd(d, 1);
       }
-      if (span.restDay && !awayDays[span.restDay]) {
-        awayDays[span.restDay] = {
-          label: 'REST',
-          summary: 'Rest day after residential (no appointments)',
-          kind: 'rest_after_away',
-        };
-      }
+    }
+    for (const span of restSpans) {
+      if (awayDays[span.restDay]?.kind === 'away_span') continue;
+      awayDays[span.restDay] = {
+        label: 'REST',
+        summary: span.summary || 'Rest day after multi-day workshop',
+        kind: 'rest_after_workshop',
+        workshop_title: span.workshop_title || null,
+        workshop_last_day: span.lastDay || null,
+      };
     }
     for (const span of teachingSpans) {
       if (awayDays[span.startDay]?.kind === 'away_span') continue;
+      if (awayDays[span.startDay]?.kind === 'rest_after_workshop') continue;
       awayDays[span.startDay] = {
         label: 'TEACHING',
         summary: span.summary || 'Teaching / client day',
@@ -104,10 +110,10 @@ module.exports = async function handler(req, res) {
       };
     }
     for (const [day, meta] of Object.entries(awayDays)) {
-      if (meta.kind === 'rest_after_away' || meta.kind === 'teaching_day') {
+      if (meta.kind === 'rest_after_workshop' || meta.kind === 'teaching_day') {
         dayBanners.push({
           day,
-          title: meta.label === 'REST' ? 'REST (after residential)' : 'TEACHING / client day',
+          title: meta.label === 'REST' ? 'REST (after multi-day workshop)' : 'TEACHING / client day',
           source: meta.kind,
           id: `${meta.kind}:${day}`,
         });
@@ -129,6 +135,7 @@ module.exports = async function handler(req, res) {
       blocks,
       away_days: awayDays,
       away_spans: awaySpans,
+      rest_spans: restSpans,
       holidays,
       day_banners: dayBanners,
       rules: {
@@ -136,7 +143,11 @@ module.exports = async function handler(req, res) {
         decompress_after_task_min: Number(ruleMap.decompress_after_task_min || 30),
         buffer_scope: ruleMap.buffer_scope || 'home_only',
         gcal_writes_available: writesAvailable,
-        rest_day_after_sunday_return: String(ruleMap.rest_day_after_sunday_return || 'true') === 'true',
+        rest_day_after_multiday_workshop: String(
+          ruleMap.rest_day_after_multiday_workshop != null
+            ? ruleMap.rest_day_after_multiday_workshop
+            : 'true',
+        ) === 'true',
       },
       push: {
         open_count: (pushOpen || []).length,
@@ -150,6 +161,7 @@ module.exports = async function handler(req, res) {
         'habit-placer-lib.requiredGapMins',
         'habit-placer-lib.dayCapLimits',
         'habit-placer-lib.awaySpansFromTravelBlocks',
+        'habit-placer-lib.restDaySpansFromWorkshopEvents',
         'habit-placer-lib.dayBlockedForPlacement',
         'habit-placer-lib.teachingDaySpansFromEvents',
       ],
