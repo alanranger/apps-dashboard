@@ -224,7 +224,7 @@ async function reconcileReport(sb) {
     }
   }
 
-  // Managed Google orphans are engine-deletable — report separately, do not fail ✓.
+  // Managed Google orphans are engine-deletable — report separately from mirror match.
   const managed_orphans = (snap.to_delete || []).map((u) => ({
     kind: 'google_orphan',
     title: u.summary,
@@ -234,10 +234,29 @@ async function reconcileReport(sb) {
     reason: 'unplaced_or_unlinked_still_on_google',
   }));
 
-  const match = mismatches.length === 0;
+  // Liveable diary = LIVE Google commitments (not mirror-only).
+  const { fetchHorizonEvents } = require('./gcal-lib');
+  const { validateLiveableDiary } = require('./liveable-diary-lib');
+  const [travelBlocks, restDb, liveGcal] = await Promise.all([
+    sb(`travel_blocks?select=*&starts_at=gte.${hz.timeMin}&starts_at=lt.${hz.timeMax}&order=starts_at.asc`),
+    sb('rest_day_blocks?status=eq.active&select=rest_date,workshop_title'),
+    fetchHorizonEvents(hz.timeMin, hz.timeMax),
+  ]);
+  const liveable = validateLiveableDiary({
+    events: liveGcal.events || [],
+    travelBlocks: travelBlocks || [],
+    ruleMap,
+    restDb: restDb || [],
+  });
+
+  const mirrorOk = mismatches.length === 0;
+  const liveableOk = !!liveable.ok;
+  const match = mirrorOk && liveableOk;
   const statusLine = match
-    ? 'Google matches DB: ✓'
-    : `Google matches DB: ✗ — ${mismatches.length} mismatch${mismatches.length === 1 ? '' : 'es'}`;
+    ? 'Diary liveable: ✓ (mirror + live calendar)'
+    : !liveableOk
+      ? `Diary liveable: ✗ — ${liveable.violation_count} live violation(s)`
+      : `Google matches DB: ✗ — ${mismatches.length} mismatch${mismatches.length === 1 ? '' : 'es'}`;
   const nowIso = new Date().toISOString();
   try {
     const existing = await sb(
@@ -279,8 +298,11 @@ async function reconcileReport(sb) {
     mode: 'reconcile',
     flags,
     horizon: { from, to },
-    google_matches_db: match,
+    google_matches_db: mirrorOk,
+    diary_liveable: liveableOk,
+    liveable,
     status_line: statusLine,
+    ok: match,
     checked_count: checked.length,
     mismatch_count: mismatches.length,
     mismatches: mismatches.slice(0, 50),

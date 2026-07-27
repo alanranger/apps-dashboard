@@ -161,34 +161,95 @@ function gapBufferTitle(afterLabel) {
   return `MC ⏳ Decompress — after ${bare.slice(0, 60)}`;
 }
 
+function timedClose(aIso, bIso, tolMin = 2) {
+  return Math.abs(Date.parse(aIso) - Date.parse(bIso)) <= tolMin * 60000;
+}
+
+/** Delete other primary timed clones for the same decompress slot. */
+async function purgeTimedSiblings(events, {
+  summary, startIso, endIso, keepId,
+}) {
+  let purged = 0;
+  for (const e of events || []) {
+    if (e._calendarId && e._calendarId !== 'primary') continue;
+    if (!e.start?.dateTime || e.id === keepId) continue;
+    if (String(e.summary || '') !== summary) continue;
+    const liveStart = e.start.dateTime;
+    const liveEnd = e.end?.dateTime || e.start.dateTime;
+    if (!timedClose(liveStart, startIso) || !timedClose(liveEnd, endIso)) continue;
+    try {
+      await deletePrimaryEvent(e.id);
+      purged += 1;
+      await sleep(40);
+    } catch (_) { /* ignore */ }
+  }
+  return purged;
+}
+
+function findLiveTimed(events, summary, startIso, endIso) {
+  return (events || []).find((e) => {
+    if (e._calendarId && e._calendarId !== 'primary') return false;
+    if (!e.start?.dateTime) return false;
+    if (String(e.summary || '') !== summary) return false;
+    const liveEnd = e.end?.dateTime || e.start.dateTime;
+    return timedClose(e.start.dateTime, startIso) && timedClose(liveEnd, endIso);
+  }) || null;
+}
+
 /**
  * Persist decompress buffers where gap already meets need (paint protected space).
  * Tight pairs stay as MOVE proposals — never overlap-paint.
+ * Revive retired (day, after_event_id); adopt/purge live siblings; delete GCal if DB fails.
  */
 async function syncGapBuffers(sb, blocks, ruleMap, {
-  writeGcal = true, travelBlocks = [],
+  writeGcal = true, travelBlocks = [], events = [],
 } = {}) {
   const awaySpans = awaySpansFromTravelBlocks(travelBlocks);
   const pairs = workPairs(blocks, ruleMap, awaySpans)
     .filter((p) => p.gap >= p.need && p.need > 0);
-  const existing = await sb('gap_buffer_blocks?status=eq.active&select=*') || [];
-  const byAfter = new Map(existing.map((r) => [String(r.after_event_id || ''), r]));
+  const existing = await sb('gap_buffer_blocks?select=*&order=updated_at.desc&limit=5000') || [];
+  const byKey = new Map();
+  for (const r of existing) {
+    const k = `${r.day}|${String(r.after_event_id || '')}`;
+    const prev = byKey.get(k);
+    if (!prev) {
+      byKey.set(k, r);
+      continue;
+    }
+    if (r.status === 'active' && prev.status !== 'active') byKey.set(k, r);
+  }
   const keep = new Set();
   const created = [];
   const updated = [];
   const failed = [];
+  let purged = 0;
 
   for (const p of pairs) {
     const afterId = String(p.a.id || p.a.calendar_event_id || '');
     if (!afterId) continue;
-    keep.add(afterId);
+    keep.add(`${p.day}|${afterId}`);
     const startMin = isoToLondonMinutes(p.a.end);
     const endMin = startMin + p.need;
     if (endMin > isoToLondonMinutes(p.b.start)) continue;
     const startIso = new Date(londonYmdHmToUtcMs(p.day, hmLabel(startMin))).toISOString();
     const endIso = new Date(londonYmdHmToUtcMs(p.day, hmLabel(endMin))).toISOString();
     const title = gapBufferTitle(blockTitle(p.a));
-    const row = byAfter.get(afterId);
+    // Never paint a decompress over another live commitment.
+    const sMs = Date.parse(startIso);
+    const eMs = Date.parse(endIso);
+    const blockedByLive = (events || []).some((ev) => {
+      if (!ev.start?.dateTime) return false;
+      if (ev.id === afterId || ev.id === (p.b.id || p.b.calendar_event_id)) return false;
+      const t = String(ev.summary || '');
+      if (t.includes('MC ⏳') && /Decompress|Prep —/i.test(t)) return false;
+      if (ev.transparency === 'transparent') return false;
+      const o0 = Date.parse(ev.start.dateTime);
+      const o1 = Date.parse(ev.end?.dateTime || ev.start.dateTime);
+      return sMs < o1 && o0 < eMs;
+    });
+    if (blockedByLive) continue;
+    const key = `${p.day}|${afterId}`;
+    const row = byKey.get(key);
     const body = {
       day: p.day,
       starts_at: startIso,
@@ -213,42 +274,73 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
       continue;
     }
 
+    let eventId = null;
     try {
       if (row?.calendar_event_id) {
         const v = await verifyPrimaryEvent(row.calendar_event_id, {
           summary: title, startIso, endIso,
         });
         if (v.ok) {
-          body.calendar_event_id = row.calendar_event_id;
-          await sb(`gap_buffer_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
-          updated.push(row.id);
+          eventId = row.calendar_event_id;
+        } else {
+          try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
+        }
+      }
+      if (!eventId) {
+        const live = findLiveTimed(events, title, startIso, endIso);
+        if (live?.id) eventId = live.id;
+      }
+      if (!eventId) {
+        const ev = await insertPrimaryEvent({ summary: title, startIso, endIso });
+        const v = await verifyPrimaryEvent(ev.id, { summary: title, startIso, endIso });
+        if (!v.ok) {
+          try { await deletePrimaryEvent(ev.id); } catch (_) { /* ignore */ }
+          failed.push({ afterId, error: 'readback_mismatch' });
           continue;
         }
-        try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
+        eventId = ev.id;
       }
-      const ev = await insertPrimaryEvent({ summary: title, startIso, endIso });
-      const v = await verifyPrimaryEvent(ev.id, { summary: title, startIso, endIso });
-      if (!v.ok) {
-        failed.push({ afterId, error: 'readback_mismatch' });
-        continue;
-      }
-      body.calendar_event_id = ev.id;
+      body.calendar_event_id = eventId;
+      purged += await purgeTimedSiblings(events, {
+        summary: title, startIso, endIso, keepId: eventId,
+      });
       if (row) {
         await sb(`gap_buffer_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });
         updated.push(row.id);
       } else {
-        await sb('gap_buffer_blocks', { method: 'POST', prefer: 'return=minimal', body });
-        created.push(afterId);
+        try {
+          await sb('gap_buffer_blocks', { method: 'POST', prefer: 'return=minimal', body });
+          created.push(afterId);
+        } catch (e) {
+          // Unique (day, after_event_id) — revive any retired row
+          const retired = await sb(
+            `gap_buffer_blocks?day=eq.${p.day}&after_event_id=eq.${encodeURIComponent(afterId)}`
+            + '&select=id&limit=1',
+          );
+          if (retired?.[0]?.id) {
+            await sb(`gap_buffer_blocks?id=eq.${retired[0].id}`, {
+              method: 'PATCH', prefer: 'return=minimal', body,
+            });
+            updated.push(retired[0].id);
+          } else {
+            try { await deletePrimaryEvent(eventId); } catch (_) { /* ignore */ }
+            failed.push({ afterId, error: e.message });
+            continue;
+          }
+        }
       }
       await sleep(50);
     } catch (e) {
+      if (eventId) {
+        try { await deletePrimaryEvent(eventId); } catch (_) { /* ignore */ }
+      }
       failed.push({ afterId, error: e.message });
     }
   }
 
   let pruned = 0;
-  for (const row of existing) {
-    const key = String(row.after_event_id || '');
+  for (const row of existing.filter((r) => r.status === 'active')) {
+    const key = `${row.day}|${String(row.after_event_id || '')}`;
     if (keep.has(key)) continue;
     if (row.calendar_event_id) {
       try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* ignore */ }
@@ -265,6 +357,7 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
     created: created.length,
     updated: updated.length,
     pruned,
+    purged_siblings: purged,
     failed,
     tight_pairs: workPairs(blocks, ruleMap, awaySpans).filter((p) => p.gap < p.need).length,
   };

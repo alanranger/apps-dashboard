@@ -413,6 +413,7 @@ async function runRuleEventMasterSync(sb, opts = {}) {
   const gaps = await syncGapBuffers(sb, gapBlocks, ruleMap, {
     writeGcal,
     travelBlocks: travel || [],
+    events: gcal.events || [],
   });
 
   return {

@@ -1285,6 +1285,12 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
     const aE = Date.parse(a.endIso);
     dayUsed[a.day] = (dayUsed[a.day] || 0) + a.duration_min;
     for (const b of clientBusy) {
+      // Existing habit intervals are seeded into busy for placement; do not fail
+      // proof against the same occurrence (habit_id|ideal_date).
+      if (b.habit_id && b.ideal_date
+        && b.habit_id === a.habit_id && b.ideal_date === a.ideal_date) {
+        continue;
+      }
       if (overlaps(aS, aE, b.startMs, b.endMs)) {
         fails.push(`habit-client: ${a.title} @ ${a.day}`);
       }
