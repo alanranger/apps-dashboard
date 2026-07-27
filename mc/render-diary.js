@@ -784,12 +784,13 @@ function wireDiary(root, data, refresh) {
     if (!ptr || e.pointerId !== ptr.pid) return;
     const wasDrag = ptr.moved;
     const block = ptr.block;
+    // Resolve target while blocks still have pointer-events:none
+    const under = wasDrag ? document.elementFromPoint(e.clientX, e.clientY) : null;
+    const grid = under?.closest?.('.dy-day-grid');
+    const day = grid?.getAttribute('data-day');
     clearPtrGhost();
     dragBlock = null;
     if (!wasDrag) return;
-    const under = document.elementFromPoint(e.clientX, e.clientY);
-    const grid = under?.closest?.('.dy-day-grid');
-    const day = grid?.getAttribute('data-day');
     if (!grid || !day) {
       toast('Drop on a day column to reschedule');
       return;
