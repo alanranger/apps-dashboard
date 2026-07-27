@@ -118,6 +118,11 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         from: null,
         to: { start: p.new_start, end: p.new_end },
         patch,
+        task_id: p.task_id || null,
+        display_id: p.display_id || p.task_display_id || null,
+        habit_id: p.habit_id || null,
+        ideal_date: p.ideal_date || null,
+        travel_block_id: p.block_id || null,
       };
     }
     const insert = { summary: title, startIso: p.new_start, endIso: p.new_end };
@@ -135,7 +140,9 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       insert,
       habit_id: p.habit_id || null,
       task_id: p.task_id || null,
+      display_id: p.display_id || p.task_display_id || null,
       ideal_date: p.ideal_date || null,
+      travel_block_id: p.block_id || null,
     };
   }
 
@@ -332,6 +339,139 @@ async function resolveQueueTitle(sb, row, prefixes) {
   return safeTitle(p.title, null);
 }
 
+function parseDiaryPinChange(change) {
+  const m = String(change || '').match(/^diary_pin:([^|]+)\|(.+)$/);
+  if (!m) return null;
+  return { startIso: m[1].trim(), endIso: m[2].trim() };
+}
+
+/**
+ * Live DB times at plan/write moment — never trust stale queue/backlog payloads.
+ * Tasks → tasks.scheduled_*; habits → recurring_log diary_pin; travel → travel_blocks.
+ */
+async function liveDbSlot(sb, w, prefixes) {
+  if (w.action === 'delete') return null;
+  if (w.entity_type === 'task') {
+    const tid = w.task_id || null;
+    const did = w.display_id || null;
+    let task = null;
+    if (tid) {
+      const rows = await sb(
+        `tasks?id=eq.${tid}&select=id,display_id,title,priority,scheduled_start,scheduled_end,calendar_event_id`,
+      );
+      task = rows?.[0];
+    } else if (did != null) {
+      const rows = await sb(
+        `tasks?display_id=eq.${Number(did)}&select=id,display_id,title,priority,scheduled_start,scheduled_end,calendar_event_id`,
+      );
+      task = rows?.[0];
+    }
+    if (!task?.scheduled_start || !task?.scheduled_end) return { error: 'task_missing_db_times' };
+    return {
+      startIso: new Date(task.scheduled_start).toISOString(),
+      endIso: new Date(task.scheduled_end).toISOString(),
+      summary: taskGcalTitle(task),
+      event_id: task.calendar_event_id || w.event_id || null,
+      task_id: task.id,
+      display_id: task.display_id,
+      live_from: 'tasks',
+    };
+  }
+  if (w.entity_type === 'habit' && w.habit_id) {
+    const ideal = w.ideal_date || null;
+    let q = `recurring_log?recurring_task_id=eq.${w.habit_id}&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=5`;
+    if (ideal) q = `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${ideal}&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=3`;
+    const logs = await sb(q);
+    const pin = (logs || []).map((l) => ({ l, pin: parseDiaryPinChange(l.change) })).find((x) => x.pin);
+    const habits = await sb(`recurring_tasks?id=eq.${w.habit_id}&select=title`);
+    const title = habits?.[0]?.title ? habitGcalTitle(habits[0].title, prefixes) : w.summary;
+    if (pin?.pin) {
+      return {
+        startIso: new Date(pin.pin.startIso).toISOString(),
+        endIso: new Date(pin.pin.endIso).toISOString(),
+        summary: title,
+        event_id: pin.l.calendar_event_id || w.event_id || null,
+        live_from: 'recurring_log',
+      };
+    }
+    return null;
+  }
+  if (w.entity_type === 'travel') {
+    const bid = w.travel_block_id || String(w.related_id || '').replace(/^gcal:travel:/, '') || null;
+    if (!bid) return null;
+    const rows = await sb(
+      `travel_blocks?id=eq.${bid}&select=id,starts_at,ends_at,calendar_event_id,block_type,venue_name,workshop_title,leg_from,leg_to,drive_minutes_used`,
+    );
+    const row = rows?.[0];
+    if (!row?.starts_at || !row?.ends_at) return { error: 'travel_missing_db_times' };
+    return {
+      startIso: new Date(row.starts_at).toISOString(),
+      endIso: new Date(row.ends_at).toISOString(),
+      summary: travelGcalTitle(row, prefixes),
+      event_id: row.calendar_event_id || w.event_id || null,
+      live_from: 'travel_blocks',
+    };
+  }
+  return null;
+}
+
+function applyLiveSlot(w, live) {
+  if (!live || live.error) return w;
+  const next = { ...w, live_from: live.live_from };
+  if (live.summary) next.summary = live.summary;
+  if (live.event_id) next.event_id = live.event_id;
+  if (live.task_id) next.task_id = live.task_id;
+  if (live.display_id != null) next.display_id = live.display_id;
+  next.to = { start: live.startIso, end: live.endIso, day: String(live.startIso).slice(0, 10) };
+  if (w.action === 'patch') {
+    next.patch = {
+      ...(w.patch || {}),
+      startIso: live.startIso,
+      endIso: live.endIso,
+      summary: live.summary || w.patch?.summary || w.summary,
+    };
+  }
+  if (w.action === 'insert') {
+    next.insert = {
+      ...(w.insert || {}),
+      startIso: live.startIso,
+      endIso: live.endIso,
+      summary: live.summary || w.insert?.summary || w.summary,
+    };
+  }
+  return next;
+}
+
+async function hydrateWritesFromDb(sb, writes, prefixes) {
+  const out = [];
+  for (const w of writes || []) {
+    if (w.action === 'delete') {
+      out.push(w);
+      continue;
+    }
+    const live = await liveDbSlot(sb, w, prefixes);
+    if (live?.error) {
+      out.push({ ...w, skip: true, reason: live.error });
+      continue;
+    }
+    out.push(live ? applyLiveSlot(w, live) : w);
+  }
+  return out.filter((w) => !w.skip);
+}
+
+async function flagVerifyFail(sb, w, verify) {
+  if (w.source !== 'gcal_push_queue' || !w.source_id) return;
+  const detail = `VERIFY_FAILED titleOk=${verify?.titleOk} startOk=${verify?.startOk} endOk=${verify?.endOk}`;
+  await sb(`gcal_push_queue?id=eq.${w.source_id}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: {
+      summary: `${detail} · ${String(w.summary || '').slice(0, 120)}`,
+      proposed_action: `${detail}. expect=${JSON.stringify(verify?.expect || {})} live=${JSON.stringify(verify?.live || {})}`,
+      updated_at: new Date().toISOString(),
+    },
+  });
+}
+
 async function buildFlushPlan(sb, opts = {}) {
   const includeBacklog = opts.includeBacklog !== false;
   const rules = await sb('scheduling_rules?select=key,value');
@@ -393,15 +533,19 @@ async function buildFlushPlan(sb, opts = {}) {
     return ra - rb;
   });
 
+  const hydrated = await hydrateWritesFromDb(sb, writes, prefixes);
+  const skippedLive = writes.length - hydrated.length;
+
   return {
     dry_run: true,
     include_backlog: includeBacklog,
+    live_db_times: true,
     queue_raw: (open || []).length,
     queue_collapsed: collapsed.length,
     backlog_rows: backlogRows,
-    write_count: writes.length,
-    skipped_count: skipped.length,
-    writes,
+    write_count: hydrated.length,
+    skipped_count: skipped.length + skippedLive,
+    writes: hydrated,
     skipped: skipped.map((s) => ({
       reason: s.reason,
       source: s.row?.related_id || s.row?.id || null,
@@ -465,12 +609,25 @@ async function applyFlushPlan(sb, plan, actor) {
   const actorSafe = ['alan', 'claude', 'cursor', 'external', 'system'].includes(actor)
     ? actor
     : 'cursor';
-  for (const w of plan.writes || []) {
+  const rules = await sb('scheduling_rules?select=key,value');
+  const ruleMap = ruleMapFromRows(rules || []);
+  const prefixes = {
+    habit: ruleMap.title_prefix_recurring || 'MC 🔁',
+    travel: ruleMap.title_prefix_travel || 'MC 🚗',
+    buffer: ruleMap.title_prefix_buffer || 'MC ⏳',
+  };
+  const liveWrites = await hydrateWritesFromDb(sb, plan.writes || [], prefixes);
+
+  for (const w of liveWrites) {
     try {
       let eventId = w.event_id || null;
       if (w.action === 'delete') {
         await deletePrimaryEvent(w.event_id);
       } else if (w.action === 'patch') {
+        if (!w.patch?.startIso || !w.patch?.endIso) {
+          results.push({ ...w, ok: false, error: 'patch_missing_live_times' });
+          continue;
+        }
         await patchPrimaryEvent(w.event_id, w.patch);
         const v = await verifyPrimaryEvent(w.event_id, {
           summary: w.patch?.summary,
@@ -478,6 +635,7 @@ async function applyFlushPlan(sb, plan, actor) {
           endIso: w.patch?.endIso,
         });
         if (!v.ok) {
+          await flagVerifyFail(sb, w, v);
           results.push({ ...w, ok: false, error: 'readback_mismatch', verify: v });
           continue;
         }
@@ -494,6 +652,7 @@ async function applyFlushPlan(sb, plan, actor) {
           endIso: w.insert.endIso,
         });
         if (!v.ok) {
+          await flagVerifyFail(sb, w, v);
           results.push({ ...w, ok: false, error: 'readback_mismatch', event_id: eventId, verify: v });
           continue;
         }
@@ -552,4 +711,6 @@ module.exports = {
   syncRecurringLogAfterFlush,
   dedupePlans,
   safeTitle,
+  hydrateWritesFromDb,
+  liveDbSlot,
 };

@@ -32,6 +32,7 @@ function summarisePlan(plan) {
     queue_raw: plan.queue_raw || 0,
     queue_collapsed: plan.queue_collapsed || 0,
     backlog_rows: plan.backlog_rows || 0,
+    live_db_times: !!plan.live_db_times,
     writes: (plan.writes || []).map((w) => ({
       action: w.action,
       entity_type: w.entity_type,
@@ -39,6 +40,8 @@ function summarisePlan(plan) {
       summary: w.summary || null,
       from: w.from || null,
       to: w.to || null,
+      live_from: w.live_from || null,
+      display_id: w.display_id || null,
       source: w.source,
       source_id: w.source_id,
     })),
@@ -164,25 +167,101 @@ async function autoSyncIfAllowed(sb, actor) {
 async function reconcileReport(sb) {
   const flags = await loadFlags(sb);
   const hz = defaultHorizon();
-  // Rebuild horizon is ~52w; poll uses shorter window for speed
   const from = hz.from;
   const to = hz.to;
   const { masters, ruleMap, referencedIds } = await loadDbMasters(sb, from, to);
   const snap = await snapshotPrimaryMc(hz.timeMin, hz.timeMax, referencedIds, ruleMap);
-  const plan = await buildFlushPlan(sb);
-  const byOld = new Map(masters.filter((m) => m.old_event_id).map((m) => [m.old_event_id, m]));
-  const missing = masters.filter((m) => !m.old_event_id);
-  const orphanManaged = (snap.to_delete || []).filter((r) => !byOld.has(r.id));
+  const plan = await buildFlushPlan(sb, { includeBacklog: false });
+  const { getPrimaryEvent } = require('./gcal-write-lib');
+
+  const mismatches = [];
+  const checked = [];
+  for (const m of masters || []) {
+    if (!m.old_event_id || !m.start || !m.end) continue;
+    try {
+      const live = await getPrimaryEvent(m.old_event_id);
+      const liveStart = live?.start?.dateTime || live?.start?.date || null;
+      const liveEnd = live?.end?.dateTime || live?.end?.date || null;
+      const titleOk = String(live?.summary || '') === String(m.title || '');
+      const startOk = Math.abs(Date.parse(liveStart) - Date.parse(m.start)) <= 120000;
+      const endOk = Math.abs(Date.parse(liveEnd) - Date.parse(m.end)) <= 120000;
+      const row = {
+        kind: m.kind,
+        title: m.title,
+        db_start: m.start,
+        db_end: m.end,
+        gcal_start: liveStart,
+        gcal_end: liveEnd,
+        event_id: m.old_event_id,
+        titleOk,
+        startOk,
+        endOk,
+      };
+      checked.push(row);
+      if (!titleOk || !startOk || !endOk) mismatches.push(row);
+    } catch (e) {
+      mismatches.push({
+        kind: m.kind, title: m.title, event_id: m.old_event_id,
+        error: e.message, db_start: m.start, db_end: m.end,
+      });
+    }
+  }
+
+  const match = mismatches.length === 0;
+  const statusLine = match
+    ? 'Google matches DB: ✓'
+    : `Google matches DB: ✗ — ${mismatches.length} mismatch${mismatches.length === 1 ? '' : 'es'}`;
+  const nowIso = new Date().toISOString();
+  try {
+    const existing = await sb(
+      `scheduling_rules?key=eq.${encodeURIComponent('gcal_reconcile_status_line')}&select=key`,
+    );
+    const body = {
+      key: 'gcal_reconcile_status_line',
+      value: statusLine,
+      value_type: 'string',
+      description: 'Standing DB↔Google reconcile one-liner for Diary',
+      updated_at: nowIso,
+    };
+    if (existing?.[0]) {
+      await sb(`scheduling_rules?key=eq.${encodeURIComponent('gcal_reconcile_status_line')}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: { value: statusLine, updated_at: nowIso },
+      });
+    } else {
+      await sb('scheduling_rules', { method: 'POST', prefer: 'return=minimal', body });
+    }
+    await sb(`scheduling_rules?key=eq.${encodeURIComponent('gcal_reconcile_at')}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { value: nowIso, updated_at: nowIso },
+    }).catch(async () => {
+      await sb('scheduling_rules', {
+        method: 'POST', prefer: 'return=minimal',
+        body: {
+          key: 'gcal_reconcile_at',
+          value: nowIso,
+          value_type: 'string',
+          description: 'Last reconcile timestamp',
+          updated_at: nowIso,
+        },
+      });
+    });
+  } catch (_) { /* non-fatal */ }
+
   return {
     mode: 'reconcile',
     flags,
     horizon: { from, to },
+    google_matches_db: match,
+    status_line: statusLine,
+    checked_count: checked.length,
+    mismatch_count: mismatches.length,
+    mismatches: mismatches.slice(0, 50),
     masters: masters.length,
-    masters_missing_event_id: missing.length,
-    gcal_managed_candidates: (snap.to_delete || []).length,
-    orphan_managed_not_in_db_ids: orphanManaged.length,
+    masters_missing_event_id: masters.filter((m) => !m.old_event_id).length,
     pending_flush_writes: plan.write_count,
     pending_flush_sample: summarisePlan(plan).writes.slice(0, 25),
+    pending_flush_live_db_times: !!plan.live_db_times,
     left_uncertain: snap.left_uncertain?.length || 0,
   };
 }

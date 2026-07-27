@@ -339,6 +339,11 @@ function renderToolbar(data) {
     ? `<p class="dy-drift-banner"><strong>${driftN} block${driftN === 1 ? '' : 's'} differ from Google</strong> —
         Amber <strong>PUSH</strong> = you moved it here (hit Push). <strong>OUT OF SYNC</strong> = Google time shown until you pin/drag.</p>`
     : `<p class="meta dy-edit-hint">Drag blue/green to move · then <strong>Push</strong> so Google matches. Diary keeps your move visible until then.</p>`;
+  const reconcileLine = push.reconcile_status
+    ? `<p class="meta dy-reconcile-line"><strong>${esc(push.reconcile_status)}</strong>${
+      push.reconcile_at ? ` · checked ${esc(String(push.reconcile_at).slice(0, 19).replace('T', ' '))}Z` : ''
+    }</p>`
+    : '';
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
@@ -350,6 +355,7 @@ function renderToolbar(data) {
         <button type="button" class="btn-secondary" data-dy-refresh>Refresh</button>
       </div>
       ${driftNote}
+      ${reconcileLine}
       <div class="dy-push-panel ${pushTone}">
         <div class="dy-push-panel-head">
           <span class="dy-push-kicker">Google Calendar sync</span>
