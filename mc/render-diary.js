@@ -511,7 +511,20 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   </div>`;
 }
 
-function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
+function renderAwayOverlays(day, overlays, away, axis) {
+  if (away?.kind === 'away_span') return '';
+  return (overlays || [])
+    .filter((o) => o.day === day && o.end_min > o.start_min)
+    .map((o) => {
+      const top = minsToTop(o.start_min, axis);
+      const h = heightPct(o.end_min - o.start_min, axis);
+      return `<div class="dy-away-partial" style="top:${top}%;height:${h}%"
+        title="Away — between travel out and travel home"></div>`;
+    })
+    .join('');
+}
+
+function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlays) {
   const dayBlocks = blocks.filter((b) => b.day === day);
   const conflicts = conflictIds(dayBlocks);
   const lanes = conflictLanes(dayBlocks, conflicts);
@@ -557,6 +570,7 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle) {
         style="height:${axis.grid_px || 1152}px;--dy-step:${axis.px_per_step || 36}px">
         ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
         ${statusBanner}
+        ${renderAwayOverlays(day, overlays, away, axis)}
         ${hours.join('')}
         ${dayBlocks.map((b) => renderBlock(b, axis, conflicts, lanes.get(b.id) || 0)).join('')}
       </div>
@@ -693,13 +707,13 @@ function renderWeekGauge(week) {
     </div>`;
 }
 
-function renderWeek(week, blocks, awayDays, axis, banners, holidays) {
+function renderWeek(week, blocks, awayDays, axis, banners, holidays, overlays) {
   return `
     <div class="dy-week-wrap">
       ${renderWeekGauge(week)}
       <div class="dy-week">
         ${week.days.map((d) => renderDayColumn(
-    d, blocks, awayDays[d], axis, banners, holidays?.[d],
+    d, blocks, awayDays[d], axis, banners, holidays?.[d], overlays,
   )).join('')}
       </div>
     </div>`;
@@ -921,7 +935,7 @@ async function paintDiary(el, opts = {}) {
       <div class="dy-scroll">
         ${(data.weeks || []).map((w) => renderWeek(
     w, data.blocks || [], data.away_days || {}, axis,
-    data.day_banners || [], data.holidays || {},
+    data.day_banners || [], data.holidays || {}, data.away_overlays || [],
   )).join('')}
       </div>`;
   wireDiary(el, data, (refreshOpts) => paintDiary(el, refreshOpts));

@@ -7,7 +7,7 @@ const { splitMcAndBusy } = require('./rule-breach-lib');
 const {
   requiredGapMins, dayCapLimits, awaySpansFromTravelBlocks, dayInsideAwaySpan,
   dayBlockedForPlacement, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
-  teachingDayRuleEnabled,
+  teachingDayRuleEnabled, awayBusySegments, partialAwayMinsOnDay, intervalInsideAwaySpan,
   londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
@@ -417,6 +417,8 @@ function warnDrop({
     warnings.push(awayOnly
       ? 'Away middle day (between travel-out and travel-back)'
       : 'Blocked day (post-residential rest — no habits/tasks)');
+  } else if (intervalInsideAwaySpan(day, startMin, endMin, awaySpans)) {
+    warnings.push('Away — between travel-out and travel-back');
   }
   if ((peers || []).some((p) => p.day === day
     && (p.kind === 'workshop' || p.kind === 'lesson' || p.client_fixed))) {
@@ -538,7 +540,7 @@ function kindMinutes(dayBlocks) {
  * - Normal desk day: capacity = core working window + optional 19–21 catch-up
  *   (catch-up dropped if evening class/fixture); committed = merged timed blocks.
  */
-function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
+function weekCapacity(days, blocks, awayDays, ruleMap, holidays, awaySpans = []) {
   let available = 0;
   let filled = 0;
   let awayDaysCounted = 0;
@@ -590,8 +592,14 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
     if (!dayHasEveningCommitment(dayBlocks)) {
       dayCap += (EVENING_CATCHUP_END - EVENING_CATCHUP_START);
     }
+    // Travel-out → travel-back edge hours are not free admin time.
+    const awayCover = partialAwayMinsOnDay(
+      day, awaySpans, AWAY_DAY_START_MIN, AWAY_DAY_END_MIN,
+    );
+    const awayExtra = Math.max(0, awayCover - committed);
+    if (awayExtra > 0) breakdown.away += awayExtra;
     available += dayCap;
-    filled += committed;
+    filled += committed + awayExtra;
   }
 
   const pct = available > 0 ? Math.round((filled / available) * 100) : (filled > 0 ? 100 : 0);
@@ -623,13 +631,13 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays) {
   };
 }
 
-function attachWeekCapacity(weeks, blocks, awayDays, ruleMap) {
+function attachWeekCapacity(weeks, blocks, awayDays, ruleMap, awaySpans = []) {
   const fromY = (weeks?.[0]?.days?.[0] || '').slice(0, 4);
   const toY = (weeks?.[weeks.length - 1]?.days?.[6] || fromY).slice(0, 4);
   const holidays = bankHolidaySet(Number(fromY) || 2026, Number(toY) || 2026);
   return (weeks || []).map((w) => ({
     ...w,
-    capacity: weekCapacity(w.days, blocks, awayDays, ruleMap, holidays),
+    capacity: weekCapacity(w.days, blocks, awayDays, ruleMap, holidays, awaySpans),
   }));
 }
 
@@ -649,6 +657,7 @@ module.exports = {
   teachingDayRuleEnabled,
   restDaySpansFromWorkshopEvents,
   dayBlockedForPlacement,
+  awayBusySegments,
   tasksToBlocks,
   travelToBlocks,
   busyToBlocks,

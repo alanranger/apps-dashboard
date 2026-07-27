@@ -834,6 +834,11 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   border:1px solid #9ca3af;
 }
 .dy-away { background:repeating-linear-gradient(-45deg, rgba(127,29,29,0.18), rgba(127,29,29,0.18) 6px, rgba(127,29,29,0.06) 6px, rgba(127,29,29,0.06) 12px); }
+.dy-away-partial {
+  position:absolute; left:0; right:0; z-index:0; pointer-events:none;
+  background:repeating-linear-gradient(-45deg, rgba(127,29,29,0.18), rgba(127,29,29,0.18) 6px, rgba(127,29,29,0.06) 6px, rgba(127,29,29,0.06) 12px);
+  border-left:2px solid rgba(248,113,113,0.35);
+}
 .dy-teaching { background:rgba(124,45,18,0.12); }
 .dy-rest { background:repeating-linear-gradient(-45deg, rgba(30,58,138,0.16), rgba(30,58,138,0.16) 6px, rgba(30,58,138,0.05) 6px, rgba(30,58,138,0.05) 12px); }
 .dy-bh .dy-day-head { border-bottom:2px solid #f59e0b; }

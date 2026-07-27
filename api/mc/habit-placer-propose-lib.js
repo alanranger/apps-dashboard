@@ -4,7 +4,8 @@
 const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
 const {
   buildBusyIntervals, datedTasksToIntervals, findTaskBumps, findBlockedDayTaskBumps,
-  findPastIncompleteTaskBumps, findSoftOverlapBumps, mergeTaskBumps, placeBumpedTasks,
+  findAwayIntervalTaskBumps, findPastIncompleteTaskBumps, findSoftOverlapBumps,
+  mergeTaskBumps, placeBumpedTasks,
   placeHabits, buildAmendments, provePlacement, awaySpansFromTravelBlocks,
   teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
   trySlotOnDay, dayBlockedForPlacement,
@@ -414,6 +415,7 @@ async function runHabitPlacerPropose(ctx) {
   const bumpsRaw = mergeTaskBumps(
     findTaskBumps(placements, softTasks),
     findBlockedDayTaskBumps(softTasks, blockedSpans),
+    findAwayIntervalTaskBumps(softTasks, awaySpans),
     findPastIncompleteTaskBumps(softTasks, Date.now()),
     findSoftOverlapBumps(softTasks),
   );

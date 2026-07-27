@@ -9,7 +9,7 @@ const {
   awaySpansFromTravelBlocks, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
   tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
-  habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity,
+  habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, awayBusySegments,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
@@ -92,7 +92,7 @@ module.exports = async function handler(req, res) {
 
     const awayDays = {};
     for (const span of awaySpans) {
-      // Full AWAY column = middle days only; travel days stay open around the drive.
+      // Full AWAY column = middle days; travel days use timed away_overlays.
       const from = span.middleStart || (span.partial_edges ? null : span.startDay);
       const to = span.middleEnd || (span.partial_edges ? null : span.endDay);
       if (!from || !to) continue;
@@ -140,7 +140,7 @@ module.exports = async function handler(req, res) {
       from,
       to,
       today,
-      weeks: attachWeekCapacity(weeksFrom(from, weeks), blocks, awayDays, ruleMap),
+      weeks: attachWeekCapacity(weeksFrom(from, weeks), blocks, awayDays, ruleMap, awaySpans),
       day_axis: {
         start_min: DAY_START_MIN,
         end_min: DAY_END_MIN,
@@ -151,6 +151,7 @@ module.exports = async function handler(req, res) {
       blocks,
       away_days: awayDays,
       away_spans: awaySpans,
+      away_overlays: awayBusySegments(awaySpans, DAY_START_MIN, DAY_END_MIN),
       rest_spans: restSpans,
       holidays,
       day_banners: dayBanners,

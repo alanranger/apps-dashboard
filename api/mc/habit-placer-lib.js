@@ -49,8 +49,9 @@ function dayCapLimits(ruleMap) {
 
 /**
  * Multi-day residential away spans from travel_out + travel_back pairs.
- * Busy interval = travel_out start → travel_back end (partial edges).
- * Whole-day placement blocks apply only to middle days (see dayInsideAwaySpan).
+ * Busy interval = travel_out start → travel_back end (you are away the whole time).
+ * Whole-day AWAY banner / placement skip = middle days only; edge days use
+ * startMs–endMs (and awayBusySegments) so morning-before-outbound stays free.
  * Same-day day-trips skipped (drive intervals already cover those).
  */
 function awaySpansFromTravelBlocks(blocks) {
@@ -201,7 +202,7 @@ function multidayWorkshopRestRows(events) {
     || a.title.localeCompare(b.title));
 }
 
-/** Middle away days only when partial_edges (travel days stay schedulable outside drive). */
+/** Middle away days only when partial_edges (full-day AWAY column). */
 function dayInsideAwaySpan(day, spans) {
   return (spans || []).some((s) => {
     if (s.kind === 'teaching_day') return false;
@@ -211,6 +212,61 @@ function dayInsideAwaySpan(day, spans) {
     }
     return day >= s.startDay && day <= s.endDay;
   });
+}
+
+/**
+ * Timed away overlays for diary hatch + capacity: each London day slice of
+ * [startMs, endMs] clipped to [clipStartMin, clipEndMin].
+ */
+function awayBusySegments(spans, clipStartMin = 7 * 60, clipEndMin = 23 * 60) {
+  const out = [];
+  for (const s of spans || []) {
+    if (s.kind && s.kind !== 'away_span') continue;
+    if (!Number.isFinite(s.startMs) || !Number.isFinite(s.endMs)) continue;
+    if (!s.startDay || !s.endDay) continue;
+    let d = s.startDay;
+    while (d <= s.endDay) {
+      const dayLo = londonYmdHmToUtcMs(d, hmLabel(clipStartMin));
+      const dayHi = londonYmdHmToUtcMs(d, hmLabel(clipEndMin));
+      const lo = Math.max(dayLo, s.startMs);
+      const hi = Math.min(dayHi, s.endMs);
+      if (hi > lo) {
+        let startMin = isoToLondonMinutes(new Date(lo).toISOString());
+        let endMin = isoToLondonMinutes(new Date(hi).toISOString());
+        const endDay = isoToLondonDate(new Date(hi).toISOString());
+        if (endDay > d) endMin = clipEndMin;
+        startMin = Math.max(clipStartMin, startMin);
+        endMin = Math.min(clipEndMin, endMin);
+        if (endMin > startMin) {
+          out.push({
+            day: d,
+            start_min: startMin,
+            end_min: endMin,
+            summary: s.summary || null,
+            kind: 'away_span',
+          });
+        }
+      }
+      d = addDays(d, 1);
+    }
+  }
+  return out;
+}
+
+function partialAwayMinsOnDay(day, spans, clipStartMin, clipEndMin) {
+  return awayBusySegments(spans, clipStartMin, clipEndMin)
+    .filter((seg) => seg.day === day)
+    .reduce((n, seg) => n + (seg.end_min - seg.start_min), 0);
+}
+
+/** True if [startMin,endMin] on day overlaps a residential away busy interval. */
+function intervalInsideAwaySpan(day, startMin, endMin, spans) {
+  const startMs = londonYmdHmToUtcMs(day, hmLabel(startMin));
+  const endMs = londonYmdHmToUtcMs(day, hmLabel(endMin));
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return false;
+  return (spans || []).some((s) => s.kind === 'away_span'
+    && Number.isFinite(s.startMs) && Number.isFinite(s.endMs)
+    && overlaps(startMs, endMs, s.startMs, s.endMs));
 }
 
 /** Away middle days + post-residential rest + teaching — no habits/tasks. */
@@ -500,6 +556,35 @@ function findBlockedDayTaskBumps(softTaskIntervals, blockedSpans) {
       habit_start: null,
       habit_end: null,
       reason: 'on_blocked_day',
+      depends_on_display_id: task.depends_on_display_id,
+      calendar_event_id: task.calendar_event_id,
+    });
+  }
+  return bumps;
+}
+
+/** Soft tasks overlapping travel-out → travel-back busy interval (edge days). */
+function findAwayIntervalTaskBumps(softTaskIntervals, awaySpans) {
+  const bumps = [];
+  for (const task of softTaskIntervals || []) {
+    const hit = (awaySpans || []).find((s) => s.kind === 'away_span'
+      && Number.isFinite(s.startMs) && Number.isFinite(s.endMs)
+      && overlaps(task.startMs, task.endMs, s.startMs, s.endMs));
+    if (!hit) continue;
+    const day = isoToLondonDate(new Date(task.startMs).toISOString());
+    if (day && dayBlockedForPlacement(day, awaySpans)) continue;
+    bumps.push({
+      display_id: task.display_id,
+      title: task.summary,
+      task_start: new Date(task.startMs).toISOString(),
+      task_end: new Date(task.endMs).toISOString(),
+      duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
+      habit_id: null,
+      habit_title: 'away interval',
+      habit_day: day,
+      habit_start: null,
+      habit_end: null,
+      reason: 'during_away',
       depends_on_display_id: task.depends_on_display_id,
       calendar_event_id: task.calendar_event_id,
     });
@@ -1049,11 +1134,15 @@ module.exports = {
   dayInsideAwaySpan,
   dayBlockedForPlacement,
   coveringBlockedSpan,
+  awayBusySegments,
+  partialAwayMinsOnDay,
+  intervalInsideAwaySpan,
   teachingDayRuleEnabled,
   teachingDaySpansFromEvents,
   datedTasksToIntervals,
   findTaskBumps,
   findBlockedDayTaskBumps,
+  findAwayIntervalTaskBumps,
   findPastIncompleteTaskBumps,
   findSoftOverlapBumps,
   mergeTaskBumps,
