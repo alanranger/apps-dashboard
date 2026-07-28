@@ -22,6 +22,26 @@ function matchBlocks(byKey, byStart, ev) {
   return byStart.get(day) || [];
 }
 
+/** Peak-style overnight: day-2 sunrise is hotel→venue travel_leg, not home travel_out+back. */
+function coveredByOvernightLegs(blocks, ev) {
+  const day = ev.start_date;
+  const blob = `${ev.title || ''} ${ev.location_name || ''} ${ev.postcode || ''}`.toLowerCase();
+  const peakish = /peak|heather|roaches|rudyard|padley|hathersage/.test(blob);
+  const legs = (blocks || []).filter((b) => {
+    if (b.block_type !== 'travel_leg') return false;
+    const startDay = b.starts_at ? String(b.starts_at).slice(0, 10) : '';
+    const wsDay = b.workshop_start ? String(b.workshop_start).slice(0, 10) : '';
+    return startDay === day || wsDay === day;
+  });
+  if (!legs.length) return false;
+  if (peakish) return true;
+  const title = String(ev.title || '').toLowerCase().slice(0, 24);
+  return legs.some((b) => {
+    const t = `${b.workshop_title || ''} ${b.venue_name || ''}`.toLowerCase();
+    return title && t && (t.includes(title.slice(0, 16)) || title.includes(t.slice(0, 16)));
+  });
+}
+
 async function insertPending(sb, existingPending, inserted, row) {
   if (await existingPending(row.change_type, row.related_id)) return;
   const out = await sb('pending_diary_changes', { method: 'POST', body: row });
@@ -41,7 +61,7 @@ async function runMissingTravelBlockScan(ctx) {
   let blocks = [];
   try {
     blocks = await sb(
-      'travel_blocks?select=workshop_row_key,workshop_start,block_type,calendar_event_id',
+      'travel_blocks?select=workshop_row_key,workshop_start,workshop_title,venue_name,block_type,calendar_event_id,starts_at',
     ) || [];
   } catch (e) {
     ctx.notes.push(`travel_blocks_read_error: ${e.message}`);
@@ -69,6 +89,8 @@ async function runMissingTravelBlockScan(ctx) {
     if (!need.length) continue;
     const matched = matchBlocks(byKey, byStart, ev);
     if (hasTypes(matched, need)) continue;
+    // Overnight multi-leg (e.g. Peak Heathers Sat→Sun + Hotel Rudyard) already covers day-2.
+    if (!home && coveredByOvernightLegs(blocks, ev)) continue;
 
     const relatedId = home ? `buffer_block:${ev.row_key}` : `travel_block:${ev.row_key}`;
     const prefix = home ? bufferPrefix : travelPrefix;
