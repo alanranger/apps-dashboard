@@ -167,6 +167,8 @@ function asIso(v) {
 function busyToBlocks(busy, fixtures) {
   const out = [];
   for (const e of busy || []) {
+    // Placement-only expansions (±fixture_buffer) — never paint as diary blocks.
+    if (e.hard_fixture) continue;
     const start = e.start?.dateTime || e.start;
     const end = e.end?.dateTime || e.end;
     if (!start || !String(start).includes('T')) continue;
@@ -183,28 +185,35 @@ function busyToBlocks(busy, fixtures) {
       slot_pinned: clientFixed,
       priority: clientFixed ? 'p0' : null,
       client_fixed: clientFixed,
+      calendar_event_id: e.id || null,
     }));
   }
   for (const e of fixtures || []) {
+    const title = e.summary || 'Fixture';
+    const isFlank = /MC\s*⚽\s*(Before|After)\s*:/i.test(title) || /Before:|After:/i.test(title) && /MC\s*⚽/i.test(title);
     out.push(toBlock({
       id: `fix:${e.id}`,
-      kind: 'fixture',
-      title: e.summary || 'Fixture',
+      kind: isFlank ? 'buffer' : 'fixture',
+      title,
       start: e.start,
       end: e.end,
       editable: false,
+      calendar_event_id: e.id || null,
+      is_buffer: isFlank,
     }));
   }
   return out;
 }
 
 /**
- * Pre/post match flanks from fixture_blocks (DB). GCal MC ⚽ events are split
- * into `mc` and never painted — this restores the visible Before/After strips.
+ * DB pre/post strips only when Primary GCal flanks are missing.
+ * When before_event_id / after_event_id exist, Google already owns the paint.
  */
 function fixtureFlanksToBlocks(rows) {
   const out = [];
   for (const r of rows || []) {
+    // Live MC ⚽ Before/After on Primary — do not invent a second pair.
+    if (r.before_event_id || r.after_event_id) continue;
     const label = String(r.title || 'Fixture').replace(/^⚽️\s*/, '').trim();
     const fixStart = asIso(r.fixture_start);
     const fixEnd = asIso(r.fixture_end);

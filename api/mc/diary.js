@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
       listOpenPush(sb),
       listAwaySpanBacklog(sb),
-      sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
+      sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,before_event_id,after_event_id,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
       sb(`bank_holidays?select=holiday_date,title&holiday_date=gte.${from}&holiday_date=lte.${to}`),
       buildFlushPlan(sb, { includeBacklog: false }).catch(() => ({ write_count: 0, skipped_count: 0 })),
       sb('workshop_hotels?select=id,hotel,workshop_name,free_cancel_until,reminder_event_id,reminder_placed,status&reminder_event_id=not.is.null&status=eq.active'),
@@ -77,9 +77,10 @@ module.exports = async function handler(req, res) {
       gcalHealth = assessment;
       const split = splitMcAndBusy(events, ruleMap);
       mcEvents = split.mc || [];
-      eventById = indexGcalEventsById([...(split.mc || []), ...(split.busy || [])]);
+      eventById = indexGcalEventsById([...(split.mc || []), ...(split.fixtures || []), ...(split.busy || []).filter((e) => !e.hard_fixture)]);
       // Drop tied twins from busy paint — DB/orphan path owns them.
-      busyEvents = (split.busy || []).filter((e) => !e?.id || !tiedIds.has(e.id));
+      // hard_fixture rows are placement-only (±buffer); never paint them.
+      busyEvents = (split.busy || []).filter((e) => !e?.id || !tiedIds.has(e.id)).filter((e) => !e.hard_fixture);
       const fixtures = (split.fixtures || []).filter((e) => !e?.id || !tiedIds.has(e.id));
       busyBlocks = busyToBlocks(busyEvents, fixtures);
       dayBanners = allDayBannersFromBusy(busyEvents);
