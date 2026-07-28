@@ -28,11 +28,34 @@ async function main() {
   const plan = planTravelRegenerate(
     blocks || [], gcal.events || [], ruleMapFromRows(rules || []), venues || [],
   );
-  // Prefer linked desired times even when DB already matches (Google may be stale).
+  // Apply overnight-chain and other desired back times even when DB already patched
+  // but Google is stale — or when plan.changes says so.
+  const targets = new Map();
+  for (const row of [...(plan.linked || []), ...(plan.changes || [])]) {
+    if (!row?.back?.calendar_event_id || !row.back.to) continue;
+    targets.set(row.back.calendar_event_id, row);
+    if (row.out?.calendar_event_id && row.out.to) targets.set(`out:${row.out.id}`, row);
+  }
   let fixed = 0;
+  for (const row of plan.changes || []) {
+    for (const leg of ['out', 'back']) {
+      if (!row[leg]?.changed || !row[leg].calendar_event_id) continue;
+      const startIso = row[leg].to.starts_at;
+      const endIso = row[leg].to.ends_at;
+      await sb(`travel_blocks?id=eq.${row[leg].id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: { starts_at: startIso, ends_at: endIso },
+      });
+      await patchPrimaryEvent(row[leg].calendar_event_id, { startIso, endIso });
+      const v = await verifyPrimaryEvent(row[leg].calendar_event_id, { startIso, endIso });
+      console.log(v.ok ? 'fixed' : 'FAIL', leg, (row.title || '').slice(0, 50), startIso);
+      fixed += 1;
+    }
+  }
+  // Also catch linked rows where Google drifted from desired (stale write)
   for (const row of plan.linked || []) {
     const id = row.back.calendar_event_id;
-    if (!id) continue;
+    if (!id || (plan.changes || []).some((c) => c.back?.id === row.back.id && c.back.changed)) continue;
     const startIso = row.back.to.starts_at;
     const endIso = row.back.to.ends_at;
     const live = (gcal.events || []).find((e) => e.id === id);
@@ -44,10 +67,15 @@ async function main() {
     });
     await patchPrimaryEvent(id, { startIso, endIso });
     const v = await verifyPrimaryEvent(id, { startIso, endIso });
-    console.log(v.ok ? 'fixed' : 'FAIL', (row.title || '').slice(0, 55), liveStart, '->', startIso);
+    console.log(v.ok ? 'fixed-stale' : 'FAIL', (row.title || '').slice(0, 55), liveStart, '->', startIso);
     fixed += 1;
   }
-  console.log(JSON.stringify({ linked: (plan.linked || []).length, fixed }, null, 2));
+  console.log(JSON.stringify({
+    linked: (plan.linked || []).length,
+    changes: (plan.changes || []).length,
+    overnight: (plan.overnight_chains || []).length,
+    fixed,
+  }, null, 2));
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

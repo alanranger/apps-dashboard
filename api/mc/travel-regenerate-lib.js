@@ -337,9 +337,12 @@ function applyBusyAvoidance(desired, busy) {
 }
 
 /**
- * Overnight hotel / multi-venue trips use travel_leg rows between out and back.
- * Do not apply residential day-before / same-workshop back formulas to those pairs.
+ * Overnight hotel / multi-venue: travel home after the LAST workshop, not into the hotel leg.
  */
+function isOvernightHotelLeg(b) {
+  return /overnight|hotel|rudyard/i.test(`${b.workshop_title || ''} ${b.venue_name || ''}`);
+}
+
 function hasIntermediateTravelLegs(pair, blocks) {
   const outMs = Date.parse(pair.out.starts_at);
   const backMs = Date.parse(pair.back.starts_at);
@@ -356,9 +359,43 @@ function hasIntermediateTravelLegs(pair, blocks) {
       titleScore(pair.out.venue_name, b.venue_name),
       titleScore(pair.back.venue_name, b.venue_name),
     );
-    return score >= 40
-      || /overnight|hotel|rudyard/i.test(`${b.workshop_title || ''} ${b.venue_name || ''}`);
+    return score >= 40 || isOvernightHotelLeg(b);
   });
+}
+
+/** Next-morning workshop after overnight hotel leg (e.g. Sat sunset → Sun sunrise). */
+function overnightChainEndBounds(pair, blocks, workshops) {
+  const outMs = Date.parse(pair.out.starts_at);
+  if (!Number.isFinite(outMs)) return null;
+  const hotelLeg = (blocks || []).find((b) => {
+    if (b.block_type !== 'travel_leg' || !isOvernightHotelLeg(b)) return false;
+    const ms = Date.parse(b.starts_at);
+    return Number.isFinite(ms) && ms >= outMs - 3600000 && ms <= outMs + 36 * 3600000;
+  });
+  if (!hotelLeg) return null;
+  const hotelEnd = Date.parse(hotelLeg.ends_at || hotelLeg.starts_at);
+  const nextLeg = (blocks || []).find((b) => {
+    if (b.block_type !== 'travel_leg' || isOvernightHotelLeg(b)) return false;
+    const ms = Date.parse(b.starts_at);
+    return Number.isFinite(ms) && ms > hotelEnd && ms < hotelEnd + 18 * 3600000;
+  });
+  const titleHint = nextLeg?.workshop_title || pair.out.workshop_title;
+  let best = null;
+  let bestScore = -1;
+  for (const w of workshops || []) {
+    const b = eventBounds(w);
+    if (!b || b.startMs < hotelEnd || b.startMs > hotelEnd + 20 * 3600000) continue;
+    const ts = titleScore(titleHint, w.summary);
+    const related = /peak|heathers|roaches|padley|district/i.test(
+      `${w.summary || ''} ${titleHint || ''}`,
+    );
+    const score = ts + (related ? 15 : 0);
+    if (score > bestScore && (ts >= 35 || related)) {
+      bestScore = score;
+      best = { event: w, bounds: b };
+    }
+  }
+  return best;
 }
 
 function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
@@ -370,19 +407,10 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const changes = [];
   const linked = [];
   const unmatched = [];
+  const overnight_chains = [];
   const skipped_multileg = [];
 
   for (const pair of pairs) {
-    if (hasIntermediateTravelLegs(pair, blocks)) {
-      skipped_multileg.push({
-        venue: pair.out.venue_name,
-        title: pair.out.workshop_title,
-        out_id: pair.out.id,
-        back_id: pair.back.id,
-        reason: 'intermediate_travel_legs',
-      });
-      continue;
-    }
     const match = pickWorkshop(pair, workshops);
     if (!match) {
       unmatched.push({
@@ -396,16 +424,58 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     const rowKey = `gcal:${match.event.id}`;
     const drive = driveMinutesFor(pair, venues);
     const titleBlob = `${match.event.summary || ''} ${pair.out.workshop_title || ''}`;
-    // Own Workshops calendar → first-day arrive. Guest/attending (e.g. David Ward on
-    // Primary) → day-before arrive. Calendar + "attending" title — not date patches.
     const guestOrAttending = !isWorkshopCalendarEvent(match.event)
       || /attending/i.test(titleBlob);
-    const desiredRaw = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap, {
-      teachingEvents: workshops,
-      excludeEventId: match.event.id,
-      guestOrAttending,
-    });
-    // Ignore other travel titles when sliding (own trip legs).
+
+    let desiredRaw;
+    let workshopLiveEnd = match.bounds.endIso;
+    const chainEnd = hasIntermediateTravelLegs(pair, blocks)
+      ? overnightChainEndBounds(pair, blocks, workshops)
+      : null;
+
+    if (chainEnd) {
+      // Arrive first workshop start; home only after last workshop end.
+      const outEndMs = match.bounds.startMs;
+      const outStartMs = outEndMs - drive * 60000;
+      const backStartMs = chainEnd.bounds.endMs;
+      const backEndMs = backStartMs + drive * 60000;
+      desiredRaw = {
+        out: {
+          starts_at: new Date(outStartMs).toISOString(),
+          ends_at: new Date(outEndMs).toISOString(),
+        },
+        back: {
+          starts_at: new Date(backStartMs).toISOString(),
+          ends_at: new Date(backEndMs).toISOString(),
+        },
+        workshop_start: match.bounds.startIso,
+        mode: 'overnight_chain_home_after_last',
+        travel_arrive_day: londonDay(match.bounds.startIso),
+      };
+      workshopLiveEnd = chainEnd.bounds.endIso;
+      overnight_chains.push({
+        title: pair.out.workshop_title,
+        first: match.event.summary,
+        last: chainEnd.event.summary,
+        back: desiredRaw.back,
+      });
+    } else if (hasIntermediateTravelLegs(pair, blocks)) {
+      skipped_multileg.push({
+        venue: pair.out.venue_name,
+        title: pair.out.workshop_title,
+        out_id: pair.out.id,
+        back_id: pair.back.id,
+        reason: 'intermediate_travel_legs_no_chain_end',
+      });
+      continue;
+    } else {
+      desiredRaw = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap, {
+        teachingEvents: workshops,
+        excludeEventId: match.event.id,
+        guestOrAttending,
+      });
+    }
+
     const busySansTravel = busy.filter((b) => !/Travel /i.test(b.summary || ''));
     const desired = applyBusyAvoidance(desiredRaw, busySansTravel);
     const timesOut = !isoClose(pair.out.starts_at, desired.out.starts_at)
@@ -425,7 +495,7 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
       workshop_event_id: match.event.id,
       workshop_row_key: rowKey,
       workshop_live_start: desired.workshop_start,
-      workshop_live_end: match.bounds.endIso,
+      workshop_live_end: workshopLiveEnd,
       drive_minutes: drive,
       arrive_before_min: arriveMin,
       mode: desired.mode,
@@ -482,6 +552,7 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     linked_count: linked.length,
     unmatched,
     skipped_multileg,
+    overnight_chains,
     changes,
     changed_count: changes.length,
     times_changed_count: changes.filter((c) => c.out.times_changed || c.back.times_changed).length,
@@ -496,6 +567,7 @@ module.exports = {
   isTravelWorkshopEvent,
   desiredTravelTimes,
   hasIntermediateTravelLegs,
+  overnightChainEndBounds,
   pickWorkshop,
   otherTeachingEndOnDay,
   normTitle,
