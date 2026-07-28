@@ -78,7 +78,7 @@ function renderTimeline(preview) {
   if (!preview?.ok) {
     return `<div class="cf-empty meta">${esc(preview?.error || 'Could not load day timeline')}</div>`;
   }
-  const axis = preview.axis || { start_min: 420, end_min: 1380 };
+  const axis = preview.axis || { start_min: 300, end_min: 1380 };
   const blocks = preview.blocks || [];
   const hours = [];
   for (let m = axis.start_min; m < axis.end_min; m += 60) {

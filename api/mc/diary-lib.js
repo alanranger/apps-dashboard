@@ -12,7 +12,8 @@ const {
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
 
-const DAY_START_MIN = 7 * 60;
+/** 05:00–23:00 so Peak sunrise / early travel legs are visible (was 07:00). */
+const DAY_START_MIN = 5 * 60;
 const DAY_END_MIN = 23 * 60;
 const AXIS_STEP_MIN = 30;
 const PX_PER_STEP = 36;

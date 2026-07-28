@@ -820,7 +820,7 @@ function showDropPreview(root, grid, clientY, axis, durMin) {
 }
 
 function wireDiary(root, data, refresh) {
-  const axis = data.day_axis || { start_min: 420, end_min: 1380, step_min: 30 };
+  const axis = data.day_axis || { start_min: 300, end_min: 1380, step_min: 30 };
   let dragStarted = false;
   let ptr = null;
 

@@ -16,7 +16,7 @@ const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const { splitMcAndBusy } = require('./rule-breach-lib');
 const { priorityRank } = require('./priority-lib');
 
-const AXIS_START = 7 * 60;
+const AXIS_START = 5 * 60;
 const AXIS_END = 23 * 60;
 
 function parseOverlapRelated(relatedId) {
