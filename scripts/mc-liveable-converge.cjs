@@ -190,11 +190,11 @@ async function main() {
     const flushApplied = flush?.flush?.applied || 0;
     console.log('flush', flushApplied);
 
-    // Purge duplicate decompress on live primary for near horizon
+    // Purge duplicate decompress on live primary for full placer horizon
     const today = londonToday();
     const near = await fetchHorizonEvents(
       `${addDaysYmd(today, -7)}T00:00:00.000Z`,
-      `${addDaysYmd(today, 120)}T00:00:00.000Z`,
+      `${addDaysYmd(today, 200)}T00:00:00.000Z`,
     );
     const purgedDup = await purgeDuplicateDecompress(near.events || []);
     console.log('purged_decompress_dupes', purgedDup);

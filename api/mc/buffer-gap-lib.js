@@ -237,14 +237,12 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
     const startIso = new Date(londonYmdHmToUtcMs(p.day, hmLabel(startMin))).toISOString();
     const endIso = new Date(londonYmdHmToUtcMs(p.day, hmLabel(endMin))).toISOString();
     const title = gapBufferTitle(blockTitle(p.a));
-    // Never paint a decompress over another live commitment.
+    // Never paint a decompress over another live commitment (incl. other decompress).
     const sMs = Date.parse(startIso);
     const eMs = Date.parse(endIso);
     const blockedByLive = (events || []).some((ev) => {
       if (!ev.start?.dateTime) return false;
       if (ev.id === afterId || ev.id === (p.b.id || p.b.calendar_event_id)) return false;
-      const t = String(ev.summary || '');
-      if (t.includes('MC ⏳') && /Decompress|Prep —/i.test(t)) return false;
       if (ev.transparency === 'transparent') return false;
       const o0 = Date.parse(ev.start.dateTime);
       const o1 = Date.parse(ev.end?.dateTime || ev.start.dateTime);

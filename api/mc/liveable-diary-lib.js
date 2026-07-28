@@ -62,11 +62,16 @@ function validateLiveableDiary({
     };
   }).filter((c) => c.startMs != null);
 
-  // —— Overlaps (MC commitment vs anything opaque, or two MC) ——
-  // Personal×personal (Cleaner×Haircut) is not an MC engine fault — skip.
-  // Fixture flanks (MC ⚽) always stay; overlap with existing non-MC is OK.
-  // Other MC work inside a fixture flank window IS a fault.
+  // —— Overlaps ——
+  // Personal×personal: skip.
+  // Fixture flanks always stay; flank × non-MC OK; travel × fixture OK
+  // (travel is workshop-anchored — fixtures must not budge it).
+  // Other MC inside a fixture flank (habits/decompress) IS a fault.
   const isFixtureFlank = (s) => /^MC\s*⚽/u.test(String(s || '')) || String(s || '').includes('MC ⚽');
+  const isTravel = (s) => /MC\s*🚗|Travel out|Travel back/i.test(String(s || ''));
+  const isIpswich = (s) => /⚽️|Ipswich Town/i.test(String(s || ''));
+  const isReminder = (s) => /MC\s*⏰|deadline|Room release|cancel by/i.test(String(s || ''));
+  const reminderExempt = String(ruleMap.deadline_reminder_window_exempt) === 'true';
   for (let i = 0; i < commits.length; i += 1) {
     for (let j = i + 1; j < commits.length; j += 1) {
       const a = commits[i];
@@ -77,8 +82,20 @@ function validateLiveableDiary({
       if (!a.isMc && !b.isMc) continue;
       const aFix = isFixtureFlank(a.summary);
       const bFix = isFixtureFlank(b.summary);
+      const aTrav = isTravel(a.summary);
+      const bTrav = isTravel(b.summary);
       if (aFix && bFix) continue;
       if ((aFix && !b.isMc) || (bFix && !a.isMc)) continue;
+      // Travel × fixture flank / raw Ipswich — allowed
+      if ((aTrav && (bFix || isIpswich(b.summary))) || (bTrav && (aFix || isIpswich(a.summary)))) {
+        continue;
+      }
+      // Travel × existing non-MC (Cleaner etc.) — travel stays anchored
+      if ((aTrav && !b.isMc) || (bTrav && !a.isMc)) continue;
+      // Hotel reminders may sit over teaching when window-exempt
+      if (reminderExempt && ((isReminder(a.summary) && !b.isMc) || (isReminder(b.summary) && !a.isMc))) {
+        continue;
+      }
       violations.push({
         rule: 'overlap',
         day: a.day,
@@ -89,10 +106,14 @@ function validateLiveableDiary({
   }
 
   // —— Duplicate MC (same title + start within 2 min on primary) ——
+  // Decompress: same title + London day = duplicate even if times drift.
   const bySlot = new Map();
   for (const c of commits) {
     if (!c.isMc || c.allDay || c.cal !== 'primary') continue;
-    const key = `${c.summary}|${Math.round(c.startMs / 120000)}`;
+    const decomp = /MC\s*⏳/i.test(c.summary) && /Decompress/i.test(c.summary);
+    const key = decomp
+      ? `day:${c.summary}|${c.day}`
+      : `${c.summary}|${Math.round(c.startMs / 120000)}`;
     if (!bySlot.has(key)) bySlot.set(key, []);
     bySlot.get(key).push(c);
   }

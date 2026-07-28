@@ -40,11 +40,19 @@ function classify(v) {
     const b = String(v.b?.summary || '');
     const aMc = isMcTitle(a);
     const bMc = isMcTitle(b);
+    const isFix = (t) => /MC\s*⚽/u.test(t) || t.includes('MC ⚽');
+    const isTrav = (t) => /MC\s*🚗|Travel out|Travel back/i.test(t);
+    const isIps = (t) => /⚽️|Ipswich Town/i.test(t);
     const real = (t) => !isMcTitle(t) && !/MC ⏳|MC 🚗|MC ⚽|REST|AWAY/i.test(t);
+    // Travel anchored to workshop — fixtures must not budge it
+    if ((isTrav(a) && (isFix(b) || isIps(b))) || (isTrav(b) && (isFix(a) || isIps(a)))) {
+      return { class: 'EXCEPTION', reason: 'Travel × fixture allowed — workshop start/end wins' };
+    }
+    if ((isTrav(a) && !bMc) || (isTrav(b) && !aMc)) {
+      return { class: 'EXCEPTION', reason: 'Travel × existing non-MC — travel stays workshop-anchored' };
+    }
     if ((aMc && real(b)) || (bMc && real(a))) {
-      const aFix = /MC\s*⚽/u.test(a) || a.includes('MC ⚽');
-      const bFix = /MC\s*⚽/u.test(b) || b.includes('MC ⚽');
-      if ((aFix && !bMc) || (bFix && !aMc)) {
+      if ((isFix(a) && !bMc) || (isFix(b) && !aMc)) {
         return { class: 'EXCEPTION', reason: 'Fixture buffer alongside existing non-MC — allowed' };
       }
       return { class: 'BUG', reason: 'MC placed over real/teaching/personal commitment' };
