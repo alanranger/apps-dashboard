@@ -15,7 +15,7 @@ function overlaps(a0, a1, b0, b1) {
 
 function isMcTitle(summary) {
   const t = String(summary || '');
-  return t.includes('MC ') || t.includes('MC-') || /^MC\b/.test(t);
+  return t.includes('MC ') || t.includes('MC-') || /^MC\b/u.test(t);
 }
 
 function eventBounds(e) {
@@ -48,7 +48,7 @@ function countsAsCommitment(e) {
  * Validate live Google events (+ optional travel DB) for a liveable diary.
  */
 function validateLiveableDiary({
-  events = [], travelBlocks = [], ruleMap = {}, restDb = [],
+  events = [], travelBlocks = [], ruleMap = {}, restDb = [], limit = 100,
 } = {}) {
   const violations = [];
   const commits = (events || []).filter(countsAsCommitment).map((e) => {
@@ -62,15 +62,23 @@ function validateLiveableDiary({
     };
   }).filter((c) => c.startMs != null);
 
-  // —— Overlaps (any two opaque commitments) ——
+  // —— Overlaps (MC commitment vs anything opaque, or two MC) ——
+  // Personal×personal (Cleaner×Haircut) is not an MC engine fault — skip.
+  // Fixture flanks (MC ⚽) always stay; overlap with existing non-MC is OK.
+  // Other MC work inside a fixture flank window IS a fault.
+  const isFixtureFlank = (s) => /^MC\s*⚽/u.test(String(s || '')) || String(s || '').includes('MC ⚽');
   for (let i = 0; i < commits.length; i += 1) {
     for (let j = i + 1; j < commits.length; j += 1) {
       const a = commits[i];
       const b = commits[j];
       if (a.allDay || b.allDay) continue;
       if (!overlaps(a.startMs, a.endMs, b.startMs, b.endMs)) continue;
-      // Identical id race
       if (a.id === b.id) continue;
+      if (!a.isMc && !b.isMc) continue;
+      const aFix = isFixtureFlank(a.summary);
+      const bFix = isFixtureFlank(b.summary);
+      if (aFix && bFix) continue;
+      if ((aFix && !b.isMc) || (bFix && !a.isMc)) continue;
       violations.push({
         rule: 'overlap',
         day: a.day,
@@ -113,6 +121,11 @@ function validateLiveableDiary({
     if (!c.isMc || !c.day || c.allDay) continue;
     // Travel/rest banners belong on away/rest edge days — not violations.
     if (/REST|AWAY|⚽|Travel |Prep —|Decompress/i.test(c.summary)) continue;
+    // Hotel/deadline reminders may legally sit on blocked days (rule exempt).
+    if (String(ruleMap.deadline_reminder_window_exempt) === 'true'
+      && /MC ⏰|deadline|Room release|cancel by/i.test(c.summary)) {
+      continue;
+    }
     if (dayBlockedForHabits(c.day, blocked)) {
       violations.push({
         rule: 'blocked_day',
@@ -182,7 +195,7 @@ function validateLiveableDiary({
     ok: violations.length === 0,
     violation_count: violations.length,
     by_rule: byRule,
-    violations: violations.slice(0, 100),
+    violations: limit == null ? violations : violations.slice(0, limit),
     commitment_count: commits.length,
     busy_interval_count: busy.length,
   };

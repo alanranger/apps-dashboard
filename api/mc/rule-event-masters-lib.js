@@ -16,7 +16,7 @@ const {
 } = require('./gcal-write-lib');
 const { restDayGcalTitle, awaySpanGcalTitle } = require('./gcal-title-lib');
 const { flankWindows, matchLabel } = require('./fixture-coverage-lib');
-const { ruleMapFromRows } = require('./scheduling-rules-lib');
+const { ruleMapFromRows, isoToLondonDate } = require('./scheduling-rules-lib');
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -288,13 +288,17 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   };
 }
 
-async function syncFixtureBuffers(sb, ruleMap, { writeGcal = true } = {}) {
+async function syncFixtureBuffers(sb, ruleMap, {
+  writeGcal = true, events = [],
+} = {}) {
   const prefix = ruleMap.title_prefix_fixture || 'MC ⚽';
   const rows = await sb('fixture_blocks?status=eq.active&select=*') || [];
   const linked = [];
   const created = [];
   const failed = [];
   const already = [];
+  // Always paint 1h pre/post around every fixture (teaching day does not cancel).
+  // Liveable/placer: flank vs existing non-MC is OK; other MC must not land in window.
 
   for (const row of rows) {
     const label = matchLabel({ summary: row.title });
@@ -302,7 +306,6 @@ async function syncFixtureBuffers(sb, ruleMap, { writeGcal = true } = {}) {
     const afterTitle = `${prefix} After: ${label}`;
     const bufferMin = Number(row.buffer_min || 60);
 
-    // Derive flank windows from stored fixture times
     const fake = {
       start: { dateTime: row.fixture_start },
       end: { dateTime: row.fixture_end },
@@ -315,7 +318,6 @@ async function syncFixtureBuffers(sb, ruleMap, { writeGcal = true } = {}) {
     }
 
     if (row.before_event_id && row.after_event_id) {
-      // Confirm live; if missing, recreate
       let beforeOk = false;
       let afterOk = false;
       try {
@@ -401,7 +403,10 @@ async function runRuleEventMasterSync(sb, opts = {}) {
 
   const rest = await syncRestDays(sb, gcal.events || [], ruleMap, { writeGcal });
   const away = await syncAwayDays(sb, travel || [], gcal.events || [], { writeGcal });
-  const fixtures = await syncFixtureBuffers(sb, ruleMap, { writeGcal });
+  const fixtures = await syncFixtureBuffers(sb, ruleMap, {
+    writeGcal,
+    events: gcal.events || [],
+  });
 
   const { syncGapBuffers } = require('./buffer-gap-lib');
   const gapBlocks = (gcal.events || []).map((e) => ({

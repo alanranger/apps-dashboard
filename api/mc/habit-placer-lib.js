@@ -377,9 +377,16 @@ function teachingDaySpansFromEvents(events, ruleMap = {}) {
       continue;
     }
     const startRaw = e.start?.dateTime || e.start;
+    const endRaw = e.end?.dateTime || e.end || startRaw;
     if (!startRaw || !String(startRaw).includes('T')) continue;
-    const day = isoToLondonDate(String(startRaw));
-    if (day) byDay.set(day, e.summary || 'teaching');
+    let d = isoToLondonDate(String(startRaw));
+    const last = isoToLondonDate(String(endRaw)) || d;
+    if (!d) continue;
+    while (d && d <= last) {
+      byDay.set(d, e.summary || 'teaching');
+      if (d === last) break;
+      d = addDays(d, 1);
+    }
   }
   return [...byDay.entries()].map(([day, summary]) => ({
     startDay: day,
@@ -393,17 +400,21 @@ function teachingDaySpansFromEvents(events, ruleMap = {}) {
 }
 
 /**
- * Busy intervals from mixed events. Strip MC (incl. MC ⚽).
- * Ipswich force-busy expanded by fixture_buffer_min.
+ * Busy intervals from mixed events.
+ * Skip MC admin/habit titles — except fixture markers (MC ⚽), which are HARD-BUSY
+ * (Alan 2026-07-27: Ipswich fixtures block like workshops/tuition).
+ * Ipswich calendar events always hard-busy + fixture_buffer_min expansion.
  */
 function buildBusyIntervals(events, ruleMap = {}) {
   const buffer = Number(ruleMap.fixture_buffer_min || 60);
   const out = [];
   for (const e of events || []) {
-    if (isMcBlock(e) || isFixtureBlock(e, ruleMap)) continue;
     const calId = e._calendarId || e.calendarId;
     const force = isForceBusyCalendar(calId);
-    if (e.transparency === 'transparent' && !force) continue;
+    const fixtureMc = isFixtureBlock(e, ruleMap);
+    // MC admin/habits out of busy; fixture flanks stay in (hard-busy).
+    if (isMcBlock(e) && !fixtureMc) continue;
+    if (e.transparency === 'transparent' && !force && !fixtureMc) continue;
 
     if (e.start?.date && !e.start?.dateTime) {
       let d = e.start.date;
@@ -424,7 +435,7 @@ function buildBusyIntervals(events, ruleMap = {}) {
     if (!startRaw || !String(startRaw).includes('T')) continue;
     let startMs = Date.parse(startRaw);
     let endMs = Date.parse(endRaw || startRaw);
-    if (force) {
+    if (force || fixtureMc) {
       startMs -= buffer * 60000;
       endMs += buffer * 60000;
     }

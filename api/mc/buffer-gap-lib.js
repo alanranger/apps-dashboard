@@ -165,18 +165,21 @@ function timedClose(aIso, bIso, tolMin = 2) {
   return Math.abs(Date.parse(aIso) - Date.parse(bIso)) <= tolMin * 60000;
 }
 
-/** Delete other primary timed clones for the same decompress slot. */
+/** Delete other primary timed clones for the same decompress slot / same day. */
 async function purgeTimedSiblings(events, {
-  summary, startIso, endIso, keepId,
+  summary, startIso, endIso, keepId, day,
 }) {
   let purged = 0;
+  const dayKey = day || (startIso ? isoToLondonDate(startIso) : null);
   for (const e of events || []) {
     if (e._calendarId && e._calendarId !== 'primary') continue;
     if (!e.start?.dateTime || e.id === keepId) continue;
     if (String(e.summary || '') !== summary) continue;
     const liveStart = e.start.dateTime;
     const liveEnd = e.end?.dateTime || e.start.dateTime;
-    if (!timedClose(liveStart, startIso) || !timedClose(liveEnd, endIso)) continue;
+    const sameSlot = timedClose(liveStart, startIso) && timedClose(liveEnd, endIso);
+    const sameDay = dayKey && isoToLondonDate(liveStart) === dayKey;
+    if (!sameSlot && !sameDay) continue;
     try {
       await deletePrimaryEvent(e.id);
       purged += 1;
@@ -302,7 +305,7 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
       }
       body.calendar_event_id = eventId;
       purged += await purgeTimedSiblings(events, {
-        summary: title, startIso, endIso, keepId: eventId,
+        summary: title, startIso, endIso, keepId: eventId, day: p.day,
       });
       if (row) {
         await sb(`gap_buffer_blocks?id=eq.${row.id}`, { method: 'PATCH', prefer: 'return=minimal', body });

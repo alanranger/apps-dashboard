@@ -132,6 +132,14 @@ function londonDay(iso) {
   }
 }
 
+/** True if event occupies this London calendar day (multi-day timed inclusive). */
+function eventOnLondonDay(bounds, day) {
+  if (!bounds || !day) return false;
+  const startDay = londonDay(bounds.startIso);
+  const endDay = londonDay(bounds.endIso);
+  return day >= startDay && day <= endDay;
+}
+
 /** Latest end (ms) of another teaching event on a London calendar day; null if free. */
 function otherTeachingEndOnDay(day, teachingEvents, excludeEventId) {
   let maxEnd = null;
@@ -139,19 +147,16 @@ function otherTeachingEndOnDay(day, teachingEvents, excludeEventId) {
     if (!w || w.id === excludeEventId) continue;
     if (!isWorkshopCalendarEvent(w)) continue;
     const b = eventBounds(w);
-    if (!b || londonDay(b.startIso) !== day) continue;
+    if (!b || !eventOnLondonDay(b, day)) continue;
     if (maxEnd == null || b.endMs > maxEnd) maxEnd = b.endMs;
   }
   return maxEnd;
 }
 
 /**
- * Desired out/back around live workshop bounds.
- * Day-trip: arrive_before_start_min before start, leave at end.
- * Residential: arrive residential_arrive_hm (default 16:00) on the day before
- * first workshop day; leave for home at workshop end + drive.
- * Never place residential travel_out on a day that already has another workshop —
- * leave after that local teaching ends, or walk back to a free day.
+ * Guest/attending residential (e.g. David Ward on Primary): day-before arrive.
+ * Own Workshops-calendar residential: travel out on first day, arrive at start;
+ * travel back leaves at end on last day.
  */
 function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opts = {}) {
   const arrive = Math.max(0, Number(arriveMin) || 30);
@@ -161,6 +166,7 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
   const dayTrip = outDay === backDay;
   const teaching = opts.teachingEvents || [];
   const excludeId = opts.excludeEventId || null;
+  const guest = !!opts.guestOrAttending;
 
   if (dayTrip) {
     const outEndMs = bounds.startMs - arrive * 60000;
@@ -184,6 +190,32 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
     ends_at: new Date(backEndMs).toISOString(),
   };
 
+  // Alan's own residential workshop: first-day travel out, arrive at workshop start.
+  if (!guest) {
+    let outEndMs = bounds.startMs;
+    let outStartMs = outEndMs - drive * 60000;
+    let deferred = false;
+    const localEnd = otherTeachingEndOnDay(firstDay, teaching, excludeId);
+    if (localEnd != null && localEnd > outStartMs
+      && localEnd + Math.max(30, arrive) * 60000 + drive * 60000 <= bounds.startMs) {
+      outStartMs = localEnd + Math.max(30, arrive) * 60000;
+      outEndMs = outStartMs + drive * 60000;
+      deferred = true;
+    }
+    return {
+      out: {
+        starts_at: new Date(outStartMs).toISOString(),
+        ends_at: new Date(outEndMs).toISOString(),
+      },
+      back,
+      workshop_start: bounds.startIso,
+      mode: 'residential_first_day_arrive',
+      travel_arrive_day: firstDay,
+      deferred_for_local_teaching: deferred,
+    };
+  }
+
+  // Guest/attending (David Ward etc.): day-before afternoon arrive.
   const idealDay = addDays(firstDay, -1);
   const localEndIdeal = otherTeachingEndOnDay(idealDay, teaching, excludeId);
   if (localEndIdeal == null) {
@@ -196,13 +228,12 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
       },
       back,
       workshop_start: bounds.startIso,
-      mode: 'residential_arrive',
+      mode: 'residential_guest_day_before',
       arrive_hm: arriveHm,
       travel_arrive_day: idealDay,
     };
   }
 
-  // Same day already has teaching elsewhere — leave after it ends (overnight drive).
   const leaveMs = localEndIdeal + Math.max(30, arrive) * 60000;
   const arriveMs = leaveMs + drive * 60000;
   if (arriveMs <= bounds.startMs - arrive * 60000) {
@@ -213,14 +244,13 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
       },
       back,
       workshop_start: bounds.startIso,
-      mode: 'residential_after_local_teaching',
+      mode: 'residential_guest_after_local_teaching',
       arrive_hm: arriveHm,
       travel_arrive_day: idealDay,
       deferred_for_local_teaching: true,
     };
   }
 
-  // Walk back for a free afternoon arrive day (max 4 days before workshop).
   for (let step = 2; step <= 4; step += 1) {
     const day = addDays(firstDay, -step);
     if (otherTeachingEndOnDay(day, teaching, excludeId) != null) continue;
@@ -233,14 +263,13 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
       },
       back,
       workshop_start: bounds.startIso,
-      mode: 'residential_arrive_walkback',
+      mode: 'residential_guest_walkback',
       arrive_hm: arriveHm,
       travel_arrive_day: day,
       deferred_for_local_teaching: true,
     };
   }
 
-  // Last resort: still leave after local teaching even if tight vs residential start.
   return {
     out: {
       starts_at: new Date(leaveMs).toISOString(),
@@ -248,15 +277,59 @@ function desiredTravelTimes(bounds, driveMin, arriveMin, pair, ruleMap = {}, opt
     },
     back,
     workshop_start: bounds.startIso,
-    mode: 'residential_after_local_teaching_tight',
+    mode: 'residential_guest_after_local_teaching_tight',
     arrive_hm: arriveHm,
     travel_arrive_day: idealDay,
     deferred_for_local_teaching: true,
   };
 }
 
+function intervalHitsBusy(startMs, endMs, busy) {
+  return (busy || []).some((b) => startMs < b.endMs && b.startMs < endMs);
+}
+
 function isoClose(a, b, tolMin = 2) {
   return Math.abs(Date.parse(a) - Date.parse(b)) <= tolMin * 60000;
+}
+
+/** Slide a travel interval later until clear of busy (30-min steps), or null. */
+function slideOffBusy(startMs, endMs, busy, maxSteps = 48) {
+  const dur = endMs - startMs;
+  let s = startMs;
+  let e = endMs;
+  for (let i = 0; i <= maxSteps; i += 1) {
+    if (!intervalHitsBusy(s, e, busy)) {
+      return { startMs: s, endMs: e, shifted: i > 0 };
+    }
+    s += 30 * 60000;
+    e = s + dur;
+  }
+  return null;
+}
+
+function applyBusyAvoidance(desired, busy) {
+  if (!busy?.length || !desired?.out) return desired;
+  const outS = Date.parse(desired.out.starts_at);
+  const outE = Date.parse(desired.out.ends_at);
+  const backS = Date.parse(desired.back.starts_at);
+  const backE = Date.parse(desired.back.ends_at);
+  const outSlide = slideOffBusy(outS, outE, busy);
+  const backSlide = slideOffBusy(backS, backE, busy);
+  if (!outSlide || !backSlide) return desired;
+  if (!outSlide.shifted && !backSlide.shifted) return desired;
+  return {
+    ...desired,
+    out: {
+      starts_at: new Date(outSlide.startMs).toISOString(),
+      ends_at: new Date(outSlide.endMs).toISOString(),
+    },
+    back: {
+      starts_at: new Date(backSlide.startMs).toISOString(),
+      ends_at: new Date(backSlide.endMs).toISOString(),
+    },
+    mode: `${desired.mode}_busy_avoid`,
+    deferred_for_busy: true,
+  };
 }
 
 /**
@@ -287,6 +360,8 @@ function hasIntermediateTravelLegs(pair, blocks) {
 function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const arriveMin = Number(ruleMap.arrive_before_start_min || 30);
   const workshops = (gcalEvents || []).filter(isTravelWorkshopEvent);
+  const { buildBusyIntervals } = require('./habit-placer-lib');
+  const busy = buildBusyIntervals(gcalEvents || [], ruleMap);
   const pairs = pairTravelBlocks(blocks);
   const changes = [];
   const linked = [];
@@ -316,10 +391,19 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
     }
     const rowKey = `gcal:${match.event.id}`;
     const drive = driveMinutesFor(pair, venues);
-    const desired = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap, {
+    const titleBlob = `${match.event.summary || ''} ${pair.out.workshop_title || ''}`;
+    // Own Workshops calendar → first-day arrive. Guest/attending (e.g. David Ward on
+    // Primary) → day-before arrive. Calendar + "attending" title — not date patches.
+    const guestOrAttending = !isWorkshopCalendarEvent(match.event)
+      || /attending/i.test(titleBlob);
+    const desiredRaw = desiredTravelTimes(match.bounds, drive, arriveMin, pair, ruleMap, {
       teachingEvents: workshops,
       excludeEventId: match.event.id,
+      guestOrAttending,
     });
+    // Ignore other travel titles when sliding (own trip legs).
+    const busySansTravel = busy.filter((b) => !/Travel /i.test(b.summary || ''));
+    const desired = applyBusyAvoidance(desiredRaw, busySansTravel);
     const timesOut = !isoClose(pair.out.starts_at, desired.out.starts_at)
       || !isoClose(pair.out.ends_at, desired.out.ends_at);
     const timesBack = !isoClose(pair.back.starts_at, desired.back.starts_at)

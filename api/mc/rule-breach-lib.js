@@ -26,14 +26,14 @@ function isMcBlock(block) {
 }
 
 /**
- * Informational Ipswich fixture block (MC ⚽). NOT binding: excluded from every
- * breach check (cap, window, gap, overlap, residential). It must never displace,
- * flag or cost a roll to a class or MC admin — Alan just wants to see the match.
+ * Painted MC fixture flank/marker on Primary (MC ⚽ …).
+ * Does NOT match raw Ipswich calendar rows that merely contain ⚽.
  */
 function isFixtureBlock(block, ruleMap = {}) {
   const t = String(block.summary || block.title || '');
   const prefix = ruleMap.title_prefix_fixture || 'MC ⚽';
-  return t.includes(prefix) || t.includes('⚽');
+  if (t.includes(prefix)) return true;
+  return /^MC\s*⚽/u.test(t);
 }
 
 /** Day has a real commitment matching window_overrun_blocked_by (justifies overrun). */
@@ -360,23 +360,36 @@ function buildRuleBreachProposals(blocks, ruleMap, pinnedIds, injectedHolidays, 
 
 /**
  * Split a mixed calendar dump into MC blocks vs busy-map inputs vs fixtures.
- * MC never enters busy. Ipswich (force-busy) events are routed to `fixtures`
- * (informational) and NEVER into the busy map — a fixture must not block or flag
- * a class or MC admin (Alan's 2026-07-25 ruling). MC ⚽ blocks are dropped from
- * the busy map for the same reason.
+ * MC admin never enters busy. Ipswich calendar + MC ⚽ flanks ARE hard-busy
+ * (Alan 2026-07-27) — also listed in `fixtures` for diary display.
  */
 function splitMcAndBusy(events, ruleMap = {}) {
   const mc = [];
   const busy = [];
   const fixtures = [];
+  const buffer = Number(ruleMap.fixture_buffer_min || 60);
   for (const e of events || []) {
     const forceBusy = isForceBusyCalendar(e._calendarId);
-    if (forceBusy) {
+    const fixtureMc = isFixtureBlock(e, ruleMap);
+    if (forceBusy || fixtureMc) {
       const start = e.start?.dateTime || e.start;
       const end = e.end?.dateTime || e.end;
       if (start && String(start).includes('T')) {
         fixtures.push({
           id: e.id, summary: e.summary, start, end, _calendarId: e._calendarId,
+        });
+        // Hard-busy for placement / liveable checks
+        let startMs = Date.parse(start);
+        let endMs = Date.parse(end || start);
+        startMs -= buffer * 60000;
+        endMs += buffer * 60000;
+        busy.push({
+          id: e.id,
+          summary: e.summary,
+          start: new Date(startMs).toISOString(),
+          end: new Date(endMs).toISOString(),
+          _calendarId: e._calendarId,
+          hard_fixture: true,
         });
       }
       continue;

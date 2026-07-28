@@ -37,20 +37,22 @@ async function clearPushLock() {
 }
 
 async function purgeDuplicateDecompress(events) {
+  const { isoToLondonDate } = require('../api/mc/scheduling-rules-lib');
   const groups = new Map();
   for (const e of events || []) {
     if ((e._calendarId || 'primary') !== 'primary') continue;
     if (!e.start?.dateTime) continue;
     const t = String(e.summary || '');
     if (!t.includes('MC ⏳') || !/Decompress/i.test(t)) continue;
-    const key = `${t}|${e.start.dateTime}|${e.end?.dateTime || ''}`;
+    // Same title + London day = one decompress only (not exact timestamp).
+    const key = `${t}|${isoToLondonDate(e.start.dateTime)}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(e);
   }
   let deleted = 0;
   for (const [, group] of groups) {
     if (group.length < 2) continue;
-    // Keep first, delete rest
+    group.sort((a, b) => Date.parse(a.start.dateTime) - Date.parse(b.start.dateTime));
     for (const e of group.slice(1)) {
       try {
         await deletePrimaryEvent(e.id);
