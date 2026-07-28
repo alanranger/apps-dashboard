@@ -307,27 +307,31 @@ function slideOffBusy(startMs, endMs, busy, maxSteps = 48) {
   return null;
 }
 
+/**
+ * Travel back is anchored to workshop end — never slide it.
+ * Fixture / Ipswich busy must NOT push travel later (buffers coexist with travel).
+ * Travel out may still slide only for non-fixture busy (e.g. another teaching block).
+ */
+function isFixtureBusySummary(summary) {
+  const t = String(summary || '');
+  return /MC\s*⚽|⚽️|Ipswich Town|hard_fixture/i.test(t);
+}
+
 function applyBusyAvoidance(desired, busy) {
   if (!busy?.length || !desired?.out) return desired;
+  const busyForOut = (busy || []).filter((b) => !isFixtureBusySummary(b.summary));
   const outS = Date.parse(desired.out.starts_at);
   const outE = Date.parse(desired.out.ends_at);
-  const backS = Date.parse(desired.back.starts_at);
-  const backE = Date.parse(desired.back.ends_at);
-  const outSlide = slideOffBusy(outS, outE, busy);
-  const backSlide = slideOffBusy(backS, backE, busy);
-  if (!outSlide || !backSlide) return desired;
-  if (!outSlide.shifted && !backSlide.shifted) return desired;
+  const outSlide = slideOffBusy(outS, outE, busyForOut);
+  if (!outSlide || !outSlide.shifted) return desired;
   return {
     ...desired,
     out: {
       starts_at: new Date(outSlide.startMs).toISOString(),
       ends_at: new Date(outSlide.endMs).toISOString(),
     },
-    back: {
-      starts_at: new Date(backSlide.startMs).toISOString(),
-      ends_at: new Date(backSlide.endMs).toISOString(),
-    },
-    mode: `${desired.mode}_busy_avoid`,
+    // back unchanged — leave at workshop end
+    mode: `${desired.mode}_busy_avoid_out`,
     deferred_for_busy: true,
   };
 }
