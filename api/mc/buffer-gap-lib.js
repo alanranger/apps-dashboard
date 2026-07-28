@@ -364,10 +364,68 @@ async function syncGapBuffers(sb, blocks, ruleMap, {
   };
 }
 
+/**
+ * When a parent task/habit is completed, skipped, or dismissed: retire its
+ * attached decompress strip(s) and queue GCal deletes.
+ */
+async function retireGapBuffersAfter(sb, upsertPushRow, {
+  afterEventId = null,
+  labelHints = [],
+} = {}) {
+  const found = new Map();
+  if (afterEventId) {
+    const rows = await sb(
+      `gap_buffer_blocks?after_event_id=eq.${encodeURIComponent(afterEventId)}&select=*`,
+    ) || [];
+    for (const r of rows) found.set(r.id, r);
+  }
+  for (const hint of (labelHints || []).filter(Boolean).slice(0, 5)) {
+    const safe = String(hint).replace(/[%*,.()]/g, ' ').trim();
+    if (safe.length < 4) continue;
+    const rows = await sb(
+      `gap_buffer_blocks?status=eq.active&after_label=ilike.*${encodeURIComponent(safe)}*&select=*`,
+    ) || [];
+    for (const r of rows) found.set(r.id, r);
+  }
+  let queued = 0;
+  let retired = 0;
+  for (const row of found.values()) {
+    if (row.calendar_event_id) {
+      await upsertPushRow(sb, {
+        related_id: `gcal:gap_buffer:${row.id}`,
+        entity_type: 'habit',
+        change_kind: 'skip',
+        summary: `Retire decompress after ${row.after_label || row.after_event_id}`,
+        proposed_action: `Delete Primary decompress ${row.calendar_event_id}`,
+        payload: {
+          gap_buffer_id: row.id,
+          calendar_event_id: row.calendar_event_id,
+          action: 'delete_event',
+          title: gapBufferTitle(row.after_label),
+        },
+      });
+      queued += 1;
+    }
+    if (row.status !== 'retired' || row.calendar_event_id) {
+      await sb(`gap_buffer_blocks?id=eq.${row.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          status: 'retired',
+          calendar_event_id: null,
+          updated_at: new Date().toISOString(),
+        },
+      });
+      retired += 1;
+    }
+  }
+  return { queued, retired, ids: [...found.keys()] };
+}
+
 module.exports = {
   workPairs,
   collectEnforcedGapProposals,
   syncGapBuffers,
   gapBufferTitle,
   concreteSlideAction,
+  retireGapBuffersAfter,
 };

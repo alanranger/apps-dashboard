@@ -11,7 +11,7 @@ const {
   tasksToBlocks, travelToBlocks, busyToBlocks,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, awayBusySegments,
-  indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks,
+  indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks, hotelDeadlineBlocks,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     const timeMin = `${from}T00:00:00.000Z`;
     const timeMax = `${addDaysYmd(to, 1)}T00:00:00.000Z`;
 
-    const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows, flushPlan] = await Promise.all([
+    const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows, flushPlan, hotels] = await Promise.all([
       sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,last_activity_at,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
       sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
@@ -51,9 +51,14 @@ module.exports = async function handler(req, res) {
       sb(`fixture_blocks?select=id,fixture_event_id,title,fixture_start,fixture_end,block_start,block_end,buffer_min,status&status=eq.active&fixture_start=gte.${timeMin}&fixture_start=lt.${timeMax}&order=fixture_start.asc`),
       sb(`bank_holidays?select=holiday_date,title&holiday_date=gte.${from}&holiday_date=lte.${to}`),
       buildFlushPlan(sb, { includeBacklog: false }).catch(() => ({ write_count: 0, skipped_count: 0 })),
+      sb('workshop_hotels?select=id,hotel,workshop_name,free_cancel_until,reminder_event_id,reminder_placed,status&reminder_event_id=not.is.null&status=eq.active'),
     ]);
 
     const habitMap = new Map((habits || []).map((h) => [h.id, h]));
+    const hotelByEventId = new Map();
+    for (const h of hotels || []) {
+      if (h.reminder_event_id) hotelByEventId.set(h.reminder_event_id, h);
+    }
     const holidays = holidayMapFromRows(bhRows);
     let busyBlocks = [];
     let dayBanners = [];
@@ -65,6 +70,7 @@ module.exports = async function handler(req, res) {
       ...(tasks || []).map((t) => t.calendar_event_id).filter(Boolean),
       ...(logs || []).map((l) => l.calendar_event_id).filter(Boolean),
       ...(travel || []).map((t) => t.calendar_event_id).filter(Boolean),
+      ...[...hotelByEventId.keys()],
     ]);
     if (gcalConfigured()) {
       const { events, assessment } = await fetchHorizonEvents(timeMin, timeMax);
@@ -95,8 +101,12 @@ module.exports = async function handler(req, res) {
       ...fixtureFlanksToBlocks(fixtureRows),
     ];
     const { blocks: baselined, drift_count: driftCount } = applyGcalBaselineTimes(dbBlocks, eventById);
+    const deadlines = hotelDeadlineBlocks(mcEvents, hotelByEventId);
+    for (const d of deadlines) {
+      if (d.calendar_event_id) tiedIds.add(d.calendar_event_id);
+    }
     const orphans = untiedMcBlocks(mcEvents, tiedIds);
-    const blocks = insertDecompressStrips([...baselined, ...orphans], ruleMap);
+    const blocks = insertDecompressStrips([...baselined, ...deadlines, ...orphans], ruleMap);
 
     const awayDays = {};
     for (const span of awaySpans) {

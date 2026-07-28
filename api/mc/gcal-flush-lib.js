@@ -71,17 +71,70 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
   }
 
   if (kind === 'complete') {
-    if (!evt) return { skip: true, reason: 'complete_without_event_id', row };
+    // Done items stay on the day at completion time (match Mission Control diary).
+    // Only delete when explicitly requested (e.g. skip-style cleanup).
+    if (p.action === 'delete_event' && !p.scheduled_start) {
+      if (!evt) return { skip: true, reason: 'complete_without_event_id', row };
+      return {
+        source: 'gcal_push_queue',
+        source_id: row.id,
+        entity_type: row.entity_type,
+        action: 'delete',
+        event_id: evt,
+        summary: title || row.summary || 'MC complete',
+        from: null,
+        to: null,
+        note: 'complete → delete (explicit)',
+      };
+    }
+    const startIso = p.scheduled_start || p.new_start || null;
+    const endIso = p.scheduled_end || p.new_end || null;
+    if (!startIso || !endIso) {
+      if (!evt) return { skip: true, reason: 'complete_without_event_id', row };
+      return {
+        source: 'gcal_push_queue',
+        source_id: row.id,
+        entity_type: row.entity_type,
+        action: 'delete',
+        event_id: evt,
+        summary: title || row.summary || 'MC complete',
+        from: null,
+        to: null,
+        note: 'complete → delete (no times)',
+      };
+    }
+    const doneTitle = title || row.summary || 'MC complete';
+    if (evt) {
+      return {
+        source: 'gcal_push_queue',
+        source_id: row.id,
+        entity_type: row.entity_type,
+        action: 'patch',
+        event_id: evt,
+        summary: doneTitle,
+        from: null,
+        to: { start: startIso, end: endIso },
+        patch: { startIso, endIso, summary: doneTitle },
+        task_id: p.task_id || null,
+        display_id: p.display_id || null,
+        habit_id: p.habit_id || null,
+        note: 'complete → move to completion slot',
+      };
+    }
     return {
       source: 'gcal_push_queue',
       source_id: row.id,
       entity_type: row.entity_type,
-      action: 'delete',
-      event_id: evt,
-      summary: title || row.summary || 'MC complete',
+      action: 'insert',
+      event_id: null,
+      summary: doneTitle,
       from: null,
-      to: null,
-      note: 'complete → delete calendar block',
+      to: { start: startIso, end: endIso },
+      insert: { summary: doneTitle, startIso, endIso },
+      task_id: p.task_id || null,
+      display_id: p.display_id || null,
+      habit_id: p.habit_id || null,
+      note: 'complete → create at completion slot',
     };
   }
 

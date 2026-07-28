@@ -13,6 +13,7 @@ const {
 } = require('./gcal-push-lib');
 const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
 const { autoSyncIfAllowed } = require('./gcal-auto-sync-lib');
+const { retireGapBuffersAfter } = require('./buffer-gap-lib');
 
 async function respondAfterChange(res, payload, actor) {
   let calendar_sync = { skipped: true, reason: 'not_attempted' };
@@ -331,11 +332,81 @@ module.exports = async function handler(req, res) {
     if (action === 'complete') {
       const today = isoToLondonDate(new Date().toISOString());
       const actualMin = body.actual_minutes != null ? Number(body.actual_minutes) : null;
+
+      // Hotel / room-release deadline reminders → move to completion time (like tasks).
+      if (body.hotel_id || body.kind === 'deadline') {
+        const hotelId = body.hotel_id || (String(body.task_id || '').startsWith('deadline:')
+          ? String(body.task_id).replace(/^deadline:/, '')
+          : null);
+        const evtId = body.calendar_event_id || null;
+        const completedAt = body.completed_at || new Date().toISOString();
+        const completedOn = isoToLondonDate(completedAt) || today;
+        const mins = Number.isFinite(actualMin) && actualMin > 0
+          ? Math.round(actualMin)
+          : 20;
+        const startMs = Date.parse(completedAt);
+        const scheduledStart = new Date(startMs).toISOString();
+        const scheduledEnd = new Date(startMs + mins * 60000).toISOString();
+        let title = 'Room release / hotel deadline';
+        if (hotelId) {
+          const hotel = (await sb(
+            `workshop_hotels?id=eq.${hotelId}&select=id,hotel,workshop_name,notes,reminder_event_id`,
+          ))?.[0];
+          if (!hotel) return json(res, 404, { error: 'hotel reminder not found' });
+          title = `MC ⏰ Room release — ${hotel.hotel || hotel.workshop_name || 'hotel'}`;
+          const noteLine = `done ${completedOn} via diary @ ${scheduledStart}`;
+          const notes = hotel.notes
+            ? `${hotel.notes}\n${noteLine}`
+            : noteLine;
+          await sb(`workshop_hotels?id=eq.${hotelId}`, {
+            method: 'PATCH', prefer: 'return=minimal',
+            body: {
+              reminder_event_id: null,
+              reminder_placed: false,
+              notes,
+              updated_at: new Date().toISOString(),
+            },
+          });
+        }
+        const liveEvt = evtId || null;
+        await retireGapBuffersAfter(sb, upsertPushRow, {
+          afterEventId: liveEvt,
+          labelHints: [title, 'Room release', 'Hartland'],
+        });
+        const related = `hotel_deadline:${hotelId || liveEvt || today}`;
+        await upsertPushRow(sb, {
+          related_id: related,
+          entity_type: 'other',
+          change_kind: 'complete',
+          summary: `Complete hotel deadline → ${completedOn}`,
+          proposed_action: `Move Primary event ${liveEvt || '(create)'} to ${scheduledStart}–${scheduledEnd}`,
+          payload: {
+            hotel_id: hotelId || null,
+            calendar_event_id: liveEvt,
+            title: `DONE · ${title}`,
+            completed_on: completedOn,
+            completed_at: completedAt,
+            actual_minutes: mins,
+            scheduled_start: scheduledStart,
+            scheduled_end: scheduledEnd,
+          },
+        });
+        return respondAfterChange(res, {
+          hotel_id: hotelId || null,
+          calendar_event_id: liveEvt,
+          completed: true,
+          completed_on: completedOn,
+          scheduled_start: scheduledStart,
+          scheduled_end: scheduledEnd,
+        }, actor);
+      }
+
       if (body.habit_id) {
         const habitId = body.habit_id;
         const scheduledDate = String(body.scheduled_date || body.completed_on || today).slice(0, 10);
         const ideal = String(body.ideal_date || scheduledDate).slice(0, 10);
-        const lastDone = ideal > scheduledDate ? ideal : scheduledDate;
+        const completedAt = body.completed_at || new Date().toISOString();
+        const completedOn = isoToLondonDate(completedAt) || today;
         const habit = (await sb(
           `recurring_tasks?id=eq.${habitId}&select=id,title,last_done,duration_min`,
         ))?.[0];
@@ -343,10 +414,13 @@ module.exports = async function handler(req, res) {
         const mins = Number.isFinite(actualMin) && actualMin > 0
           ? Math.round(actualMin)
           : Number(habit.duration_min || 60);
+        const startMs = Date.parse(completedAt);
+        const scheduledStart = new Date(startMs).toISOString();
+        const scheduledEnd = new Date(startMs + mins * 60000).toISOString();
         await sb(`recurring_tasks?id=eq.${habitId}`, {
           method: 'PATCH', prefer: 'return=minimal',
           body: {
-            last_done: lastDone,
+            last_done: completedOn,
             rolls_used: 0,
             updated_at: new Date().toISOString(),
           },
@@ -356,10 +430,12 @@ module.exports = async function handler(req, res) {
           + '&select=id&order=at.desc&limit=1',
         );
         const logBody = {
-          change: `completed ${lastDone}|actual=${mins}`,
+          change: `completed ${completedOn}|actual=${mins}|at=${scheduledStart}`,
           roll_reason: 'diary_complete',
           ideal_date: ideal,
+          // Keep occurrence key on original day; paint uses completion timestamp.
           scheduled_date: scheduledDate,
+          calendar_event_id: body.calendar_event_id || null,
         };
         if (existing?.[0]?.id) {
           await sb(`recurring_log?id=eq.${existing[0].id}`, {
@@ -372,39 +448,48 @@ module.exports = async function handler(req, res) {
               recurring_task_id: habitId,
               actor,
               ...logBody,
-              calendar_event_id: body.calendar_event_id || null,
               projection_key: `diary-complete:${habitId}:${ideal}`,
             },
           });
         }
         const related = relatedIdForHabit(habitId, ideal, body.calendar_event_id || null);
+        const habitEvtId = body.calendar_event_id || null;
+        await retireGapBuffersAfter(sb, upsertPushRow, {
+          afterEventId: habitEvtId,
+          labelHints: [habit.title],
+        });
         await upsertPushRow(sb, {
           related_id: related,
           entity_type: 'habit',
           change_kind: 'complete',
-          summary: `Complete habit ${habit.title} (${mins}m actual)`,
-          proposed_action: `Mark GCal event complete/shorten to ${mins}m if present; DB last_done=${lastDone}`,
+          summary: `Complete habit ${habit.title} (${mins}m actual) @ ${completedOn}`,
+          proposed_action: `Move GCal event ${habitEvtId || '(create)'} to ${scheduledStart}–${scheduledEnd}`,
           payload: {
             habit_id: habitId,
-            completed_on: lastDone,
+            title: habit.title,
+            completed_on: completedOn,
             ideal_date: ideal,
             scheduled_date: scheduledDate,
             actual_minutes: mins,
-            calendar_event_id: body.calendar_event_id || null,
+            scheduled_start: scheduledStart,
+            scheduled_end: scheduledEnd,
+            calendar_event_id: habitEvtId,
           },
         });
         await supersedeSiblingHabitRows(sb, {
           habitId,
           keepRelatedId: related,
-          calendarEventId: body.calendar_event_id || null,
+          calendarEventId: habitEvtId,
           idealDate: ideal,
           scheduledDate: scheduledDate,
           actor,
         });
         return respondAfterChange(res, {
           habit_id: habitId,
-          last_done: lastDone,
+          last_done: completedOn,
           actual_minutes: mins,
+          scheduled_start: scheduledStart,
+          scheduled_end: scheduledEnd,
         }, actor);
       }
       const completedAt = body.completed_at || new Date().toISOString();
@@ -420,6 +505,7 @@ module.exports = async function handler(req, res) {
           ? Math.round(actualMin)
           : Number(task.est_minutes || 30);
         const startMs = Date.parse(completedAt);
+        const evtId = task.calendar_event_id || body.calendar_event_id || null;
         const patch = {
           completed_on: completedOn,
           actual_minutes: mins,
@@ -429,23 +515,31 @@ module.exports = async function handler(req, res) {
           last_activity_at: new Date().toISOString(),
           scheduled_start: new Date(startMs).toISOString(),
           scheduled_end: new Date(startMs + mins * 60000).toISOString(),
+          // Keep link so Google can be patched to the completion slot.
+          calendar_event_id: evtId,
         };
         await sb(`tasks?id=eq.${task.id}`, { method: 'PATCH', prefer: 'return=minimal', body: patch });
         await logChange(task.id, actor, `completed ${completedOn} via diary at ${patch.scheduled_start}; actual ${mins}m`);
+        await retireGapBuffersAfter(sb, upsertPushRow, {
+          afterEventId: evtId,
+          labelHints: [`MC-${task.display_id}`, task.title],
+        });
         await upsertPushRow(sb, {
           related_id: relatedIdForTask(task.id),
           entity_type: 'task',
           change_kind: 'complete',
           summary: `Complete MC-${task.display_id} (${mins}m actual) @ ${completedOn}`,
-          proposed_action: `Move/complete GCal event ${task.calendar_event_id || '(none)'} for MC-${task.display_id} to ${patch.scheduled_start}–${patch.scheduled_end} (${mins}m)`,
+          proposed_action: `Move GCal event ${evtId || '(create)'} for MC-${task.display_id} to ${patch.scheduled_start}–${patch.scheduled_end}`,
           payload: {
             task_id: task.id,
             display_id: task.display_id,
+            title: task.title,
             completed_on: completedOn,
             completed_at: completedAt,
             actual_minutes: mins,
             scheduled_start: patch.scheduled_start,
             scheduled_end: patch.scheduled_end,
+            calendar_event_id: evtId,
           },
         });
         return respondAfterChange(res, {
@@ -456,6 +550,40 @@ module.exports = async function handler(req, res) {
           actual_minutes: mins,
         }, actor);
       }
+    }
+
+    if (action === 'skip' && (body.hotel_id || body.kind === 'deadline')) {
+      const today = isoToLondonDate(new Date().toISOString());
+      const hotelId = body.hotel_id || null;
+      const evtId = body.calendar_event_id || null;
+      if (hotelId) {
+        await sb(`workshop_hotels?id=eq.${hotelId}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: {
+            reminder_event_id: null,
+            reminder_placed: false,
+            updated_at: new Date().toISOString(),
+          },
+        });
+      }
+      const related = `hotel_deadline:${hotelId || evtId || today}`;
+      await upsertPushRow(sb, {
+        related_id: related,
+        entity_type: 'other',
+        change_kind: 'skip',
+        summary: `Skip hotel deadline reminder`,
+        proposed_action: `Delete Primary event ${evtId || '(none)'} for hotel deadline`,
+        payload: {
+          hotel_id: hotelId,
+          calendar_event_id: evtId,
+          skipped_on: today,
+        },
+      });
+      return respondAfterChange(res, {
+        hotel_id: hotelId,
+        calendar_event_id: evtId,
+        skipped: true,
+      }, actor);
     }
 
     if (action === 'skip' && body.habit_id) {
@@ -493,6 +621,11 @@ module.exports = async function handler(req, res) {
         });
       }
       const related = relatedIdForHabit(habitId, ideal, body.calendar_event_id || null);
+      const habitEvtId = body.calendar_event_id || null;
+      await retireGapBuffersAfter(sb, upsertPushRow, {
+        afterEventId: habitEvtId,
+        labelHints: [habit.title],
+      });
       await upsertPushRow(sb, {
         related_id: related,
         entity_type: 'habit',
@@ -503,13 +636,13 @@ module.exports = async function handler(req, res) {
           habit_id: habitId,
           ideal_date: ideal,
           scheduled_date: scheduledDate,
-          calendar_event_id: body.calendar_event_id || null,
+          calendar_event_id: habitEvtId,
         },
       });
       await supersedeSiblingHabitRows(sb, {
         habitId,
         keepRelatedId: related,
-        calendarEventId: body.calendar_event_id || null,
+        calendarEventId: habitEvtId,
         idealDate: ideal,
         scheduledDate: scheduledDate,
         actor,
@@ -523,11 +656,22 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'dismiss' && body.task_id) {
-      const task = (await sb(`tasks?id=eq.${body.task_id}&select=id,display_id,title`))?.[0];
+      const task = (await sb(
+        `tasks?id=eq.${body.task_id}&select=id,display_id,title,calendar_event_id`,
+      ))?.[0];
       if (!task) return json(res, 404, { error: 'task not found' });
+      const evtId = task.calendar_event_id || body.calendar_event_id || null;
       await sb(`tasks?id=eq.${task.id}`, {
         method: 'PATCH', prefer: 'return=minimal',
-        body: { state: 'wont_do', last_activity_at: new Date().toISOString() },
+        body: {
+          state: 'wont_do',
+          calendar_event_id: null,
+          last_activity_at: new Date().toISOString(),
+        },
+      });
+      await retireGapBuffersAfter(sb, upsertPushRow, {
+        afterEventId: evtId,
+        labelHints: [`MC-${task.display_id}`, task.title],
       });
       await upsertPushRow(sb, {
         related_id: relatedIdForTask(task.id),
@@ -535,7 +679,12 @@ module.exports = async function handler(req, res) {
         change_kind: 'dismiss',
         summary: `Dismiss MC-${task.display_id}`,
         proposed_action: `Delete or cancel GCal event for MC-${task.display_id} if present`,
-        payload: { task_id: task.id, display_id: task.display_id },
+        payload: {
+          task_id: task.id,
+          display_id: task.display_id,
+          calendar_event_id: evtId,
+          action: 'delete_event',
+        },
       });
       return respondAfterChange(res, { task_id: task.id, state: 'wont_do' }, actor);
     }

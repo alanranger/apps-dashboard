@@ -13,6 +13,7 @@ const KIND_CLASS = {
   lesson: 'dy-lesson',
   mc_task: 'dy-task',
   habit: 'dy-habit',
+  deadline: 'dy-deadline',
   travel: 'dy-travel',
   buffer: 'dy-buffer',
   fixture: 'dy-fixture',
@@ -23,6 +24,7 @@ const KIND_ICON = {
   workshop: '📷',
   lesson: '🎓',
   habit: '🔁',
+  deadline: '⏰',
   mc_task: '📋',
   travel: '🚗',
   buffer: '⏳',
@@ -140,6 +142,10 @@ function showMenu(block, x, y, refresh) {
     items.push(['dismiss', 'Dismiss']);
   } else if (block.kind === 'habit') {
     items.push(['skip', 'Skip occurrence']);
+  } else if (block.kind === 'deadline') {
+    items.length = 0;
+    items.push(['complete', 'Mark complete']);
+    items.push(['skip', 'Skip / dismiss reminder']);
   }
   menu.innerHTML = items.map(([a, label]) => (
     `<button type="button" data-dy-act="${a}">${label}</button>`
@@ -173,14 +179,23 @@ function askActualMinutes(block) {
 async function runMenuAction(act, block, refresh) {
   try {
     if (act === 'complete') {
-      const actual = askActualMinutes(block);
-      if (actual == null) return;
+      let actual = null;
+      if (block.kind === 'deadline') {
+        actual = block.duration_min || 20;
+      } else {
+        actual = askActualMinutes(block);
+        if (actual == null) return;
+      }
       await api('/api/mc/diary-action', {
         method: 'POST',
         body: {
           action: 'complete',
+          kind: block.kind || undefined,
           task_id: block.kind === 'mc_task' ? block.id.replace(/^task:/, '') : undefined,
           habit_id: block.habit_id || undefined,
+          hotel_id: block.hotel_id || (block.kind === 'deadline' && String(block.id || '').startsWith('deadline:')
+            ? String(block.id).replace(/^deadline:/, '')
+            : undefined),
           display_id: block.display_id || undefined,
           completed_at: new Date().toISOString(),
           scheduled_date: block.day || undefined,
@@ -189,7 +204,9 @@ async function runMenuAction(act, block, refresh) {
           actual_minutes: actual,
         },
       });
-      toast(`Completed · ${actual}m actual · placed at completion time · queued for Claude`);
+      toast(block.kind === 'deadline'
+        ? 'Deadline complete · moved to now on Google · decompress cleared'
+        : `Completed · ${actual}m actual · placed at completion time · Google updated`);
     } else if (act === 'lock' || act === 'unlock') {
       await api('/api/mc/diary-action', {
         method: 'POST',
@@ -202,18 +219,35 @@ async function runMenuAction(act, block, refresh) {
         body: { action: 'dismiss', task_id: block.id.replace(/^task:/, '') },
       });
     } else if (act === 'skip') {
-      if (!confirm(`Skip this occurrence only?\n${block.title}\n\nRemoves it from this day. Next scheduled occurrence still appears.`)) return;
-      await api('/api/mc/diary-action', {
-        method: 'POST',
-        body: {
-          action: 'skip',
-          habit_id: block.habit_id,
-          scheduled_date: block.day,
-          ideal_date: block.ideal_date || block.day,
-          calendar_event_id: block.calendar_event_id || undefined,
-        },
-      });
-      toast('Skipped this occurrence · next cycle still schedules');
+      if (block.kind === 'deadline') {
+        if (!confirm(`Skip / dismiss this reminder?\n${block.title}\n\nRemoves it from Diary and Google.`)) return;
+        await api('/api/mc/diary-action', {
+          method: 'POST',
+          body: {
+            action: 'skip',
+            kind: 'deadline',
+            hotel_id: block.hotel_id || (String(block.id || '').startsWith('deadline:')
+              ? String(block.id).replace(/^deadline:/, '')
+              : undefined),
+            calendar_event_id: block.calendar_event_id || undefined,
+            scheduled_date: block.day,
+          },
+        });
+        toast('Reminder dismissed · removing from Google');
+      } else {
+        if (!confirm(`Skip this occurrence only?\n${block.title}\n\nRemoves it from this day. Next scheduled occurrence still appears.`)) return;
+        await api('/api/mc/diary-action', {
+          method: 'POST',
+          body: {
+            action: 'skip',
+            habit_id: block.habit_id,
+            scheduled_date: block.day,
+            ideal_date: block.ideal_date || block.day,
+            calendar_event_id: block.calendar_event_id || undefined,
+          },
+        });
+        toast('Skipped this occurrence · next cycle still schedules');
+      }
     } else if (act === 'settime') {
       const afterSave = async () => {
         try {
@@ -290,6 +324,7 @@ function renderLegend() {
   const editable = [
     ['dy-task', '📋', 'Manual task', 'drag · ☐ complete · amend'],
     ['dy-habit', '🔁', 'Recurring habit', 'drag · ☐ complete · amend'],
+    ['dy-deadline', '⏰', 'Hotel / room deadline', '☐ complete · skip'],
   ];
   const readonly = [
     ['dy-workshop', '📷', 'Client booking', 'Zoom / workshop — locked'],
@@ -314,7 +349,7 @@ function renderLegend() {
         <div class="dy-leg-head dy-leg-head-ro">From calendar — read-only</div>
         <div class="dy-leg-row">${readonly.map(row).join('')}</div>
       </div>
-      <p class="meta dy-leg-note">Blue tasks &amp; green habits only. Locked 🔒 client bookings cannot move.</p>
+      <p class="meta dy-leg-note">Blue tasks, green habits &amp; amber deadlines. Locked 🔒 client bookings cannot move.</p>
     </div>`;
 }
 
@@ -475,8 +510,8 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     lane > 0 ? `dy-lane-${Math.min(lane, 2)}` : '',
   ].filter(Boolean).join(' ');
   const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
-  // Allow drag even when pinned — drop will unlock. Client-fixed stays locked.
-  const canDrag = !!(canEdit && !b.client_fixed);
+  // Allow drag even when pinned — drop will unlock. Client-fixed / deadlines stay undragged.
+  const canDrag = !!(canEdit && !b.client_fixed && b.kind !== 'deadline');
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
     b.gcal_baseline ? 'Time from Google Calendar' : '',
@@ -494,7 +529,7 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : '';
-  const doneBtn = canEdit && (b.kind === 'mc_task' || b.kind === 'habit')
+  const doneBtn = canEdit && (b.kind === 'mc_task' || b.kind === 'habit' || b.kind === 'deadline')
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☐</button>`
     : '';
   const grab = canDrag
@@ -650,6 +685,7 @@ function renderHorizonBoard(weeks, landIdx = 0) {
     const bh = cap.breakdown_h || {};
     const bits = [
       bh.habit ? `Habits ${bh.habit}h` : '',
+      bh.deadline ? `Deadlines ${bh.deadline}h` : '',
       bh.task ? `Tasks ${bh.task}h` : '',
       bh.away ? `Away ${bh.away}h` : '',
       bh.workshop ? `Client ${bh.workshop}h` : '',
@@ -691,6 +727,7 @@ function renderWeekBreakdown(cap) {
     ['lesson', 'Lesson', 'dy-lesson'],
     ['travel', 'Travel', 'dy-travel'],
     ['habit', 'Habits', 'dy-habit'],
+    ['deadline', 'Deadlines', 'dy-deadline'],
     ['task', 'Tasks', 'dy-task'],
     ['fixture', 'Fixture', 'dy-fixture'],
     ['personal', 'Personal', 'dy-personal'],

@@ -85,6 +85,7 @@ function toBlock(opts) {
     habit_id: opts.habit_id || null,
     ideal_date: opts.ideal_date || null,
     calendar_event_id: opts.calendar_event_id || null,
+    hotel_id: opts.hotel_id || null,
     read_only: !opts.editable,
     priority: opts.priority || null,
     due_date: opts.due_date || null,
@@ -267,9 +268,15 @@ function parseDiaryPin(change) {
 }
 
 function parseCompleteMeta(change) {
-  const m = String(change || '').match(/^completed\s+(\d{4}-\d{2}-\d{2})(?:\|actual=(\d+))?/i);
+  const m = String(change || '').match(
+    /^completed\s+(\d{4}-\d{2}-\d{2})(?:\|actual=(\d+))?(?:\|at=([^|]+))?/i,
+  );
   if (!m) return null;
-  return { date: m[1], actual_min: m[2] != null ? Number(m[2]) : null };
+  return {
+    date: m[1],
+    actual_min: m[2] != null ? Number(m[2]) : null,
+    at: m[3] ? String(m[3]).trim() : null,
+  };
 }
 
 function isSkippedChange(change) {
@@ -309,7 +316,13 @@ function habitLogsToBlocks(logs, habitMap) {
     const pin = parseDiaryPin(log.change);
     let startIso;
     let endIso;
-    if (pin?.start && pin?.end && !done) {
+    if (done && doneMeta?.at && Number.isFinite(Date.parse(doneMeta.at))) {
+      startIso = new Date(doneMeta.at).toISOString();
+      endIso = new Date(Date.parse(doneMeta.at) + dur * 60000).toISOString();
+    } else if (done && log.at && Number.isFinite(Date.parse(log.at))) {
+      startIso = new Date(log.at).toISOString();
+      endIso = new Date(Date.parse(log.at) + dur * 60000).toISOString();
+    } else if (pin?.start && pin?.end && !done) {
       startIso = pin.start;
       endIso = pin.end;
     } else if (pin?.start && done) {
@@ -438,9 +451,14 @@ function untiedMcBlocks(mcEvents, tiedIds) {
     const end = e.end?.dateTime || e.end;
     if (!start || !String(start).includes('T')) continue;
     const title = e.summary || 'MC block';
+    // Deadlines are owned by hotelDeadlineBlocks (editable complete/skip).
+    if (/MC\s*⏰/i.test(title) && /Hotel deadline|Hotel decision|Room release|cancel by/i.test(title)) {
+      continue;
+    }
     const kind = /travel/i.test(title)
       ? 'travel'
       : (/decompress|buffer/i.test(title) ? 'buffer' : 'habit');
+    const done = /^DONE\b/i.test(title.trim());
     const block = toBlock({
       id: `gcal-mc:${e.id}`,
       kind,
@@ -449,12 +467,50 @@ function untiedMcBlocks(mcEvents, tiedIds) {
       end: end ? String(end) : String(start),
       editable: false,
       calendar_event_id: e.id,
+      done,
     });
     block.gcal_orphan = true;
     block.gcal_baseline = true;
     block.read_only = true;
     block.out_of_sync = false;
     if (fixedRe.test(title)) block.client_fixed = false;
+    out.push(block);
+  }
+  return out;
+}
+
+/**
+ * Hotel / room-release reminders → editable deadline blocks (Mark complete / Skip).
+ * Linked via workshop_hotels.reminder_event_id when present.
+ */
+function hotelDeadlineBlocks(mcEvents, hotelByEventId) {
+  const out = [];
+  const seen = new Set();
+  for (const e of mcEvents || []) {
+    if (!e?.id || seen.has(e.id)) continue;
+    const start = e.start?.dateTime || e.start;
+    const end = e.end?.dateTime || e.end;
+    if (!start || !String(start).includes('T')) continue;
+    const title = e.summary || '';
+    const hotel = hotelByEventId?.get(e.id) || null;
+    const isDeadline = !!hotel
+      || (/MC\s*⏰/i.test(title)
+        && /Hotel deadline|Hotel decision|Room release|cancel by/i.test(title));
+    if (!isDeadline) continue;
+    seen.add(e.id);
+    const block = toBlock({
+      id: hotel ? `deadline:${hotel.id}` : `deadline-gcal:${e.id}`,
+      kind: 'deadline',
+      title,
+      start: String(start),
+      end: end ? String(end) : String(start),
+      editable: true,
+      calendar_event_id: e.id,
+      hotel_id: hotel?.id || null,
+    });
+    block.gcal_baseline = true;
+    block.hotel_name = hotel?.hotel || null;
+    block.cancel_by = hotel?.free_cancel_until || null;
     out.push(block);
   }
   return out;
@@ -469,54 +525,12 @@ function mondayOnOrBefore(ymd) {
 }
 
 /**
- * Insert visible decompress strips after work blocks (not buffers/fixtures/travel).
- * Uses placer requiredGapMins (admin 15 / substantial 30); skips where buffer covers.
+ * Decompress visibility: Google is source of truth for painted buffers.
+ * Gap-buffer / travel decompress arrive via GCal orphans + travel_blocks.
+ * Do not invent synthetic strips — they desync Mission Control from Google.
  */
-function insertDecompressStrips(blocks, ruleMap) {
-  const skipKinds = new Set(['buffer', 'fixture', 'away', 'travel']);
-  const byDay = new Map();
-  for (const b of blocks || []) {
-    if (!b.day) continue;
-    if (!byDay.has(b.day)) byDay.set(b.day, []);
-    byDay.get(b.day).push(b);
-  }
-  const extras = [];
-  for (const [day, list] of byDay) {
-    const sorted = [...list].sort((a, b) => a.start_min - b.start_min);
-    for (let i = 0; i < sorted.length; i += 1) {
-      const cur = sorted[i];
-      if (skipKinds.has(cur.kind) || cur.is_buffer) continue;
-      const nextWork = sorted.slice(i + 1).find((x) => !skipKinds.has(x.kind) && !x.is_buffer);
-      const need = nextWork
-        ? requiredGapMins(cur.title || '', nextWork.title || '', ruleMap)
-        : Number(ruleMap.decompress_after_task_min || 30);
-      const stripStart = cur.end_min;
-      let stripEnd = stripStart + need;
-      const next = sorted[i + 1];
-      if (next && next.start_min < stripEnd) stripEnd = next.start_min;
-      if (stripEnd <= stripStart) stripEnd = stripStart + 8;
-      const covered = sorted.some((x) => x.kind === 'buffer'
-        && x.start_min <= stripStart && x.end_min >= stripStart + 5);
-      if (covered) continue;
-      extras.push({
-        id: `buffer-gap:${cur.id}:${stripStart}`,
-        kind: 'buffer',
-        title: 'decompress',
-        day,
-        start: cur.end,
-        end: cur.end,
-        start_min: stripStart,
-        end_min: stripEnd,
-        duration_min: stripEnd - stripStart,
-        editable: false,
-        read_only: true,
-        slot_pinned: false,
-        is_buffer: true,
-        synthetic: true,
-      });
-    }
-  }
-  return [...(blocks || []), ...extras];
+function insertDecompressStrips(blocks) {
+  return [...(blocks || [])];
 }
 
 /** Drop warn-check — uses placer requiredGapMins + dayCapLimits + awaySpans. */
@@ -666,7 +680,7 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays, awaySpans = [])
   let awayDaysCounted = 0;
   let teachingDays = 0;
   const breakdown = {
-    away: 0, workshop: 0, lesson: 0, travel: 0, habit: 0, task: 0,
+    away: 0, workshop: 0, lesson: 0, travel: 0, habit: 0, deadline: 0, task: 0,
     fixture: 0, personal: 0, buffer: 0, other: 0,
   };
 
@@ -729,7 +743,7 @@ function weekCapacity(days, blocks, awayDays, ruleMap, holidays, awaySpans = [])
   for (const [k, v] of Object.entries(breakdown)) {
     if (v > 0) breakdown_h[k] = Math.round((v / 60) * 10) / 10;
   }
-  const movableMin = (breakdown.habit || 0) + (breakdown.task || 0);
+  const movableMin = (breakdown.habit || 0) + (breakdown.deadline || 0) + (breakdown.task || 0);
   const fixedMin = Object.entries(breakdown)
     .filter(([k]) => k !== 'habit' && k !== 'task')
     .reduce((s, [, v]) => s + v, 0);
@@ -791,6 +805,7 @@ module.exports = {
   indexGcalEventsById,
   applyGcalBaselineTimes,
   untiedMcBlocks,
+  hotelDeadlineBlocks,
   GCAL_DRIFT_TOLERANCE_MIN,
   insertDecompressStrips,
   warnDrop,

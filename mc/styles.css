@@ -810,6 +810,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-workshop { background:#6d28d9; color:#fff; }
 .dy-lesson { background:#0e7490; color:#fff; }
 .dy-habit { background:#15803d; color:#fff; }
+.dy-deadline { background:#b45309; color:#fff; }
 .dy-task { background:#1d4ed8; color:#fff; }
 .dy-travel { background:#c2410c; color:#fff; }
 .dy-buffer, .dy-leg-swatch.dy-buffer, .dy-buffer-strip {
