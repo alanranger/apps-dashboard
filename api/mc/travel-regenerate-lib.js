@@ -64,7 +64,7 @@ function pairKey(b) {
   return `${b.venue_name || ''}|${normTitle(b.workshop_title)}`;
 }
 
-/** Pair travel_out + travel_back for regeneration. */
+/** Pair travel_out + travel_back for regeneration. Never steal another trip's back. */
 function pairTravelBlocks(blocks) {
   const outs = (blocks || []).filter((b) => b.block_type === 'travel_out')
     .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
@@ -73,12 +73,16 @@ function pairTravelBlocks(blocks) {
   const used = new Set();
   const pairs = [];
   for (const out of outs) {
+    if (out.manual_lock) continue;
     const key = pairKey(out);
     const outMs = Date.parse(out.starts_at);
-    let bi = backs.findIndex((bk, i) => !used.has(i) && pairKey(bk) === key
-      && Date.parse(bk.starts_at) >= outMs);
+    let bi = backs.findIndex((bk, i) => !used.has(i) && !bk.manual_lock
+      && pairKey(bk) === key && Date.parse(bk.starts_at) >= outMs);
+    // Title match only when same venue_name — still no cross-venue fallthrough.
     if (bi < 0) {
-      bi = backs.findIndex((bk, i) => !used.has(i) && Date.parse(bk.starts_at) >= outMs
+      bi = backs.findIndex((bk, i) => !used.has(i) && !bk.manual_lock
+        && Date.parse(bk.starts_at) >= outMs
+        && String(bk.venue_name || '') === String(out.venue_name || '')
         && titleScore(out.workshop_title, bk.workshop_title) >= 50);
     }
     if (bi < 0) continue;
@@ -411,6 +415,16 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const skipped_multileg = [];
 
   for (const pair of pairs) {
+    if (pair.out?.manual_lock || pair.back?.manual_lock) {
+      skipped_multileg.push({
+        venue: pair.out.venue_name,
+        title: pair.out.workshop_title,
+        out_id: pair.out.id,
+        back_id: pair.back.id,
+        reason: 'manual_lock',
+      });
+      continue;
+    }
     const match = pickWorkshop(pair, workshops);
     if (!match) {
       unmatched.push({

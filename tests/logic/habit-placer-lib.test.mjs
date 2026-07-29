@@ -433,6 +433,61 @@ describe('habit-placer-lib — away spans', () => {
     assert.ok(placements.every((p) => p.day < '2026-08-03' || p.day > '2026-08-06'));
   });
 
+  it('does not steal another venue travel_back (no cross-trip fallback)', () => {
+    const spans = awaySpansFromTravelBlocks([
+      {
+        block_type: 'travel_out', venue_name: 'Surprise View / Hathersage',
+        workshop_row_key: 'peak-sunset',
+        starts_at: '2026-08-15T14:45:00Z', ends_at: '2026-08-15T16:45:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'wales - Gower Peninsular',
+        workshop_row_key: 'gower',
+        starts_at: '2026-08-30T13:00:00Z', ends_at: '2026-08-30T16:15:00Z',
+      },
+      {
+        block_type: 'travel_out', venue_name: 'wales - Gower Peninsular',
+        workshop_row_key: 'gower',
+        starts_at: '2026-08-28T05:45:00Z', ends_at: '2026-08-28T09:00:00Z',
+      },
+    ]);
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].summary, 'away:wales - Gower Peninsular');
+    assert.equal(spans[0].startDay, '2026-08-28');
+    assert.equal(spans[0].endDay, '2026-08-30');
+  });
+
+  it('Peak overnight legs end span on morning day without stealing later backs', () => {
+    const spans = awaySpansFromTravelBlocks([
+      {
+        block_type: 'travel_out', venue_name: 'Surprise View / Hathersage',
+        workshop_row_key: 'peak-sunset',
+        starts_at: '2026-08-15T14:45:00Z', ends_at: '2026-08-15T16:45:00Z',
+      },
+      {
+        block_type: 'travel_leg', venue_name: 'Hotel Rudyard',
+        workshop_title: 'Peak District Heathers Sunset -> overnight',
+        starts_at: '2026-08-15T20:15:00Z', ends_at: '2026-08-15T20:50:00Z',
+      },
+      {
+        block_type: 'travel_leg', venue_name: 'The Roaches / Leek',
+        workshop_title: 'Peak District Heathers Sunrise',
+        starts_at: '2026-08-16T04:00:00Z', ends_at: '2026-08-16T04:15:00Z',
+      },
+      {
+        block_type: 'travel_back', venue_name: 'wales - Gower Peninsular',
+        workshop_row_key: 'gower',
+        starts_at: '2026-08-30T13:00:00Z', ends_at: '2026-08-30T16:15:00Z',
+      },
+    ]);
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].summary, 'away:Surprise View / Hathersage');
+    assert.equal(spans[0].startDay, '2026-08-15');
+    assert.equal(spans[0].endDay, '2026-08-16');
+    assert.equal(spans[0].middleStart, null);
+    assert.equal(spans[0].overnight_chain, true);
+  });
+
   it('does not place habit on teaching/client day when rule enabled', () => {
     const { teachingDaySpansFromEvents } = require('../../api/mc/habit-placer-lib.js');
     const on = { teaching_day_whole_day_block: 'true' };

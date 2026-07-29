@@ -194,6 +194,10 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   const created = [];
   const updated = [];
   const failed = [];
+  // Never prune / rewrite Alan-locked AWAY masters.
+  for (const row of existing) {
+    if (row.manual_lock) keepIds.add(row.id);
+  }
 
   for (const span of spans) {
     const venue = String(span.summary || '').replace(/^away:/, '');
@@ -210,6 +214,10 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
     if (!row) {
       const legacyKey = `${span.startDay}|${span.endDay}|${workshopRowKey}`;
       row = byKey.get(legacyKey) || null;
+    }
+    if (row?.manual_lock) {
+      keepIds.add(row.id);
+      continue;
     }
     const body = {
       start_date: startDate,
@@ -242,6 +250,10 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
         );
         if (prior?.[0]) row = prior[0];
       }
+      if (row?.manual_lock) {
+        keepIds.add(row.id);
+        continue;
+      }
       const linked = await ensureAllDayLinked({
         row,
         title,
@@ -270,6 +282,7 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   let pruned = 0;
   for (const row of existing) {
     if (keepIds.has(row.id)) continue;
+    if (row.manual_lock) continue;
     const wk = row.workshop_row_key || `${row.venue_name || ''}|${row.start_date}`;
     const key = `${row.start_date}|${row.end_date}|${wk}`;
     if (keep.has(key)) continue;

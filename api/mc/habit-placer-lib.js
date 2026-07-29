@@ -47,12 +47,52 @@ function dayCapLimits(ruleMap) {
   return { target: cap, hard: cap + tol };
 }
 
+function travelPairKey(b) {
+  return b.workshop_row_key || `${b.venue_name || ''}|${b.workshop_start || ''}`;
+}
+
+/**
+ * Peak-style overnight: travel_out + hotel leg + morning travel_leg, often no
+ * travel_back yet. End the busy span on the morning-leg day (not the next trip).
+ * Never invent a span by stealing another venue's travel_back.
+ */
+function overnightEndFromLegs(out, blocks) {
+  const outMs = Date.parse(out.starts_at);
+  if (!Number.isFinite(outMs)) return null;
+  const hotel = (blocks || []).find((b) => {
+    if (b.block_type !== 'travel_leg') return false;
+    const blob = `${b.workshop_title || ''} ${b.venue_name || ''}`;
+    if (!/overnight|hotel|rudyard/i.test(blob)) return false;
+    const ms = Date.parse(b.starts_at);
+    return Number.isFinite(ms) && ms >= outMs - 3600000 && ms <= outMs + 36 * 3600000;
+  });
+  if (!hotel) return null;
+  const hotelEnd = Date.parse(hotel.ends_at || hotel.starts_at);
+  const morning = (blocks || []).find((b) => {
+    if (b.block_type !== 'travel_leg') return false;
+    if (/overnight|hotel|rudyard/i.test(`${b.workshop_title || ''} ${b.venue_name || ''}`)) {
+      return false;
+    }
+    const ms = Date.parse(b.starts_at);
+    return Number.isFinite(ms) && ms > hotelEnd && ms < hotelEnd + 18 * 3600000;
+  });
+  if (!morning?.ends_at) return null;
+  // Busy until late afternoon home-arrival window on the morning-leg day.
+  const endDay = isoToLondonDate(morning.ends_at);
+  if (!endDay) return null;
+  const endMs = londonYmdHmToUtcMs(endDay, '16:00');
+  return { endDay, endMs, overnight: true };
+}
+
 /**
  * Multi-day residential away spans from travel_out + travel_back pairs.
  * Busy interval = travel_out start → travel_back end (you are away the whole time).
  * Whole-day AWAY banner / placement skip = middle days only; edge days use
  * startMs–endMs (and awayBusySegments) so morning-before-outbound stays free.
  * Same-day day-trips skipped (drive intervals already cover those).
+ *
+ * CRITICAL: only pair by matching workshop_row_key / venue key — never fall back
+ * to the next travel_back of a different trip (that cascaded false multi-day AWAYs).
  */
 function awaySpansFromTravelBlocks(blocks) {
   const outs = [];
@@ -65,26 +105,34 @@ function awaySpansFromTravelBlocks(blocks) {
   outs.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
   backs.sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
 
-  const pairKey = (b) => b.workshop_row_key || `${b.venue_name || ''}|${b.workshop_start || ''}`;
   const usedBack = new Set();
   const spans = [];
 
   for (const out of outs) {
-    const key = pairKey(out);
+    const key = travelPairKey(out);
     const outMs = Date.parse(out.starts_at);
-    let backIdx = backs.findIndex((bk, i) => !usedBack.has(i) && pairKey(bk) === key
+    const backIdx = backs.findIndex((bk, i) => !usedBack.has(i) && travelPairKey(bk) === key
       && Date.parse(bk.starts_at) >= outMs);
-    if (backIdx < 0) {
-      backIdx = backs.findIndex((bk, i) => !usedBack.has(i) && Date.parse(bk.starts_at) >= outMs);
+
+    let endDay;
+    let endMs;
+    let overnight = false;
+    if (backIdx >= 0) {
+      usedBack.add(backIdx);
+      const back = backs[backIdx];
+      endDay = isoToLondonDate(back.ends_at);
+      endMs = Date.parse(back.ends_at);
+    } else {
+      const syn = overnightEndFromLegs(out, blocks);
+      if (!syn) continue;
+      endDay = syn.endDay;
+      endMs = syn.endMs;
+      overnight = true;
     }
-    if (backIdx < 0) continue;
-    usedBack.add(backIdx);
-    const back = backs[backIdx];
+
     const startDay = isoToLondonDate(out.starts_at);
-    const endDay = isoToLondonDate(back.ends_at);
     if (!startDay || !endDay || endDay < startDay || startDay === endDay) continue;
     const startMs = Date.parse(out.starts_at);
-    const endMs = Date.parse(back.ends_at);
     if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
     // All-day AWAY banner / GCal master = middle days only (edges are travel blocks).
     const middleStart = addDays(startDay, 1);
@@ -98,6 +146,7 @@ function awaySpansFromTravelBlocks(blocks) {
       startMs,
       endMs,
       partial_edges: true,
+      overnight_chain: overnight,
       summary: `away:${out.venue_name || out.workshop_title || key}`,
       kind: 'away_span',
     });
@@ -467,6 +516,7 @@ function datedTasksToIntervals(tasks, { pinnedOnly = false } = {}) {
       summary: `MC-${t.display_id} ${t.title || ''}`.trim(),
       display_id: t.display_id,
       slot_pinned: pinned,
+      priority: t.priority || 'p3',
       kind: 'dated_task',
       calendar_event_id: t.calendar_event_id || null,
       depends_on_display_id: t.depends_on_display_id != null
@@ -475,6 +525,16 @@ function datedTasksToIntervals(tasks, { pinnedOnly = false } = {}) {
     });
   }
   return out.sort((a, b) => a.startMs - b.startMs);
+}
+
+/**
+ * Ringfence for one habit: dated tasks that outrank or tie this habit.
+ * Equal priority → task wins (compareByPriority). Lower-priority tasks stay soft
+ * and may be bumped after placement.
+ */
+function taskFenceForHabit(softTaskIntervals, habit) {
+  const hRank = priorityRank(habit?.priority);
+  return (softTaskIntervals || []).filter((t) => priorityRank(t.priority) <= hRank);
 }
 
 function expandBumpsWithDependents(bumps, softTaskIntervals) {
@@ -531,29 +591,35 @@ function findSharedCalendarEventFlags(softTaskIntervals) {
   return flags;
 }
 
-/** Habits outrank unpinned tasks — report overlaps as bumps (task yields). */
+/**
+ * Only bump a soft task when the overlapping habit strictly outranks it.
+ * Same/higher-priority tasks are ringfenced during placement (taskFenceForHabit).
+ */
 function findTaskBumps(placements, softTaskIntervals) {
   const bumps = [];
   for (const task of softTaskIntervals || []) {
+    const tRank = priorityRank(task.priority);
     for (const p of placements || []) {
-      if (overlaps(Date.parse(p.startIso), Date.parse(p.endIso), task.startMs, task.endMs)) {
-        bumps.push({
-          display_id: task.display_id,
-          title: task.summary,
-          task_start: new Date(task.startMs).toISOString(),
-          task_end: new Date(task.endMs).toISOString(),
-          duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
-          habit_id: p.habit_id,
-          habit_title: p.title,
-          habit_day: p.day,
-          habit_start: p.startIso,
-          habit_end: p.endIso,
-          reason: 'habit_overlap',
-          depends_on_display_id: task.depends_on_display_id,
-          calendar_event_id: task.calendar_event_id,
-        });
-        break;
+      if (!overlaps(Date.parse(p.startIso), Date.parse(p.endIso), task.startMs, task.endMs)) {
+        continue;
       }
+      if (priorityRank(p.priority) >= tRank) continue;
+      bumps.push({
+        display_id: task.display_id,
+        title: task.summary,
+        task_start: new Date(task.startMs).toISOString(),
+        task_end: new Date(task.endMs).toISOString(),
+        duration_min: Math.max(15, Math.round((task.endMs - task.startMs) / 60000)),
+        habit_id: p.habit_id,
+        habit_title: p.title,
+        habit_day: p.day,
+        habit_start: p.startIso,
+        habit_end: p.endIso,
+        reason: 'habit_outranks_task',
+        depends_on_display_id: task.depends_on_display_id,
+        calendar_event_id: task.calendar_event_id,
+      });
+      break;
     }
   }
   return expandBumpsWithDependents(bumps, softTaskIntervals);
@@ -1138,9 +1204,11 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
         ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
         habit.rrule, true,
       );
+      // Ringfence: same/higher-priority dated tasks. Lower-priority tasks may yield later.
+      const fence = taskFenceForHabit(opts.softTaskIntervals || [], habit);
       // While re-placing this occurrence, ignore its own prior block so it can KEEP/MOVE.
-      // existingHabitIntervals are already seeded into busyWork (with habit_id/ideal_date).
       const busySansSelf = busyWork
+        .concat(fence)
         .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
       let slot = null;
       for (const day of days) {
@@ -1308,7 +1376,11 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
     }
     for (const t of softTasks) {
       if (!overlaps(aS, aE, t.startMs, t.endMs)) continue;
-      if (!bumpedIds.has(Number(t.display_id))) {
+      if (bumpedIds.has(Number(t.display_id))) continue;
+      // Same/higher-priority task should have ringfenced this habit.
+      if (priorityRank(t.priority) <= priorityRank(a.priority)) {
+        fails.push(`habit-task-fence: ${a.title} × MC-${t.display_id}`);
+      } else {
         fails.push(`habit-task-silent: ${a.title} × MC-${t.display_id}`);
       }
     }
@@ -1364,6 +1436,7 @@ module.exports = {
   teachingDayRuleEnabled,
   teachingDaySpansFromEvents,
   datedTasksToIntervals,
+  taskFenceForHabit,
   findTaskBumps,
   findBlockedDayTaskBumps,
   findAwayIntervalTaskBumps,
