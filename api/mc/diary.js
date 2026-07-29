@@ -111,9 +111,9 @@ module.exports = async function handler(req, res) {
 
     const awayDays = {};
     for (const span of awaySpans) {
-      // Full AWAY column = middle days; travel days use timed away_overlays.
-      const spanFrom = span.middleStart || (span.partial_edges ? null : span.startDay);
-      const spanTo = span.middleEnd || (span.partial_edges ? null : span.endDay);
+      // Full AWAY column = travel-out day through travel-back day inclusive.
+      const spanFrom = span.startDay;
+      const spanTo = span.endDay;
       if (!spanFrom || !spanTo) continue;
       let d = spanFrom;
       while (d <= spanTo) {

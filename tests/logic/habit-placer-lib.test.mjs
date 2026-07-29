@@ -484,7 +484,9 @@ describe('habit-placer-lib — away spans', () => {
     assert.equal(spans[0].summary, 'away:Surprise View / Hathersage');
     assert.equal(spans[0].startDay, '2026-08-15');
     assert.equal(spans[0].endDay, '2026-08-16');
-    assert.equal(spans[0].middleStart, null);
+    assert.equal(spans[0].middleStart, '2026-08-15');
+    assert.equal(spans[0].middleEnd, '2026-08-16');
+    assert.equal(spans[0].partial_edges, false);
     assert.equal(spans[0].overnight_chain, true);
   });
 

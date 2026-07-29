@@ -64,7 +64,7 @@ function durationMin(b) {
 
 /**
  * home_only: no decompress on travel edge days either.
- * dayInsideAwaySpan skips partial_edges middles-only (Peak 2-day trips have no middle),
+ * dayInsideAwaySpan = full travel-out→travel-back days (Alan away whole trip),
  * which wrongly painted decompress over travel/workshop days.
  */
 function homeOnlySkip(day, ruleMap, awaySpans) {

@@ -183,7 +183,7 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
 
 async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   const spans = awaySpansFromTravelBlocks(travel || [])
-    .filter((s) => s.middleStart && s.middleEnd);
+    .filter((s) => s.startDay && s.endDay && s.startDay !== s.endDay);
   const existing = await sb('away_day_blocks?status=eq.active&select=*') || [];
   const byKey = new Map(existing.map((r) => {
     const wk = r.workshop_row_key || `${r.venue_name || ''}|${r.start_date}`;
@@ -202,9 +202,9 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   for (const span of spans) {
     const venue = String(span.summary || '').replace(/^away:/, '');
     const workshopRowKey = venue;
-    // GCal/DB all-day AWAY covers middle days only (not travel-out / travel-back days).
-    const startDate = span.middleStart;
-    const endDate = span.middleEnd;
+    // Full trip: travel-out day → travel-back day inclusive (Hartland Fri–Sun = all three).
+    const startDate = span.startDay;
+    const endDate = span.endDay;
     const key = `${startDate}|${endDate}|${workshopRowKey}`;
     keep.add(key);
     const title = awaySpanGcalTitle({ venue_name: venue });
