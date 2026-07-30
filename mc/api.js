@@ -18,7 +18,7 @@ function errorMessage(data, res) {
     return `${res.status} gateway timeout — try Next 8 weeks first, or wait and retry Full horizon`;
   }
   if (res.status === 500) {
-    return 'HTTP 500 — server timed out or crashed. Use Next 8 weeks for placer/heal; Full is detect-only after deploy.';
+    return 'HTTP 500 — server timed out or crashed. Retry, or use Next 8 weeks if Full mid-pass failed.';
   }
   return `HTTP ${res.status || '?'} (no error body)`;
 }

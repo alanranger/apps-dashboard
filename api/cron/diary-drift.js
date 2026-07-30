@@ -690,13 +690,10 @@ async function handler(req, res) {
   }
 
   // Joint habit placer → pending amendments (KEEP omitted; no calendar writes).
-  // Bound placer horizon to the check scope so Full/8w do not always force 26w.
+  // Manual Full skips here — Scheduling UI chains run_placer windows instead.
   if (gcalConfigured() && !lightFull) {
     try {
-      const habitWeeks = Math.min(
-        Number(ruleMap.habit_horizon_weeks || 26),
-        Math.max(horizonWeeks, 8),
-      );
+      const habitWeeks = Number(ruleMap.habit_horizon_weeks || 26);
       const habitTo = addDaysYmd(today, habitWeeks * 7);
       const timeMin = `${today}T00:00:00Z`;
       const timeMax = `${habitTo}T23:59:59Z`;

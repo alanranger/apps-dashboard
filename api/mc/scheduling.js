@@ -193,7 +193,7 @@ async function handler(req, res) {
         const scope = body.scope === 'full' ? 'full' : '8w';
         const detect = await runDiaryCheck(scope);
         let heal = null;
-        // Full horizon already maxes the time budget — heal on a follow-up 8w run.
+        // Full: client chains run_placer windows + run_heal (one request times out).
         if (scope === 'full') {
           heal = {
             overlaps_fixed: 0,
@@ -203,7 +203,7 @@ async function handler(req, res) {
             push_queued: 0,
             remaining_pending: null,
             skipped: true,
-            note: 'Heal skipped on Full horizon (too heavy). Run Next 8 weeks to auto-heal overlaps/orphans.',
+            note: 'Detect only in this pass — browser will run placer windows then heal.',
           };
         } else {
           try {
@@ -225,13 +225,46 @@ async function handler(req, res) {
             };
           }
         }
+        const habitWeeks = Number(
+          (await sb('scheduling_rules?key=eq.habit_horizon_weeks&select=value'))?.[0]?.value || 26,
+        );
         return json(res, 200, {
-          run: { ...(detect || {}), heal },
+          run: { ...(detect || {}), heal, habit_horizon_weeks: habitWeeks },
           calendar_writes: 0,
         });
       }
+      if (body.entity === 'run_placer') {
+        if (!body.from || !body.to) return json(res, 400, { error: 'from and to required (YYYY-MM-DD)' });
+        const { runPlacerWindow } = require('./habit-placer-window-lib');
+        const placer = await runPlacerWindow(sb, String(body.from), String(body.to));
+        return json(res, 200, { placer, calendar_writes: 0 });
+      }
+      if (body.entity === 'run_heal') {
+        try {
+          const { runDiaryHeal } = require('./diary-heal-lib');
+          const heal = await runDiaryHeal(sb, {
+            actor,
+            maxOverlaps: 25,
+            orphanDays: 120,
+          });
+          return json(res, 200, { heal, calendar_writes: 0 });
+        } catch (healErr) {
+          return json(res, 200, {
+            heal: {
+              overlaps_fixed: 0,
+              overlaps_failed: 0,
+              orphans_queued: 0,
+              gaps_retired: 0,
+              push_queued: 0,
+              remaining_pending: null,
+              error: healErr.message || 'heal failed',
+            },
+            calendar_writes: 0,
+          });
+        }
+      }
       return json(res, 400, {
-        error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|resolve_block|run_check',
+        error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|resolve_block|run_check|run_placer|run_heal',
       });
     }
 

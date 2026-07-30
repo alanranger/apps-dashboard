@@ -84,12 +84,12 @@ function runReadout(run) {
     <div class="rec-head">
       <div>
         <h2><i class="ti ti-radar"></i> Diary check</h2>
-        <p class="meta">The 06:00 cron and this button run the <strong>same</strong> detector. Findings go to the pending list — never a direct calendar write.</p>
+        <p class="meta">The 06:00 cron and this button run the <strong>same</strong> detector. <strong>Full</strong> also auto-places habits across ~26 weeks in several passes (server can't do it in one shot). Findings go to the pending list — never a direct calendar write.</p>
       </div>
       <div class="sched-run-controls">
         <select id="schedScope" aria-label="Check scope">
-          <option value="8w">Next 8 weeks (detect + placer)</option>
-          <option value="full">Full detect (~12w — no placer)</option>
+          <option value="8w">Next 8 weeks (quick)</option>
+          <option value="full">Full habit horizon (~26w placer)</option>
         </select>
         <button type="button" class="btn-verify" id="schedRunCheck">Run check now</button>
       </div>
@@ -331,11 +331,21 @@ function summaryHtml(run, scope) {
     .slice(0, 6)
     .map((n) => `<li>${esc(n)}</li>`)
     .join('');
+  const placerWins = run.placer_windows || [];
+  const placerLine = placerWins.length
+    ? placerWins.map((p) => {
+      if (p.skipped) return `${p.from}→${p.to}: skipped (${p.reason || '—'})`;
+      return `${p.from}→${p.to}: +${p.create || 0} create / ${p.move || 0} move`;
+    }).map((t) => `<li>${esc(t)}</li>`).join('')
+    : '';
+  const scopeLabel = scope === 'full'
+    ? `Full habit horizon (~${run.habit_horizon_weeks || 26}w placer)`
+    : 'Next 8 weeks';
   return `
     <div class="sched-check-summary">
       ${healSummaryHtml(run.heal)}
       <div class="sched-sum-grid">
-        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full detect (~12w)' : 'Next 8 weeks')}</strong></div>
+        <div><span class="meta">Scope</span><strong>${esc(scopeLabel)}</strong></div>
         <div><span class="meta">Covered</span><strong>${esc(covered)}</strong></div>
         <div><span class="meta">New proposals</span><strong>${run.inserted ?? 0}</strong></div>
         <div><span class="meta">Calendar writes</span><strong>${run.calendar_writes ?? 0}</strong></div>
@@ -344,8 +354,15 @@ function summaryHtml(run, scope) {
         <div><span class="meta">Calendars</span><strong>${esc(sh.calendars || '—')}</strong></div>
         <div><span class="meta">Events in horizon</span><strong>${run.events_in_horizon ?? '—'}</strong></div>
       </div>
+      ${placerLine ? `<p class="meta" style="margin:8px 0 4px"><strong>Auto-placer windows</strong></p><ul class="sched-sum-notes">${placerLine}</ul>` : ''}
       ${notes ? `<ul class="sched-sum-notes">${notes}</ul>` : ''}
     </div>`;
+}
+
+function addDaysYmdClient(ymd, n) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }
 
 function openCheckProgressModal(scope) {
@@ -354,15 +371,20 @@ function openCheckProgressModal(scope) {
   const ac = new AbortController();
   let phaseIdx = 0;
   let timer = null;
+  let statusExtra = '';
   const started = Date.now();
 
   const paintRunning = () => {
     const elapsed = Math.round((Date.now() - started) / 1000);
     const pct = Math.min(92, Math.round(((phaseIdx + 1) / CHECK_PHASES.length) * 100));
+    const scopeLabel = scope === 'full'
+      ? 'Full habit horizon (~26w placer in passes)'
+      : 'Next 8 weeks';
     box.innerHTML = `
       <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check running</h2>
-      <p class="meta">Scope: <strong>${esc(scope === 'full' ? 'Full detect (~12w)' : 'Next 8 weeks')}</strong>
-        · Elapsed ${elapsed}s · same detector as the 06:00 cron</p>
+      <p class="meta">Scope: <strong>${esc(scopeLabel)}</strong>
+        · Elapsed ${elapsed}s</p>
+      ${statusExtra ? `<p class="meta"><strong>${esc(statusExtra)}</strong></p>` : ''}
       <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
       <ul class="sched-phase-list">${phaseListHtml(phaseIdx)}</ul>
       <div style="display:flex;gap:8px;margin-top:14px">
@@ -389,6 +411,10 @@ function openCheckProgressModal(scope) {
 
   return {
     signal: ac.signal,
+    setStatus(msg) {
+      statusExtra = msg || '';
+      paintRunning();
+    },
     finish(run) {
       clearInterval(timer);
       const secs = Math.round((Date.now() - started) / 1000);
@@ -416,6 +442,47 @@ function openCheckProgressModal(scope) {
   };
 }
 
+async function runFullHorizonWithChunks(ui) {
+  ui.setStatus('Pass 1 — detect (travel / overlaps / CSV)…');
+  const data = await api('/api/mc/scheduling', {
+    method: 'PATCH',
+    body: { entity: 'run_check', scope: 'full' },
+    signal: ui.signal,
+  });
+  const run = data.run || data;
+  const totalWeeks = Number(run.habit_horizon_weeks || 26);
+  const chunk = 8;
+  const today = new Date().toISOString().slice(0, 10);
+  const placerWindows = [];
+  let pass = 2;
+  for (let w = 0; w < totalWeeks; w += chunk) {
+    const from = addDaysYmdClient(today, w * 7);
+    const to = addDaysYmdClient(today, Math.min(w + chunk, totalWeeks) * 7);
+    const n = Math.floor(w / chunk) + 1;
+    const total = Math.ceil(totalWeeks / chunk);
+    ui.setStatus(`Pass ${pass} — auto-placer window ${n}/${total} (${from} → ${to})…`);
+    const p = await api('/api/mc/scheduling', {
+      method: 'PATCH',
+      body: { entity: 'run_placer', from, to },
+      signal: ui.signal,
+    });
+    placerWindows.push(p.placer || { from, to, skipped: true });
+    pass += 1;
+  }
+  ui.setStatus(`Pass ${pass} — auto-heal overlaps / orphans…`);
+  const healRes = await api('/api/mc/scheduling', {
+    method: 'PATCH',
+    body: { entity: 'run_heal' },
+    signal: ui.signal,
+  });
+  return {
+    ...run,
+    placer_windows: placerWindows,
+    heal: healRes.heal || run.heal,
+    habit_horizon_weeks: totalWeeks,
+  };
+}
+
 async function startDiaryCheckWithModal(runBtn) {
   const scope = $('schedScope')?.value === 'full' ? 'full' : '8w';
   const label = runBtn.textContent;
@@ -423,12 +490,14 @@ async function startDiaryCheckWithModal(runBtn) {
   runBtn.textContent = 'Running…';
   const ui = openCheckProgressModal(scope);
   try {
-    const data = await api('/api/mc/scheduling', {
-      method: 'PATCH',
-      body: { entity: 'run_check', scope },
-      signal: ui.signal,
-    });
-    ui.finish(data.run || data);
+    const run = scope === 'full'
+      ? await runFullHorizonWithChunks(ui)
+      : (await api('/api/mc/scheduling', {
+        method: 'PATCH',
+        body: { entity: 'run_check', scope },
+        signal: ui.signal,
+      })).run;
+    ui.finish(run || {});
     await renderScheduling();
   } catch (err) {
     if (ui.signal.aborted || err.name === 'AbortError') {
