@@ -89,7 +89,7 @@ function runReadout(run) {
       <div class="sched-run-controls">
         <select id="schedScope" aria-label="Check scope">
           <option value="8w">Next 8 weeks</option>
-          <option value="full">Full horizon</option>
+          <option value="full">Full (~26w — travel rule is 104w)</option>
         </select>
         <button type="button" class="btn-verify" id="schedRunCheck">Run check now</button>
       </div>
@@ -285,6 +285,12 @@ function phaseListHtml(activeIdx) {
 
 function healSummaryHtml(heal) {
   if (!heal) return '';
+  if (heal.skipped) {
+    return `
+    <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35)">
+      <p style="margin:0"><strong>Auto-heal skipped</strong> — ${esc(heal.note || 'Run Next 8 weeks to heal overlaps/orphans.')}</p>
+    </div>`;
+  }
   if (heal.error) {
     return `
     <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35)">
@@ -329,7 +335,7 @@ function summaryHtml(run, scope) {
     <div class="sched-check-summary">
       ${healSummaryHtml(run.heal)}
       <div class="sched-sum-grid">
-        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full horizon' : 'Next 8 weeks')}</strong></div>
+        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full (~26w capped)' : 'Next 8 weeks')}</strong></div>
         <div><span class="meta">Covered</span><strong>${esc(covered)}</strong></div>
         <div><span class="meta">New proposals</span><strong>${run.inserted ?? 0}</strong></div>
         <div><span class="meta">Calendar writes</span><strong>${run.calendar_writes ?? 0}</strong></div>

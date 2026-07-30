@@ -131,7 +131,7 @@ async function resolvePending(id, status, actor) {
   return rows?.[0];
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (cors(req, res)) return;
   if (!envReady()) return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
   const session = requireAuth(req, res);
@@ -193,15 +193,8 @@ module.exports = async function handler(req, res) {
         const scope = body.scope === 'full' ? 'full' : '8w';
         const detect = await runDiaryCheck(scope);
         let heal = null;
-        try {
-          const { runDiaryHeal } = require('./diary-heal-lib');
-          // Cap heal work so Full horizon detect + heal stays under Vercel limit.
-          heal = await runDiaryHeal(sb, {
-            actor,
-            maxOverlaps: scope === 'full' ? 12 : 25,
-            orphanDays: scope === 'full' ? 90 : 200,
-          });
-        } catch (healErr) {
+        // Full horizon already maxes the time budget — heal on a follow-up 8w run.
+        if (scope === 'full') {
           heal = {
             overlaps_fixed: 0,
             overlaps_failed: 0,
@@ -209,8 +202,28 @@ module.exports = async function handler(req, res) {
             gaps_retired: 0,
             push_queued: 0,
             remaining_pending: null,
-            error: healErr.message || 'heal failed',
+            skipped: true,
+            note: 'Heal skipped on Full horizon (too heavy). Run Next 8 weeks to auto-heal overlaps/orphans.',
           };
+        } else {
+          try {
+            const { runDiaryHeal } = require('./diary-heal-lib');
+            heal = await runDiaryHeal(sb, {
+              actor,
+              maxOverlaps: 25,
+              orphanDays: 120,
+            });
+          } catch (healErr) {
+            heal = {
+              overlaps_fixed: 0,
+              overlaps_failed: 0,
+              orphans_queued: 0,
+              gaps_retired: 0,
+              push_queued: 0,
+              remaining_pending: null,
+              error: healErr.message || 'heal failed',
+            };
+          }
         }
         return json(res, 200, {
           run: { ...(detect || {}), heal },
@@ -226,4 +239,7 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     return json(res, e.status || 500, { error: e.message || 'scheduling error', detail: e.data });
   }
-};
+}
+
+module.exports = handler;
+module.exports.config = { maxDuration: 300 };

@@ -191,7 +191,7 @@ async function existingPending(changeType, relatedId) {
   return rows?.[0];
 }
 
-module.exports = async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(204).end();
@@ -261,14 +261,33 @@ module.exports = async function handler(req, res) {
   const ruleMap = Object.fromEntries((rules || []).map((r) => [r.key, r.value]));
   const maxRolls = Number(ruleMap.missed_habit_max_rolls || 3);
   // Scope: the 06:00 cron (no scope) and the Scheduling-tab button call THIS same
-  // endpoint. scope=8w → next 8 weeks; scope=full → travel horizon; default → cron horizon.
+  // endpoint. scope=8w → next 8 weeks; scope=full → travel horizon (manual is capped —
+  // travel_horizon_weeks can be 104 and will timeout Vercel if unbounded).
   const q = req.query || {};
   const scope = String(q.scope || '').toLowerCase();
-  const defaultWeeks = Number(ruleMap.travel_horizon_weeks || 12);
-  const scopeWeeks = scope === '8w' ? 8 : (scope === 'full' ? defaultWeeks : null);
   const runMode = q.mode === 'manual' ? 'manual' : 'auto';
+  const defaultWeeks = Number(ruleMap.travel_horizon_weeks || 12);
+  const habitWeeksCfg = Number(ruleMap.habit_horizon_weeks || 26);
+  const manualFullCap = Number(ruleMap.manual_full_horizon_weeks || habitWeeksCfg || 26);
+  const cronCap = Number(ruleMap.cron_horizon_cap_weeks || 52);
+  let scopeWeeks = null;
+  if (scope === '8w') {
+    scopeWeeks = 8;
+  } else if (scope === 'full') {
+    const cap = runMode === 'manual' ? manualFullCap : cronCap;
+    scopeWeeks = Math.min(defaultWeeks, Math.max(8, cap));
+  } else if (!scope) {
+    // Overnight cron default: never run unbounded 104w in one shot.
+    scopeWeeks = Math.min(defaultWeeks, Math.max(8, cronCap));
+  }
   const horizonWeeks = scopeWeeks || defaultWeeks;
   const horizonEnd = addDaysYmd(today, horizonWeeks * 7);
+  if (defaultWeeks > horizonWeeks) {
+    notes.push(
+      `horizon_capped: travel_horizon_weeks=${defaultWeeks} → ${horizonWeeks}w `
+      + `(mode=${runMode}, scope=${scope || 'default'}; raise manual_full_horizon_weeks / cron_horizon_cap_weeks if needed)`,
+    );
+  }
 
   // Bank-holiday source health. A holiday input that returns 0 rows over the
   // scheduling horizon is a FAULT (empty is indistinguishable from "no holidays"),
@@ -745,3 +764,6 @@ module.exports = async function handler(req, res) {
     calendar_writes: 0,
   });
 };
+
+module.exports = handler;
+module.exports.config = { maxDuration: 300 };
