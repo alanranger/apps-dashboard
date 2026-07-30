@@ -31,6 +31,15 @@ function relatedId(habitId, idealDate) {
 }
 
 /** Existing keyed habit blocks — calendar event times only (live diary = truth). */
+function parseDiaryPinTimes(change) {
+  const m = String(change || '').match(/^diary_pin:([^|]+)\|([^|]+)/);
+  if (!m) return null;
+  const startIso = m[1].trim();
+  const endIso = m[2].trim();
+  if (!Number.isFinite(Date.parse(startIso)) || !Number.isFinite(Date.parse(endIso))) return null;
+  return { startIso, endIso };
+}
+
 function loadExistingFromLog(logs, habits, gcalEvents) {
   const habitById = new Map((habits || []).map((h) => [h.id, h]));
   const byEvent = new Map();
@@ -39,23 +48,31 @@ function loadExistingFromLog(logs, habits, gcalEvents) {
   }
   const best = new Map();
   for (const row of logs || []) {
-    if (!row.calendar_event_id || !row.ideal_date || !row.recurring_task_id) continue;
+    if (!row.ideal_date || !row.recurring_task_id) continue;
     const k = `${row.recurring_task_id}|${row.ideal_date}`;
     if (best.has(k)) continue;
     const habit = habitById.get(row.recurring_task_id);
     if (!habit) continue;
-    const ev = byEvent.get(row.calendar_event_id);
-    // Mid-apply / regen: skip log rows whose event is missing from live GCal.
-    if (!ev?.start?.dateTime) continue;
-    const startIso = new Date(ev.start.dateTime).toISOString();
-    const endIso = new Date(ev.end?.dateTime || ev.start.dateTime).toISOString();
+    const ev = row.calendar_event_id ? byEvent.get(row.calendar_event_id) : null;
+    // Prefer live Google times; fall back to diary_pin so unflushed pins occupy busy.
+    let startIso = null;
+    let endIso = null;
+    if (ev?.start?.dateTime && ev.status !== 'cancelled') {
+      startIso = new Date(ev.start.dateTime).toISOString();
+      endIso = new Date(ev.end?.dateTime || ev.start.dateTime).toISOString();
+    } else {
+      const pin = parseDiaryPinTimes(row.change);
+      if (!pin) continue;
+      startIso = pin.startIso;
+      endIso = pin.endIso;
+    }
     best.set(k, {
       habit_id: row.recurring_task_id,
       title: habit.title,
       ideal_date: row.ideal_date,
       startIso,
       endIso,
-      calendar_event_id: row.calendar_event_id,
+      calendar_event_id: (ev?.status === 'cancelled') ? null : (row.calendar_event_id || null),
     });
   }
   return [...best.values()];
@@ -607,7 +624,11 @@ async function runHabitPlacerPropose(ctx) {
   const [habits, deps, logs, taskRows, travelBlocks, restDb] = await Promise.all([
     sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule,last_done,rolls_used&active=eq.true'),
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
-    sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
+    sb(
+      'recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change'
+      + `&or=(and(scheduled_date.gte.${fromYmd},scheduled_date.lte.${toYmd}),and(ideal_date.gte.${fromYmd},ideal_date.lte.${toYmd}))`
+      + '&order=at.desc&limit=8000',
+    ),
     sb(
       'tasks?select=display_id,title,state,priority,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
       + 'depends_on:depends_on_task_id(display_id)'
@@ -693,7 +714,8 @@ async function runHabitPlacerPropose(ctx) {
   let habitDbApplied = 0;
   let habitRolls = { rolled: 0 };
   const proofOk = !!proof?.ok;
-  if (writePending) {
+  // Never commit overlapping packs. Proof fail → proposals only (no pin/bump DB writes).
+  if (writePending && proofOk) {
     for (const a of amendments) {
       // KEEP with no Google id → CREATE.
       // CREATE/MOVE always. DELETE only when the old slot is illegal (blocked day
@@ -773,10 +795,50 @@ async function runHabitPlacerPropose(ctx) {
     } catch (e) {
       habitRolls = { rolled: 0, error: e.message };
     }
+  } else if (writePending && !proofOk) {
+    // Proof failed — surface intents as pending only; do not pin or bump into clashes.
+    for (const a of amendments) {
+      if (a.action === 'DELETE') {
+        try {
+          if (await applyHabitAmendmentToDb(sb, a)) habitDbApplied += 1;
+        } catch (_) { /* ignore */ }
+      }
+      const row = amendmentToPending(a);
+      if (!row) continue;
+      if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
+      const out = await sb('pending_diary_changes', {
+        method: 'POST',
+        body: {
+          ...row,
+          summary: `[proof-blocked] ${row.summary || a.title || 'habit'}`,
+          status: a.action === 'DELETE' ? 'applied' : 'pending',
+          resolved_at: a.action === 'DELETE' ? new Date().toISOString() : null,
+          resolved_by: a.action === 'DELETE' ? 'habit_placer_enforce' : null,
+        },
+      });
+      const id = Array.isArray(out) ? out[0]?.id : out?.id;
+      if (id && inserted) inserted.push(id);
+      if (id) pendingWrote += 1;
+    }
+    for (const b of allBumps) {
+      const row = bumpToPending(b);
+      if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
+      const out = await sb('pending_diary_changes', {
+        method: 'POST',
+        body: {
+          ...row,
+          summary: `[proof-blocked] ${row.summary || `MC-${b.display_id}`}`,
+          status: 'pending',
+        },
+      });
+      const id = Array.isArray(out) ? out[0]?.id : out?.id;
+      if (id && inserted) inserted.push(id);
+      if (id) pendingWrote += 1;
+    }
   }
 
   let blockedCleared = [];
-  if (writePending) {
+  if (writePending && proofOk) {
     try {
       blockedCleared = await clearHabitsDatedOnBlockedDays(
         sb, blockedSpans, fromYmd, toYmd, placements,
@@ -818,6 +880,8 @@ async function runHabitPlacerPropose(ctx) {
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
     proof,
+    proof_ok: proofOk,
+    proof_writes_blocked: writePending && !proofOk,
     pending_wrote: pendingWrote,
     calendar_writes: 0,
   };

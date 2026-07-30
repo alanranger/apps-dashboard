@@ -1408,11 +1408,14 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
   const dayUsed = {};
   const softTasks = opts.softTaskIntervals || [];
   const bumps = opts.bumps || findTaskBumps(placements, softTasks);
-  const bumpedIds = new Set(bumps.map((b) => Number(b.display_id)));
+  // Only SCHEDULED bumps clear a habit↔task clash. Unplaced bumps still mean overlap.
+  const resolvedBumpIds = new Set(
+    bumps.filter((b) => !b.unplaced && b.new_start).map((b) => Number(b.display_id)),
+  );
 
   // Cap includes soft tasks that remain (not bumped) — packed days must not exceed hard.
   // Do NOT seed away/rest banners or multi-day busy spans into the cap meter.
-  seedDayUsed(dayUsed, softTasks.filter((t) => !bumpedIds.has(Number(t.display_id))), null, null);
+  seedDayUsed(dayUsed, softTasks.filter((t) => !resolvedBumpIds.has(Number(t.display_id))), null, null);
 
   for (let i = 0; i < placements.length; i += 1) {
     const a = placements[i];
@@ -1432,7 +1435,7 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
     }
     for (const t of softTasks) {
       if (!overlaps(aS, aE, t.startMs, t.endMs)) continue;
-      if (bumpedIds.has(Number(t.display_id))) continue;
+      if (resolvedBumpIds.has(Number(t.display_id))) continue;
       // Same/higher-priority task should have ringfenced this habit.
       if (priorityRank(t.priority) <= priorityRank(a.priority)) {
         fails.push(`habit-task-fence: ${a.title} × MC-${t.display_id}`);

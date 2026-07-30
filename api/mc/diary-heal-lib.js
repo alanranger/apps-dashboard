@@ -243,6 +243,9 @@ async function queueOrphanDecompress(sb, primary) {
   });
   let orphans_queued = 0;
   for (const d of strips) {
+    // Workshop travel decompress ("Decompress — {workshop}") is owned by travel_blocks.
+    // Only gap strips titled "after …" are eligible for orphan purge here.
+    if (!/Decompress\s*—\s*after\s+/i.test(d.summary || '')) continue;
     const day = isoToLondonDate(d.start.dateTime);
     const after = decompressAfterLabel(d.summary);
     if (parentMatchesDecompress(primary, d, after, day)) continue;
@@ -324,11 +327,12 @@ async function runDiaryHeal(sb, {
   if (flushAfter) {
     try {
       const { pushSync } = require('./gcal-auto-sync-lib');
+      const { runRuleEventMasterSync } = require('./rule-event-masters-lib');
       let applied = 0;
       let failed = 0;
       for (let i = 0; i < 12; i += 1) {
         const batch = await pushSync(sb, who, {
-          includeRuleMasters: i === 11,
+          includeRuleMasters: false,
           includeBacklog: false,
           limit: 40,
           force: i === 0,
@@ -338,7 +342,13 @@ async function runDiaryHeal(sb, {
         failed += f.failed || 0;
         if (!(f.remaining_planned > 0) && !(f.applied > 0)) break;
       }
-      flush = { applied, failed };
+      let rule_masters = null;
+      try {
+        rule_masters = await runRuleEventMasterSync(sb, { writeGcal: true, weeks: 52 });
+      } catch (e) {
+        rule_masters = { error: e.message };
+      }
+      flush = { applied, failed, rule_masters };
     } catch (e) {
       flush = { error: e.message || 'flush failed' };
     }

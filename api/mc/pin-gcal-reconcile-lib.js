@@ -25,11 +25,41 @@ function bareHabitTitle(summary, prefix) {
   return s.replace(/^DONE\s*[·•\-–]\s*/i, '').trim().toLowerCase();
 }
 
+async function slotOccupied(sb, habitId, startIso, endIso, from, to) {
+  const startMs = Date.parse(startIso);
+  const endMs = Date.parse(endIso);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return true;
+  const logs = await sb(
+    `recurring_log?select=recurring_task_id,change,calendar_event_id`
+    + `&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=at.desc&limit=4000`,
+  ) || [];
+  const seen = new Set();
+  for (const row of logs) {
+    if (row.recurring_task_id === habitId) continue;
+    const pin = parsePin(row.change);
+    if (!pin) continue;
+    const k = row.recurring_task_id;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const a = Date.parse(pin.start);
+    const b = Date.parse(pin.end);
+    if (Number.isFinite(a) && Number.isFinite(b) && a < endMs && startMs < b) return true;
+  }
+  const tasks = await sb(
+    `tasks?select=id,scheduled_start,scheduled_end`
+    + `&scheduled_start=lt.${encodeURIComponent(endIso)}`
+    + `&scheduled_end=gt.${encodeURIComponent(startIso)}`
+    + '&state=not.in.(done,verified,wont_do,superseded)&limit=20',
+  ) || [];
+  return tasks.length > 0;
+}
+
 /**
  * Re-queue CREATE for pins whose calendar_event_id is dead or null.
  * Clears stale IDs so flush inserts instead of patching corpses.
  * When the event is alive but times drifted, pull live times into the pin
  * so Diary stops painting a different slot than Google.
+ * Never recreate into a slot already occupied by another habit/task.
  */
 async function healMissingPinEvents(sb, from, to, prefixes) {
   const logs = await sb(
@@ -42,6 +72,7 @@ async function healMissingPinEvents(sb, from, to, prefixes) {
   let missing_cleared = 0;
   let inserts_queued = 0;
   let pins_synced_from_gcal = 0;
+  let pins_unplaced_clash = 0;
 
   for (const log of logs) {
     const pin = parsePin(log.change);
@@ -93,6 +124,21 @@ async function healMissingPinEvents(sb, from, to, prefixes) {
       missing_cleared += 1;
     }
 
+    // Occupied slot → unplace rather than recreate a stacked conflict.
+    if (await slotOccupied(sb, habit.id, pin.start, pin.end, from, to)) {
+      await sb(`recurring_log?id=eq.${log.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          change: `unplaced ${log.ideal_date || log.scheduled_date}|reconcile_clash`,
+          scheduled_date: null,
+          calendar_event_id: null,
+          roll_reason: 'pin_reconcile_clash',
+        },
+      });
+      pins_unplaced_clash += 1;
+      continue;
+    }
+
     const related = relatedIdForHabit(habit.id, log.ideal_date || log.scheduled_date, null);
     await supersedeSiblingHabitRows(sb, {
       habitId: habit.id,
@@ -120,7 +166,7 @@ async function healMissingPinEvents(sb, from, to, prefixes) {
     });
     inserts_queued += 1;
   }
-  return { missing_cleared, inserts_queued, pins_synced_from_gcal };
+  return { missing_cleared, inserts_queued, pins_synced_from_gcal, pins_unplaced_clash };
 }
 
 /**
