@@ -169,7 +169,7 @@ function occurrenceStatus(task, idealYmd) {
     return { kind: 'skipped', text: `${idealYmd} · skipped` };
   }
   if (/^unplaced/i.test(ch)) {
-    return { kind: 'unplaced', text: `${idealYmd} · NOT in diary (no free slot)` };
+    return { kind: 'unplaced', text: `${idealYmd} · NOT in diary (waiting for placer)` };
   }
   if (/^diary_pin:/i.test(ch)) {
     const m = ch.match(/^diary_pin:([^|]+)\|/);

@@ -1025,14 +1025,14 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
     const before = addDays(cover.startDay, -1);
     if (mode === 'forward') {
       const open = firstOpenOnOrAfter(
-        after >= idealYmd ? after : idealYmd, ruleMap, holidays, awaySpans, 14, forHabits,
+        after >= idealYmd ? after : idealYmd, ruleMap, holidays, awaySpans, 60, forHabits,
       );
       if (open) days.push(open);
     } else if (mode === 'backward') {
       if (before <= idealYmd) days.push(before);
     } else {
       days.push(before, after);
-      const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans, 14, forHabits);
+      const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans, 60, forHabits);
       if (open) days.push(open);
     }
   }
@@ -1129,10 +1129,10 @@ function seedDayUsed(dayUsed, intervals, fromYmd, toYmd) {
   }
 }
 
-function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, ruleMap) {
+function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, ruleMap, opts = {}) {
   const win = workingWindow(ruleMap, day);
   const { hard } = dayCapLimits(ruleMap);
-  if ((dayUsed[day] || 0) + durationMin > hard) return null;
+  if (!opts.ignoreCap && (dayUsed[day] || 0) + durationMin > hard) return null;
 
   const idealMin = parseHm(idealHm);
   const starts = [];
@@ -1189,71 +1189,102 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     || b.kind === 'teaching_day'
     || b.kind === 'rest_after_workshop'
     || b.restDay);
-  // opts.existingHabitIntervals must already be merged into `busy` with habit_id + ideal_date
-  // so self-strip below can KEEP/MOVE an occurrence without colliding with itself.
+
+  function tryDays(habit, ideal, days, fence, ignoreCap = false) {
+    const busySansSelf = busyWork
+      .concat(fence)
+      .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
+    for (const day of days) {
+      if (day > toYmd) continue;
+      if (dayBlockedForHabits(day, awaySpans)) continue;
+      if (!isSchedulableDay(day, ruleMap, holidays)) continue;
+      const trial = trySlotOnDay(
+        day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
+        habit.title, busySansSelf, placements, dayUsed, ruleMap,
+        { ignoreCap },
+      );
+      if (!trial || !depOk(habit, trial, placedByHabit, deps)) continue;
+      return trial;
+    }
+    return null;
+  }
+
+  /** Prefer window; if full, walk forward day-by-day to horizon (always schedule). */
+  function findSlotAlways(habit, ideal) {
+    const fence = taskFenceForHabit(opts.softTaskIntervals || [], habit);
+    const windowDays = candidateDays(
+      ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
+      habit.rrule, true,
+    );
+    let slot = tryDays(habit, ideal, windowDays, fence, false);
+    if (slot) return slot;
+    const extended = [];
+    let d = ideal;
+    for (let i = 0; i < 120; i += 1) {
+      if (d > toYmd) break;
+      if (!windowDays.includes(d)) extended.push(d);
+      d = addDays(d, 1);
+    }
+    // Extended search may exceed daily cap — still no overlaps / blocked days.
+    return tryDays(habit, ideal, extended, fence, true);
+  }
+
+  function commitSlot(habit, ideal, slot) {
+    const row = {
+      habit_id: habit.id,
+      title: habit.title,
+      priority: habit.priority,
+      ideal_date: ideal,
+      day: slot.day,
+      startIso: slot.startIso,
+      endIso: slot.endIso,
+      duration_min: slot.durationMin,
+    };
+    placements.push(row);
+    dayUsed[slot.day] = (dayUsed[slot.day] || 0) + slot.durationMin;
+    if (!placedByHabit.has(habit.id)) placedByHabit.set(habit.id, []);
+    placedByHabit.get(habit.id).push(row);
+    busyWork.push({
+      startMs: Date.parse(slot.startIso),
+      endMs: Date.parse(slot.endIso),
+      summary: habit.title,
+      habit_id: habit.id,
+      ideal_date: ideal,
+    });
+    return row;
+  }
 
   for (const habit of ordered) {
     for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
-      const days = candidateDays(
-        ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
-        habit.rrule, true,
-      );
-      // Ringfence: same/higher-priority dated tasks. Lower-priority tasks may yield later.
-      const fence = taskFenceForHabit(opts.softTaskIntervals || [], habit);
-      // While re-placing this occurrence, ignore its own prior block so it can KEEP/MOVE.
-      const busySansSelf = busyWork
-        .concat(fence)
-        .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
-      let slot = null;
-      for (const day of days) {
-        if (dayBlockedForHabits(day, awaySpans)) continue;
-        const trial = trySlotOnDay(
-          day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
-          habit.title, busySansSelf, placements, dayUsed, ruleMap,
-        );
-        if (!trial || !depOk(habit, trial, placedByHabit, deps)) continue;
-        slot = trial;
-        break;
-      }
+      const slot = findSlotAlways(habit, ideal);
       if (!slot) {
-        unplaced.push({ habit_id: habit.id, title: habit.title, ideal_date: ideal });
+        unplaced.push({
+          habit_id: habit.id, title: habit.title, ideal_date: ideal,
+          reason: 'no_slot_in_horizon',
+        });
         continue;
       }
-      const row = {
-        habit_id: habit.id,
-        title: habit.title,
-        priority: habit.priority,
-        ideal_date: ideal,
-        day: slot.day,
-        startIso: slot.startIso,
-        endIso: slot.endIso,
-        duration_min: slot.durationMin,
-      };
-      placements.push(row);
-      dayUsed[slot.day] = (dayUsed[slot.day] || 0) + slot.durationMin;
-      if (!placedByHabit.has(habit.id)) placedByHabit.set(habit.id, []);
-      placedByHabit.get(habit.id).push(row);
-      busyWork.push({
-        startMs: Date.parse(slot.startIso),
-        endMs: Date.parse(slot.endIso),
-        summary: habit.title,
-        habit_id: habit.id,
-        ideal_date: ideal,
-      });
+      commitSlot(habit, ideal, slot);
     }
   }
-  cullPackedDayPlacements(placements, unplaced, dayUsed, ruleMap);
+  rehomeCulledPlacements(placements, unplaced, dayUsed, busyWork, ruleMap, {
+    findSlotAlways, commitSlot, toYmd,
+  });
   return { placements, unplaced };
 }
 
-/** Final pass: drop lower-priority / later placements that still gap/overlap. */
-function cullPackedDayPlacements(placements, unplaced, dayUsed, ruleMap) {
-  const kept = [];
+/**
+ * If two placements still clash after packing, move the lower-priority one to the
+ * next free day — never leave it unplaced while horizon has room.
+ */
+function rehomeCulledPlacements(placements, unplaced, dayUsed, busyWork, ruleMap, ctx) {
   const sorted = placements.slice().sort((a, b) => {
     const pr = priorityRank(a.priority) - priorityRank(b.priority);
     if (pr !== 0) return pr;
     return Date.parse(a.startIso) - Date.parse(b.startIso);
   });
+  const kept = [];
+  const toRehome = [];
   for (const p of sorted) {
     const aS = Date.parse(p.startIso);
     const aE = Date.parse(p.endIso);
@@ -1266,17 +1297,40 @@ function cullPackedDayPlacements(placements, unplaced, dayUsed, ruleMap) {
       if (gap < 0) return true;
       return gap < requiredGapMins(k.title, p.title, ruleMap);
     });
-    if (conflict) {
-      unplaced.push({
-        habit_id: p.habit_id, title: p.title, ideal_date: p.ideal_date,
-        reason: 'cull_overlap_gap',
-      });
-      continue;
-    }
-    kept.push(p);
+    if (conflict) toRehome.push(p);
+    else kept.push(p);
   }
   placements.length = 0;
   for (const p of kept) placements.push(p);
+
+  for (const p of toRehome) {
+    dayUsed[p.day] = Math.max(0, (dayUsed[p.day] || 0) - (p.duration_min || 0));
+    // Drop the culled block from busy so rehome can land elsewhere.
+    for (let i = busyWork.length - 1; i >= 0; i -= 1) {
+      const b = busyWork[i];
+      if (b.habit_id === p.habit_id && b.ideal_date === p.ideal_date) busyWork.splice(i, 1);
+    }
+    const habit = {
+      id: p.habit_id,
+      title: p.title,
+      priority: p.priority,
+      duration_min: p.duration_min,
+      ideal_time: '09:00',
+      window_days: 14,
+      time_critical: false,
+      rrule: '',
+    };
+    const slot = ctx.findSlotAlways(habit, addDays(p.day, 1))
+      || ctx.findSlotAlways(habit, p.ideal_date);
+    if (!slot) {
+      unplaced.push({
+        habit_id: p.habit_id, title: p.title, ideal_date: p.ideal_date,
+        reason: 'cull_no_rehome',
+      });
+      continue;
+    }
+    ctx.commitSlot(habit, p.ideal_date, slot);
+  }
 }
 
 function sameLondonSlot(aIso, bIso) {
