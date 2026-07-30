@@ -36,6 +36,16 @@ function statusFor(task) {
     }
     const lastDue = lastDueOnOrBefore(task.rrule, today);
     if (lastDue && (!task.last_done || task.last_done < lastDue) && lastDue < today) {
+      // Pin / skip for that ideal clears missed. Future Diary placements also
+      // mean the placer caught up — don't red-flag just because last_done is null.
+      const lastSt = occurrenceStatus(task, lastDue);
+      if (lastSt.kind === 'pinned' || lastSt.kind === 'done' || lastSt.kind === 'skipped') {
+        return { label: 'ok', cls: '' };
+      }
+      const upcoming = upcomingIdeals(task, 4);
+      if (upcoming.some((d) => occurrenceStatus(task, d).kind === 'pinned')) {
+        return { label: 'ok', cls: '' };
+      }
       return { label: 'missed', cls: 'rec-missed' };
     }
   } catch (e) { /* ignore bad rrule */ }
