@@ -51,9 +51,12 @@ function nthWeekdayInMonth(year, month, nth, dow) {
   return null;
 }
 
-function nextWeekly(after, byday) {
+function nextWeekly(after, byday, interval = 1) {
   const bd = parseByDay(byday);
   if (!bd || bd.dow == null) return null;
+  const step = Math.max(1, Number(interval) || 1);
+  // Same weekday as previous occurrence → jump INTERVAL weeks (matches api/mc/rrule-core).
+  if (after.getDay() === bd.dow) return addDays(after, step * 7);
   let d = addDays(after, 1);
   for (let i = 0; i < 14; i += 1) {
     if (d.getDay() === bd.dow) return d;
@@ -62,16 +65,17 @@ function nextWeekly(after, byday) {
   return null;
 }
 
-function nextMonthlyDom(after, dom) {
+function nextMonthlyDom(after, dom, interval = 1) {
   let y = after.getFullYear();
   let m = after.getMonth();
-  for (let i = 0; i < 24; i += 1) {
+  const step = Math.max(1, Number(interval) || 1);
+  for (let i = 0; i < 48; i += 1) {
     const last = new Date(y, m + 1, 0).getDate();
     const day = Math.min(dom, last);
     const cand = new Date(y, m, day, 12, 0, 0, 0);
     if (cand > after) return cand;
-    m += 1;
-    if (m > 11) { m = 0; y += 1; }
+    m += step;
+    while (m > 11) { m -= 12; y += 1; }
   }
   return null;
 }
@@ -100,8 +104,8 @@ export function nextDueFromRrule(rrule, fromDate) {
   const interval = Number(p.INTERVAL) || 1;
 
   let n = null;
-  if (p.FREQ === 'WEEKLY' && p.BYDAY) n = nextWeekly(after, p.BYDAY.split(',')[0]);
-  else if (p.FREQ === 'MONTHLY' && p.BYMONTHDAY) n = nextMonthlyDom(after, Number(p.BYMONTHDAY));
+  if (p.FREQ === 'WEEKLY' && p.BYDAY) n = nextWeekly(after, p.BYDAY.split(',')[0], interval);
+  else if (p.FREQ === 'MONTHLY' && p.BYMONTHDAY) n = nextMonthlyDom(after, Number(p.BYMONTHDAY), interval);
   else if (p.FREQ === 'MONTHLY' && p.BYDAY) n = nextMonthlyByDay(after, p.BYDAY.split(',')[0], interval);
   return n ? toYmd(n) : null;
 }

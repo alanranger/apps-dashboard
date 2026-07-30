@@ -162,14 +162,14 @@ function occurrenceStatus(task, idealYmd) {
   }
   const log = latestLogForIdeal(task.id, idealYmd);
   if (!log) {
-    return { kind: 'open', text: `${idealYmd} · not placed yet` };
+    return { kind: 'open', text: `${idealYmd} · not attempted yet` };
   }
   const ch = String(log.change || '');
   if (/^skipped/i.test(ch)) {
     return { kind: 'skipped', text: `${idealYmd} · skipped` };
   }
   if (/^unplaced/i.test(ch)) {
-    return { kind: 'unplaced', text: `${idealYmd} · NOT in diary` };
+    return { kind: 'unplaced', text: `${idealYmd} · NOT in diary (no free slot)` };
   }
   if (/^diary_pin:/i.test(ch)) {
     const m = ch.match(/^diary_pin:([^|]+)\|/);
@@ -184,13 +184,17 @@ function occurrenceStatus(task, idealYmd) {
 
 function upcomingIdeals(task, count = 4) {
   const today = todayStr();
-  const from = addDaysYmd(today, -7);
-  const to = addDaysYmd(today, 120);
+  // Anchor from a real prior due so WEEKLY INTERVAL=8 does not invent every Monday.
+  let from = today;
+  try {
+    const last = lastDueOnOrBefore(task.rrule, addDaysYmd(today, -1));
+    if (last) from = last;
+  } catch (_) { /* ignore */ }
+  const to = addDaysYmd(today, 180);
   try {
     const all = occurrencesInRange(task.rrule, from, to);
-    const upcoming = all.filter((d) => d >= today || (task.last_done && d > task.last_done));
-    const pick = (upcoming.length ? upcoming : all).slice(0, count);
-    return pick;
+    const upcoming = all.filter((d) => d >= today);
+    return (upcoming.length ? upcoming : all).slice(0, count);
   } catch (_) {
     const n = nextDue(task);
     return n && n !== '—' ? [n] : [];
