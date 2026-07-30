@@ -191,7 +191,13 @@ module.exports = async function handler(req, res) {
       }
       if (body.entity === 'run_check') {
         const scope = body.scope === 'full' ? 'full' : '8w';
-        return json(res, 200, { run: await runDiaryCheck(scope) });
+        const detect = await runDiaryCheck(scope);
+        const { runDiaryHeal } = require('./diary-heal-lib');
+        const heal = await runDiaryHeal(sb, { actor });
+        return json(res, 200, {
+          run: { ...(detect || {}), heal },
+          calendar_writes: 0,
+        });
       }
       return json(res, 400, {
         error: 'entity required: rule|drive|hotel|pending|conflict_preview|resolve_overlap|resolve_block|run_check',

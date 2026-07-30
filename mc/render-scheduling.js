@@ -269,6 +269,7 @@ const CHECK_PHASES = [
   'Hotel deadlines',
   'Calendar fetch + rule breaches',
   'Fixture blocks',
+  'Heal overlaps & orphan decompress',
   'Recording run',
 ];
 
@@ -280,6 +281,27 @@ function phaseListHtml(activeIdx) {
     else if (i === activeIdx) { cls = 'active'; mark = '…'; }
     return `<li class="${cls}"><span class="sched-phase-mark">${mark}</span>${esc(label)}</li>`;
   }).join('');
+}
+
+function healSummaryHtml(heal) {
+  if (!heal) return '';
+  const fixed = heal.overlaps_fixed ?? 0;
+  const failed = heal.overlaps_failed ?? 0;
+  const orphans = (heal.orphans_queued ?? 0) + (heal.gaps_retired ?? 0);
+  const pushN = heal.push_queued ?? 0;
+  const remain = heal.remaining_pending ?? 0;
+  return `
+    <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35)">
+      <p style="margin:0 0 4px"><strong>Auto-heal</strong> (DB + push queue — Google not written yet)</p>
+      <p class="meta" style="margin:0">
+        Moved <strong>${fixed}</strong> lower-priority overlap${fixed === 1 ? '' : 's'}
+        · queued <strong>${orphans}</strong> orphan/stale decompress cleanup
+        ${failed ? ` · <strong>${failed}</strong> overlap${failed === 1 ? '' : 's'} still need a decision` : ''}
+        · <strong>${remain}</strong> pending row${remain === 1 ? '' : 's'} left
+        · <strong>${pushN}</strong> write${pushN === 1 ? '' : 's'} ready for Diary Push
+      </p>
+      <p class="meta" style="margin:6px 0 0"><strong>Next:</strong> Open Diary → Push to write Google.</p>
+    </div>`;
 }
 
 function summaryHtml(run, scope) {
@@ -297,6 +319,7 @@ function summaryHtml(run, scope) {
     .join('');
   return `
     <div class="sched-check-summary">
+      ${healSummaryHtml(run.heal)}
       <div class="sched-sum-grid">
         <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full horizon' : 'Next 8 weeks')}</strong></div>
         <div><span class="meta">Covered</span><strong>${esc(covered)}</strong></div>
@@ -355,9 +378,12 @@ function openCheckProgressModal(scope) {
     finish(run) {
       clearInterval(timer);
       const secs = Math.round((Date.now() - started) / 1000);
+      const heal = run?.heal;
+      const pushN = heal?.push_queued ?? 0;
       box.innerHTML = `
-        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check complete</h2>
-        <p class="meta">Finished in ${secs}s · findings are in the pending list below</p>
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check + heal complete</h2>
+        <p class="meta">Finished in ${secs}s · overlaps/orphans auto-fixed where possible
+          ${pushN ? ` · <strong>Open Diary → Push ${pushN} write${pushN === 1 ? '' : 's'}</strong> to update Google` : ''}</p>
         ${summaryHtml(run, scope)}
         <div style="display:flex;gap:8px;margin-top:14px">
           <button type="button" class="btn-verify" id="schedCheckClose">Close</button>
