@@ -16,7 +16,8 @@ function relatedIdForTask(taskId) {
 }
 
 function relatedIdForHabit(habitId, idealDate, calendarEventId) {
-  if (calendarEventId) return `gcal:habit:${habitId}:evt:${calendarEventId}`;
+  // Always key by ideal — evt:* lineages caused CREATE patches on dead IDs
+  // while a parallel ideal-keyed insert created duplicates.
   return `gcal:habit:${habitId}:${idealDate}`;
 }
 

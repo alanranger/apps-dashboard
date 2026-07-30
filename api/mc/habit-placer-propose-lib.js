@@ -221,8 +221,31 @@ async function applyHabitAmendmentToDb(sb, a) {
     + '&select=id,calendar_event_id,scheduled_date,change&order=at.desc&limit=1',
   );
   const keepId = logRows?.[0]?.id || null;
-  const evtId = a.calendar_event_id || logRows?.[0]?.calendar_event_id || null;
+  // CREATE must never reuse a stale calendar_event_id — that queues a patch on a
+  // deleted Primary event and leaves a Diary ghost forever.
+  const evtId = a.action === 'CREATE'
+    ? null
+    : (a.calendar_event_id || logRows?.[0]?.calendar_event_id || null);
   const log = logRows?.[0] || null;
+
+  // CREATE after a dead link: drop the corpse so flush inserts cleanly.
+  if (a.action === 'CREATE' && logRows?.[0]?.calendar_event_id) {
+    const stale = logRows[0].calendar_event_id;
+    await upsertPushRow(sb, {
+      related_id: relatedIdForHabit(a.habit_id, a.ideal_date, stale),
+      entity_type: 'habit',
+      change_kind: 'skip',
+      summary: `Placer CREATE supersedes stale event: ${a.title}`,
+      proposed_action: `DELETE Primary event ${stale} (stale before recreate).`,
+      payload: {
+        habit_id: a.habit_id,
+        title: a.title,
+        ideal_date: a.ideal_date,
+        calendar_event_id: stale,
+        action: 'delete_event',
+      },
+    }).catch(() => {});
+  }
 
   // KEEP: Google may already match plan while recurring_log pin/scheduled_date is stale.
   if (a.action === 'KEEP') {

@@ -304,19 +304,26 @@ function healSummaryHtml(heal) {
   const pushN = heal.push_queued ?? 0;
   const remain = heal.remaining_pending ?? 0;
   const left = heal.overlaps_left || 0;
+  const rec = heal.reconcile || {};
+  const flushed = heal.flush?.applied ?? 0;
+  const flushErr = heal.flush?.error;
   return `
     <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35)">
-      <p style="margin:0 0 4px"><strong>Auto-heal</strong> (DB + push queue — Google not written yet)</p>
+      <p style="margin:0 0 4px"><strong>Auto-heal + pin↔Google reconcile</strong></p>
       <p class="meta" style="margin:0">
         Moved <strong>${fixed}</strong> lower-priority overlap${fixed === 1 ? '' : 's'}
         · slid <strong>${gapFixed}</strong> for decompress gap${gapFixed === 1 ? '' : 's'}
         · queued <strong>${orphans}</strong> orphan/stale decompress cleanup
+        · cleared <strong>${rec.missing_cleared ?? 0}</strong> dead pin event id${(rec.missing_cleared ?? 0) === 1 ? '' : 's'}
+        · deleted <strong>${rec.dupes_deleted ?? 0}</strong> duplicate Google clone${(rec.dupes_deleted ?? 0) === 1 ? '' : 's'}
+        · wrote <strong>${flushed}</strong> Google event${flushed === 1 ? '' : 's'}
         ${failed ? ` · <strong>${failed}</strong> overlap${failed === 1 ? '' : 's'} still need a decision` : ''}
         ${left ? ` · <strong>${left}</strong> more overlap${left === 1 ? '' : 's'} next run` : ''}
         · <strong>${remain}</strong> pending row${remain === 1 ? '' : 's'} left
-        · <strong>${pushN}</strong> write${pushN === 1 ? '' : 's'} ready for Diary Push
+        · <strong>${pushN}</strong> write${pushN === 1 ? '' : 's'} queued
       </p>
-      <p class="meta" style="margin:6px 0 0"><strong>Next:</strong> Open Diary → Push to write Google.</p>
+      ${flushErr ? `<p class="err" style="margin:6px 0 0">Flush: ${esc(flushErr)}</p>` : ''}
+      <p class="meta" style="margin:6px 0 0"><strong>Full horizon</strong> now reconciles pins to live Google and flushes. Diary Push still available for manual moves.</p>
     </div>`;
 }
 
@@ -471,10 +478,10 @@ async function runFullHorizonWithChunks(ui) {
     placerWindows.push(p.placer || { from, to, skipped: true });
     pass += 1;
   }
-  ui.setStatus(`Pass ${pass} — auto-heal overlaps / orphans…`);
+  ui.setStatus(`Pass ${pass} — auto-heal + pin↔Google reconcile + flush…`);
   const healRes = await api('/api/mc/scheduling', {
     method: 'PATCH',
-    body: { entity: 'run_heal' },
+    body: { entity: 'run_heal', flush: true },
     signal: ui.signal,
   });
   return {
@@ -482,6 +489,7 @@ async function runFullHorizonWithChunks(ui) {
     placer_windows: placerWindows,
     heal: healRes.heal || run.heal,
     habit_horizon_weeks: totalWeeks,
+    calendar_writes: healRes.calendar_writes || 0,
   };
 }
 

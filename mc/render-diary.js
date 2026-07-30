@@ -563,6 +563,9 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const oosBadge = b.awaiting_push
     ? '<span class="dy-oos-badge" title="Moved here — Push to update Google">PUSH</span>'
     : (b.out_of_sync ? '<span class="dy-oos-badge" title="DB pin differs from Google">OUT OF SYNC</span>' : '');
+  const missingBadge = b.gcal_missing
+    ? '<span class="dy-oos-badge" title="Pin points at a missing Google event — run Full Horizon / Push">MISSING GCAL</span>'
+    : '';
   const orphanBadge = b.gcal_orphan ? '<span class="dy-orphan-badge" title="Google only">GCAL</span>' : '';
   const label = isBuffer
     ? (b.title && !/^decompress$/i.test(String(b.title).trim())
@@ -580,6 +583,7 @@ function renderBlock(b, axis, conflicts, lane = 0) {
       ${editBadge}
       ${doneBadge}
       ${oosBadge}
+      ${missingBadge}
       ${orphanBadge}
       ${conflictBadge}
       ${priorityTag(b.priority)}

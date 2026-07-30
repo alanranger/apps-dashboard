@@ -165,21 +165,19 @@ function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
   if (!d0) return false;
   return primary.some((e) => {
     if (e.id === decompressEvent.id) return false;
-    if (/Decompress|Travel |AWAY|REST|⚽/i.test(e.summary || '')) return false;
-    // Prep counts as parent for workshop-style decompress titles.
+    // Prep is NEVER a decompress parent — decompress belongs after the workshop/work block.
+    if (/Decompress|Travel |AWAY|REST|⚽|Prep\s*—/i.test(e.summary || '')) return false;
     const isMc = /^MC\b/i.test(e.summary || '') || /^P\d\s*·\s*MC-/i.test(e.summary || '')
       || /^DONE\b/i.test(e.summary || '');
     if (!isMc) return false;
     if (isoToLondonDate(e.start.dateTime) !== day) return false;
-    // Require adjacency: parent must end within 5 minutes before decompress.
     const end = Date.parse(e.end?.dateTime || e.start.dateTime);
     const gapMin = (d0 - end) / 60000;
     if (gapMin < -1 || gapMin > 5) return false;
     const bare = String(e.summary || '')
       .replace(/^DONE\s*[·•\-–]\s*/i, '')
       .replace(/^MC\s*[^\s]+\s+/, '')
-      .replace(/^P\d\s*·\s*MC-\d+\s*·\s*/i, '')
-      .replace(/^Prep\s*—\s*/i, '');
+      .replace(/^P\d\s*·\s*MC-\d+\s*·\s*/i, '');
     const a = after.toLowerCase().slice(0, 28);
     const b = bare.toLowerCase().slice(0, 28);
     return a && b && (a.includes(b.slice(0, 16)) || b.includes(a.slice(0, 16)));
@@ -307,6 +305,7 @@ async function runDiaryHeal(sb, {
   maxOverlaps = 25,
   maxGaps = 25,
   orphanDays = 200,
+  flushAfter = false,
 } = {}) {
   const who = actor || 'scheduling-heal';
   const overlaps = await healOverlaps(sb, who, maxOverlaps);
@@ -314,6 +313,36 @@ async function runDiaryHeal(sb, {
   const primary = await loadPrimaryEvents(orphanDays);
   const orphans = await queueOrphanDecompress(sb, primary);
   const stale = await queueStaleGapMasters(sb, primary);
+  let reconcile = null;
+  try {
+    const { runPinGcalReconcile } = require('./pin-gcal-reconcile-lib');
+    reconcile = await runPinGcalReconcile(sb, { daysAhead: orphanDays });
+  } catch (e) {
+    reconcile = { error: e.message || 'reconcile failed' };
+  }
+  let flush = null;
+  if (flushAfter) {
+    try {
+      const { pushSync } = require('./gcal-auto-sync-lib');
+      let applied = 0;
+      let failed = 0;
+      for (let i = 0; i < 12; i += 1) {
+        const batch = await pushSync(sb, who, {
+          includeRuleMasters: i === 11,
+          includeBacklog: false,
+          limit: 40,
+          force: i === 0,
+        });
+        const f = batch.flush || batch;
+        applied += f.applied || 0;
+        failed += f.failed || 0;
+        if (!(f.remaining_planned > 0) && !(f.applied > 0)) break;
+      }
+      flush = { applied, failed };
+    } catch (e) {
+      flush = { error: e.message || 'flush failed' };
+    }
+  }
   const remaining = await sb(
     'pending_diary_changes?status=eq.pending&select=id',
   ) || [];
@@ -327,8 +356,11 @@ async function runDiaryHeal(sb, {
     orphans_queued: orphans.orphans_queued,
     gaps_retired: stale.gaps_retired,
     push_queued: overlaps.push_queued + gapHeal.push_queued
-      + orphans.push_queued + stale.push_queued,
+      + orphans.push_queued + stale.push_queued
+      + (reconcile?.push_queued || 0),
     remaining_pending: remaining.length,
+    reconcile,
+    flush,
   };
 }
 

@@ -248,8 +248,10 @@ async function handler(req, res) {
             actor,
             maxOverlaps: 25,
             orphanDays: 120,
+            flushAfter: !!body.flush,
           });
-          return json(res, 200, { heal, calendar_writes: 0 });
+          const writes = heal.flush?.applied || 0;
+          return json(res, 200, { heal, calendar_writes: writes });
         } catch (healErr) {
           return json(res, 200, {
             heal: {

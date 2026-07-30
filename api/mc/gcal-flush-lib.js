@@ -685,7 +685,44 @@ async function applyFlushPlan(sb, plan, actor, opts = {}) {
           results.push({ ...w, ok: false, error: 'patch_missing_live_times' });
           continue;
         }
-        await patchPrimaryEvent(w.event_id, w.patch);
+        try {
+          await patchPrimaryEvent(w.event_id, w.patch);
+        } catch (patchErr) {
+          // Dead event id → recreate instead of failing the pin forever.
+          if (patchErr.status === 404 || patchErr.status === 410) {
+            const insert = {
+              summary: w.patch.summary || w.summary,
+              startIso: w.patch.startIso,
+              endIso: w.patch.endIso,
+            };
+            if (w.patch.location) insert.location = w.patch.location;
+            if (w.patch.description) insert.description = w.patch.description;
+            const created = await insertPrimaryEvent(insert);
+            eventId = created.id;
+            if (w.habit_id && w.ideal_date) {
+              await sb(
+                `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${w.ideal_date}`,
+                {
+                  method: 'PATCH', prefer: 'return=minimal',
+                  body: { calendar_event_id: eventId },
+                },
+              );
+            }
+            if (w.task_id) {
+              await sb(`tasks?id=eq.${w.task_id}`, {
+                method: 'PATCH', prefer: 'return=minimal',
+                body: { calendar_event_id: eventId },
+              });
+            }
+            await syncRecurringLogAfterFlush(sb, w, eventId);
+            if (w.source === 'gcal_push_queue' && w.source_id) {
+              await markPushStatus(sb, [w.source_id], 'applied', actorSafe);
+            }
+            results.push({ ...w, ok: true, event_id: eventId, recovered: 'insert_after_404' });
+            continue;
+          }
+          throw patchErr;
+        }
         const v = await verifyPrimaryEvent(w.event_id, {
           summary: w.patch?.summary,
           startIso: w.patch?.startIso,

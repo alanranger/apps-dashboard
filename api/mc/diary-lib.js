@@ -405,8 +405,18 @@ function indexGcalEventsById(events) {
 function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOLERANCE_MIN) {
   let driftCount = 0;
   const out = (blocks || []).map((b) => {
-    if (b.done || !b.calendar_event_id || !eventById?.has(b.calendar_event_id)) {
+    if (b.done || !b.calendar_event_id) {
       return { ...b, gcal_baseline: false, out_of_sync: false, awaiting_push: false };
+    }
+    // Pin points at a dead/missing Primary event — Diary ghost until reconcile recreates it.
+    if (!eventById?.has(b.calendar_event_id)) {
+      return {
+        ...b,
+        gcal_baseline: false,
+        out_of_sync: true,
+        awaiting_push: true,
+        gcal_missing: true,
+      };
     }
     const g = eventById.get(b.calendar_event_id);
     const dbStart = b.start;
