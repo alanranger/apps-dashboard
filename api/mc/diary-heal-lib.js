@@ -3,12 +3,12 @@
  * DB + gcal_push_queue only — never writes Google Calendar directly.
  */
 const { resolveOverlap } = require('./conflict-resolve-lib');
-const { upsertPushRow } = require('./gcal-push-lib');
+const { relatedIdForTask, upsertPushRow } = require('./gcal-push-lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const { londonToday, addDaysYmd } = require('./diary-lib');
 const { isoToLondonDate, ruleMapFromRows } = require('./scheduling-rules-lib');
 const { workPairs, gapBufferTitle } = require('./buffer-gap-lib');
-const { awaySpansFromTravelBlocks } = require('./habit-placer-lib');
+const { awaySpansFromTravelBlocks, londonYmdHmToUtcMs } = require('./habit-placer-lib');
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -17,6 +17,12 @@ function sleep(ms) {
 function isOverlapPending(row) {
   return row.change_type === 'rule_breach'
     && (/breach:overlap:/.test(row.related_id || '') || /overlaps/i.test(row.summary || ''));
+}
+
+function isGapPending(row) {
+  return row.change_type === 'rule_breach'
+    && (/breach:gap:/.test(row.related_id || '')
+      || /gap -?\d+m < \d+m decompress/i.test(row.summary || ''));
 }
 
 async function healOverlaps(sb, actor, maxOverlaps = 25) {
@@ -45,22 +51,129 @@ async function healOverlaps(sb, actor, maxOverlaps = 25) {
   };
 }
 
+/** Apply concrete MOVE from gap breach proposed_action (same shapes as flush). */
+async function healGaps(sb, actor, maxGaps = 25) {
+  const rows = await sb(
+    'pending_diary_changes?status=eq.pending&select=*&order=detected_at.asc',
+  ) || [];
+  const gaps = rows.filter(isGapPending).slice(0, Math.max(1, maxGaps));
+  let gaps_fixed = 0;
+  let gaps_failed = 0;
+  let push_queued = 0;
+
+  for (const row of gaps) {
+    try {
+      const action = String(row.proposed_action || '');
+      const moveTask = /MOVE MC-(\d+).*?event ([A-Za-z0-9_-]+) to (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})[–-](\d{2}:\d{2})/i
+        .exec(action);
+      const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+)\s*[–-]\s*(\S+)/i
+        .exec(action);
+      if (moveTask) {
+        const displayId = Number(moveTask[1]);
+        const eventId = moveTask[2];
+        const day = moveTask[3];
+        const startIso = new Date(londonYmdHmToUtcMs(day, moveTask[4])).toISOString();
+        const endIso = new Date(londonYmdHmToUtcMs(day, moveTask[5])).toISOString();
+        const tasks = await sb(
+          `tasks?display_id=eq.${displayId}&select=id,display_id,title,calendar_event_id&limit=1`,
+        );
+        const task = tasks?.[0];
+        if (!task) {
+          gaps_failed += 1;
+          continue;
+        }
+        await sb(`tasks?id=eq.${task.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: {
+            scheduled_start: startIso,
+            scheduled_end: endIso,
+            last_activity_at: new Date().toISOString(),
+          },
+        });
+        await upsertPushRow(sb, {
+          related_id: relatedIdForTask(task.id),
+          entity_type: 'task',
+          change_kind: 'move',
+          summary: `Heal gap: slide MC-${displayId} for decompress`,
+          proposed_action: action,
+          payload: {
+            action: 'patch',
+            event_id: eventId || task.calendar_event_id,
+            startIso,
+            endIso,
+            display_id: displayId,
+          },
+        });
+      } else if (movePrimary) {
+        const eventId = movePrimary[1];
+        const startIso = movePrimary[2];
+        const endIso = movePrimary[3];
+        await upsertPushRow(sb, {
+          related_id: `gcal:gap_slide:${eventId}`,
+          entity_type: 'habit',
+          change_kind: 'move',
+          summary: `Heal gap: slide Primary ${eventId}`,
+          proposed_action: action,
+          payload: {
+            action: 'patch',
+            event_id: eventId,
+            startIso,
+            endIso,
+          },
+        });
+      } else {
+        gaps_failed += 1;
+        continue;
+      }
+      await sb(`pending_diary_changes?id=eq.${row.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          status: 'applied',
+          resolved_at: new Date().toISOString(),
+          resolved_by: actor || 'scheduling-heal',
+        },
+      });
+      gaps_fixed += 1;
+      push_queued += 1;
+      await sleep(40);
+    } catch (_) {
+      gaps_failed += 1;
+    }
+  }
+  return {
+    gaps_fixed,
+    gaps_failed,
+    push_queued,
+    gaps_left: Math.max(0, rows.filter(isGapPending).length - gaps.length),
+  };
+}
+
+function decompressAfterLabel(summary) {
+  const s = String(summary || '');
+  const after = /Decompress\s*—\s*after\s+(.+)$/i.exec(s);
+  if (after) return after[1].trim();
+  const bare = /Decompress\s*—\s*(.+)$/i.exec(s);
+  return bare ? bare[1].trim() : '';
+}
+
 function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
   const after = String(afterLabel || '');
+  if (!after) return false;
   return primary.some((e) => {
     if (e.id === decompressEvent.id) return false;
-    if (/Decompress|Prep —|Travel |AWAY|REST|⚽/i.test(e.summary || '')) return false;
-    if (!(/^MC\b/i.test(e.summary || '') || /^P\d\s*·\s*MC-/i.test(e.summary || '')
-      || /^DONE\b/i.test(e.summary || ''))) {
-      return false;
-    }
+    if (/Decompress|Travel |AWAY|REST|⚽/i.test(e.summary || '')) return false;
+    // Prep counts as parent for workshop-style decompress titles.
+    const isMc = /^MC\b/i.test(e.summary || '') || /^P\d\s*·\s*MC-/i.test(e.summary || '')
+      || /^DONE\b/i.test(e.summary || '');
+    if (!isMc) return false;
     if (isoToLondonDate(e.start.dateTime) !== day) return false;
     const bare = String(e.summary || '')
       .replace(/^DONE\s*[·•\-–]\s*/i, '')
       .replace(/^MC\s*[^\s]+\s+/, '')
-      .replace(/^P\d\s*·\s*MC-\d+\s*·\s*/i, '');
-    const a = after.toLowerCase().slice(0, 24);
-    const b = bare.toLowerCase().slice(0, 24);
+      .replace(/^P\d\s*·\s*MC-\d+\s*·\s*/i, '')
+      .replace(/^Prep\s*—\s*/i, '');
+    const a = after.toLowerCase().slice(0, 28);
+    const b = bare.toLowerCase().slice(0, 28);
     return a && b && (a.includes(b.slice(0, 16)) || b.includes(a.slice(0, 16)));
   });
 }
@@ -102,11 +215,14 @@ async function loadPrimaryEvents(daysAhead) {
 }
 
 async function queueOrphanDecompress(sb, primary) {
-  const strips = (primary || []).filter((e) => /Decompress — after /i.test(e.summary || ''));
+  const strips = (primary || []).filter((e) => {
+    const t = e.summary || '';
+    return /Decompress/i.test(t) && (/^MC\b/i.test(t) || /⏳/.test(t));
+  });
   let orphans_queued = 0;
   for (const d of strips) {
     const day = isoToLondonDate(d.start.dateTime);
-    const after = (/Decompress — after (.+)$/i.exec(d.summary) || [])[1] || '';
+    const after = decompressAfterLabel(d.summary);
     if (parentMatchesDecompress(primary, d, after, day)) continue;
     await queueDeleteDecompress(sb, d.id, d.summary);
     orphans_queued += 1;
@@ -165,10 +281,12 @@ async function queueStaleGapMasters(sb, primary) {
 async function runDiaryHeal(sb, {
   actor,
   maxOverlaps = 25,
+  maxGaps = 25,
   orphanDays = 200,
 } = {}) {
   const who = actor || 'scheduling-heal';
   const overlaps = await healOverlaps(sb, who, maxOverlaps);
+  const gapHeal = await healGaps(sb, who, maxGaps);
   const primary = await loadPrimaryEvents(orphanDays);
   const orphans = await queueOrphanDecompress(sb, primary);
   const stale = await queueStaleGapMasters(sb, primary);
@@ -179,9 +297,13 @@ async function runDiaryHeal(sb, {
     overlaps_fixed: overlaps.overlaps_fixed,
     overlaps_failed: overlaps.overlaps_failed,
     overlaps_left: overlaps.overlaps_left || 0,
+    gaps_fixed: gapHeal.gaps_fixed,
+    gaps_failed: gapHeal.gaps_failed,
+    gaps_left: gapHeal.gaps_left || 0,
     orphans_queued: orphans.orphans_queued,
     gaps_retired: stale.gaps_retired,
-    push_queued: overlaps.push_queued + orphans.push_queued + stale.push_queued,
+    push_queued: overlaps.push_queued + gapHeal.push_queued
+      + orphans.push_queued + stale.push_queued,
     remaining_pending: remaining.length,
   };
 }

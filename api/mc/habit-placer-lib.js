@@ -457,7 +457,14 @@ function buildBusyIntervals(events, ruleMap = {}) {
     const fixtureMc = isFixtureBlock(e, ruleMap);
     // MC admin/habits out of busy; fixture flanks stay in (hard-busy).
     if (isMcBlock(e) && !fixtureMc) continue;
-    if (e.transparency === 'transparent' && !force && !fixtureMc) continue;
+    if (e.transparency === 'transparent' && !force && !fixtureMc) {
+      // All-day "Easy Moving" / leave etc. are often Free in Google so they
+      // don't block colleagues — MC must still treat them as hard busy.
+      const allDay = !!(e.start?.date && !e.start?.dateTime);
+      const title = String(e.summary || '');
+      const personalBlock = allDay && /easy moving|annual leave|out of office|\booo\b|away —|rest —|holiday|not available/i.test(title);
+      if (!personalBlock) continue;
+    }
 
     if (e.start?.date && !e.start?.dateTime) {
       let d = e.start.date;

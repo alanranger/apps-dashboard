@@ -299,6 +299,7 @@ function healSummaryHtml(heal) {
   }
   const fixed = heal.overlaps_fixed ?? 0;
   const failed = heal.overlaps_failed ?? 0;
+  const gapFixed = heal.gaps_fixed ?? 0;
   const orphans = (heal.orphans_queued ?? 0) + (heal.gaps_retired ?? 0);
   const pushN = heal.push_queued ?? 0;
   const remain = heal.remaining_pending ?? 0;
@@ -308,6 +309,7 @@ function healSummaryHtml(heal) {
       <p style="margin:0 0 4px"><strong>Auto-heal</strong> (DB + push queue — Google not written yet)</p>
       <p class="meta" style="margin:0">
         Moved <strong>${fixed}</strong> lower-priority overlap${fixed === 1 ? '' : 's'}
+        · slid <strong>${gapFixed}</strong> for decompress gap${gapFixed === 1 ? '' : 's'}
         · queued <strong>${orphans}</strong> orphan/stale decompress cleanup
         ${failed ? ` · <strong>${failed}</strong> overlap${failed === 1 ? '' : 's'} still need a decision` : ''}
         ${left ? ` · <strong>${left}</strong> more overlap${left === 1 ? '' : 's'} next run` : ''}
