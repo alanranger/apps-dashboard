@@ -359,7 +359,9 @@ function renderToolbar(data) {
   const backlogN = push.backlog_count || 0;
   const actionable = Number(push.actionable_count != null ? push.actionable_count : openN);
   const skipped = Number(push.skipped_count || 0);
-  const rawTotal = openN + backlogN;
+  const qs = push.queue_summary || {};
+  const bd = qs.breakdown || {};
+  const samples = Array.isArray(qs.samples) ? qs.samples : [];
   const enabled = !!push.cursor_writes_available || !!push.writes_available;
   const autoOn = !!push.auto_sync_enabled;
   const signed = !!push.auto_sync_signed_off;
@@ -379,6 +381,20 @@ function renderToolbar(data) {
       push.reconcile_at ? ` · checked ${esc(String(push.reconcile_at).slice(0, 19).replace('T', ' '))}Z` : ''
     }</p>`
     : '';
+  const kindBits = [
+    bd.skip ? `${bd.skip} remove/skip` : '',
+    bd.move ? `${bd.move} move/create` : '',
+    bd.complete ? `${bd.complete} complete` : '',
+    bd.other ? `${bd.other} other` : '',
+  ].filter(Boolean).join(' · ');
+  const placerBit = bd.placer
+    ? `<strong>${bd.placer}</strong> from today’s Scheduling / habit placer (not hand-dragged Diary edits).`
+    : 'No placer rows in the queue.';
+  const sampleHtml = samples.length
+    ? `<ul class="dy-push-samples">${samples.map((s) =>
+      `<li><span class="dy-push-kind">${esc(s.kind || '')}</span> ${esc(s.what || '')}</li>`,
+    ).join('')}</ul>`
+    : '<p class="meta">Queue is empty.</p>';
   return `
     <div class="dy-toolbar card">
       <div class="dy-toolbar-top">
@@ -404,25 +420,27 @@ function renderToolbar(data) {
             </div>
             <div class="dy-push-count">
               <strong>${openN}</strong>
-              <span>diary edits</span>
+              <span>queued writes</span>
             </div>
             <div class="dy-push-count">
               <strong>${skipped}</strong>
-              <span>skipped (stale/unparsed)</span>
+              <span>skipped (stale)</span>
             </div>
           </div>
+          <p class="dy-push-breakdown">${kindBits || 'Nothing queued'}. ${placerBit}</p>
+          ${sampleHtml}
           <button type="button" class="dy-push-btn" data-dy-push ${enabled && actionable ? '' : 'disabled'}
             title="${enabled
-    ? 'Push your Diary edits to Google only (not the old detector backlog).'
+    ? 'Writes whatever is in the queue (see list above) to Google via Cursor.'
     : 'Blocked until Google Calendar OAuth is configured.'}">
             ${enabled
-    ? (actionable ? `Push ${actionable} diary edit${actionable === 1 ? '' : 's'} to Google` : 'Nothing to push')
+    ? (actionable ? `Push ${actionable} queued write${actionable === 1 ? '' : 's'} to Google` : 'Nothing to push')
     : `Blocked · ${actionable} actionable`}
           </button>
         </div>
         <p class="dy-push-explain">
-          Push = <strong>your Diary moves</strong> in the write queue (not hundreds of detector proposals).
-          Raw detector leftovers sit on Scheduling until dismissed.
+          Only push when you recognise the list above.
+          Raw Scheduling detector proposals are separate until dismissed.
           Auto-sync: ${autoOn ? 'ON' : 'OFF'} · sign-off: ${signed ? 'done' : 'pending dry-run approval'}.
         </p>
       </div>

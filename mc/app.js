@@ -55,7 +55,7 @@ function setView(name) {
     const labels = {
       board: 'You are on: <strong>Project board</strong> — kanban by stream',
       recurring: 'You are on: <strong>Recurring</strong> — habits &amp; cadence (Reclaim replacement)',
-      diary: 'You are on: <strong>Diary</strong> — 4-week reschedule grid (DB master; Claude flushes GCal)',
+      diary: 'You are on: <strong>Diary</strong> — 4-week reschedule grid (DB master; Cursor Push writes Google)',
       scheduling: 'You are on: <strong>Scheduling</strong> — rules, drive times, hotels, pending diary proposals',
       home: 'You are on: <strong>Dashboard</strong> — RAG overview &amp; planner',
     };

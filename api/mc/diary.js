@@ -17,6 +17,22 @@ const {
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
 const { buildFlushPlan } = require('./gcal-flush-lib');
 
+function summariseOpenPush(rows) {
+  const breakdown = { skip: 0, move: 0, complete: 0, other: 0, placer: 0 };
+  const samples = [];
+  for (const row of rows || []) {
+    const kind = row.change_kind || 'other';
+    if (kind === 'skip' || kind === 'move' || kind === 'complete') breakdown[kind] += 1;
+    else breakdown.other += 1;
+    const label = String(row.summary || row.payload?.title || row.related_id || '');
+    if (/^Placer\b/i.test(label)) breakdown.placer += 1;
+    if (samples.length < 8) {
+      samples.push({ kind, what: label.slice(0, 110) });
+    }
+  }
+  return { total: (rows || []).length, breakdown, samples };
+}
+
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
   if (req.method !== 'GET') return json(res, 405, { error: 'method not allowed' });
@@ -200,6 +216,7 @@ module.exports = async function handler(req, res) {
         actionable_count: Number(flushPlan.write_count || 0),
         skipped_count: Number(flushPlan.skipped_count || 0),
         live_db_times: !!flushPlan.live_db_times,
+        queue_summary: summariseOpenPush(pushOpen || []),
         reconcile_status: ruleMap.gcal_reconcile_status_line || null,
         reconcile_at: ruleMap.gcal_reconcile_at || null,
         writes_available: cursorWrites,
