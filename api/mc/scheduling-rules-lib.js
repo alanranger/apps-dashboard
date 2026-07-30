@@ -109,16 +109,20 @@ function isSchedulableDay(ymdStr, ruleMap, holidays) {
 
 function isoToLondonDate(iso) {
   if (!iso) return null;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date(iso));
+  }).format(new Date(t));
 }
 
 function isoToLondonMinutes(iso) {
   if (!iso) return null;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(new Date(iso));
+  }).formatToParts(new Date(t));
   const h = Number(parts.find((p) => p.type === 'hour')?.value || 0);
   const m = Number(parts.find((p) => p.type === 'minute')?.value || 0);
   return h * 60 + m;

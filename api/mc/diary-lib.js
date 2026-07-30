@@ -67,9 +67,15 @@ function isDoneTask(t) {
 function toBlock(opts) {
   const start = opts.start;
   const end = opts.end;
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+    return null;
+  }
   const day = isoToLondonDate(start);
   const sMin = isoToLondonMinutes(start);
   const eMin = isoToLondonMinutes(end);
+  if (day == null || sMin == null || eMin == null) return null;
   return {
     id: opts.id,
     kind: opts.kind,
@@ -138,7 +144,7 @@ function tasksToBlocks(tasks, todayYmd) {
       done,
       actual_minutes: t.actual_minutes != null ? t.actual_minutes : null,
     });
-  });
+  }).filter(Boolean);
 }
 
 function travelKind(blockType) {
@@ -155,7 +161,7 @@ function travelToBlocks(rows) {
     end: b.ends_at,
     editable: false,
     calendar_event_id: b.calendar_event_id || null,
-  }));
+  })).filter(Boolean);
 }
 
 function asIso(v) {
@@ -176,7 +182,7 @@ function busyToBlocks(busy, fixtures) {
     const kind = blockTypeFromBusy(e);
     const title = e.summary || '(busy)';
     const clientFixed = kind === 'workshop' || isZoomClientBooking(title);
-    out.push(toBlock({
+    const busyBlock = toBlock({
       id: `busy:${e.id}`,
       kind,
       title,
@@ -187,12 +193,13 @@ function busyToBlocks(busy, fixtures) {
       priority: clientFixed ? 'p0' : null,
       client_fixed: clientFixed,
       calendar_event_id: e.id || null,
-    }));
+    });
+    if (busyBlock) out.push(busyBlock);
   }
   for (const e of fixtures || []) {
     const title = e.summary || 'Fixture';
     const isFlank = /MC\s*⚽\s*(Before|After)\s*:/i.test(title) || /Before:|After:/i.test(title) && /MC\s*⚽/i.test(title);
-    out.push(toBlock({
+    const fixBlock = toBlock({
       id: `fix:${e.id}`,
       kind: isFlank ? 'buffer' : 'fixture',
       title,
@@ -201,7 +208,8 @@ function busyToBlocks(busy, fixtures) {
       editable: false,
       calendar_event_id: e.id || null,
       is_buffer: isFlank,
-    }));
+    });
+    if (fixBlock) out.push(fixBlock);
   }
   return out;
 }
@@ -221,7 +229,7 @@ function fixtureFlanksToBlocks(rows) {
     const blockStart = asIso(r.block_start);
     const blockEnd = asIso(r.block_end);
     if (blockStart && fixStart) {
-      out.push(toBlock({
+      const before = toBlock({
         id: `fix-before:${r.fixture_event_id || r.id}`,
         kind: 'buffer',
         title: `pre-match · ${label}`,
@@ -229,10 +237,11 @@ function fixtureFlanksToBlocks(rows) {
         end: fixStart,
         editable: false,
         is_buffer: true,
-      }));
+      });
+      if (before) out.push(before);
     }
     if (fixEnd && blockEnd) {
-      out.push(toBlock({
+      const after = toBlock({
         id: `fix-after:${r.fixture_event_id || r.id}`,
         kind: 'buffer',
         title: `post-match · ${label}`,
@@ -240,7 +249,8 @@ function fixtureFlanksToBlocks(rows) {
         end: blockEnd,
         editable: false,
         is_buffer: true,
-      }));
+      });
+      if (after) out.push(after);
     }
   }
   return out;
@@ -272,9 +282,13 @@ function holidayMapFromRows(rows) {
 }
 
 function parseDiaryPin(change) {
-  const m = String(change || '').match(/^diary_pin:([^|]+)\|(.+)$/);
+  // diary_pin:<start>|<end> optionally followed by |note — never let the note poison end ISO.
+  const m = String(change || '').match(/^diary_pin:([^|]+)\|([^|]+)/);
   if (!m) return null;
-  return { start: m[1].trim(), end: m[2].trim() };
+  const start = m[1].trim();
+  const end = m[2].trim();
+  if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end))) return null;
+  return { start, end };
 }
 
 function parseCompleteMeta(change) {
@@ -344,7 +358,7 @@ function habitLogsToBlocks(logs, habitMap) {
       startIso = new Date(startMs).toISOString();
       endIso = new Date(startMs + dur * 60000).toISOString();
     }
-    out.push(toBlock({
+    const habitBlock = toBlock({
       id: `habit:${habit.id}:${day}`,
       kind: 'habit',
       title: habit.title,
@@ -358,7 +372,8 @@ function habitLogsToBlocks(logs, habitMap) {
       priority: habit.priority || null,
       done,
       actual_minutes: actual,
-    }));
+    });
+    if (habitBlock) out.push(habitBlock);
   }
   return out;
 }
@@ -479,6 +494,7 @@ function untiedMcBlocks(mcEvents, tiedIds) {
       calendar_event_id: e.id,
       done,
     });
+    if (!block) continue;
     block.gcal_orphan = true;
     block.gcal_baseline = true;
     block.read_only = true;
@@ -518,6 +534,7 @@ function hotelDeadlineBlocks(mcEvents, hotelByEventId) {
       calendar_event_id: e.id,
       hotel_id: hotel?.id || null,
     });
+    if (!block) continue;
     block.gcal_baseline = true;
     block.hotel_name = hotel?.hotel || null;
     block.cancel_by = hotel?.free_cancel_until || null;
