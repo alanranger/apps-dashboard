@@ -261,14 +261,14 @@ async function handler(req, res) {
   const ruleMap = Object.fromEntries((rules || []).map((r) => [r.key, r.value]));
   const maxRolls = Number(ruleMap.missed_habit_max_rolls || 3);
   // Scope: the 06:00 cron (no scope) and the Scheduling-tab button call THIS same
-  // endpoint. scope=8w → next 8 weeks; scope=full → travel horizon (manual is capped —
-  // travel_horizon_weeks can be 104 and will timeout Vercel if unbounded).
+  // endpoint. scope=8w → next 8 weeks; scope=full → capped (travel_horizon can be 104w
+  // and will timeout Vercel — Hobby often hard-caps at ~60s even if maxDuration=300).
   const q = req.query || {};
   const scope = String(q.scope || '').toLowerCase();
   const runMode = q.mode === 'manual' ? 'manual' : 'auto';
   const defaultWeeks = Number(ruleMap.travel_horizon_weeks || 12);
-  const habitWeeksCfg = Number(ruleMap.habit_horizon_weeks || 26);
-  const manualFullCap = Number(ruleMap.manual_full_horizon_weeks || habitWeeksCfg || 26);
+  // Manual Full default 12w — placer+fixture are skipped below; keep detect under ~60s.
+  const manualFullCap = Number(ruleMap.manual_full_horizon_weeks || 12);
   const cronCap = Number(ruleMap.cron_horizon_cap_weeks || 52);
   let scopeWeeks = null;
   if (scope === '8w') {
@@ -282,6 +282,13 @@ async function handler(req, res) {
   }
   const horizonWeeks = scopeWeeks || defaultWeeks;
   const horizonEnd = addDaysYmd(today, horizonWeeks * 7);
+  // Manual Full: detect only — habit placer + season fixture scan blow the time budget.
+  const lightFull = scope === 'full' && runMode === 'manual';
+  if (lightFull) {
+    notes.push(
+      'light_full: skipped habit_placer + fixture_scan (run Next 8 weeks for those)',
+    );
+  }
   if (defaultWeeks > horizonWeeks) {
     notes.push(
       `horizon_capped: travel_horizon_weeks=${defaultWeeks} → ${horizonWeeks}w `
@@ -676,16 +683,20 @@ async function handler(req, res) {
 
   // Fixture blocks — dedicated season-length fetch (main busy-map horizon is only
   // 12w; the feed runs ~11 months). Informational MC ⚽ proposals only.
-  if (gcalConfigured()) {
+  if (gcalConfigured() && !lightFull) {
     await maybeRunFixtureScan({
       sb, existingPending, inserted, notes, ruleMap, today,
     });
   }
 
   // Joint habit placer → pending amendments (KEEP omitted; no calendar writes).
-  if (gcalConfigured()) {
+  // Bound placer horizon to the check scope so Full/8w do not always force 26w.
+  if (gcalConfigured() && !lightFull) {
     try {
-      const habitWeeks = Number(ruleMap.habit_horizon_weeks || 26);
+      const habitWeeks = Math.min(
+        Number(ruleMap.habit_horizon_weeks || 26),
+        Math.max(horizonWeeks, 8),
+      );
       const habitTo = addDaysYmd(today, habitWeeks * 7);
       const timeMin = `${today}T00:00:00Z`;
       const timeMax = `${habitTo}T23:59:59Z`;

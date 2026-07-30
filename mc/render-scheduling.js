@@ -88,8 +88,8 @@ function runReadout(run) {
       </div>
       <div class="sched-run-controls">
         <select id="schedScope" aria-label="Check scope">
-          <option value="8w">Next 8 weeks</option>
-          <option value="full">Full (~26w — travel rule is 104w)</option>
+          <option value="8w">Next 8 weeks (detect + placer)</option>
+          <option value="full">Full detect (~12w — no placer)</option>
         </select>
         <button type="button" class="btn-verify" id="schedRunCheck">Run check now</button>
       </div>
@@ -335,7 +335,7 @@ function summaryHtml(run, scope) {
     <div class="sched-check-summary">
       ${healSummaryHtml(run.heal)}
       <div class="sched-sum-grid">
-        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full (~26w capped)' : 'Next 8 weeks')}</strong></div>
+        <div><span class="meta">Scope</span><strong>${esc(scope === 'full' ? 'Full detect (~12w)' : 'Next 8 weeks')}</strong></div>
         <div><span class="meta">Covered</span><strong>${esc(covered)}</strong></div>
         <div><span class="meta">New proposals</span><strong>${run.inserted ?? 0}</strong></div>
         <div><span class="meta">Calendar writes</span><strong>${run.calendar_writes ?? 0}</strong></div>
@@ -361,7 +361,7 @@ function openCheckProgressModal(scope) {
     const pct = Math.min(92, Math.round(((phaseIdx + 1) / CHECK_PHASES.length) * 100));
     box.innerHTML = `
       <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Diary check running</h2>
-      <p class="meta">Scope: <strong>${esc(scope === 'full' ? 'Full horizon' : 'Next 8 weeks')}</strong>
+      <p class="meta">Scope: <strong>${esc(scope === 'full' ? 'Full detect (~12w)' : 'Next 8 weeks')}</strong>
         · Elapsed ${elapsed}s · same detector as the 06:00 cron</p>
       <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
       <ul class="sched-phase-list">${phaseListHtml(phaseIdx)}</ul>
