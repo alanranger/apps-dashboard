@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
       sb('task_comments?order=at.desc&limit=400'),
       sb('task_log?order=at.desc&limit=500'),
       safeSb('recurring_tasks?order=title.asc'),
-      safeSb('recurring_log?order=at.desc&limit=200'),
+      safeSb('recurring_log?order=at.desc&limit=1500'),
       safeSb('mc_reconcile_log?order=run_at.desc&limit=20'),
       safeSb('recurring_task_deps?select=*&order=created_at.asc'),
     ]);

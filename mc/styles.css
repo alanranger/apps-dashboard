@@ -472,7 +472,17 @@ button.linkish {
 .rec-missed-pill { margin-left: 8px; background: var(--red-bg); color: var(--red); }
 .rec-table tr.rec-skipped td:first-child { color: #92400e; }
 .rec-skipped-pill { margin-left: 8px; background: #fef3c7; color: #92400e; }
-.rec-sched { max-width: 220px; font-size: 12px; color: var(--text-dim); }
+.rec-sched { max-width: 280px; font-size: 12px; color: var(--text-dim); }
+.rec-occ-list { list-style: none; margin: 0; padding: 0; max-width: 300px; }
+.rec-occ {
+  font-size: 12px; line-height: 1.35; margin: 0 0 4px; padding: 3px 6px;
+  border-radius: 4px; border-left: 3px solid transparent;
+}
+.rec-occ-pinned { background: rgba(34, 197, 94, 0.12); border-left-color: #22c55e; color: #bbf7d0; }
+.rec-occ-unplaced { background: rgba(239, 68, 68, 0.12); border-left-color: #ef4444; color: #fecaca; }
+.rec-occ-skipped { background: rgba(245, 158, 11, 0.12); border-left-color: #f59e0b; color: #fde68a; }
+.rec-occ-open { background: rgba(148, 163, 184, 0.12); border-left-color: #94a3b8; color: var(--text-dim); }
+.rec-occ-done { background: rgba(100, 116, 139, 0.15); border-left-color: #64748b; color: var(--text-faint); }
 .chip.pinned { background: #dbeafe; color: #1e40af; font-size: 11px; }
 .rec-rolled-pill { margin-left: 6px; background: #fef3c7; color: #92400e; font-size: 10px; }
 .rec-crit-pill { margin-left: 6px; background: #ede9fe; color: #5b21b6; font-size: 10px; }

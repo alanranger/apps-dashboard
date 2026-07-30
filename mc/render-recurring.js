@@ -1,6 +1,6 @@
 import { store } from './store.js';
 import { $, esc, fmtTime, fmtDate } from './util.js';
-import { nextDueFromRrule, lastDueOnOrBefore, RRULE_PRESETS } from './rrule.js';
+import { nextDueFromRrule, lastDueOnOrBefore, occurrencesInRange, RRULE_PRESETS } from './rrule.js';
 import { api } from './api.js';
 import { prioritySelectOptions } from './priority.js';
 export const DIARY_HORIZON_DAYS = 28;
@@ -123,17 +123,90 @@ function formFields(prefix, t = {}) {
     <label>Ideal time<input id="${prefix}Time" type="time" value="${String(t.ideal_time || '09:00').slice(0, 5)}" /></label>
     <label>Window days (how far slot may drift from ideal)<input id="${prefix}Win" type="number" min="0" value="${t.window_days != null ? t.window_days : 2}" /></label>
     <label class="rec-toggle"><input id="${prefix}Crit" type="checkbox" ${t.time_critical ? 'checked' : ''} /> Time-critical (deadline: roll <strong>earlier</strong>; month-day / 1MO anchors always roll <strong>forward</strong> only)</label>
-    <label>Scheduled by Claude<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Claude fills after booking diary — e.g. Thu 23 11:00–13:00" /></label>
+    <label>Legacy note (optional)<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Ignored by Occurrences column — diary log is truth" /></label>
     <label>Notes<textarea id="${prefix}Notes" rows="3">${esc(t.notes_md || '')}</textarea></label>
-    <p class="meta">Claude books Google Calendar busy time <strong>${DIARY_HORIZON_DAYS} days ahead</strong> (not this app). Apps-dashboard never writes to Calendar.</p>`;
+    <p class="meta">Occurrences on this tab come from <strong>recurring_log</strong> (placer / Diary drag / skip). Push writes Google; this tab never invents a pin.</p>`;
+}
+
+function addDaysYmd(ymd, n) {
+  const d = new Date(`${ymd}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function londonHmFromIso(iso) {
+  if (!iso || !String(iso).includes('T')) return '';
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date(iso));
+  } catch (_) {
+    return String(iso).slice(11, 16);
+  }
+}
+
+function latestLogForIdeal(habitId, idealYmd) {
+  const rows = (store.recurring_log || []).filter(
+    (l) => l.recurring_task_id === habitId && l.ideal_date === idealYmd,
+  );
+  return rows[0] || null;
+}
+
+/** Truth for one ideal due date — from recurring_log, not stale scheduled_note. */
+function occurrenceStatus(task, idealYmd) {
+  if (task.last_done && task.last_done >= idealYmd) {
+    return { kind: 'done', text: `${idealYmd} · done` };
+  }
+  const log = latestLogForIdeal(task.id, idealYmd);
+  if (!log) {
+    return { kind: 'open', text: `${idealYmd} · not placed yet` };
+  }
+  const ch = String(log.change || '');
+  if (/^skipped/i.test(ch)) {
+    return { kind: 'skipped', text: `${idealYmd} · skipped` };
+  }
+  if (/^unplaced/i.test(ch)) {
+    return { kind: 'unplaced', text: `${idealYmd} · NOT in diary` };
+  }
+  if (/^diary_pin:/i.test(ch)) {
+    const m = ch.match(/^diary_pin:([^|]+)\|/);
+    const day = log.scheduled_date || idealYmd;
+    const hm = londonHmFromIso(m?.[1]);
+    const rolled = day !== idealYmd ? ` (ideal ${idealYmd})` : '';
+    const gcal = log.calendar_event_id ? ' · on Google' : ' · DB only (Push?)';
+    return { kind: 'pinned', text: `${day}${hm ? ` ${hm}` : ''}${rolled}${gcal}` };
+  }
+  return { kind: 'other', text: `${idealYmd} · ${ch.slice(0, 48)}` };
+}
+
+function upcomingIdeals(task, count = 4) {
+  const today = todayStr();
+  const from = addDaysYmd(today, -7);
+  const to = addDaysYmd(today, 120);
+  try {
+    const all = occurrencesInRange(task.rrule, from, to);
+    const upcoming = all.filter((d) => d >= today || (task.last_done && d > task.last_done));
+    const pick = (upcoming.length ? upcoming : all).slice(0, count);
+    return pick;
+  } catch (_) {
+    const n = nextDue(task);
+    return n && n !== '—' ? [n] : [];
+  }
 }
 
 function formatScheduledCell(t) {
-  if (!t.scheduled_note && !t.last_scheduled) return '<span class="meta">—</span>';
-  const note = t.scheduled_note || fmtDate(t.last_scheduled);
-  const rolled = /rolled from/i.test(String(note));
-  const pill = rolled ? ' <span class="pill rec-rolled-pill">rolled</span>' : '';
-  return `<span class="${rolled ? 'rec-sched rec-rolled' : 'rec-sched'}">${esc(note)}${pill}</span>`;
+  const ideals = upcomingIdeals(t, 4);
+  if (!ideals.length) {
+    return '<span class="meta">No upcoming dates from cadence</span>';
+  }
+  const lines = ideals.map((ideal) => {
+    const st = occurrenceStatus(t, ideal);
+    return `<li class="rec-occ rec-occ-${esc(st.kind)}">${esc(st.text)}</li>`;
+  }).join('');
+  return `<ul class="rec-occ-list" title="From recurring_log — not the old Scheduled note">${lines}</ul>`;
 }
 
 const DEP_TYPE_LABELS = {
@@ -222,7 +295,7 @@ export function renderRecurring() {
     <div class="rec-head">
       <div>
         <h2><i class="ti ti-repeat"></i> Recurring tasks (BAU)</h2>
-        <p class="meta">Add habits here — not under New task. Claude books diary time <strong>${DIARY_HORIZON_DAYS} days ahead</strong>; this tab tracks cadence + done.</p>
+        <p class="meta">Cadence + done live here. <strong>Occurrences</strong> column shows the next dates from the diary log (in Diary / not placed / skipped) — not a stale sticky note.</p>
       </div>
       <button type="button" class="btn-verify" id="recAddBtn" data-rec-add="1">+ Add habit</button>
     </div>
@@ -230,7 +303,7 @@ export function renderRecurring() {
       <table class="rec-table">
         <thead><tr>
           <th>Title</th><th>Cadence</th><th>Priority</th><th>Duration</th><th>Ideal time</th><th>Next due</th><th>Last done</th>
-          <th>Scheduled by Claude</th><th>Depends on</th><th>Active</th><th></th>
+          <th>Occurrences (diary truth)</th><th>Depends on</th><th>Active</th><th></th>
         </tr></thead>
         <tbody>${body}</tbody>
       </table>

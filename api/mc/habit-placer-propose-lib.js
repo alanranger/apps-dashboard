@@ -14,6 +14,7 @@ const {
 const { relatedIdForTask, relatedIdForHabit, upsertPushRow } = require('./gcal-push-lib');
 const { occurrencesInRange } = require('./rrule-core');
 const { computeMissedProposal } = require('./missed-habit-lib');
+const { priorityRank } = require('./priority-lib');
 
 function londonHm(iso) {
   try {
@@ -280,6 +281,14 @@ async function applyHabitAmendmentToDb(sb, a) {
         },
       });
     }
+    await sb(`recurring_tasks?id=eq.${a.habit_id}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        scheduled_note: `${a.ideal_date} · NOT in diary`,
+        last_scheduled: null,
+        updated_at: new Date().toISOString(),
+      },
+    }).catch(() => {});
     return true;
   }
 
@@ -324,6 +333,19 @@ async function applyHabitAmendmentToDb(sb, a) {
       calendar_event_id: evtId,
     },
   });
+  const hm = String(a.startIso || '').includes('T')
+    ? new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date(a.startIso))
+    : '';
+  await sb(`recurring_tasks?id=eq.${a.habit_id}`, {
+    method: 'PATCH', prefer: 'return=minimal',
+    body: {
+      scheduled_note: `${day}${hm ? ` ${hm}` : ''} (diary pin)`,
+      last_scheduled: day,
+      updated_at: new Date().toISOString(),
+    },
+  }).catch(() => {});
   return true;
 }
 
@@ -550,7 +572,7 @@ async function runHabitPlacerPropose(ctx) {
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb('recurring_log?calendar_event_id=not.is.null&select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id&order=at.desc&limit=5000'),
     sb(
-      'tasks?select=display_id,title,state,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
+      'tasks?select=display_id,title,state,priority,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
       + 'depends_on:depends_on_task_id(display_id)'
       + '&scheduled_start=not.is.null'
       + `&scheduled_start=gte.${addDays(fromYmd, -21)}T00:00:00Z`
@@ -632,12 +654,32 @@ async function runHabitPlacerPropose(ctx) {
   const proofOk = !!proof?.ok;
   if (writePending) {
     for (const a of amendments) {
-      // KEEP with no Google id → CREATE. All writes require proofOk (never bypass busy).
-      const writeAction = (a.action === 'KEEP' && proofOk && !a.calendar_event_id)
+      // KEEP with no Google id → CREATE.
+      // CREATE/MOVE always. DELETE only when the old slot is illegal (blocked day
+      // or overlaps a same/higher-priority dated task). Skipping all DELETEs left
+      // zombie GCal habits stacked on tasks after packing failed.
+      const writeAction = (a.action === 'KEEP' && !a.calendar_event_id)
         ? { ...a, action: 'CREATE' }
         : a;
-      const mayWrite = (writeAction.action === 'DELETE' || writeAction.action === 'MOVE'
-          || writeAction.action === 'CREATE' || writeAction.action === 'KEEP') && proofOk;
+      let mayWrite = writeAction.action === 'MOVE'
+        || writeAction.action === 'CREATE'
+        || writeAction.action === 'KEEP';
+      if (writeAction.action === 'DELETE') {
+        const day = writeAction.startIso
+          ? require('./scheduling-rules-lib').isoToLondonDate(writeAction.startIso)
+          : writeAction.ideal_date;
+        const onBlocked = day && dayBlockedForHabits(day, blockedSpans);
+        const hRank = priorityRank(
+          (habits || []).find((h) => h.id === writeAction.habit_id)?.priority,
+        );
+        const clashesTask = (softTasks || []).some((t) => {
+          if (priorityRank(t.priority) > hRank) return false;
+          if (!writeAction.startIso || !writeAction.endIso) return false;
+          return Date.parse(writeAction.startIso) < t.endMs
+            && t.startMs < Date.parse(writeAction.endIso);
+        });
+        mayWrite = !!(onBlocked || clashesTask);
+      }
       if (mayWrite) {
         try {
           if (await applyHabitAmendmentToDb(sb, writeAction)) habitDbApplied += 1;
