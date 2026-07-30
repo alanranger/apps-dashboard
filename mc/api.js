@@ -15,7 +15,10 @@ function errorMessage(data, res) {
   const st = res.statusText && res.statusText !== 'Error' ? res.statusText : '';
   if (st) return `${res.status} ${st}`;
   if (res.status === 504 || res.status === 502) {
-    return `${res.status} gateway timeout — queue too large for one Push; retry (batched pushes continue automatically)`;
+    return `${res.status} gateway timeout — try Next 8 weeks first, or wait and retry Full horizon`;
+  }
+  if (res.status === 500) {
+    return 'HTTP 500 — server timed out or crashed (Full horizon is heavy; try Next 8 weeks, or retry once)';
   }
   return `HTTP ${res.status || '?'} (no error body)`;
 }

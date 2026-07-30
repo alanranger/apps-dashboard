@@ -19,11 +19,11 @@ function isOverlapPending(row) {
     && (/breach:overlap:/.test(row.related_id || '') || /overlaps/i.test(row.summary || ''));
 }
 
-async function healOverlaps(sb, actor) {
+async function healOverlaps(sb, actor, maxOverlaps = 25) {
   const rows = await sb(
     'pending_diary_changes?status=eq.pending&select=*&order=detected_at.asc',
   ) || [];
-  const overlaps = rows.filter(isOverlapPending);
+  const overlaps = rows.filter(isOverlapPending).slice(0, Math.max(1, maxOverlaps));
   let overlaps_fixed = 0;
   let overlaps_failed = 0;
   let push_queued = 0;
@@ -32,12 +32,17 @@ async function healOverlaps(sb, actor) {
       await resolveOverlap(sb, row, 'lower', actor);
       overlaps_fixed += 1;
       push_queued += 1;
-      await sleep(80);
+      await sleep(40);
     } catch (_) {
       overlaps_failed += 1;
     }
   }
-  return { overlaps_fixed, overlaps_failed, push_queued };
+  return {
+    overlaps_fixed,
+    overlaps_failed,
+    push_queued,
+    overlaps_left: Math.max(0, rows.filter(isOverlapPending).length - overlaps.length),
+  };
 }
 
 function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
@@ -86,15 +91,18 @@ async function queueDeleteDecompress(sb, eventId, title) {
   ).catch(() => {});
 }
 
-async function queueOrphanDecompress(sb) {
-  if (!gcalConfigured()) return { orphans_queued: 0, push_queued: 0 };
+async function loadPrimaryEvents(daysAhead) {
+  if (!gcalConfigured()) return [];
   const today = londonToday();
-  const to = addDaysYmd(today, 200);
+  const to = addDaysYmd(today, daysAhead);
   const { events } = await fetchHorizonEvents(`${today}T00:00:00.000Z`, `${to}T00:00:00.000Z`);
-  const primary = (events || []).filter(
+  return (events || []).filter(
     (e) => (e._calendarId || 'primary') === 'primary' && e.start?.dateTime,
   );
-  const strips = primary.filter((e) => /Decompress — after /i.test(e.summary || ''));
+}
+
+async function queueOrphanDecompress(sb, primary) {
+  const strips = (primary || []).filter((e) => /Decompress — after /i.test(e.summary || ''));
   let orphans_queued = 0;
   for (const d of strips) {
     const day = isoToLondonDate(d.start.dateTime);
@@ -106,19 +114,16 @@ async function queueOrphanDecompress(sb) {
   return { orphans_queued, push_queued: orphans_queued };
 }
 
-async function queueStaleGapMasters(sb) {
-  if (!gcalConfigured()) return { gaps_retired: 0, push_queued: 0 };
+async function queueStaleGapMasters(sb, primary) {
   const today = londonToday();
-  const to = addDaysYmd(today, 200);
-  const [rules, travel, gcal, existing] = await Promise.all([
+  const [rules, travel, existing] = await Promise.all([
     sb('scheduling_rules?select=key,value'),
     sb('travel_blocks?select=*&order=starts_at.asc'),
-    fetchHorizonEvents(`${today}T00:00:00.000Z`, `${to}T00:00:00.000Z`),
     sb('gap_buffer_blocks?status=eq.active&select=*'),
   ]);
   const ruleMap = ruleMapFromRows(rules || []);
   const awaySpans = awaySpansFromTravelBlocks(travel || []);
-  const gapBlocks = (gcal.events || []).map((e) => ({
+  const gapBlocks = (primary || []).map((e) => ({
     id: e.id,
     summary: e.summary,
     start: e.start?.dateTime || e.start?.date || null,
@@ -157,17 +162,23 @@ async function queueStaleGapMasters(sb) {
   return { gaps_retired, push_queued };
 }
 
-async function runDiaryHeal(sb, { actor } = {}) {
+async function runDiaryHeal(sb, {
+  actor,
+  maxOverlaps = 25,
+  orphanDays = 200,
+} = {}) {
   const who = actor || 'scheduling-heal';
-  const overlaps = await healOverlaps(sb, who);
-  const orphans = await queueOrphanDecompress(sb);
-  const stale = await queueStaleGapMasters(sb);
+  const overlaps = await healOverlaps(sb, who, maxOverlaps);
+  const primary = await loadPrimaryEvents(orphanDays);
+  const orphans = await queueOrphanDecompress(sb, primary);
+  const stale = await queueStaleGapMasters(sb, primary);
   const remaining = await sb(
     'pending_diary_changes?status=eq.pending&select=id',
   ) || [];
   return {
     overlaps_fixed: overlaps.overlaps_fixed,
     overlaps_failed: overlaps.overlaps_failed,
+    overlaps_left: overlaps.overlaps_left || 0,
     orphans_queued: orphans.orphans_queued,
     gaps_retired: stale.gaps_retired,
     push_queued: overlaps.push_queued + orphans.push_queued + stale.push_queued,

@@ -192,8 +192,26 @@ module.exports = async function handler(req, res) {
       if (body.entity === 'run_check') {
         const scope = body.scope === 'full' ? 'full' : '8w';
         const detect = await runDiaryCheck(scope);
-        const { runDiaryHeal } = require('./diary-heal-lib');
-        const heal = await runDiaryHeal(sb, { actor });
+        let heal = null;
+        try {
+          const { runDiaryHeal } = require('./diary-heal-lib');
+          // Cap heal work so Full horizon detect + heal stays under Vercel limit.
+          heal = await runDiaryHeal(sb, {
+            actor,
+            maxOverlaps: scope === 'full' ? 12 : 25,
+            orphanDays: scope === 'full' ? 90 : 200,
+          });
+        } catch (healErr) {
+          heal = {
+            overlaps_fixed: 0,
+            overlaps_failed: 0,
+            orphans_queued: 0,
+            gaps_retired: 0,
+            push_queued: 0,
+            remaining_pending: null,
+            error: healErr.message || 'heal failed',
+          };
+        }
         return json(res, 200, {
           run: { ...(detect || {}), heal },
           calendar_writes: 0,
