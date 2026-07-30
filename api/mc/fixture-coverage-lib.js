@@ -140,6 +140,25 @@ async function proposeCreateOrMove(ctx, fixture, row) {
     return true;
   }
   if (timesMoved(row, win)) {
+    // Unique related_id per kick-off left prior move rows forever. Clear siblings first.
+    try {
+      const old = await sb(
+        `pending_diary_changes?status=eq.pending&change_type=eq.fixture_block`
+        + `&related_id=like.${encodeURIComponent(`fixture_move:${fixture.id}:*`)}`
+        + '&select=id',
+      );
+      for (const p of old || []) {
+        await sb(`pending_diary_changes?id=eq.${p.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: {
+            status: 'dismissed',
+            resolved_at: new Date().toISOString(),
+            resolved_by: 'fixture_move_supersede',
+            proposed_action: 'DISMISSED — superseded by newer fixture kick-off',
+          },
+        });
+      }
+    } catch (_) { /* non-fatal */ }
     await insertPending(sb, existingPending, inserted, {
       change_type: 'fixture_block',
       target_date: day,

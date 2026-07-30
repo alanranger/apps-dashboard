@@ -314,6 +314,19 @@ async function applyHabitAmendmentToDb(sb, a) {
       body: { recurring_task_id: a.habit_id, actor: 'cursor', ...logBody },
     });
   }
+  // Pin means this ideal is no longer missed — clear sticky missed_habit backlog.
+  await sb(
+    `pending_diary_changes?change_type=eq.missed_habit&related_id=eq.${encodeURIComponent(`habit:${a.habit_id}:${a.ideal_date}`)}&status=eq.pending`,
+    {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        status: 'applied',
+        resolved_at: new Date().toISOString(),
+        resolved_by: 'habit_placer_pin',
+        proposed_action: `AUTO-RESOLVED — diary_pin ${day}`,
+      },
+    },
+  ).catch(() => {});
   await upsertPushRow(sb, {
     related_id: relatedIdForHabit(a.habit_id, a.ideal_date, evtId),
     entity_type: 'habit',

@@ -1,10 +1,12 @@
 /**
  * Post-detect heal for manual Scheduling "Run check now".
- * DB + gcal_push_queue only — never writes Google Calendar directly.
+ * Overlaps/gaps queue GCal via push; orphan decompress deletes apply immediately
+ * (queue-only left zombies when flush did not run).
  */
 const { resolveOverlap } = require('./conflict-resolve-lib');
 const { relatedIdForTask, upsertPushRow } = require('./gcal-push-lib');
 const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
+const { deletePrimaryEvent } = require('./gcal-write-lib');
 const { londonToday, addDaysYmd } = require('./diary-lib');
 const { isoToLondonDate, ruleMapFromRows } = require('./scheduling-rules-lib');
 const { workPairs, gapBufferTitle } = require('./buffer-gap-lib');
@@ -159,6 +161,8 @@ function decompressAfterLabel(summary) {
 function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
   const after = String(afterLabel || '');
   if (!after) return false;
+  const d0 = Date.parse(decompressEvent.start?.dateTime || 0);
+  if (!d0) return false;
   return primary.some((e) => {
     if (e.id === decompressEvent.id) return false;
     if (/Decompress|Travel |AWAY|REST|⚽/i.test(e.summary || '')) return false;
@@ -167,6 +171,10 @@ function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
       || /^DONE\b/i.test(e.summary || '');
     if (!isMc) return false;
     if (isoToLondonDate(e.start.dateTime) !== day) return false;
+    // Require adjacency: parent must end within 5 minutes before decompress.
+    const end = Date.parse(e.end?.dateTime || e.start.dateTime);
+    const gapMin = (d0 - end) / 60000;
+    if (gapMin < -1 || gapMin > 5) return false;
     const bare = String(e.summary || '')
       .replace(/^DONE\s*[·•\-–]\s*/i, '')
       .replace(/^MC\s*[^\s]+\s+/, '')
@@ -178,7 +186,10 @@ function parentMatchesDecompress(primary, decompressEvent, afterLabel, day) {
   });
 }
 
-async function queueDeleteDecompress(sb, eventId, title) {
+async function deleteOrphanDecompressNow(sb, eventId, title) {
+  try {
+    await deletePrimaryEvent(eventId);
+  } catch (_) { /* missing is fine */ }
   await upsertPushRow(sb, {
     related_id: `gcal:gap_buffer:orphan:${eventId}`,
     entity_type: 'habit',
@@ -191,6 +202,19 @@ async function queueDeleteDecompress(sb, eventId, title) {
       title: title || 'MC ⏳ Decompress',
     },
   });
+  // Mark the push row applied — delete already done live.
+  await sb(
+    `gcal_push_queue?related_id=eq.${encodeURIComponent(`gcal:gap_buffer:orphan:${eventId}`)}&status=eq.pending`,
+    {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        status: 'applied',
+        resolved_at: new Date().toISOString(),
+        resolved_by: 'scheduling-heal',
+        updated_at: new Date().toISOString(),
+      },
+    },
+  ).catch(() => {});
   await sb(
     `gap_buffer_blocks?calendar_event_id=eq.${encodeURIComponent(eventId)}`,
     {
@@ -224,7 +248,7 @@ async function queueOrphanDecompress(sb, primary) {
     const day = isoToLondonDate(d.start.dateTime);
     const after = decompressAfterLabel(d.summary);
     if (parentMatchesDecompress(primary, d, after, day)) continue;
-    await queueDeleteDecompress(sb, d.id, d.summary);
+    await deleteOrphanDecompressNow(sb, d.id, d.summary);
     orphans_queued += 1;
   }
   return { orphans_queued, push_queued: orphans_queued };
@@ -257,7 +281,7 @@ async function queueStaleGapMasters(sb, primary) {
     const key = `${row.day}|${String(row.after_event_id || '')}`;
     if (keep.has(key)) continue;
     if (row.calendar_event_id) {
-      await queueDeleteDecompress(
+      await deleteOrphanDecompressNow(
         sb,
         row.calendar_event_id,
         gapBufferTitle(row.after_label),
