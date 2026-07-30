@@ -285,11 +285,18 @@ function phaseListHtml(activeIdx) {
 
 function healSummaryHtml(heal) {
   if (!heal) return '';
+  if (heal.error) {
+    return `
+    <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35)">
+      <p style="margin:0"><strong>Auto-heal skipped</strong> — ${esc(heal.error)}. Detect results below still apply.</p>
+    </div>`;
+  }
   const fixed = heal.overlaps_fixed ?? 0;
   const failed = heal.overlaps_failed ?? 0;
   const orphans = (heal.orphans_queued ?? 0) + (heal.gaps_retired ?? 0);
   const pushN = heal.push_queued ?? 0;
   const remain = heal.remaining_pending ?? 0;
+  const left = heal.overlaps_left || 0;
   return `
     <div class="sched-heal-banner" style="margin:10px 0;padding:10px 12px;border-radius:8px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35)">
       <p style="margin:0 0 4px"><strong>Auto-heal</strong> (DB + push queue — Google not written yet)</p>
@@ -297,6 +304,7 @@ function healSummaryHtml(heal) {
         Moved <strong>${fixed}</strong> lower-priority overlap${fixed === 1 ? '' : 's'}
         · queued <strong>${orphans}</strong> orphan/stale decompress cleanup
         ${failed ? ` · <strong>${failed}</strong> overlap${failed === 1 ? '' : 's'} still need a decision` : ''}
+        ${left ? ` · <strong>${left}</strong> more overlap${left === 1 ? '' : 's'} next run` : ''}
         · <strong>${remain}</strong> pending row${remain === 1 ? '' : 's'} left
         · <strong>${pushN}</strong> write${pushN === 1 ? '' : 's'} ready for Diary Push
       </p>
