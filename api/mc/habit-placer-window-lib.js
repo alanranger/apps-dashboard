@@ -66,6 +66,8 @@ async function runPlacerWindow(sb, fromYmd, toYmd, opts = {}) {
     keep: result.amendment_counts?.KEEP || 0,
     delete: result.amendment_counts?.DELETE || 0,
     proof_ok: !!result.proof?.ok,
+    proof_writes_blocked: !!result.proof_writes_blocked,
+    proof_fails: (result.proof?.fails || []).slice(0, 8),
   };
 }
 
