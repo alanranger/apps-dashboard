@@ -12,7 +12,7 @@ const {
   trySlotOnDay, dayBlockedForPlacement, dayBlockedForHabits,
 } = require('./habit-placer-lib');
 const { relatedIdForTask, relatedIdForHabit, upsertPushRow } = require('./gcal-push-lib');
-const { occurrencesInRange } = require('./rrule-core');
+const { idealsInHorizon } = require('./rrule-core');
 const { computeMissedProposal } = require('./missed-habit-lib');
 const { priorityRank } = require('./priority-lib');
 
@@ -427,7 +427,7 @@ async function applyIncompleteHabitRolls(ctx) {
   const used = { ...(dayUsed || {}) };
 
   for (const habit of habits || []) {
-    const ideals = occurrencesInRange(habit.rrule, lookback, addDays(today, -1), 40);
+    const ideals = idealsInHorizon(habit.rrule, lookback, addDays(today, -1), 40);
     for (const ideal of ideals) {
       if (habit.last_done && String(habit.last_done) >= String(ideal)) continue;
       const skipRows = await sb(

@@ -7,7 +7,7 @@
  */
 const { envReady, json, cors, sb } = require('./_lib');
 const {
-  occurrencesInRange, fromYmd, addDays, toYmd, lastDueOnOrBefore,
+  idealsInHorizon, fromYmd, addDays, toYmd, lastDueOnOrBefore,
 } = require('./rrule-core');
 const { PRIORITY_ORDER } = require('./priority-lib');
 const { fetchCompetingPool, competitionForRange } = require('./competing-items-lib');
@@ -115,7 +115,7 @@ module.exports = async function handler(req, res) {
     const skipped = [];
     for (const h of Array.isArray(habits) ? habits : []) {
       let dates = [];
-      try { dates = occurrencesInRange(h.rrule, today, endYmd); }
+      try { dates = idealsInHorizon(h.rrule, today, endYmd); }
       catch (e) { skipped.push({ habit_id: h.id, title: h.title, reason: 'bad_rrule' }); continue; }
       if (!dates.length) {
         skipped.push({ habit_id: h.id, title: h.title, reason: 'no_occurrences' });

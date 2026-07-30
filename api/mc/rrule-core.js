@@ -144,6 +144,24 @@ function lastDueOnOrBefore(rrule, today) {
 }
 
 /**
+ * Ideals in [startYmd, endYmd] on the true INTERVAL phase.
+ * Must anchor from lastDueOnOrBefore — starting at "today" alone breaks
+ * WEEKLY;INTERVAL=8 (every Monday instead of every 8th Monday).
+ */
+function idealsInHorizon(rrule, startYmd, endYmd, maxSteps = 200) {
+  const from = String(startYmd).slice(0, 10);
+  const to = String(endYmd).slice(0, 10);
+  let expandFrom = from;
+  try {
+    const dayBefore = toYmd(addDays(fromYmd(from), -1));
+    const last = lastDueOnOrBefore(rrule, dayBefore);
+    if (last) expandFrom = last;
+  } catch (_) { /* keep from */ }
+  return occurrencesInRange(rrule, expandFrom, to, maxSteps)
+    .filter((d) => d >= from && d <= to);
+}
+
+/**
  * Month-day / ordinal weekday anchors (BYMONTHDAY=n, BYDAY=1MO / -1FR):
  * floor = ideal; never roll earlier than the rrule occurrence.
  */
@@ -164,6 +182,7 @@ function criticalRollMode(rrule, timeCritical) {
 module.exports = {
   parseRrule,
   occurrencesInRange,
+  idealsInHorizon,
   nextDueFromRrule,
   lastDueOnOrBefore,
   toYmd,

@@ -5,7 +5,7 @@
 const {
   workingWindow, isSchedulableDay, isoToLondonDate, isoToLondonMinutes, addDays,
 } = require('./scheduling-rules-lib');
-const { occurrencesInRange, criticalRollMode } = require('./rrule-core');
+const { idealsInHorizon, criticalRollMode } = require('./rrule-core');
 const { priorityRank } = require('./priority-lib');
 const { isMcBlock, isFixtureBlock } = require('./rule-breach-lib');
 const { isForceBusyCalendar } = require('./gcal-lib');
@@ -1255,7 +1255,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
   }
 
   for (const habit of ordered) {
-    for (const ideal of occurrencesInRange(habit.rrule, fromYmd, toYmd, 200)) {
+    for (const ideal of idealsInHorizon(habit.rrule, fromYmd, toYmd, 200)) {
       const slot = findSlotAlways(habit, ideal);
       if (!slot) {
         unplaced.push({
