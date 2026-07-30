@@ -658,7 +658,7 @@ async function syncRecurringLogAfterFlush(sb, w, eventId) {
   }
 }
 
-async function applyFlushPlan(sb, plan, actor) {
+async function applyFlushPlan(sb, plan, actor, opts = {}) {
   const results = [];
   const actorSafe = ['alan', 'claude', 'cursor', 'external', 'system'].includes(actor)
     ? actor
@@ -670,7 +670,10 @@ async function applyFlushPlan(sb, plan, actor) {
     travel: ruleMap.title_prefix_travel || 'MC 🚗',
     buffer: ruleMap.title_prefix_buffer || 'MC ⏳',
   };
-  const liveWrites = await hydrateWritesFromDb(sb, plan.writes || [], prefixes);
+  const allWrites = plan.writes || [];
+  const limit = Number(opts.limit) > 0 ? Math.min(80, Number(opts.limit)) : allWrites.length;
+  const batch = allWrites.slice(0, limit);
+  const liveWrites = await hydrateWritesFromDb(sb, batch, prefixes);
 
   for (const w of liveWrites) {
     try {
@@ -754,6 +757,8 @@ async function applyFlushPlan(sb, plan, actor) {
     applied: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
     results,
+    batch_size: batch.length,
+    remaining_planned: Math.max(0, allWrites.length - batch.length),
   };
 }
 

@@ -5,7 +5,7 @@
     "api/cron/hotel-source-reconcile.js": { "maxDuration": 300 },
     "api/cron/gcal-auto-sync.js": { "maxDuration": 120 },
     "api/mc/diary.js": { "maxDuration": 60 },
-    "api/mc/gcal-auto-sync.js": { "maxDuration": 120 }
+    "api/mc/gcal-auto-sync.js": { "maxDuration": 300 }
   },
   "crons": [
     {

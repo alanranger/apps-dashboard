@@ -59,12 +59,17 @@ module.exports = async function handler(req, res) {
       return json(res, 200, await dryRunSync(sb));
     }
     if (action === 'push') {
-      // Default: diary edits only (queue). Backlog + rule masters timeout Vercel.
+      // Default: diary queue only. Rule masters / backlog are opt-in (they timeout Vercel).
+      // Chunked batches (limit) so large queues finish without FUNCTION_INVOCATION_TIMEOUT.
       const includeBacklog = body.include_backlog === true;
       const includeRuleMasters = body.include_rule_masters === true;
+      const limit = Number(body.limit) > 0 ? Number(body.limit) : 25;
+      const force = body.force === true;
       return json(res, 200, await pushSync(sb, actor, {
         includeRuleMasters,
         includeBacklog,
+        limit,
+        force,
       }));
     }
     if (action === 'reconcile') {

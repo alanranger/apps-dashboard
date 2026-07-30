@@ -62,20 +62,20 @@ async function dryRunSync(sb) {
   };
 }
 
-async function acquirePushLock(sb) {
+async function acquirePushLock(sb, { force = false } = {}) {
   const key = 'gcal_push_inflight_until';
   const now = Date.now();
   const rows = await sb(`scheduling_rules?key=eq.${encodeURIComponent(key)}&select=key,value`);
   const cur = rows?.[0];
   const until = Number(cur?.value || 0);
-  if (until > now) {
-    const err = new Error('PUSH_ALREADY_IN_PROGRESS — wait for the current Push to finish');
+  if (!force && until > now) {
+    const err = new Error('PUSH_ALREADY_IN_PROGRESS — wait for the current Push to finish (or retry in a minute)');
     err.status = 409;
     throw err;
   }
   const body = {
     key,
-    value: String(now + 4 * 60 * 1000),
+    value: String(now + 3 * 60 * 1000),
     value_type: 'string',
     description: 'Epoch ms — Push lock expires; prevents duplicate REST/AWAY creates',
     updated_at: new Date().toISOString(),
@@ -103,6 +103,8 @@ async function releasePushLock(sb) {
 async function pushSync(sb, actor, {
   includeRuleMasters = true,
   includeBacklog = false,
+  limit = 25,
+  force = false,
 } = {}) {
   const flags = await loadFlags(sb);
   if (!flags.cursor_writes_available) {
@@ -110,13 +112,16 @@ async function pushSync(sb, actor, {
     err.status = 503;
     throw err;
   }
-  await acquirePushLock(sb);
+  await acquirePushLock(sb, { force: !!force });
   try {
     // Diary Push = gcal_push_queue only. Habit-placement backlog is separate (too big for one request).
     const plan = await buildFlushPlan(sb, { includeBacklog: !!includeBacklog });
-    const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push');
+    const batchLimit = Math.max(1, Math.min(40, Number(limit) || 25));
+    const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push', { limit: batchLimit });
     let rule_masters = null;
-    if (includeRuleMasters) {
+    // Only refresh rule masters on the final batch (nothing left) — avoids timeout.
+    const moreLeft = (flush.remaining_planned || 0) > 0;
+    if (includeRuleMasters && !moreLeft) {
       try {
         rule_masters = await runRuleEventMasterSync(sb, { writeGcal: true, weeks: 52 });
       } catch (e) {
@@ -131,6 +136,9 @@ async function pushSync(sb, actor, {
         applied: flush.applied,
         failed: flush.failed,
         results: flush.results,
+        batch_size: flush.batch_size,
+        remaining_planned: flush.remaining_planned,
+        more: moreLeft,
         include_backlog: !!includeBacklog,
         backlog_rows: plan.backlog_rows || 0,
       },

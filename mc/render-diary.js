@@ -1090,6 +1090,7 @@ function openPushProgressModal(plannedHint) {
   const started = Date.now();
   let tick = 0;
   let timer = null;
+  let progressNote = '';
 
   const paint = () => {
     const elapsed = Math.round((Date.now() - started) / 1000);
@@ -1097,13 +1098,14 @@ function openPushProgressModal(plannedHint) {
     box.innerHTML = `
       <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Pushing to Google Calendar</h2>
       <p class="meta">Cursor writer · titles from DB · read-back before applied
-        · Elapsed ${elapsed}s${plannedHint ? ` · ~${esc(String(plannedHint))} planned` : ''}</p>
+        · Elapsed ${elapsed}s${plannedHint ? ` · ~${esc(String(plannedHint))} planned` : ''}
+        ${progressNote ? ` · ${esc(progressNote)}` : ''}</p>
       <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
       <ul class="sched-phase-list" style="margin-top:10px">
         <li class="${tick >= 0 ? 'on' : ''}">Build flush plan</li>
-        <li class="${tick >= 1 ? 'on' : ''}">Write / patch / delete events</li>
+        <li class="${tick >= 1 ? 'on' : ''}">Write / patch / delete events (batched)</li>
         <li class="${tick >= 2 ? 'on' : ''}">Read-back verify each write</li>
-        <li class="${tick >= 3 ? 'on' : ''}">Refresh rule masters (rest / away)</li>
+        <li class="${tick >= 3 ? 'on' : ''}">Refresh rule masters on final batch</li>
       </ul>
       <div style="display:flex;gap:8px;margin-top:14px">
         <button type="button" class="btn-secondary" id="dyPushCancel">Cancel wait</button>
@@ -1132,6 +1134,10 @@ function openPushProgressModal(plannedHint) {
 
   return {
     signal: ac.signal,
+    setProgress(note) {
+      progressNote = note || '';
+      paint();
+    },
     finish(res) {
       clearInterval(timer);
       const secs = Math.round((Date.now() - started) / 1000);
@@ -1147,15 +1153,15 @@ function openPushProgressModal(plannedHint) {
       const rmLine = rm && !rm.error
         ? `<p class="meta">Rule masters: rest ${esc(String(rm.rest?.desired ?? '—'))}, away ${esc(String(rm.away?.desired ?? '—'))}, fixtures ${esc(String(rm.fixtures?.already_linked_live ?? '—'))}, gaps created ${esc(String(rm.gaps?.created ?? '—'))}</p>`
         : (rm?.error ? `<p class="err">Rule masters: ${esc(rm.error)}</p>` : '');
-      const emptyNote = planned === 0
+      const emptyNote = planned === 0 && applied === 0
         ? `<p class="meta" style="margin-top:8px">No diary queue writes this time (schedule already matched Google, or nothing pending). Rule masters still refreshed.</p>`
         : '';
       box.innerHTML = `
         <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Push complete</h2>
         <p class="meta">Finished in ${secs}s</p>
         <div class="sched-sum-grid" style="margin-top:10px">
-          <div><strong>${planned}</strong><span>planned</span></div>
-          <div><strong>${applied}</strong><span>applied</span></div>
+          <div><strong>${planned}</strong><span>planned (last batch)</span></div>
+          <div><strong>${applied}</strong><span>applied (this run)</span></div>
           <div><strong>${failed}</strong><span>failed</span></div>
         </div>
         ${emptyNote}
@@ -1169,9 +1175,15 @@ function openPushProgressModal(plannedHint) {
     fail(err) {
       clearInterval(timer);
       if (ac.signal.aborted) return;
+      const detail = err?.status ? `HTTP ${err.status}` : '';
+      const extra = err?.data?.detail
+        ? `<p class="meta">${esc(typeof err.data.detail === 'string' ? err.data.detail : JSON.stringify(err.data.detail)).slice(0, 400)}</p>`
+        : '';
       box.innerHTML = `
         <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Push failed</h2>
-        <p class="err">${esc(err.message || String(err))}</p>
+        <p class="err">${esc(err.message || String(err) || 'Unknown error')}${detail ? ` · ${esc(detail)}` : ''}</p>
+        ${extra}
+        <p class="meta">If this was a timeout, hit Push again — remaining queue continues in batches of 25.</p>
         <button type="button" class="btn-verify" id="dyPushClose">Close</button>`;
       $('dyPushClose').onclick = () => modal.classList.remove('open');
     },
@@ -1192,15 +1204,38 @@ async function runPushToGoogleWithModal(btn, refresh) {
   btn.textContent = 'Pushing…';
   toast('Push to Google started…');
   const ui = openPushProgressModal(plannedHint);
+  let totalApplied = 0;
+  let totalFailed = 0;
+  let lastRes = null;
   try {
-    const res = await api('/api/mc/gcal-auto-sync', {
-      method: 'POST',
-      body: { action: 'push' },
-      signal: ui.signal,
-    });
-    ui.finish(res);
-    const f = res.flush || {};
-    toast(`Push done · ${f.applied || 0} applied · ${f.failed || 0} failed`);
+    for (let round = 1; round <= 20; round += 1) {
+      if (ui.signal.aborted) break;
+      ui.setProgress(`batch ${round}`);
+      const res = await api('/api/mc/gcal-auto-sync', {
+        method: 'POST',
+        body: { action: 'push', limit: 25, force: round === 1 },
+        signal: ui.signal,
+      });
+      lastRes = res;
+      const f = res.flush || {};
+      totalApplied += Number(f.applied || 0);
+      totalFailed += Number(f.failed || 0);
+      ui.setProgress(`batch ${round} · ${totalApplied} applied · ${f.remaining_planned || 0} left`);
+      if (!f.more) break;
+    }
+    if (lastRes) {
+      lastRes = {
+        ...lastRes,
+        flush: {
+          ...(lastRes.flush || {}),
+          applied: totalApplied,
+          failed: totalFailed,
+          planned: Number(plannedHint) || (lastRes.flush?.planned || 0),
+        },
+      };
+      ui.finish(lastRes);
+      toast(`Push done · ${totalApplied} applied · ${totalFailed} failed`);
+    }
     await refresh();
   } catch (err) {
     if (ui.signal.aborted) {
