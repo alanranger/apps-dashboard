@@ -465,7 +465,7 @@ async function runFullHorizonWithChunks(ui) {
     ui.setStatus(`Pass ${pass} — auto-placer window ${n}/${total} (${from} → ${to})…`);
     const p = await api('/api/mc/scheduling', {
       method: 'PATCH',
-      body: { entity: 'run_placer', from, to },
+      body: { entity: 'run_placer', from, to, phase_anchor: today },
       signal: ui.signal,
     });
     placerWindows.push(p.placer || { from, to, skipped: true });

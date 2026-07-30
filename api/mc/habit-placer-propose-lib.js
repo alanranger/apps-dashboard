@@ -427,7 +427,7 @@ async function applyIncompleteHabitRolls(ctx) {
   const used = { ...(dayUsed || {}) };
 
   for (const habit of habits || []) {
-    const ideals = idealsInHorizon(habit.rrule, lookback, addDays(today, -1), 40);
+    const ideals = idealsInHorizon(habit.rrule, lookback, addDays(today, -1), 40, today);
     for (const ideal of ideals) {
       if (habit.last_done && String(habit.last_done) >= String(ideal)) continue;
       const skipRows = await sb(
@@ -565,6 +565,7 @@ async function runHabitPlacerPropose(ctx) {
   const {
     sb, ruleMap, holidays, fromYmd, toYmd, gcalEvents,
     existingPending, inserted, writePending = true,
+    phaseAnchorYmd = null,
   } = ctx;
 
   const [habits, deps, logs, taskRows, travelBlocks, restDb] = await Promise.all([
@@ -616,7 +617,11 @@ async function runHabitPlacerPropose(ctx) {
   const { placements, unplaced } = placeHabits(
     habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
     // existingHabitIntervals: self-strip only (intervals already in hardBusy)
-    { softTaskIntervals: softTasks, existingHabitIntervals: existingHabitBusy },
+    {
+      softTaskIntervals: softTasks,
+      existingHabitIntervals: existingHabitBusy,
+      phaseAnchorYmd: phaseAnchorYmd || fromYmd,
+    },
   );
   const existing = enrichExistingFromGcalTitles(
     existingLog, habits || [], gcalEvents || [], placements,
@@ -665,20 +670,9 @@ async function runHabitPlacerPropose(ctx) {
         || writeAction.action === 'CREATE'
         || writeAction.action === 'KEEP';
       if (writeAction.action === 'DELETE') {
-        const day = writeAction.startIso
-          ? require('./scheduling-rules-lib').isoToLondonDate(writeAction.startIso)
-          : writeAction.ideal_date;
-        const onBlocked = day && dayBlockedForHabits(day, blockedSpans);
-        const hRank = priorityRank(
-          (habits || []).find((h) => h.id === writeAction.habit_id)?.priority,
-        );
-        const clashesTask = (softTasks || []).some((t) => {
-          if (priorityRank(t.priority) > hRank) return false;
-          if (!writeAction.startIso || !writeAction.endIso) return false;
-          return Date.parse(writeAction.startIso) < t.endMs
-            && t.startMs < Date.parse(writeAction.endIso);
-        });
-        mayWrite = !!(onBlocked || clashesTask);
+        // Always retire Google when plan dropped this ideal (wrong phase / culled).
+        // Restricting to blocked/clash only left zombie wrong-phase pins on Primary.
+        mayWrite = true;
       }
       if (mayWrite) {
         try {

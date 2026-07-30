@@ -236,7 +236,9 @@ async function handler(req, res) {
       if (body.entity === 'run_placer') {
         if (!body.from || !body.to) return json(res, 400, { error: 'from and to required (YYYY-MM-DD)' });
         const { runPlacerWindow } = require('./habit-placer-window-lib');
-        const placer = await runPlacerWindow(sb, String(body.from), String(body.to));
+        const placer = await runPlacerWindow(sb, String(body.from), String(body.to), {
+          phaseAnchorYmd: body.phase_anchor || body.from,
+        });
         return json(res, 200, { placer, calendar_writes: 0 });
       }
       if (body.entity === 'run_heal') {

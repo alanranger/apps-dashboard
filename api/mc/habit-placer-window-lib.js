@@ -20,7 +20,7 @@ async function existingPending(sb, changeType, relatedId) {
   return rows?.[0];
 }
 
-async function runPlacerWindow(sb, fromYmd, toYmd) {
+async function runPlacerWindow(sb, fromYmd, toYmd, opts = {}) {
   if (!gcalConfigured()) {
     return { skipped: true, reason: 'gcal not configured', from: fromYmd, to: toYmd };
   }
@@ -54,6 +54,7 @@ async function runPlacerWindow(sb, fromYmd, toYmd) {
     existingPending: pendingFn,
     inserted,
     writePending: true,
+    phaseAnchorYmd: opts.phaseAnchorYmd || fromYmd,
   });
   return {
     from: fromYmd,

@@ -1262,7 +1262,8 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
   }
 
   for (const habit of ordered) {
-    for (const ideal of idealsInHorizon(habit.rrule, fromYmd, toYmd, 200)) {
+    const phaseAnchor = opts.phaseAnchorYmd || fromYmd;
+    for (const ideal of idealsInHorizon(habit.rrule, fromYmd, toYmd, 200, phaseAnchor)) {
       const slot = findSlotAlways(habit, ideal);
       if (!slot) {
         unplaced.push({
