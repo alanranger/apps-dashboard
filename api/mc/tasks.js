@@ -59,13 +59,14 @@ async function patchTask(id, body, actor, role) {
     }
     if (body.state === 'done_claimed') {
       const evidence = body.evidence_url || cur.evidence_url || patch.evidence_url;
-      if (!evidence) {
+      // Agents must attach evidence; Alan marking his own board work does not.
+      if (!evidence && role !== 'alan') {
         const err = new Error('done_claimed requires evidence_url');
         err.status = 400;
         throw err;
       }
       patch.state = 'done_claimed';
-      patch.evidence_url = evidence;
+      if (evidence) patch.evidence_url = evidence;
       patch.claimed_by = actor;
       patch.claimed_at = new Date().toISOString();
     } else {
