@@ -207,6 +207,13 @@ function findLiveTimed(events, summary, startIso, endIso) {
 async function syncGapBuffers(sb, blocks, ruleMap, {
   writeGcal = true, travelBlocks = [], events = [],
 } = {}) {
+  // Decision 3b: do not paint MC ⏳ between admin/habit blocks (orphans).
+  // Client/teaching prep+decompress stay on the travel/buffer pipeline.
+  if (String(ruleMap.gap_becomes_task || 'true') === 'false') {
+    return {
+      created: [], updated: [], failed: [], purged: 0, retired: 0, skipped: 'gap_becomes_task=false',
+    };
+  }
   const awaySpans = awaySpansFromTravelBlocks(travelBlocks);
   const pairs = workPairs(blocks, ruleMap, awaySpans)
     .filter((p) => p.gap >= p.need && p.need > 0);

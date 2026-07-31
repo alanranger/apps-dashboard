@@ -230,6 +230,96 @@ async function applyTaskBumpToDb(sb, bump) {
   return true;
 }
 
+/** Decision 1 — board-only tasks: clear diary dates + queue Google deletes. */
+async function clearProjectTasksFromDiary(sb, taskRows) {
+  let cleared = 0;
+  for (const t of taskRows || []) {
+    if (!t?.display_id) continue;
+    const evtId = t.calendar_event_id || null;
+    await sb(`tasks?display_id=eq.${Number(t.display_id)}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: {
+        scheduled_start: null,
+        scheduled_end: null,
+        calendar_event_id: null,
+        slot_pinned: false,
+        last_activity_at: new Date().toISOString(),
+      },
+    });
+    if (evtId) {
+      await upsertPushRow(sb, {
+        related_id: relatedIdForTask(t.id || `display:${t.display_id}`),
+        entity_type: 'task',
+        change_kind: 'skip',
+        summary: `Decision 1 — unsched MC-${t.display_id} from diary`,
+        proposed_action: `DELETE Primary event ${evtId} (project tasks stay on board only).`,
+        payload: {
+          task_id: t.id || null,
+          display_id: t.display_id,
+          calendar_event_id: evtId,
+          action: 'delete_event',
+          reason: 'auto_schedule_project_tasks=false',
+        },
+      }).catch(() => {});
+    }
+    cleared += 1;
+  }
+  return cleared;
+}
+
+/** Decision 4 — never silent vanish: pending alert + optional GCal warning. */
+async function writeUnplacedHabitAlerts(sb, unplaced, {
+  existingPending, inserted, writePending = true,
+} = {}) {
+  if (!writePending) return 0;
+  let n = 0;
+  for (const u of unplaced || []) {
+    if (!u?.habit_id || !u?.ideal_date) continue;
+    const related = `habit_unplaced:${u.habit_id}:${u.ideal_date}`;
+    if (existingPending && await existingPending('habit_unplaced', related)) continue;
+    const title = u.title || 'habit';
+    const out = await sb('pending_diary_changes', {
+      method: 'POST',
+      body: {
+        change_type: 'habit_unplaced',
+        target_date: u.ideal_date,
+        urgency: 'high',
+        status: 'pending',
+        related_id: related,
+        summary: `UNSCHEDULED: ${title} (${u.ideal_date})`,
+        proposed_action: [
+          `No legal diary slot for "${title}" ideal ${u.ideal_date}.`,
+          `Reason: ${u.reason || 'no_slot'}.`,
+          'Do not assume done — place manually or Skip this occurrence.',
+        ].join(' '),
+        reason: 'Decision 4 — never silent vanish',
+      },
+    });
+    const id = Array.isArray(out) ? out[0]?.id : out?.id;
+    if (id && inserted) inserted.push(id);
+    if (id) n += 1;
+    // Timed 15m warning on the ideal day so Primary still shows the hole.
+    const warnStart = `${u.ideal_date}T19:00:00.000Z`;
+    const warnEnd = `${u.ideal_date}T19:15:00.000Z`;
+    await upsertPushRow(sb, {
+      related_id: related,
+      entity_type: 'other',
+      change_kind: 'move',
+      summary: `MC ⚠️ UNSCHEDULED: ${title}`,
+      proposed_action: `CREATE Primary warning "MC ⚠️ UNSCHEDULED: ${title}" ${u.ideal_date} 20:00–20:15.`,
+      payload: {
+        title: `MC ⚠️ UNSCHEDULED: ${title}`,
+        ideal_date: u.ideal_date,
+        new_start: warnStart,
+        new_end: warnEnd,
+        reason: u.reason || 'no_slot',
+      },
+    }).catch(() => {});
+  }
+  return n;
+}
+
 /** Apply placer MOVE/CREATE/DELETE/KEEP(pin-sync) to recurring_log + gcal_push_queue. */
 async function applyHabitAmendmentToDb(sb, a) {
   if (!a || !a.habit_id || !a.ideal_date) return false;
@@ -630,7 +720,7 @@ async function runHabitPlacerPropose(ctx) {
       + '&order=at.desc&limit=8000',
     ),
     sb(
-      'tasks?select=display_id,title,state,priority,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
+      'tasks?select=id,display_id,title,state,priority,slot_pinned,scheduled_start,scheduled_end,calendar_event_id,'
       + 'depends_on:depends_on_task_id(display_id)'
       + '&scheduled_start=not.is.null'
       + `&scheduled_start=gte.${addDays(fromYmd, -21)}T00:00:00Z`
@@ -650,10 +740,16 @@ async function runHabitPlacerPropose(ctx) {
     ...t,
     depends_on_display_id: t.depends_on?.display_id ?? t.depends_on_display_id ?? null,
   }));
+  const autoScheduleTasks = String(ruleMap.auto_schedule_project_tasks || 'false') === 'true';
   const existingLog = loadExistingFromLog(logs || [], habits || [], gcalEvents || []);
   const clientBusy = buildBusyIntervals(gcalEvents || [], ruleMap);
-  const pinnedBusy = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: true });
-  const softTasks = datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false });
+  // Decision 1: project tasks stay on the board — do not fence or bump them.
+  const pinnedBusy = autoScheduleTasks
+    ? datedTasksToIntervals(taskRowsNorm, { pinnedOnly: true })
+    : [];
+  const softTasks = autoScheduleTasks
+    ? datedTasksToIntervals(taskRowsNorm, { pinnedOnly: false })
+    : [];
   const awaySpans = awaySpansFromTravelBlocks(travelBlocks || []);
   const teachingSpans = teachingDaySpansFromEvents(gcalEvents || [], ruleMap);
   const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap)
@@ -683,21 +779,36 @@ async function runHabitPlacerPropose(ctx) {
   const existing = enrichExistingFromGcalTitles(
     existingLog, habits || [], gcalEvents || [], placements,
   );
-  const bumpsRaw = mergeTaskBumps(
-    findTaskBumps(placements, softTasks),
-    findBlockedDayTaskBumps(softTasks, blockedSpans),
-    findAwayIntervalTaskBumps(softTasks, awaySpans),
-    findAdminGapTaskBumps(softTasks, ruleMap),
-    findAfterHoursTaskBumps(softTasks, ruleMap),
-    findPastIncompleteTaskBumps(softTasks, Date.now()),
-    findSoftOverlapBumps(softTasks),
-  );
-  const {
-    scheduled: bumps, unplaced: bumpUnplaced, shared_calendar_flags: sharedFlags,
-  } = placeBumpedTasks(
-    bumpsRaw, softTasks, hardBusy, placements, ruleMap, holidays, fromYmd,
-  );
-  const allBumps = bumps.concat(bumpUnplaced);
+  let allBumps = [];
+  let bumps = [];
+  let bumpUnplaced = [];
+  let sharedFlags = [];
+  let taskDbApplied = 0;
+  let tasksCleared = 0;
+  if (autoScheduleTasks) {
+    const bumpsRaw = mergeTaskBumps(
+      findTaskBumps(placements, softTasks),
+      findBlockedDayTaskBumps(softTasks, blockedSpans),
+      findAwayIntervalTaskBumps(softTasks, awaySpans),
+      findAdminGapTaskBumps(softTasks, ruleMap),
+      findAfterHoursTaskBumps(softTasks, ruleMap),
+      findPastIncompleteTaskBumps(softTasks, Date.now()),
+      findSoftOverlapBumps(softTasks),
+    );
+    const placed = placeBumpedTasks(
+      bumpsRaw, softTasks, hardBusy, placements, ruleMap, holidays, fromYmd,
+    );
+    bumps = placed.scheduled;
+    bumpUnplaced = placed.unplaced;
+    sharedFlags = placed.shared_calendar_flags;
+    allBumps = bumps.concat(bumpUnplaced);
+  } else if (writePending && (taskRowsNorm || []).length) {
+    try {
+      tasksCleared = await clearProjectTasksFromDiary(sb, taskRowsNorm);
+    } catch (_) {
+      tasksCleared = 0;
+    }
+  }
   const proof = provePlacement(placements, hardBusy, deps || [], ruleMap, {
     softTaskIntervals: softTasks,
     bumps: allBumps,
@@ -710,7 +821,6 @@ async function runHabitPlacerPropose(ctx) {
   const skippedPast = buildAmendments(placements, existing).length - amendments.length;
 
   let pendingWrote = 0;
-  let taskDbApplied = 0;
   let habitDbApplied = 0;
   let habitRolls = { rolled: 0 };
   const proofOk = !!proof?.ok;
@@ -838,6 +948,7 @@ async function runHabitPlacerPropose(ctx) {
   }
 
   let blockedCleared = [];
+  let unplacedAlerts = 0;
   if (writePending && proofOk) {
     try {
       blockedCleared = await clearHabitsDatedOnBlockedDays(
@@ -846,6 +957,16 @@ async function runHabitPlacerPropose(ctx) {
       habitDbApplied += blockedCleared.length;
     } catch (e) {
       blockedCleared = [{ error: e.message }];
+    }
+  }
+  if (writePending) {
+    try {
+      unplacedAlerts = await writeUnplacedHabitAlerts(sb, unplaced, {
+        existingPending, inserted, writePending,
+      });
+      pendingWrote += unplacedAlerts;
+    } catch (_) {
+      unplacedAlerts = 0;
     }
   }
 
@@ -858,6 +979,8 @@ async function runHabitPlacerPropose(ctx) {
     dated_tasks_seen: taskRowsNorm.length,
     pinned_busy: pinnedBusy.length,
     soft_tasks: softTasks.length,
+    auto_schedule_project_tasks: autoScheduleTasks,
+    tasks_cleared_from_diary: tasksCleared,
     away_spans: awaySpans.map((s) => ({
       startDay: s.startDay, endDay: s.endDay, restDay: s.restDay, summary: s.summary,
     })),
@@ -877,6 +1000,7 @@ async function runHabitPlacerPropose(ctx) {
     habit_db_applied: habitDbApplied,
     blocked_day_cleared: blockedCleared,
     habit_rolls: habitRolls,
+    unplaced_alerts: unplacedAlerts,
     shared_calendar_flags: sharedFlags || [],
     skipped_past: skippedPast,
     proof,
@@ -894,6 +1018,8 @@ module.exports = {
   amendmentToPending,
   bumpToPending,
   applyTaskBumpToDb,
+  clearProjectTasksFromDiary,
+  writeUnplacedHabitAlerts,
   applyHabitAmendmentToDb,
   clearHabitsDatedOnBlockedDays,
   applyIncompleteHabitRolls,

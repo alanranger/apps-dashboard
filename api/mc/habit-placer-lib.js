@@ -1036,7 +1036,8 @@ function candidateDays(idealYmd, windowDays, timeCritical, ruleMap, holidays, aw
       );
       if (open) days.push(open);
     } else if (mode === 'backward') {
-      if (before <= idealYmd) days.push(before);
+      // Stay inside window_days (Joining: Fri→Thu only — never leap to Wed).
+      if (before <= idealYmd && before >= addDays(idealYmd, -w)) days.push(before);
     } else {
       days.push(before, after);
       const open = firstOpenOnOrAfter(after, ruleMap, holidays, awaySpans, 60, forHabits);
@@ -1141,14 +1142,18 @@ function trySlotOnDay(day, durationMin, idealHm, title, busy, placed, dayUsed, r
   const { hard } = dayCapLimits(ruleMap);
   if (!opts.ignoreCap && (dayUsed[day] || 0) + durationMin > hard) return null;
 
+  // Decision 4: if day is full under normal hours, allow later evening free time.
+  const endMin = opts.allowEvening
+    ? Math.max(win.end_min, parseHm(ruleMap.evening_place_until || '21:00'))
+    : win.end_min;
   const idealMin = parseHm(idealHm);
   const starts = [];
-  for (let m = idealMin; m + durationMin <= win.end_min; m += 15) starts.push(m);
+  for (let m = idealMin; m + durationMin <= endMin; m += 15) starts.push(m);
   for (let m = idealMin - 15; m >= win.start_min; m -= 15) starts.push(m);
 
   const neighbors = (placed || []).concat(busyAsGapNeighbors(busy, day));
   for (const startMin of starts) {
-    if (startMin < win.start_min || startMin + durationMin > win.end_min) continue;
+    if (startMin < win.start_min || startMin + durationMin > endMin) continue;
     const startMs = londonYmdHmToUtcMs(day, hmLabel(startMin));
     const endMs = londonYmdHmToUtcMs(day, hmLabel(startMin + durationMin));
     if (busy.some((b) => overlaps(startMs, endMs, b.startMs, b.endMs))) continue;
@@ -1197,7 +1202,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     || b.kind === 'rest_after_workshop'
     || b.restDay);
 
-  function tryDays(habit, ideal, days, fence, ignoreCap = false) {
+  function tryDays(habit, ideal, days, fence, slotOpts = {}) {
     const busySansSelf = busyWork
       .concat(fence)
       .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
@@ -1207,8 +1212,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
       if (!isSchedulableDay(day, ruleMap, holidays)) continue;
       const trial = trySlotOnDay(
         day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
-        habit.title, busySansSelf, placements, dayUsed, ruleMap,
-        { ignoreCap },
+        habit.title, busySansSelf, placements, dayUsed, ruleMap, slotOpts,
       );
       if (!trial || !depOk(habit, trial, placedByHabit, deps)) continue;
       return trial;
@@ -1216,15 +1220,21 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     return null;
   }
 
-  /** Prefer window; if full, walk forward day-by-day to horizon (always schedule). */
+  /** Prefer window; if full, soft-cap then evening; then walk horizon. */
   function findSlotAlways(habit, ideal) {
     const fence = taskFenceForHabit(opts.softTaskIntervals || [], habit);
     const windowDays = candidateDays(
       ideal, habit.window_days, habit.time_critical === true, ruleMap, holidays, awaySpans,
       habit.rrule, true,
     );
-    let slot = tryDays(habit, ideal, windowDays, fence, false);
+    let slot = tryDays(habit, ideal, windowDays, fence, { ignoreCap: false });
     if (slot) return slot;
+    slot = tryDays(habit, ideal, windowDays, fence, { ignoreCap: true });
+    if (slot) return slot;
+    slot = tryDays(habit, ideal, windowDays, fence, { ignoreCap: true, allowEvening: true });
+    if (slot) return slot;
+    // Decision 2/4: time-critical never rolls later than the ideal window.
+    if (habit.time_critical === true) return null;
     const extended = [];
     let d = ideal;
     for (let i = 0; i < 120; i += 1) {
@@ -1232,8 +1242,9 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
       if (!windowDays.includes(d)) extended.push(d);
       d = addDays(d, 1);
     }
-    // Extended search may exceed daily cap — still no overlaps / blocked days.
-    return tryDays(habit, ideal, extended, fence, true);
+    slot = tryDays(habit, ideal, extended, fence, { ignoreCap: true });
+    if (slot) return slot;
+    return tryDays(habit, ideal, extended, fence, { ignoreCap: true, allowEvening: true });
   }
 
   function commitSlot(habit, ideal, slot) {
@@ -1459,8 +1470,10 @@ function provePlacement(placements, clientBusy, deps, ruleMap, opts = {}) {
       }
     }
   }
+  // Decision 4: daily cap is soft — over-cap evening placements must not block writes.
+  const softCap = String(ruleMap.daily_cap_is_soft || 'true') !== 'false';
   for (const [day, mins] of Object.entries(dayUsed)) {
-    if (mins > hard) fails.push(`cap: ${day} ${mins}m > ${hard}m`);
+    if (mins > hard && !softCap) fails.push(`cap: ${day} ${mins}m > ${hard}m`);
   }
   for (const d of deps || []) {
     const depsRows = placements.filter((p) => p.habit_id === d.habit_id);

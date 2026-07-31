@@ -135,16 +135,38 @@ describe('habit-placer-lib — place + §5 proof', () => {
       ideal_time: '10:00', window_days: 0, time_critical: false,
       rrule: 'FREQ=WEEKLY;BYDAY=TU',
     };
+    // Busy through evening ceiling → truly no legal slot that day.
     const clientBusy = [{
       startMs: londonYmdHmToUtcMs('2026-08-11', '09:00'),
-      endMs: londonYmdHmToUtcMs('2026-08-11', '17:00'),
+      endMs: londonYmdHmToUtcMs('2026-08-11', '21:00'),
       summary: 'all day client',
     }];
     const { placements, unplaced } = placeHabits(
-      [habit], [], clientBusy.slice(), rules, holidays, '2026-08-11', '2026-08-11',
+      [habit], [], clientBusy.slice(), { ...rules, evening_place_until: '21:00' },
+      holidays, '2026-08-11', '2026-08-11',
     );
     assert.equal(placements.length, 0);
     assert.equal(unplaced.length, 1);
+  });
+
+  it('may place after client busy into evening free time', () => {
+    const habit = {
+      id: 'hy', title: 'Joining', priority: 'p0', duration_min: 60,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    };
+    const clientBusy = [{
+      startMs: londonYmdHmToUtcMs('2026-08-11', '09:00'),
+      endMs: londonYmdHmToUtcMs('2026-08-11', '17:00'),
+      summary: 'day client',
+    }];
+    const { placements, unplaced } = placeHabits(
+      [habit], [], clientBusy.slice(), { ...rules, evening_place_until: '21:00' },
+      holidays, '2026-08-11', '2026-08-11',
+    );
+    assert.equal(unplaced.length, 0);
+    assert.equal(placements.length, 1);
+    assert.ok(Date.parse(placements[0].startIso) >= clientBusy[0].endMs);
   });
 
   it('KEEP when existing matches plan; MOVE when shifted', () => {
@@ -552,5 +574,54 @@ describe('habit-placer-lib — anchor roll direction', () => {
     );
     assert.ok(!days.some((d) => d < '2026-10-05'));
     assert.ok(days.includes('2026-10-05'));
+  });
+});
+
+describe('habit-placer-lib — Decision 4 soft cap + evening', () => {
+  it('places into evening when day window is full of hard busy', () => {
+    const habit = {
+      id: 'hev', title: 'Joining Details', priority: 'p0', duration_min: 30,
+      ideal_time: '09:00', window_days: 0, time_critical: true,
+      rrule: 'FREQ=WEEKLY;BYDAY=FR',
+    };
+    // Pack Fri 31 Jul 2026 09:00–17:00 solid busy.
+    const busy = [];
+    for (let h = 9; h < 17; h += 1) {
+      busy.push({
+        startMs: londonYmdHmToUtcMs('2026-07-31', `${String(h).padStart(2, '0')}:00`),
+        endMs: londonYmdHmToUtcMs('2026-07-31', `${String(h + 1).padStart(2, '0')}:00`),
+        summary: `busy-${h}`,
+      });
+    }
+    const { placements, unplaced } = placeHabits(
+      [habit], [], busy, { ...rules, evening_place_until: '21:00', daily_cap_is_soft: 'true' },
+      holidays, '2026-07-31', '2026-07-31',
+    );
+    assert.equal(unplaced.length, 0);
+    assert.equal(placements.length, 1);
+    const mins = require('../../api/mc/scheduling-rules-lib.js')
+      .isoToLondonMinutes(placements[0].startIso);
+    assert.ok(mins >= 17 * 60, `expected evening slot, got ${mins}`);
+  });
+
+  it('soft cap does not fail proof when over hard minutes', () => {
+    const placements = [{
+      habit_id: 'h1', title: 'Joining Details', priority: 'p1', ideal_date: '2026-08-03',
+      day: '2026-08-03',
+      startIso: new Date(londonYmdHmToUtcMs('2026-08-03', '10:00')).toISOString(),
+      endIso: new Date(londonYmdHmToUtcMs('2026-08-03', '14:00')).toISOString(),
+      duration_min: 240,
+    }, {
+      habit_id: 'h2', title: 'Hotel bookings — Alan actions', priority: 'p1', ideal_date: '2026-08-03',
+      day: '2026-08-03',
+      startIso: new Date(londonYmdHmToUtcMs('2026-08-03', '14:30')).toISOString(),
+      endIso: new Date(londonYmdHmToUtcMs('2026-08-03', '15:30')).toISOString(),
+      duration_min: 60,
+    }];
+    const soft = provePlacement(placements, [], [], { ...rules, daily_cap_is_soft: 'true' });
+    assert.equal(soft.ok, true, soft.fails?.join('; '));
+    const hard = provePlacement(placements, [], [], { ...rules, daily_cap_is_soft: 'false' });
+    assert.equal(hard.ok, false);
+    assert.ok(hard.fails.some((f) => f.startsWith('cap:')));
   });
 });
