@@ -215,8 +215,12 @@ function wireDrawer(t, onRefresh) {
       const evidence_url = $('evidenceInput').value.trim();
       await api('/api/mc/tasks', {
         method: 'PATCH',
-        body: { id: t.id, evidence_url, state: 'done_claimed' },
+        body: { id: t.id, evidence_url: evidence_url || undefined, state: 'done_claimed' },
       });
+      // Alan finishing his own task: claim + verify in one step (no evidence needed).
+      if (store.role === 'alan') {
+        await api('/api/mc/actions', { method: 'POST', body: { action: 'verify', task_id: t.id } });
+      }
       await onRefresh();
       await openDrawer(t.id, onRefresh);
     } catch (e) {
@@ -343,8 +347,8 @@ export async function openDrawer(taskId, onRefresh) {
       ${checks}
       <h3 style="font-size:14px;font-weight:600;margin-top:12px">Evidence</h3>
       <div class="inset">${t.evidence_url ? `<a href="${esc(t.evidence_url)}" target="_blank" rel="noopener">${esc(t.evidence_url)}</a>` : 'None yet'}
-      <div style="margin-top:8px"><input id="evidenceInput" placeholder="Evidence URL" value="${esc(t.evidence_url || '')}" style="width:100%;padding:8px"/>
-      <button type="button" id="saveEvidence" style="margin-top:8px">Save evidence / claim done</button></div></div>
+      <div style="margin-top:8px"><input id="evidenceInput" placeholder="Evidence URL (optional for you)" value="${esc(t.evidence_url || '')}" style="width:100%;padding:8px"/>
+      <button type="button" id="saveEvidence" style="margin-top:8px">${store.role === 'alan' ? 'Mark done' : 'Save evidence / claim done'}</button></div></div>
       <h3 style="font-size:14px;font-weight:600;margin-top:12px">Handoff refs</h3>
       <div class="inset meta">
         ${handoffRef('Q', t.question_file)}<br>
