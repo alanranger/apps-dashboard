@@ -54,3 +54,5 @@ Placement order:
 ## Verification bar (morning)
 
 DB recurring_tasks + scheduling_rules match this doc; Mission Control Diary reflects it; Google Calendar Primary has no auto-scheduled project tasks, habit pins align, no silent unplaced habits without alerts.
+
+**Also required (missed 2026-07-31 overnight — fixed morning):** Primary must have **zero** `MC ⏳ Decompress — after …` gap-paint orphans (admin/habit/task). Workshop/client Prep + travel buffers may remain. Re-check with GCal search `Decompress — after` + `gap_buffer_blocks status=active` count = 0. Script: `node scripts/mc-purge-admin-decompress.cjs`.
