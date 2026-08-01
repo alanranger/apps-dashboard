@@ -123,8 +123,11 @@ function collapsePushManifest(items) {
 }
 
 async function upsertPushRow(sb, row) {
+  // Only collapse onto OPEN rows. Reusing an applied row marked the write "done"
+  // while hydrate could no-op against the wrong event — queue looked empty, GCal stale.
   const existing = await sb(
-    `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}&select=id,status`,
+    `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}`
+    + '&status=in.(pending,ready)&select=id,status&order=updated_at.desc&limit=1',
   );
   const prev = existing?.[0];
   const body = {

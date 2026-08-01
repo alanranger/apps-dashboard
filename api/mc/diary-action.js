@@ -436,6 +436,7 @@ module.exports = async function handler(req, res) {
           // Keep occurrence key on original day; paint uses completion timestamp.
           scheduled_date: scheduledDate,
           calendar_event_id: body.calendar_event_id || null,
+          at: new Date().toISOString(),
         };
         if (existing?.[0]?.id) {
           await sb(`recurring_log?id=eq.${existing[0].id}`, {

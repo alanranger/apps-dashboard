@@ -95,8 +95,8 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         note: 'complete → delete (explicit)',
       };
     }
-    const startIso = p.scheduled_start || p.new_start || null;
-    const endIso = p.scheduled_end || p.new_end || null;
+    const startIso = sanitizeIso(p.scheduled_start || p.new_start || null);
+    const endIso = sanitizeIso(p.scheduled_end || p.new_end || null);
     if (!startIso || !endIso) {
       if (!evt) return { skip: true, reason: 'complete_without_event_id', row };
       return {
@@ -112,11 +112,13 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       };
     }
     const doneTitle = title || row.summary || 'MC complete';
+    const idealDate = p.ideal_date || p.scheduled_date || p.completed_on || null;
     if (evt) {
       return {
         source: 'gcal_push_queue',
         source_id: row.id,
         entity_type: row.entity_type,
+        change_kind: 'complete',
         action: 'patch',
         event_id: evt,
         summary: doneTitle,
@@ -126,6 +128,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         task_id: p.task_id || null,
         display_id: p.display_id || null,
         habit_id: p.habit_id || null,
+        ideal_date: idealDate,
         note: 'complete → move to completion slot',
       };
     }
@@ -133,6 +136,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       source: 'gcal_push_queue',
       source_id: row.id,
       entity_type: row.entity_type,
+      change_kind: 'complete',
       action: 'insert',
       event_id: null,
       summary: doneTitle,
@@ -142,6 +146,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       task_id: p.task_id || null,
       display_id: p.display_id || null,
       habit_id: p.habit_id || null,
+      ideal_date: idealDate,
       note: 'complete → create at completion slot',
     };
   }
@@ -447,12 +452,40 @@ async function liveDbSlot(sb, w, prefixes) {
   }
   if (w.entity_type === 'habit' && w.habit_id) {
     const ideal = w.ideal_date || null;
-    let q = `recurring_log?recurring_task_id=eq.${w.habit_id}&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=5`;
-    if (ideal) q = `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${ideal}&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=3`;
+    let q = `recurring_log?recurring_task_id=eq.${w.habit_id}&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=8`;
+    if (ideal) {
+      q = `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${ideal}`
+        + '&select=change,scheduled_date,ideal_date,calendar_event_id,at&order=at.desc&limit=5';
+    }
     const logs = await sb(q);
-    const pin = (logs || []).map((l) => ({ l, pin: parseDiaryPinChange(l.change) })).find((x) => x.pin);
     const habits = await sb(`recurring_tasks?id=eq.${w.habit_id}&select=title`);
     const title = habits?.[0]?.title ? habitGcalTitle(habits[0].title, prefixes) : w.summary;
+
+    // Prefer completion stamp for this ideal (never a pin from another month).
+    const done = (logs || []).map((l) => {
+      const m = String(l.change || '').match(
+        /^completed\s+(\d{4}-\d{2}-\d{2})(?:\|actual=(\d+))?(?:\|at=([^|]+))?/i,
+      );
+      if (!m || !m[3] || !Number.isFinite(Date.parse(m[3]))) return null;
+      const startIso = new Date(m[3]).toISOString();
+      const mins = m[2] != null ? Number(m[2]) : 30;
+      return {
+        l,
+        startIso,
+        endIso: new Date(Date.parse(startIso) + mins * 60000).toISOString(),
+      };
+    }).find(Boolean);
+    if (done) {
+      return {
+        startIso: done.startIso,
+        endIso: done.endIso,
+        summary: title,
+        event_id: done.l.calendar_event_id || w.event_id || null,
+        live_from: 'recurring_log_complete',
+      };
+    }
+
+    const pin = (logs || []).map((l) => ({ l, pin: parseDiaryPinChange(l.change) })).find((x) => x.pin);
     if (pin?.pin) {
       return {
         startIso: new Date(pin.pin.startIso).toISOString(),
@@ -514,6 +547,12 @@ async function hydrateWritesFromDb(sb, writes, prefixes) {
   const out = [];
   for (const w of writes || []) {
     if (w.action === 'delete') {
+      out.push(w);
+      continue;
+    }
+    // Habit complete payloads already carry completion-slot times. liveDbSlot only
+    // understands diary_pin and would steal a different month's pin (wrong event_id).
+    if (w.change_kind === 'complete' || String(w.note || '').startsWith('complete')) {
       out.push(w);
       continue;
     }

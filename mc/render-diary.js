@@ -204,6 +204,10 @@ async function runMenuAction(act, block, refresh) {
           actual_minutes: actual,
         },
       });
+      try {
+        const data = await api('/api/mc/bootstrap');
+        applyBootstrap(data);
+      } catch (e) { /* Recurring tab refresh best-effort */ }
       toast(block.kind === 'deadline'
         ? 'Deadline complete · moved to now on Google · decompress cleared'
         : `Completed · ${actual}m actual · placed at completion time · Google updated`);

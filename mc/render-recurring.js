@@ -175,6 +175,11 @@ function occurrenceStatus(task, idealYmd) {
     return { kind: 'open', text: `${idealYmd} · not attempted yet` };
   }
   const ch = String(log.change || '');
+  if (/^completed\s/i.test(ch)) {
+    const m = ch.match(/^completed\s+(\d{4}-\d{2}-\d{2})(?:\|actual=(\d+))?/i);
+    const actual = m?.[2] ? ` · ${m[2]}m` : '';
+    return { kind: 'done', text: `${m?.[1] || idealYmd} · done${actual}` };
+  }
   if (/^skipped/i.test(ch)) {
     return { kind: 'skipped', text: `${idealYmd} · skipped` };
   }
