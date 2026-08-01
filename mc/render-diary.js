@@ -5,7 +5,7 @@
 import { api } from './api.js';
 import { $, esc } from './util.js';
 import { openDrawer } from './drawer.js';
-import { openRecurringEdit } from './render-recurring.js';
+import { openRecurringEdit, openMcBusyModal } from './render-recurring.js';
 import { applyBootstrap } from './store.js';
 
 const KIND_CLASS = {
@@ -186,31 +186,53 @@ async function runMenuAction(act, block, refresh) {
         actual = askActualMinutes(block);
         if (actual == null) return;
       }
-      await api('/api/mc/diary-action', {
-        method: 'POST',
-        body: {
-          action: 'complete',
-          kind: block.kind || undefined,
-          task_id: block.kind === 'mc_task' ? block.id.replace(/^task:/, '') : undefined,
-          habit_id: block.habit_id || undefined,
-          hotel_id: block.hotel_id || (block.kind === 'deadline' && String(block.id || '').startsWith('deadline:')
-            ? String(block.id).replace(/^deadline:/, '')
-            : undefined),
-          display_id: block.display_id || undefined,
-          completed_at: new Date().toISOString(),
-          scheduled_date: block.day || undefined,
-          ideal_date: block.ideal_date || block.day || undefined,
-          calendar_event_id: block.calendar_event_id || undefined,
-          actual_minutes: actual,
-        },
+      const ui = openMcBusyModal({
+        title: 'Completing diary block',
+        doneTitle: 'Complete saved',
+        failTitle: 'Complete failed',
+        phases: [
+          'Mark complete in diary',
+          'Auto-sync with Google (can take 20–40s)',
+          'Refresh diary',
+        ],
       });
       try {
-        const data = await api('/api/mc/bootstrap');
-        applyBootstrap(data);
-      } catch (e) { /* Recurring tab refresh best-effort */ }
-      toast(block.kind === 'deadline'
-        ? 'Deadline complete · moved to now on Google · decompress cleared'
-        : `Completed · ${actual}m actual · placed at completion time · Google updated`);
+        ui.setPhase(0, 'saving…');
+        await api('/api/mc/diary-action', {
+          method: 'POST',
+          body: {
+            action: 'complete',
+            kind: block.kind || undefined,
+            task_id: block.kind === 'mc_task' ? block.id.replace(/^task:/, '') : undefined,
+            habit_id: block.habit_id || undefined,
+            hotel_id: block.hotel_id || (block.kind === 'deadline' && String(block.id || '').startsWith('deadline:')
+              ? String(block.id).replace(/^deadline:/, '')
+              : undefined),
+            display_id: block.display_id || undefined,
+            completed_at: new Date().toISOString(),
+            scheduled_date: block.day || undefined,
+            ideal_date: block.ideal_date || block.day || undefined,
+            calendar_event_id: block.calendar_event_id || undefined,
+            actual_minutes: actual,
+          },
+        });
+        ui.setPhase(1, 'Google sync…');
+        try {
+          const data = await api('/api/mc/bootstrap');
+          applyBootstrap(data);
+        } catch (e) { /* Recurring tab refresh best-effort */ }
+        ui.setPhase(2, 'refreshing…');
+        const doneMsg = block.kind === 'deadline'
+          ? 'Deadline complete · moved to now on Google · decompress cleared'
+          : `Completed · ${actual}m actual · placed at completion time · Google updated`;
+        toast(doneMsg);
+        await refresh({ preserveScroll: true });
+        ui.finish(doneMsg);
+      } catch (err) {
+        ui.fail(err);
+        throw err;
+      }
+      return;
     } else if (act === 'lock' || act === 'unlock') {
       await api('/api/mc/diary-action', {
         method: 'POST',
@@ -225,33 +247,59 @@ async function runMenuAction(act, block, refresh) {
     } else if (act === 'skip') {
       if (block.kind === 'deadline') {
         if (!confirm(`Skip / dismiss this reminder?\n${block.title}\n\nRemoves it from Diary and Google.`)) return;
-        await api('/api/mc/diary-action', {
-          method: 'POST',
-          body: {
-            action: 'skip',
-            kind: 'deadline',
-            hotel_id: block.hotel_id || (String(block.id || '').startsWith('deadline:')
-              ? String(block.id).replace(/^deadline:/, '')
-              : undefined),
-            calendar_event_id: block.calendar_event_id || undefined,
-            scheduled_date: block.day,
-          },
-        });
-        toast('Reminder dismissed · removing from Google');
-      } else {
-        if (!confirm(`Skip this occurrence only?\n${block.title}\n\nRemoves it from this day. Next scheduled occurrence still appears.`)) return;
-        await api('/api/mc/diary-action', {
-          method: 'POST',
-          body: {
-            action: 'skip',
-            habit_id: block.habit_id,
-            scheduled_date: block.day,
-            ideal_date: block.ideal_date || block.day,
-            calendar_event_id: block.calendar_event_id || undefined,
-          },
-        });
-        toast('Skipped this occurrence · next cycle still schedules');
+      } else if (!confirm(`Skip this occurrence only?\n${block.title}\n\nRemoves it from this day. Next scheduled occurrence still appears.`)) {
+        return;
       }
+      const ui = openMcBusyModal({
+        title: 'Skipping diary occurrence',
+        doneTitle: 'Skip complete',
+        failTitle: 'Skip failed',
+        phases: [
+          'Remove occurrence from diary',
+          'Auto-sync with Google (can take 20–40s)',
+          'Refresh diary',
+        ],
+      });
+      try {
+        ui.setPhase(0, 'saving…');
+        if (block.kind === 'deadline') {
+          await api('/api/mc/diary-action', {
+            method: 'POST',
+            body: {
+              action: 'skip',
+              kind: 'deadline',
+              hotel_id: block.hotel_id || (String(block.id || '').startsWith('deadline:')
+                ? String(block.id).replace(/^deadline:/, '')
+                : undefined),
+              calendar_event_id: block.calendar_event_id || undefined,
+              scheduled_date: block.day,
+            },
+          });
+        } else {
+          await api('/api/mc/diary-action', {
+            method: 'POST',
+            body: {
+              action: 'skip',
+              habit_id: block.habit_id,
+              scheduled_date: block.day,
+              ideal_date: block.ideal_date || block.day,
+              calendar_event_id: block.calendar_event_id || undefined,
+            },
+          });
+        }
+        ui.setPhase(1, 'Google sync…');
+        const doneMsg = block.kind === 'deadline'
+          ? 'Reminder dismissed · removing from Google'
+          : 'Skipped this occurrence · next cycle still schedules';
+        toast(doneMsg);
+        ui.setPhase(2, 'refreshing…');
+        await refresh({ preserveScroll: true });
+        ui.finish(doneMsg);
+      } catch (err) {
+        ui.fail(err);
+        throw err;
+      }
+      return;
     } else if (act === 'settime') {
       const afterSave = async () => {
         try {
@@ -291,7 +339,20 @@ async function runMenuAction(act, block, refresh) {
 async function dropBlock(block, day, startHm, endHm, override, refresh, destLabel) {
   if (dropBlock._busy) return;
   dropBlock._busy = true;
+  const where = destLabel || `${fmtDayLabel(day)} · ${startHm}–${endHm}`;
+  const ui = openMcBusyModal({
+    title: 'Moving diary block',
+    doneTitle: 'Move complete',
+    failTitle: 'Move failed',
+    phases: [
+      'Save new slot in diary',
+      'Queue Google Calendar update',
+      'Auto-sync with Google (can take 20–40s)',
+      'Refresh diary',
+    ],
+  });
   try {
+    ui.setPhase(0, `moving to ${where}…`);
     const body = {
       action: 'move',
       new_start: londonYmdHmToIso(day, startHm),
@@ -307,18 +368,33 @@ async function dropBlock(block, day, startHm, endHm, override, refresh, destLabe
       body.habit_id = block.habit_id;
       body.ideal_date = block.ideal_date || block.day;
     } else {
+      ui.fail(new Error('This block cannot be moved'));
       return;
     }
-    const res = await api('/api/mc/diary-action', { method: 'POST', body });
+    let res = await api('/api/mc/diary-action', { method: 'POST', body });
     if (res.needs_override) {
       const msg = `Warnings:\n- ${res.warnings.join('\n- ')}\n\nOverride and place anyway?`;
-      if (!confirm(msg)) return;
+      if (!confirm(msg)) {
+        ui.fail(new Error('Move cancelled (override declined)'));
+        return;
+      }
+      ui.setPhase(1, 'overriding warnings…');
       body.override = true;
-      await api('/api/mc/diary-action', { method: 'POST', body });
+      res = await api('/api/mc/diary-action', { method: 'POST', body });
     }
-    const where = destLabel || `${fmtDayLabel(day)} · ${startHm}–${endHm}`;
+    ui.setPhase(2, 'Google sync…');
+    const writes = res?.calendar_writes ?? 0;
+    ui.setPhase(3, 'refreshing…');
     toast(`Moved to ${where} · saved to DB`);
     await refresh({ preserveScroll: true });
+    ui.finish(
+      writes > 0
+        ? `Moved to ${where} and synced to Google (${writes} write${writes === 1 ? '' : 's'}).`
+        : `Moved to ${where}. Google sync skipped or had nothing to write.`,
+    );
+  } catch (err) {
+    ui.fail(err);
+    toast(err.message || 'Move failed');
   } finally {
     dropBlock._busy = false;
   }

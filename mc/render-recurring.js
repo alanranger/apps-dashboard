@@ -392,27 +392,78 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
   $('reCancel').onclick = () => modal.classList.remove('open');
   $('reSave').onclick = async () => {
     const body = readForm('re');
-    await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
     const dayEl = $('reOccDay');
     const startEl = $('reOccStart');
     const endEl = $('reOccEnd');
-    if (dayEl && startEl && endEl && dayEl.value && startEl.value && endEl.value) {
-      await api('/api/mc/diary-action', {
+    const willMove = !!(occurrence && dayEl && startEl && endEl
+      && dayEl.value && startEl.value && endEl.value);
+    const saveBtn = $('reSave');
+    const cancelBtn = $('reCancel');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = willMove ? 'Saving + syncing…' : 'Saving…';
+    }
+    if (cancelBtn) cancelBtn.disabled = true;
+
+    if (!willMove) {
+      try {
+        await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
+        modal.classList.remove('open');
+        if (onSave) await onSave();
+      } catch (err) {
+        window.alert(err.message || 'Save failed');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = occurrence ? 'Save habit + move occurrence' : 'Save';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+      }
+      return;
+    }
+
+    const moveDay = dayEl.value;
+    const moveStart = startEl.value;
+    const moveEnd = endEl.value;
+    const ui = openMcBusyModal({
+      title: 'Saving diary occurrence',
+      doneTitle: 'Occurrence saved',
+      failTitle: 'Save failed',
+      phases: [
+        'Update habit settings',
+        'Pin new diary slot',
+        'Auto-sync with Google (can take 20–40s)',
+        'Refresh diary',
+      ],
+    });
+    try {
+      ui.setPhase(0, 'saving habit…');
+      await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
+      ui.setPhase(1, `moving to ${moveDay} ${moveStart}…`);
+      const res = await api('/api/mc/diary-action', {
         method: 'POST',
         body: {
           action: 'move',
           habit_id: t.id,
-          title: t.title,
+          title: body.title || t.title,
           ideal_date: idealDay,
-          new_start: londonYmdHmToIso(dayEl.value, startEl.value),
-          new_end: londonYmdHmToIso(dayEl.value, endEl.value),
+          new_start: londonYmdHmToIso(moveDay, moveStart),
+          new_end: londonYmdHmToIso(moveDay, moveEnd),
           override: true,
           calendar_event_id: occurrence?.calendar_event_id || undefined,
         },
       });
+      ui.setPhase(2, 'Google sync…');
+      const writes = res?.calendar_writes ?? 0;
+      ui.setPhase(3, 'refreshing…');
+      if (onSave) await onSave();
+      ui.finish(
+        writes > 0
+          ? `Moved to ${moveDay} ${moveStart}–${moveEnd} and synced to Google (${writes} write${writes === 1 ? '' : 's'}).`
+          : `Moved to ${moveDay} ${moveStart}–${moveEnd}. Google sync skipped or had nothing to write.`,
+      );
+    } catch (err) {
+      ui.fail(err);
     }
-    modal.classList.remove('open');
-    if (onSave) await onSave();
   };
   modal.classList.add('open');
 }
@@ -504,8 +555,10 @@ export async function handleRecurringClick(e, onSave) {
     skipBusy = true;
     btn.disabled = true;
     btn.textContent = 'Skipping…';
-    const ui = openRecurringBusyModal({
+    const ui = openMcBusyModal({
       title: 'Skip Next in progress',
+      doneTitle: 'Skip Next complete',
+      failTitle: 'Skip Next failed',
       phases: [
         'Mark occurrence skipped in diary',
         'Queue Google Calendar delete',
@@ -551,8 +604,13 @@ export async function handleRecurringClick(e, onSave) {
   return false;
 }
 
-/** Progress modal while Skip Next waits on Google auto-sync (often 20–40s). */
-function openRecurringBusyModal({ title, phases }) {
+/** Shared progress modal for Recurring / Diary actions that wait on Google sync. */
+export function openMcBusyModal({
+  title,
+  phases,
+  doneTitle = 'Complete',
+  failTitle = 'Failed',
+} = {}) {
   const modal = $('modal');
   const box = $('modalBox');
   const started = Date.now();
@@ -570,7 +628,7 @@ function openRecurringBusyModal({ title, phases }) {
       return `<li class="${cls}"><span class="sched-phase-mark">${mark}</span>${esc(p)}</li>`;
     }).join('');
     box.innerHTML = `
-      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">${esc(title)}</h2>
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">${esc(title || 'Working…')}</h2>
       <p class="meta">Elapsed ${elapsed}s${note ? ` · ${esc(note)}` : ''}
         · Google sync often takes 20–40s — leave this open</p>
       <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
@@ -594,7 +652,7 @@ function openRecurringBusyModal({ title, phases }) {
       clearInterval(timer);
       const secs = Math.round((Date.now() - started) / 1000);
       box.innerHTML = `
-        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Skip Next complete</h2>
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">${esc(doneTitle)}</h2>
         <p class="meta">Finished in ${secs}s</p>
         <p style="margin-top:10px">${esc(msg || 'Done.')}</p>
         <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:100%"></div></div>
@@ -608,7 +666,7 @@ function openRecurringBusyModal({ title, phases }) {
     fail(err) {
       clearInterval(timer);
       box.innerHTML = `
-        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Skip Next failed</h2>
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">${esc(failTitle)}</h2>
         <p class="err">${esc(err?.message || String(err) || 'Unknown error')}</p>
         <button type="button" class="btn-verify" id="recBusyClose">Close</button>`;
       $('recBusyClose').onclick = () => modal.classList.remove('open');
