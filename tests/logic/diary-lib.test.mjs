@@ -153,6 +153,12 @@ describe('diary calendar feeds', () => {
       start: { date: '2026-08-31' }, end: { date: '2026-09-01' },
     }]);
     assert.equal(banners[0].day, '2026-08-31');
+    assert.equal(banners.length, 1);
+    const multi = allDayBannersFromBusy([{
+      id: '2', summary: 'Ruby Moving',
+      start: { date: '2026-08-09' }, end: { date: '2026-08-11' },
+    }]);
+    assert.deepEqual(multi.map((b) => b.day), ['2026-08-09', '2026-08-10']);
     const hol = holidayMapFromRows([{ holiday_date: '2026-08-31', title: 'Summer bank holiday' }]);
     assert.equal(hol['2026-08-31'], 'Summer bank holiday');
   });

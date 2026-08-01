@@ -93,8 +93,10 @@ describe('rule-breach-lib — overlap + busy map', () => {
     ];
     const { mc, busy } = splitMcAndBusy(events, rules);
     assert.equal(mc.length, 1);
-    assert.equal(busy.length, 1);
+    assert.equal(busy.length, 2);
     assert.equal(busy[0].summary, 'Josh Birthday');
+    assert.equal(busy[1].summary, 'Other free');
+    assert.equal(busy[1].show_as_free, true);
   });
 
   it('routes Ipswich fixtures to the fixtures bucket, NOT the busy map (informational)', () => {
@@ -108,7 +110,9 @@ describe('rule-breach-lib — overlap + busy map', () => {
       end: { dateTime: '2026-09-12T17:00:00+01:00' },
     }];
     const { busy, fixtures } = splitMcAndBusy(events, { ...rules, fixture_buffer_min: '60' });
-    assert.equal(busy.length, 0); // fixtures never block the diary
+    // Placement gets a hard_fixture busy window; diary paint filters hard_fixture out.
+    assert.equal(busy.length, 1);
+    assert.equal(busy[0].hard_fixture, true);
     assert.equal(fixtures.length, 1);
     assert.equal(fixtures[0].id, 'fix');
   });

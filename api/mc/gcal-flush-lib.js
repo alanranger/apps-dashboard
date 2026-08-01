@@ -50,6 +50,14 @@ function safeTitle(candidate, fallback) {
   return null;
 }
 
+/** Strip trailing junk (e.g. "Z." from proposed_action prose) and normalise. */
+function sanitizeIso(v) {
+  if (v == null || v === '') return null;
+  const s = String(v).trim().replace(/\.+$/, '');
+  const t = Date.parse(s);
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
 function planFromPushRow(row, prefixes, resolvedTitle) {
   const p = row.payload || {};
   const kind = row.change_kind;
@@ -139,14 +147,19 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
   }
 
   if (kind === 'move' || kind === 'pin') {
-    if (!p.new_start || !p.new_end) {
+    const startIso = sanitizeIso(p.new_start || p.startIso);
+    const endIso = sanitizeIso(p.new_end || p.endIso);
+    const eventId = evt || p.event_id || null;
+    if (!startIso || !endIso) {
       return { skip: true, reason: 'move_missing_times', row };
     }
-    if (!title) {
+    // Time-only Primary slides (Heal gap) may have no DB title — patch times only.
+    if (!title && !eventId) {
       return { skip: true, reason: 'move_missing_db_title', row };
     }
-    if (evt) {
-      const patch = { startIso: p.new_start, endIso: p.new_end, summary: title };
+    if (eventId) {
+      const patch = { startIso, endIso };
+      if (title) patch.summary = title;
       if (p.location != null) patch.location = p.location;
       if (p.description != null) patch.description = p.description;
       if (row.entity_type === 'travel' && (p.block_type || p.leg_from || p.leg_to)) {
@@ -166,10 +179,10 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         source_id: row.id,
         entity_type: row.entity_type,
         action: 'patch',
-        event_id: evt,
-        summary: title,
+        event_id: eventId,
+        summary: title || row.summary || 'MC move',
         from: null,
-        to: { start: p.new_start, end: p.new_end },
+        to: { start: startIso, end: endIso },
         patch,
         task_id: p.task_id || null,
         display_id: p.display_id || p.task_display_id || null,
@@ -178,7 +191,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
         travel_block_id: p.block_id || null,
       };
     }
-    const insert = { summary: title, startIso: p.new_start, endIso: p.new_end };
+    const insert = { summary: title, startIso, endIso };
     if (p.location) insert.location = p.location;
     if (p.description) insert.description = p.description;
     return {
@@ -189,7 +202,7 @@ function planFromPushRow(row, prefixes, resolvedTitle) {
       event_id: null,
       summary: title,
       from: null,
-      to: { start: p.new_start, end: p.new_end },
+      to: { start: startIso, end: endIso },
       insert,
       habit_id: p.habit_id || null,
       task_id: p.task_id || null,
@@ -289,8 +302,10 @@ function planFromBacklogRow(row) {
       needs_task_title: true,
     };
   }
-  const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+)\s*[–-]\s*(\S+)/i.exec(action);
+  const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+?)\s*[–-]\s*(\S+?)(?:\.|\s|$)/i.exec(action);
   if (movePrimary) {
+    const startIso = String(movePrimary[2] || '').replace(/\.+$/, '');
+    const endIso = String(movePrimary[3] || '').replace(/\.+$/, '');
     return {
       source: 'pending_diary_changes',
       source_id: row.id,
@@ -299,8 +314,8 @@ function planFromBacklogRow(row) {
       event_id: movePrimary[1],
       summary: null,
       from: null,
-      to: { start: movePrimary[2], end: movePrimary[3] },
-      patch: { startIso: movePrimary[2], endIso: movePrimary[3] },
+      to: { start: startIso, end: endIso },
+      patch: { startIso, endIso },
       related_id: row.related_id,
       habit_id: habitId,
       ideal_date: idealDate,
@@ -714,6 +729,12 @@ async function applyFlushPlan(sb, plan, actor, opts = {}) {
                 body: { calendar_event_id: eventId },
               });
             }
+            if (w.travel_block_id) {
+              await sb(`travel_blocks?id=eq.${w.travel_block_id}`, {
+                method: 'PATCH', prefer: 'return=minimal',
+                body: { calendar_event_id: eventId },
+              });
+            }
             await syncRecurringLogAfterFlush(sb, w, eventId);
             if (w.source === 'gcal_push_queue' && w.source_id) {
               await markPushStatus(sb, [w.source_id], 'applied', actorSafe);
@@ -761,6 +782,12 @@ async function applyFlushPlan(sb, plan, actor, opts = {}) {
         }
         if (w.task_id) {
           await sb(`tasks?id=eq.${w.task_id}`, {
+            method: 'PATCH', prefer: 'return=minimal',
+            body: { calendar_event_id: eventId },
+          });
+        }
+        if (w.travel_block_id) {
+          await sb(`travel_blocks?id=eq.${w.travel_block_id}`, {
             method: 'PATCH', prefer: 'return=minimal',
             body: { calendar_event_id: eventId },
           });

@@ -394,9 +394,12 @@ function splitMcAndBusy(events, ruleMap = {}) {
       }
       continue;
     }
-    if (e.transparency === 'transparent') continue;
+    // Transparent ("Show as Free") personal events still paint in the diary.
+    // Mark show_as_free so placement/conflict logic can ignore them as hard-busy.
+    const showAsFree = e.transparency === 'transparent';
 
     if (isMcBlock(e)) {
+      if (showAsFree) continue;
       mc.push({
         id: e.id,
         summary: e.summary,
@@ -413,7 +416,12 @@ function splitMcAndBusy(events, ruleMap = {}) {
 
     if (e.start?.date) {
       busy.push({
-        id: e.id, summary: e.summary, start: e.start, end: e.end, _calendarId: e._calendarId,
+        id: e.id,
+        summary: e.summary,
+        start: e.start,
+        end: e.end,
+        _calendarId: e._calendarId,
+        show_as_free: showAsFree || undefined,
       });
     } else if (e.start?.dateTime || (typeof e.start === 'string' && String(e.start).includes('T'))) {
       busy.push({
@@ -422,6 +430,7 @@ function splitMcAndBusy(events, ruleMap = {}) {
         start: e.start?.dateTime || e.start,
         end: e.end?.dateTime || e.end,
         _calendarId: e._calendarId,
+        show_as_free: showAsFree || undefined,
       });
     }
   }

@@ -256,18 +256,30 @@ function fixtureFlanksToBlocks(rows) {
   return out;
 }
 
-/** All-day GCal events (Calendar Dates holidays, birthdays) → day banners. */
+/** All-day GCal events (holidays, multi-day leave) → day banners for every day covered. */
 function allDayBannersFromBusy(busy) {
   const out = [];
   for (const e of busy || []) {
-    const day = e.start?.date ? String(e.start.date).slice(0, 10) : null;
-    if (!day) continue;
-    out.push({
-      day,
-      title: e.summary || 'All-day',
-      source: 'gcal',
-      id: e.id || null,
-    });
+    const startDay = e.start?.date ? String(e.start.date).slice(0, 10) : null;
+    if (!startDay) continue;
+    // Google all-day end.date is exclusive; single-day events use end = start+1 day.
+    let endExclusive = e.end?.date ? String(e.end.date).slice(0, 10) : null;
+    if (!endExclusive || endExclusive <= startDay) {
+      const d = new Date(`${startDay}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      endExclusive = d.toISOString().slice(0, 10);
+    }
+    for (let day = startDay; day < endExclusive; ) {
+      out.push({
+        day,
+        title: e.summary || 'All-day',
+        source: 'gcal',
+        id: e.id || null,
+      });
+      const d = new Date(`${day}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + 1);
+      day = d.toISOString().slice(0, 10);
+    }
   }
   return out;
 }

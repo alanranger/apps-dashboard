@@ -68,7 +68,8 @@ async function healGaps(sb, actor, maxGaps = 25) {
       const action = String(row.proposed_action || '');
       const moveTask = /MOVE MC-(\d+).*?event ([A-Za-z0-9_-]+) to (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})[–-](\d{2}:\d{2})/i
         .exec(action);
-      const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+)\s*[–-]\s*(\S+)/i
+      // End of proposed_action is "...Z. Enforce …" — do not let (\S+) eat the trailing period.
+      const movePrimary = /MOVE Primary event ([A-Za-z0-9_-]+) to (\S+?)\s*[–-]\s*(\S+?)(?:\.|\s|$)/i
         .exec(action);
       if (moveTask) {
         const displayId = Number(moveTask[1]);
@@ -108,8 +109,12 @@ async function healGaps(sb, actor, maxGaps = 25) {
         });
       } else if (movePrimary) {
         const eventId = movePrimary[1];
-        const startIso = movePrimary[2];
-        const endIso = movePrimary[3];
+        const startIso = String(movePrimary[2] || '').replace(/\.+$/, '');
+        const endIso = String(movePrimary[3] || '').replace(/\.+$/, '');
+        if (!Number.isFinite(Date.parse(startIso)) || !Number.isFinite(Date.parse(endIso))) {
+          gaps_failed += 1;
+          continue;
+        }
         await upsertPushRow(sb, {
           related_id: `gcal:gap_slide:${eventId}`,
           entity_type: 'habit',
