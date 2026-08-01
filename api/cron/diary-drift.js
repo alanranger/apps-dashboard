@@ -12,6 +12,7 @@ const { computeMissedProposal } = require('../mc/missed-habit-lib');
 const { runHabitPlacerPropose } = require('../mc/habit-placer-propose-lib');
 const {
   runMissingTravelBlockScan,
+  runMissingClientBufferFromGcalScan,
   runStaleDriveTimeScan,
   runStaleTravelVsWorkshopScan,
   runHotelDeadlineGapScan,
@@ -633,6 +634,18 @@ async function handler(req, res) {
         gcalEvents: calEvents,
         ruleMap,
         venues: drives,
+      });
+      await runMissingClientBufferFromGcalScan({
+        sb,
+        existingPending,
+        inserted,
+        notes,
+        gcalEvents: calEvents,
+        prepMin,
+        decompMin,
+        bufferPrefix,
+        today,
+        horizonEnd,
       });
       // Short busy map / empty calendar is a FAULT — never report as a clean pass.
       if (!assessment.ok) {

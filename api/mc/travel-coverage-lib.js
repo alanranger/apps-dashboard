@@ -3,6 +3,22 @@
  * Used by diary-drift.js — proposals only, no Calendar writes.
  */
 const { isStale, STALE_DAYS } = require('./drive-time-lib');
+const { isOnlineClientHome } = require('./scheduleCsv');
+const { isoToLondonDate } = require('./scheduling-rules-lib');
+
+function adjacentMs(aIso, bIso, tolMin = 5) {
+  return Math.abs(Date.parse(aIso) - Date.parse(bIso)) <= tolMin * 60000;
+}
+
+/** Short label matching existing Claude-style prep titles (e.g. Jo Galloway 1-2-1 Zoom). */
+function clientBufferWorkshopTitle(summary) {
+  const s = String(summary || '');
+  const name = s.split(':')[0].trim();
+  if (/1\s*[-–]?\s*2\s*[-–]?\s*1/i.test(s) || /\bzoom\b/i.test(s)) {
+    return `${name} 1-2-1 Zoom`;
+  }
+  return name || s.slice(0, 48);
+}
 
 function typesForEvent(home, bufferScope) {
   if (!home) return ['travel_out', 'travel_back'];
@@ -348,8 +364,71 @@ async function runStaleTravelVsWorkshopScan(ctx) {
   notes.push(`stale_travel_vs_workshop_scan: ${n} drift(s); linked=${plan.linked}; unmatched=${(plan.unmatched || []).length}`);
 }
 
+/**
+ * Acuity Zoom / online client bookings live on Primary (not always in CSV).
+ * Decision 3: visible 30m prep + decompress. Propose when travel_blocks lack them.
+ */
+async function runMissingClientBufferFromGcalScan(ctx) {
+  const {
+    sb, existingPending, inserted, notes, gcalEvents,
+    prepMin, decompMin, bufferPrefix, today, horizonEnd,
+  } = ctx;
+  if (!gcalEvents?.length) {
+    notes.push('missing_client_buffer_gcal_scan: skipped (no gcal)');
+    return;
+  }
+  let blocks = [];
+  try {
+    blocks = await sb(
+      'travel_blocks?select=block_type,starts_at,ends_at,workshop_title,calendar_event_id'
+      + '&block_type=in.(prep,decompress)',
+    ) || [];
+  } catch (e) {
+    notes.push(`missing_client_buffer_gcal_read_error: ${e.message}`);
+    return;
+  }
+
+  let missing = 0;
+  for (const e of gcalEvents) {
+    const summary = e.summary || e.title || '';
+    if (!e.start?.dateTime || !isOnlineClientHome(summary)) continue;
+    if (/^MC\b/i.test(summary)) continue;
+    const day = isoToLondonDate(e.start.dateTime);
+    if (!day || day < today || (horizonEnd && day > horizonEnd)) continue;
+    const startIso = e.start.dateTime;
+    const endIso = e.end?.dateTime || startIso;
+    const hasPrep = blocks.some(
+      (b) => b.block_type === 'prep' && adjacentMs(b.ends_at, startIso),
+    );
+    const hasDecomp = blocks.some(
+      (b) => b.block_type === 'decompress' && adjacentMs(b.starts_at, endIso),
+    );
+    if (hasPrep && hasDecomp) continue;
+
+    const relatedId = `client_buffer:${e.id || `${day}:${summary.slice(0, 24)}`}`;
+    const workshop = clientBufferWorkshopTitle(summary);
+    const need = [
+      !hasPrep ? `prep ${prepMin}m before` : null,
+      !hasDecomp ? `decompress ${decompMin}m after` : null,
+    ].filter(Boolean).join(' + ');
+    await insertPending(sb, existingPending, inserted, {
+      change_type: 'missing_buffer',
+      target_date: day,
+      summary: `Missing client buffers: ${workshop}`,
+      proposed_action: `Ensure ${bufferPrefix} ${need} for "${workshop}" on ${day} (parent GCal ${e.id}). Log prep/decompress in travel_blocks (venue HOME), parent-linked.`,
+      reason: `GCal Zoom/online client vs travel_blocks; Decision 3; need ${need}`,
+      urgency: 'normal',
+      status: 'pending',
+      related_id: relatedId,
+    });
+    missing += 1;
+  }
+  notes.push(`missing_client_buffer_gcal_scan: ${missing} proposal(s)`);
+}
+
 module.exports = {
   runMissingTravelBlockScan,
+  runMissingClientBufferFromGcalScan,
   runStaleDriveTimeScan,
   runStaleTravelVsWorkshopScan,
   runHotelDeadlineGapScan,

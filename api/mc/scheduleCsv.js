@@ -271,7 +271,18 @@ async function loadScheduleEvents() {
   return { sources, events, errors };
 }
 
+/** Zoom / online 1-2-1 / mentoring — home buffers (Decision 3), not travel. */
+function isOnlineClientHome(title) {
+  const t = String(title || '').toLowerCase();
+  const is121 = /1\s*[-–]?\s*2\s*[-–]?\s*1|\b121\b/.test(t);
+  if (is121 && /zoom|online|tuition|mentoring/.test(t)) return true;
+  if (/\bonline\b/.test(t) && is121) return true;
+  if (/\bzoom\b/.test(t) && /(tuition|mentoring|1\s*[-–]?\s*2\s*[-–]?\s*1)/.test(t)) return true;
+  return false;
+}
+
 function isHomeBased(ev, homePostcode) {
+  if (isOnlineClientHome(ev?.title || ev?.summary || ev?.Event_Title)) return true;
   const blob = `${ev.address} ${ev.postcode} ${ev.location_name}`.toLowerCase();
   const home = String(homePostcode || 'CV4 9HW').toLowerCase();
   if (blob.includes(home.toLowerCase())) return true;
@@ -285,6 +296,7 @@ module.exports = {
   getScheduleSources,
   loadScheduleEvents,
   isHomeBased,
+  isOnlineClientHome,
   parseCsv,
   readCsvText,
 };

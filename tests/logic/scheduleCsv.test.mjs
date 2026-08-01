@@ -4,7 +4,7 @@ import fs from 'fs';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { parseCsv, readCsvText } = require('../../api/mc/scheduleCsv.js');
+const { parseCsv, readCsvText, isHomeBased, isOnlineClientHome } = require('../../api/mc/scheduleCsv.js');
 
 const HEADERS = [
   'Event_Title', 'Start_Date', 'Start_Time', 'End_Date', 'End_Time',
@@ -77,5 +77,20 @@ describe('scheduleCsv — RFC-4180 parser', () => {
     assert.equal(kenil.Start_Date.slice(0, 10), '2026-09-01');
     const bad = rows.filter((r) => r.Event_Title && !/^\d{4}-\d{2}-\d{2}/.test(String(r.Start_Date || '')));
     assert.equal(bad.length, 0, `bad Start_Date rows: ${bad.slice(0, 3).map((r) => r.Start_Date).join('|')}`);
+  });
+});
+
+describe('scheduleCsv — online client = home buffers', () => {
+  it('treats Zoom 1-2-1 / mentoring as home', () => {
+    assert.equal(isOnlineClientHome('Myra Little: Online 1-2-1 Tuition - Zoom'), true);
+    assert.equal(isOnlineClientHome('Caroline Key: Monthly Mentoring Feedback - Zoom'), true);
+    assert.equal(isOnlineClientHome('Peak District Photography Workshop'), false);
+    assert.equal(isHomeBased({
+      title: 'Myra Little: Online 1-2-1 Tuition - Zoom',
+      address: '', postcode: '', location_name: '',
+    }, 'CV4 9HW'), true);
+    assert.equal(isHomeBased({
+      title: 'Away Workshop', address: 'Buxton', postcode: 'SK17', location_name: 'Peak',
+    }, 'CV4 9HW'), false);
   });
 });
