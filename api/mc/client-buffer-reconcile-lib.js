@@ -6,7 +6,7 @@
 const { isOnlineClientHome } = require('./scheduleCsv');
 const { isoToLondonDate } = require('./scheduling-rules-lib');
 const {
-  insertPrimaryEvent, patchPrimaryEvent, deletePrimaryEvent,
+  insertPrimaryEvent, patchPrimaryEvent, deletePrimaryEvent, getPrimaryEvent,
 } = require('./gcal-write-lib');
 const { gcalConfigured } = require('./gcal-lib');
 const { travelGcalTitle, travelGcalDescription } = require('./gcal-title-lib');
@@ -211,6 +211,69 @@ async function resolveMissingBufferPending(sb, parentId) {
 }
 
 /**
+ * Diary paints MISSING GCAL when travel_blocks.calendar_event_id is dead.
+ * Nightly cleanups sometimes delete Primary decompress while DB rows remain.
+ * Recreate those events so Push stays empty but Diary is truthful.
+ */
+async function healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes) {
+  const stats = { checked: 0, recreated: 0, skipped: 0 };
+  if (!gcalConfigured()) return stats;
+  let rows = [];
+  try {
+    rows = await sb(
+      'travel_blocks?select=id,block_type,starts_at,ends_at,calendar_event_id,workshop_title,venue_name'
+      + '&block_type=in.(prep,decompress)'
+      + `&starts_at=gte.${today}T00:00:00Z&starts_at=lte.${horizonEnd}T23:59:59Z`
+      + '&order=starts_at.asc&limit=400',
+    ) || [];
+  } catch (e) {
+    notes.push(`travel_buffer_heal_read_error: ${e.message}`);
+    return stats;
+  }
+
+  for (const row of rows) {
+    stats.checked += 1;
+    if (!row.starts_at || !row.ends_at) {
+      stats.skipped += 1;
+      continue;
+    }
+    let dead = !row.calendar_event_id;
+    if (!dead) {
+      try {
+        const live = await getPrimaryEvent(row.calendar_event_id);
+        dead = !live || live.status === 'cancelled';
+      } catch (e) {
+        dead = e.status === 404 || e.status === 410;
+        if (!dead) continue;
+      }
+    }
+    if (!dead) continue;
+
+    const meta = {
+      block_type: row.block_type,
+      workshop_title: row.workshop_title,
+      venue_name: row.venue_name || 'HOME',
+    };
+    const created = await insertPrimaryEvent({
+      summary: travelGcalTitle(meta, prefixes),
+      startIso: row.starts_at,
+      endIso: row.ends_at,
+      description: travelGcalDescription(meta),
+      location: row.venue_name || 'HOME',
+    });
+    await sb(`travel_blocks?id=eq.${row.id}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: { calendar_event_id: created.id },
+    });
+    stats.recreated += 1;
+  }
+  if (stats.recreated) {
+    notes.push(`travel_buffer_heal: recreated=${stats.recreated} checked=${stats.checked}`);
+  }
+  return stats;
+}
+
+/**
  * Auto-apply prep+decompress for Zoom/online client bookings in horizon.
  * @param {object} ctx
  */
@@ -292,16 +355,20 @@ async function runClientBufferReconcile(ctx) {
 
   await retireOrphans(runCtx, liveIds, today, horizonEnd);
 
+  const deadHeal = await healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes);
+  stats.recreated = deadHeal.recreated;
+
   notes.push(
     `client_buffer_reconcile: parents=${parents.length} `
     + `created=${stats.created} moved=${stats.moved} deleted=${stats.deleted} `
-    + `ok=${stats.ok} clash=${stats.clash}`,
+    + `ok=${stats.ok} clash=${stats.clash} dead_recreated=${deadHeal.recreated}`,
   );
   return stats;
 }
 
 module.exports = {
   runClientBufferReconcile,
+  healDeadTravelBufferEvents,
   flankWindows,
   clientWorkshopTitle,
   isClientParent,
