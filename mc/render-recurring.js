@@ -456,6 +456,8 @@ export function openDepEditor(habitId, onSave) {
   modal.classList.add('open');
 }
 
+let skipBusy = false;
+
 export async function handleRecurringClick(e, onSave) {
   if (e.target.closest('[data-rec-add]')) {
     openRecurringCreate(onSave);
@@ -491,28 +493,49 @@ export async function handleRecurringClick(e, onSave) {
   }
   const skip = e.target.closest('[data-rec-skip]');
   if (skip) {
+    if (skipBusy) return true;
     const reason = window.prompt(
       'Skip Next occurrence (first open date in the list) — optional reason (blank is fine):',
       '',
     ) ?? null;
     if (reason === null) return true; // cancelled prompt
+    const btn = skip;
+    const label = btn.textContent;
+    skipBusy = true;
+    btn.disabled = true;
+    btn.textContent = 'Skipping…';
+    const ui = openRecurringBusyModal({
+      title: 'Skip Next in progress',
+      phases: [
+        'Mark occurrence skipped in diary',
+        'Queue Google Calendar delete',
+        'Auto-sync with Google (can take 20–40s)',
+        'Refresh Occurrences list',
+      ],
+    });
     try {
+      ui.setPhase(1, 'writing skip…');
       const res = await api('/api/mc/recurring', {
         method: 'POST',
-        body: { action: 'skip', id: skip.getAttribute('data-rec-skip'), reason: reason || null },
+        body: { action: 'skip', id: btn.getAttribute('data-rec-skip'), reason: reason || null },
       });
+      ui.setPhase(2, 'Google sync…');
       const day = res?.task?.skipped_occurrence || res?.skipped_occurrence;
       const writes = res?.task?.calendar_writes ?? res?.calendar_writes ?? 0;
-      if (day) {
-        window.alert(
-          writes > 0
-            ? `Skipped ${day} and removed it from Google (${writes} write${writes === 1 ? '' : 's'}).`
-            : `Skipped ${day}. No Google event to remove (or auto-sync did not run).`,
-        );
-      }
+      ui.setPhase(3, 'refreshing…');
       if (onSave) await onSave();
+      const msg = day
+        ? (writes > 0
+          ? `Skipped ${day} and removed it from Google (${writes} write${writes === 1 ? '' : 's'}).`
+          : `Skipped ${day}. No Google event to remove (or auto-sync did not run).`)
+        : 'Skip Next finished.';
+      ui.finish(msg);
     } catch (err) {
-      window.alert(err.message || 'Skip Next failed');
+      ui.fail(err);
+    } finally {
+      skipBusy = false;
+      btn.disabled = false;
+      btn.textContent = label;
     }
     return true;
   }
@@ -526,4 +549,69 @@ export async function handleRecurringClick(e, onSave) {
     return true;
   }
   return false;
+}
+
+/** Progress modal while Skip Next waits on Google auto-sync (often 20–40s). */
+function openRecurringBusyModal({ title, phases }) {
+  const modal = $('modal');
+  const box = $('modalBox');
+  const started = Date.now();
+  let tick = 0;
+  let phaseIdx = 0;
+  let note = '';
+  let timer = null;
+
+  const paint = () => {
+    const elapsed = Math.round((Date.now() - started) / 1000);
+    const pct = Math.min(92, 18 + tick * 9);
+    const list = (phases || []).map((p, i) => {
+      const cls = i < phaseIdx ? 'done' : (i === phaseIdx ? 'active' : '');
+      const mark = i < phaseIdx ? '✓' : (i === phaseIdx ? '…' : '·');
+      return `<li class="${cls}"><span class="sched-phase-mark">${mark}</span>${esc(p)}</li>`;
+    }).join('');
+    box.innerHTML = `
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">${esc(title)}</h2>
+      <p class="meta">Elapsed ${elapsed}s${note ? ` · ${esc(note)}` : ''}
+        · Google sync often takes 20–40s — leave this open</p>
+      <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:${pct}%"></div></div>
+      <ul class="sched-phase-list" style="margin-top:10px">${list}</ul>`;
+  };
+
+  paint();
+  modal.classList.add('open');
+  timer = setInterval(() => {
+    tick += 1;
+    paint();
+  }, 1500);
+
+  return {
+    setPhase(i, n) {
+      phaseIdx = Math.max(0, Math.min((phases || []).length - 1, i));
+      note = n || '';
+      paint();
+    },
+    finish(msg) {
+      clearInterval(timer);
+      const secs = Math.round((Date.now() - started) / 1000);
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:4px">Skip Next complete</h2>
+        <p class="meta">Finished in ${secs}s</p>
+        <p style="margin-top:10px">${esc(msg || 'Done.')}</p>
+        <div class="sched-prog-bar"><div class="sched-prog-fill" style="width:100%"></div></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button type="button" class="btn-verify" id="recBusyClose">Close</button>
+        </div>`;
+      const close = () => modal.classList.remove('open');
+      $('recBusyClose').onclick = close;
+      setTimeout(close, 2200);
+    },
+    fail(err) {
+      clearInterval(timer);
+      box.innerHTML = `
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:8px">Skip Next failed</h2>
+        <p class="err">${esc(err?.message || String(err) || 'Unknown error')}</p>
+        <button type="button" class="btn-verify" id="recBusyClose">Close</button>`;
+      $('recBusyClose').onclick = () => modal.classList.remove('open');
+    },
+  };
 }
