@@ -12,7 +12,6 @@ const { computeMissedProposal } = require('../mc/missed-habit-lib');
 const { runHabitPlacerPropose } = require('../mc/habit-placer-propose-lib');
 const {
   runMissingTravelBlockScan,
-  runMissingClientBufferFromGcalScan,
   runStaleDriveTimeScan,
   runStaleTravelVsWorkshopScan,
   runHotelDeadlineGapScan,
@@ -20,6 +19,7 @@ const {
   runPendingRetirement,
   hotelReminderLeadDays,
 } = require('../mc/travel-coverage-lib');
+const { runClientBufferReconcile } = require('../mc/client-buffer-reconcile-lib');
 
 async function insertProposals(proposals, inserted) {
   for (const p of proposals) {
@@ -635,7 +635,7 @@ async function handler(req, res) {
         ruleMap,
         venues: drives,
       });
-      await runMissingClientBufferFromGcalScan({
+      await runClientBufferReconcile({
         sb,
         existingPending,
         inserted,
@@ -643,9 +643,9 @@ async function handler(req, res) {
         gcalEvents: calEvents,
         prepMin,
         decompMin,
-        bufferPrefix,
         today,
         horizonEnd,
+        ruleMap,
       });
       // Short busy map / empty calendar is a FAULT — never report as a clean pass.
       if (!assessment.ok) {
