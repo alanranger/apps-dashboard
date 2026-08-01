@@ -1,7 +1,58 @@
 const {
   envReady, json, cors, readBody, requireAuth, actorFromSession, sb,
 } = require('./_lib');
-const { lastDueOnOrBefore } = require('./rrule-core');
+const { occurrencesInRange } = require('./rrule-core');
+const { isoToLondonDate } = require('./scheduling-rules-lib');
+const {
+  relatedIdForHabit, upsertPushRow, supersedeSiblingHabitRows,
+} = require('./gcal-push-lib');
+const { autoSyncIfAllowed } = require('./gcal-auto-sync-lib');
+const { retireGapBuffersAfter } = require('./buffer-gap-lib');
+
+function addDaysYmd(ymd, n) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function isSkippedChange(change) {
+  return /^skipped\b/i.test(String(change || ''));
+}
+
+function isDoneChange(change) {
+  return /^completed\s|^marked done\b/i.test(String(change || ''));
+}
+
+/** First upcoming ideal (>= today) that is not done/skipped — matches Recurring "Occurrences" queue. */
+async function nextOpenOccurrence(task) {
+  const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
+  const to = addDaysYmd(today, 180);
+  let ideals = [];
+  try {
+    ideals = occurrencesInRange(task.rrule, today, to).filter((d) => d >= today);
+  } catch (_) {
+    ideals = [];
+  }
+  if (!ideals.length) return null;
+
+  const logs = await sb(
+    `recurring_log?recurring_task_id=eq.${task.id}&ideal_date=gte.${today}`
+    + '&select=id,change,ideal_date,scheduled_date,calendar_event_id,at&order=at.desc&limit=80',
+  ) || [];
+  const latestByIdeal = new Map();
+  for (const l of logs) {
+    if (!l.ideal_date || latestByIdeal.has(l.ideal_date)) continue;
+    latestByIdeal.set(l.ideal_date, l);
+  }
+
+  for (const ideal of ideals) {
+    if (task.last_done && task.last_done >= ideal) continue;
+    const log = latestByIdeal.get(ideal);
+    if (log && (isSkippedChange(log.change) || isDoneChange(log.change))) continue;
+    return { ideal, log: log || null, today };
+  }
+  return null;
+}
 
 async function logRecurring(taskId, actor, change) {
   await sb('recurring_log', { method: 'POST', body: { recurring_task_id: taskId, actor, change } });
@@ -74,39 +125,134 @@ async function markDone(id, actor) {
   return row;
 }
 
-/** Skip this occurrence — log only; never writes last_done or rolls_used. */
+/**
+ * Skip Next — first open upcoming occurrence in the Recurring queue.
+ * Logs skipped, queues GCal delete when an event exists, auto-syncs.
+ * Never writes last_done (later RRULE dates still schedule).
+ */
 async function skipOccurrence(id, actor, reason) {
-  const today = new Date().toISOString().slice(0, 10);
-  const curRows = await sb(`recurring_tasks?id=eq.${id}&select=id,title,rrule,last_done,rolls_used`);
+  const curRows = await sb(
+    `recurring_tasks?id=eq.${id}&select=id,title,rrule,last_done,rolls_used`,
+  );
   const cur = curRows?.[0];
   if (!cur) {
     const err = new Error('recurring task not found');
     err.status = 404;
     throw err;
   }
-  const occurrenceDate = lastDueOnOrBefore(cur.rrule, today);
-  if (!occurrenceDate) {
-    const err = new Error('no occurrence to skip');
+  const next = await nextOpenOccurrence(cur);
+  if (!next?.ideal) {
+    const err = new Error('no upcoming occurrence to skip');
     err.status = 400;
     throw err;
   }
+  const occurrenceDate = next.ideal;
+  const existing = next.log;
+  const evtId = existing?.calendar_event_id || null;
   const note = reason
     ? `skipped occurrence ${occurrenceDate}: ${reason}`
     : `skipped occurrence ${occurrenceDate}`;
+
   await sb(`recurring_tasks?id=eq.${id}`, {
-    method: 'PATCH',
+    method: 'PATCH', prefer: 'return=minimal',
     body: { updated_at: new Date().toISOString() },
   });
-  await sb('recurring_log', {
-    method: 'POST',
-    body: {
-      recurring_task_id: id,
-      actor,
-      change: note,
+
+  const logBody = {
+    change: note,
+    ideal_date: occurrenceDate,
+    scheduled_date: existing?.scheduled_date || occurrenceDate,
+    calendar_event_id: evtId,
+    roll_reason: 'recurring_skip_next',
+    at: new Date().toISOString(),
+  };
+  if (existing?.id) {
+    await sb(`recurring_log?id=eq.${existing.id}`, {
+      method: 'PATCH', prefer: 'return=minimal', body: logBody,
+    });
+  } else {
+    await sb('recurring_log', {
+      method: 'POST', prefer: 'return=minimal',
+      body: {
+        recurring_task_id: id,
+        actor,
+        ...logBody,
+        projection_key: `recurring-skip:${id}:${occurrenceDate}`,
+      },
+    });
+  }
+
+  // Clear UNSCHEDULED / missed pending for this ideal if present.
+  try {
+    const relatedIds = [
+      `habit_unplaced:${id}:${occurrenceDate}`,
+      `habit:${id}:${occurrenceDate}`,
+    ];
+    for (const rid of relatedIds) {
+      const pending = await sb(
+        `pending_diary_changes?status=eq.pending&related_id=eq.${encodeURIComponent(rid)}&select=id`,
+      ) || [];
+      for (const p of pending) {
+        await sb(`pending_diary_changes?id=eq.${p.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: {
+            status: 'resolved_externally',
+            resolved_at: new Date().toISOString(),
+            resolved_by: 'recurring_skip_next',
+          },
+        });
+      }
+    }
+  } catch (_) { /* non-fatal */ }
+
+  const related = relatedIdForHabit(id, occurrenceDate, evtId);
+  if (evtId) {
+    await retireGapBuffersAfter(sb, upsertPushRow, {
+      afterEventId: evtId,
+      labelHints: [cur.title],
+    });
+  }
+  await upsertPushRow(sb, {
+    related_id: related,
+    entity_type: 'habit',
+    change_kind: 'skip',
+    summary: `Skip next: ${cur.title} (${occurrenceDate})`,
+    proposed_action: evtId
+      ? `Delete/cancel GCal event ${evtId} for this occurrence only; later RRULE dates still schedule.`
+      : `No GCal event for ${occurrenceDate} — log skipped only; later RRULE dates still schedule.`,
+    payload: {
+      habit_id: id,
       ideal_date: occurrenceDate,
+      scheduled_date: existing?.scheduled_date || occurrenceDate,
+      calendar_event_id: evtId,
+      action: evtId ? 'delete_event' : undefined,
     },
   });
-  return { ...cur, skipped_occurrence: occurrenceDate };
+  await supersedeSiblingHabitRows(sb, {
+    habitId: id,
+    keepRelatedId: related,
+    calendarEventId: evtId,
+    idealDate: occurrenceDate,
+    scheduledDate: existing?.scheduled_date || occurrenceDate,
+    actor,
+  });
+
+  let calendar_sync = { skipped: true, reason: 'no_event' };
+  if (evtId) {
+    try {
+      calendar_sync = await autoSyncIfAllowed(sb, actor || 'recurring-skip');
+    } catch (e) {
+      calendar_sync = { skipped: true, error: e.message };
+    }
+  }
+
+  return {
+    ...cur,
+    skipped_occurrence: occurrenceDate,
+    calendar_event_id: evtId,
+    calendar_writes: calendar_sync.skipped ? 0 : Number(calendar_sync.flush?.applied || 0),
+    calendar_sync,
+  };
 }
 
 module.exports = async function handler(req, res) {

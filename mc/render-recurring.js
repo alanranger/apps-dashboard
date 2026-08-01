@@ -304,7 +304,7 @@ export function renderRecurring() {
       <td class="rec-actions">
         <button type="button" class="btn-secondary" data-rec-edit="${t.id}">Edit</button>
         <button type="button" class="btn-verify" data-rec-done="${t.id}">Mark done</button>
-        <button type="button" class="btn-secondary" data-rec-skip="${t.id}">Skip</button>
+        <button type="button" class="btn-secondary" data-rec-skip="${t.id}" title="Skip the next open occurrence in the list (removes it from Google if placed)">Skip Next</button>
       </td>
     </tr>`;
     }).join('')
@@ -491,12 +491,21 @@ export async function handleRecurringClick(e, onSave) {
   }
   const skip = e.target.closest('[data-rec-skip]');
   if (skip) {
-    const reason = window.prompt('Skip this occurrence — optional reason (left blank is fine):', '') ?? null;
+    const reason = window.prompt(
+      'Skip Next occurrence (first open date in the list) — optional reason (blank is fine):',
+      '',
+    ) ?? null;
     if (reason === null) return true; // cancelled prompt
-    await api('/api/mc/recurring', {
+    const res = await api('/api/mc/recurring', {
       method: 'POST',
       body: { action: 'skip', id: skip.getAttribute('data-rec-skip'), reason: reason || null },
     });
+    const day = res?.task?.skipped_occurrence || res?.skipped_occurrence;
+    const writes = res?.task?.calendar_writes ?? res?.calendar_writes;
+    if (day) {
+      // toast via alert is heavy — meta in console; onSave refreshes pills
+      console.info(`Skipped next occurrence ${day}`, writes != null ? `· ${writes} Google write(s)` : '');
+    }
     if (onSave) await onSave();
     return true;
   }
