@@ -1,7 +1,7 @@
 const {
   envReady, json, cors, readBody, requireAuth, actorFromSession, sb,
 } = require('./_lib');
-const { occurrencesInRange } = require('./rrule-core');
+const { idealsInHorizon, lastDueOnOrBefore } = require('./rrule-core');
 const { isoToLondonDate } = require('./scheduling-rules-lib');
 const {
   relatedIdForHabit, upsertPushRow, supersedeSiblingHabitRows,
@@ -23,13 +23,19 @@ function isDoneChange(change) {
   return /^completed\s|^marked done\b/i.test(String(change || ''));
 }
 
-/** First upcoming ideal (>= today) that is not done/skipped — matches Recurring "Occurrences" queue. */
+/**
+ * First upcoming ideal (>= today) that is not done/skipped.
+ * Must use idealsInHorizon (phase-anchored) — plain occurrencesInRange from
+ * "today" flips bi-monthly INTERVAL=2 onto the wrong Mondays (e.g. Sep 28
+ * instead of Aug 24), so Skip Next would miss the Occurrences list pill.
+ */
 async function nextOpenOccurrence(task) {
   const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
   const to = addDaysYmd(today, 180);
   let ideals = [];
   try {
-    ideals = occurrencesInRange(task.rrule, today, to).filter((d) => d >= today);
+    const phaseAnchor = lastDueOnOrBefore(task.rrule, addDaysYmd(today, -1)) || today;
+    ideals = idealsInHorizon(task.rrule, today, to, 200, phaseAnchor);
   } catch (_) {
     ideals = [];
   }

@@ -496,17 +496,24 @@ export async function handleRecurringClick(e, onSave) {
       '',
     ) ?? null;
     if (reason === null) return true; // cancelled prompt
-    const res = await api('/api/mc/recurring', {
-      method: 'POST',
-      body: { action: 'skip', id: skip.getAttribute('data-rec-skip'), reason: reason || null },
-    });
-    const day = res?.task?.skipped_occurrence || res?.skipped_occurrence;
-    const writes = res?.task?.calendar_writes ?? res?.calendar_writes;
-    if (day) {
-      // toast via alert is heavy — meta in console; onSave refreshes pills
-      console.info(`Skipped next occurrence ${day}`, writes != null ? `· ${writes} Google write(s)` : '');
+    try {
+      const res = await api('/api/mc/recurring', {
+        method: 'POST',
+        body: { action: 'skip', id: skip.getAttribute('data-rec-skip'), reason: reason || null },
+      });
+      const day = res?.task?.skipped_occurrence || res?.skipped_occurrence;
+      const writes = res?.task?.calendar_writes ?? res?.calendar_writes ?? 0;
+      if (day) {
+        window.alert(
+          writes > 0
+            ? `Skipped ${day} and removed it from Google (${writes} write${writes === 1 ? '' : 's'}).`
+            : `Skipped ${day}. No Google event to remove (or auto-sync did not run).`,
+        );
+      }
+      if (onSave) await onSave();
+    } catch (err) {
+      window.alert(err.message || 'Skip Next failed');
     }
-    if (onSave) await onSave();
     return true;
   }
   const active = e.target.closest('[data-rec-active]');
