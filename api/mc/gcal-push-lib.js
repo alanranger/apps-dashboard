@@ -123,22 +123,14 @@ function collapsePushManifest(items) {
 }
 
 async function upsertPushRow(sb, row) {
-  // Prefer open rows. Do not reopen applied move/create (that caused "applied"
-  // with no live write). Skip/delete may reopen applied — same related_id is
-  // unique, and Skip Next must queue a delete after a prior placer move.
+  // related_id is UNIQUE — always reopen the existing row (any status) with the
+  // new payload as pending. Skipping applied rows caused Skip/recreate to 409
+  // after placer deletes, leaving Diary MISSING GCAL with an empty Push queue.
   const existing = await sb(
     `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}`
-    + '&status=in.(pending,ready)&select=id,status&order=updated_at.desc&limit=1',
+    + '&select=id,status&order=updated_at.desc&limit=1',
   );
-  let prev = existing?.[0];
-  const isDelete = row.change_kind === 'skip' || row.payload?.action === 'delete_event';
-  if (!prev && isDelete) {
-    const any = await sb(
-      `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}`
-      + '&select=id,status&order=updated_at.desc&limit=1',
-    );
-    prev = any?.[0] || null;
-  }
+  const prev = existing?.[0];
   const body = {
     related_id: row.related_id,
     entity_type: row.entity_type,
@@ -147,7 +139,7 @@ async function upsertPushRow(sb, row) {
     proposed_action: row.proposed_action,
     payload: row.payload || {},
     updated_at: new Date().toISOString(),
-    status: prev?.status === 'ready' && !isDelete ? 'ready' : 'pending',
+    status: prev?.status === 'ready' ? 'ready' : 'pending',
     resolved_at: null,
     resolved_by: null,
   };
@@ -155,7 +147,7 @@ async function upsertPushRow(sb, row) {
     await sb(`gcal_push_queue?id=eq.${prev.id}`, {
       method: 'PATCH', prefer: 'return=minimal', body,
     });
-    return { id: prev.id, collapsed: true };
+    return { id: prev.id, collapsed: true, reopened: prev.status === 'applied' };
   }
   const inserted = await sb('gcal_push_queue', {
     method: 'POST', prefer: 'return=representation', body,
