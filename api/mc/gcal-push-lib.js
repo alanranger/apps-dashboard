@@ -123,13 +123,22 @@ function collapsePushManifest(items) {
 }
 
 async function upsertPushRow(sb, row) {
-  // Only collapse onto OPEN rows. Reusing an applied row marked the write "done"
-  // while hydrate could no-op against the wrong event — queue looked empty, GCal stale.
+  // Prefer open rows. Do not reopen applied move/create (that caused "applied"
+  // with no live write). Skip/delete may reopen applied — same related_id is
+  // unique, and Skip Next must queue a delete after a prior placer move.
   const existing = await sb(
     `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}`
     + '&status=in.(pending,ready)&select=id,status&order=updated_at.desc&limit=1',
   );
-  const prev = existing?.[0];
+  let prev = existing?.[0];
+  const isDelete = row.change_kind === 'skip' || row.payload?.action === 'delete_event';
+  if (!prev && isDelete) {
+    const any = await sb(
+      `gcal_push_queue?related_id=eq.${encodeURIComponent(row.related_id)}`
+      + '&select=id,status&order=updated_at.desc&limit=1',
+    );
+    prev = any?.[0] || null;
+  }
   const body = {
     related_id: row.related_id,
     entity_type: row.entity_type,
@@ -138,7 +147,7 @@ async function upsertPushRow(sb, row) {
     proposed_action: row.proposed_action,
     payload: row.payload || {},
     updated_at: new Date().toISOString(),
-    status: prev?.status === 'ready' ? 'ready' : 'pending',
+    status: prev?.status === 'ready' && !isDelete ? 'ready' : 'pending',
     resolved_at: null,
     resolved_by: null,
   };
