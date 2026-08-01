@@ -3,7 +3,7 @@
   "functions": {
     "api/cron/diary-drift.js": { "maxDuration": 300 },
     "api/cron/hotel-source-reconcile.js": { "maxDuration": 300 },
-    "api/cron/gcal-auto-sync.js": { "maxDuration": 120 },
+    "api/cron/gcal-auto-sync.js": { "maxDuration": 180 },
     "api/mc/diary.js": { "maxDuration": 60 },
     "api/mc/scheduling.js": { "maxDuration": 300 },
     "api/mc/gcal-auto-sync.js": { "maxDuration": 300 }

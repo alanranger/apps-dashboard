@@ -278,6 +278,8 @@ function isOnlineClientHome(title) {
   if (is121 && /zoom|online|tuition|mentoring/.test(t)) return true;
   if (/\bonline\b/.test(t) && is121) return true;
   if (/\bzoom\b/.test(t) && /(tuition|mentoring|1\s*[-–]?\s*2\s*[-–]?\s*1)/.test(t)) return true;
+  // Acuity often titles mentoring without "1-2-1" (e.g. Monthly Mentoring Feedback - Zoom).
+  if (/\bzoom\b/.test(t) && /\bmentoring\b/.test(t)) return true;
   return false;
 }
 
