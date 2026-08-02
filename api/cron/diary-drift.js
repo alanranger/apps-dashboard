@@ -20,6 +20,8 @@ const {
   hotelReminderLeadDays,
 } = require('../mc/travel-coverage-lib');
 const { runClientBufferReconcile } = require('../mc/client-buffer-reconcile-lib');
+const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-lib');
+const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
 
 async function insertProposals(proposals, inserted) {
   for (const p of proposals) {
@@ -647,6 +649,21 @@ async function handler(req, res) {
         horizonEnd,
         ruleMap,
       });
+      const wt = await runWorkshopTravelReconcile({
+        sb,
+        notes,
+        gcalEvents: calEvents,
+        today,
+        horizonEnd,
+      });
+      if (wt.deleted > 0) {
+        try {
+          await runRuleEventMasterSync(sb, { writeGcal: true, weeks: Math.max(12, horizonWeeks || 12) });
+          notes.push('workshop_travel_orphan: re-synced AWAY/REST masters');
+        } catch (e) {
+          notes.push(`workshop_travel_orphan_away_sync_error: ${e.message}`);
+        }
+      }
       // Short busy map / empty calendar is a FAULT — never report as a clean pass.
       if (!assessment.ok) {
         const relatedId = `source_empty:calendars:${today}:${assessment.faults.join(',')}`;

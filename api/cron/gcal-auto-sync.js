@@ -11,6 +11,8 @@ const {
 } = require('../mc/gcal-auto-sync-lib');
 const { fetchHorizonEvents, gcalConfigured } = require('../mc/gcal-lib');
 const { runClientBufferReconcile } = require('../mc/client-buffer-reconcile-lib');
+const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-lib');
+const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
 const { ruleMapFromRows } = require('../mc/scheduling-rules-lib');
 const { londonToday, addDaysYmd } = require('../mc/diary-lib');
 
@@ -51,12 +53,28 @@ async function runClientBufferPass() {
     inserted,
     ruleMap,
   });
+  const workshopTravel = await runWorkshopTravelReconcile({
+    sb,
+    notes,
+    gcalEvents: events || [],
+    today,
+    horizonEnd,
+  });
+  if (workshopTravel.deleted > 0) {
+    try {
+      await runRuleEventMasterSync(sb, { writeGcal: true, weeks: 12 });
+      notes.push('workshop_travel_orphan: re-synced AWAY/REST masters');
+    } catch (e) {
+      notes.push(`workshop_travel_orphan_away_sync_error: ${e.message}`);
+    }
+  }
   return {
     skipped: false,
     from: today,
     to: horizonEnd,
     stats,
-    notes: notes.slice(-8),
+    workshop_travel: workshopTravel,
+    notes: notes.slice(-12),
   };
 }
 

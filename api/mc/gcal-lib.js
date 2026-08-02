@@ -158,6 +158,22 @@ async function fetchHorizonEvents(timeMinIso, timeMaxIso) {
   return { events: all, health, assessment: assessCalendarHealth(health) };
 }
 
+async function getEventAcrossCalendars(eventId) {
+  if (!eventId) return null;
+  const token = await getAccessToken();
+  for (const calendarId of calendarIds()) {
+    const url = `${CAL_API}/calendars/${encodeURIComponent(calendarId)}`
+      + `/events/${encodeURIComponent(eventId)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 404 || res.status === 410) continue;
+    const data = await res.json();
+    if (!res.ok) continue;
+    if (data.status === 'cancelled') continue;
+    return { ...data, _calendarId: calendarId };
+  }
+  return null;
+}
+
 module.exports = {
   gcalConfigured,
   calendarIds,
@@ -167,6 +183,7 @@ module.exports = {
   getAccessToken,
   fetchHorizonEvents,
   fetchFixtureEvents,
+  getEventAcrossCalendars,
   EXPECTED_CALENDARS,
   DEFAULT_CALENDARS,
   FORCE_BUSY_CALENDAR_IDS,
