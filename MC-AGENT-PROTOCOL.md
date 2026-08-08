@@ -259,12 +259,12 @@ Any task an agent touches gets/keeps a one-line `why` (what it unblocks or what 
 
 “Weakest class” labels now name the score family: **(Surface Visibility)** on Main Dashboard Ranking tile vs **(Top-of-Page)** on Ranking & AI hero.
 
-### Main Dashboard “Search visibility” card
+### Main Dashboard “Search performance” card
 
 - **Before:** dial titled Surface Visibility + radar of full **GAIO pillars** (including dead-ish Local Entity / Service Area ~100) under one heading — two systems, one label; legacy strip “Visibility **80**” was old GSC-position pillar, not SV 40.
 - **After (Alan-approved):**
-  - Card title **Search visibility**
-  - **Dial** = Surface Visibility only
+  - Card title **Search performance** (umbrella — not confused with “Surface Visibility”)
+  - **Dial** = Surface Visibility only (labelled in subtitle; value ~40)
   - **Search visibility levers** radar/strip: five independent 0–100 action levers — **Surface Visibility, Top of Page, Authority, Content/Schema, CTR vs target** (money-page CTR as % of **2.5%** target, capped 100 — same progress as Money Pages tile). Local Entity / Service Area / legacy Visibility **removed** from this card.
   - Caption copy: “CTR **uses** money-page % of 2.5% target…” (typo “speaks use” fixed same day).
 - Deliberately **not** identical to AI Health radar (that one keeps **Brand demand** instead of CTR vs target).
@@ -287,6 +287,7 @@ Surface Outcomes, Where you stand, and Surface ownership census now share **stac
 | `f80edc4` | Stack-gate census/standings PAA; weakest-class labels |
 | `76eb0de` | Main Dashboard 5-spoke Search visibility levers |
 | `10ce6c9` | Caption typo: “CTR uses money-page %…” |
+| *(card rename)* | Card title **Search performance**; dial remains Surface Visibility |
 
 ### Open / optional
 
