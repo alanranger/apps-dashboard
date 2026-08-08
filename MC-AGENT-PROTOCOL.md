@@ -299,7 +299,7 @@ Surface Outcomes, Where you stand, and Surface ownership census now share **stac
 | `76eb0de` | Main Dashboard 5-spoke Search visibility levers |
 | `10ce6c9` | Caption typo: “CTR uses money-page %…” |
 | `0d640a8` | Card title **Search performance**; dial was still pure SV (superseded by composite) |
-| *(composite dial)* | Search performance dial = weighted 5-lever blend (~48); SV elsewhere stays ~40 |
+| `7278cb8` | Search performance dial = weighted 5-lever blend (~48); SV elsewhere stays ~40 |
 
 ### Open / optional
 
