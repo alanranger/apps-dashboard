@@ -264,10 +264,21 @@ Any task an agent touches gets/keeps a one-line `why` (what it unblocks or what 
 - **Before:** dial titled Surface Visibility + radar of full **GAIO pillars** (including dead-ish Local Entity / Service Area ~100) under one heading — two systems, one label; legacy strip “Visibility **80**” was old GSC-position pillar, not SV 40.
 - **After (Alan-approved):**
   - Card title **Search performance** (umbrella — not confused with “Surface Visibility”)
-  - **Dial** = Surface Visibility only (labelled in subtitle; value ~40)
-  - **Search visibility levers** radar/strip: five independent 0–100 action levers — **Surface Visibility, Top of Page, Authority, Content/Schema, CTR vs target** (money-page CTR as % of **2.5%** target, capped 100 — same progress as Money Pages tile). Local Entity / Service Area / legacy Visibility **removed** from this card.
+  - **Dial = weighted composite** of the five levers (presentation-layer **only** on this card). Weights (`SEARCH_PERFORMANCE_WEIGHTS` in `audit-dashboard.html`):
+
+    | Lever | Weight |
+    |-------|--------|
+    | CTR vs target | **0.35** |
+    | Surface Visibility | **0.22** |
+    | Top of Page | **0.18** |
+    | Authority | **0.15** |
+    | Content/Schema | **0.10** |
+
+    Example (32 / 40 / 49 / 64 / 100) → **48/100**. Does **not** overwrite `surfaceVisibility.overall` (~40) on Ranking & AI, Surface Outcomes, or AI Health.
+  - **Search visibility levers** radar/strip: same five 0–100 levers (SV still the true ~40 number as one spoke). CTR vs target = money-page CTR as % of **2.5%** target, capped 100. Local Entity / Service Area / legacy Visibility **removed** from this card.
   - Caption copy: “CTR **uses** money-page % of 2.5% target…” (typo “speaks use” fixed same day).
 - Deliberately **not** identical to AI Health radar (that one keeps **Brand demand** instead of CTR vs target).
+- **Naming:** dial **Search performance ~48** ≠ **Surface Visibility ~40** (true surface ownership).
 
 ### Ranking & AI tab panel reconcile
 
@@ -287,7 +298,8 @@ Surface Outcomes, Where you stand, and Surface ownership census now share **stac
 | `f80edc4` | Stack-gate census/standings PAA; weakest-class labels |
 | `76eb0de` | Main Dashboard 5-spoke Search visibility levers |
 | `10ce6c9` | Caption typo: “CTR uses money-page %…” |
-| `0d640a8` | Card title **Search performance**; dial remains Surface Visibility |
+| `0d640a8` | Card title **Search performance**; dial was still pure SV (superseded by composite) |
+| *(composite dial)* | Search performance dial = weighted 5-lever blend (~48); SV elsewhere stays ~40 |
 
 ### Open / optional
 
