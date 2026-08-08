@@ -286,7 +286,7 @@ Surface Outcomes, Where you stand, and Surface ownership census now share **stac
 | `b156b45` | SV footers, tips, Featured snippet wording |
 | `f80edc4` | Stack-gate census/standings PAA; weakest-class labels |
 | `76eb0de` | Main Dashboard 5-spoke Search visibility levers |
-| *(typo fix same day)* | Caption “CTR uses…“ — see latest main after that commit |
+| `10ce6c9` | Caption typo: “CTR uses money-page %…” |
 
 ### Open / optional
 
