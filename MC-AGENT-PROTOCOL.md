@@ -214,3 +214,83 @@ Any task an agent touches gets/keeps a one-line `why` (what it unblocks or what 
 - **Per event:** "Prep joining details" task due event−10 days; send deadline event−7 days; red if not done by event−5.
 - **Per hotel booking:** decision task due at the booking's exact free-cancellation deadline −3 days (deadlines from Booking.com confirmation emails; Claude reads and creates these tasks — no build needed from Cursor).
 - Claude adds a **"📅 Events & residential"** project and seeds tasks in Claude's pass.
+
+---
+
+## 2026-08-10 — Surface scoring + dashboard consistency round
+
+**Purpose:** Give the next agent a single place to read this round without reconstructing Google Drive QUESTION files. Work landed primarily in **ai-geo-audit** (`audit-dashboard.html`, `lib/audit/surfaceScores.js`, `lib/audit/surfaceOutcomes.js`). This section is additive history for Mission Control context (Config integrity / MC-53 still open separately).
+
+### Surface Visibility model
+
+- **Scope:** money keywords only — **local-money + national-money**.
+- **Regional-money RETIRED.** The five “regional” LOCKED keywords were remapped (e.g. “photography workshops near me” → local; macro/nature/one-day/portrait workshop-style terms → national). Headline overall no longer mixes a third money tier.
+- **Weights** (`CLASS_WEIGHTS` in `lib/audit/surfaceScores.js`; mirrored in dashboard):
+
+| Class | pack | organic | aio | fs | paa | kp |
+|-------|------|---------|-----|----|-----|-----|
+| local-money | 35 | 25 | 25 | 10 | 5 | **0** |
+| national-money | 10 | 40 | 27 | 15 | 8 | **0** |
+
+- **Live (as of this round):** Surface Visibility **~40**, Top of Page **~49**.
+- **KP (Knowledge panel):** **show-only**, weight **0** (Alan already owns ~91%; scoring it would flatter SV).
+
+### PAA (People Also Ask)
+
+- **Scored**, **stack-gated** only: `serp_surface_stack` entry `type=people_also_ask` with slot (+ `ours` for ownership). Flags `paa_present_any` / `paa_ours` alone do **not** count for SV/outcomes after the reconcile pass.
+- Outcomes: owned **~5 of 108** money when stack-gated.
+- Gap callout soft-language: per-scrape unowned demand (e.g. historic “~92%”) is volatile across location/login; do not treat as a settled permanent share. Optional **2-of-3 presence confidence gate** was evaluated and **not built** (would barely move the headline).
+- Product note: many PAA strings are informational (“how much does a course cost”, “how to start”) → content on info pages may win more than commercial booking pages alone.
+
+### AI surfaces (do not conflate Google products)
+
+| Surface | Role |
+|---------|------|
+| **Google AI Overview** (was “AI answer”) | Classic SERP AIO in `serp_surface_stack` — feeds score/ownership when stack-gated. |
+| **Google AI Mode** | Separate product (`ai_engines.google_ai_mode`) — **diagnostic only**, never feeds SV/ToP. High cite counts are expected; not a “data bug” vs AIO. |
+
+### Three instruments (labelling fixed this round)
+
+| Instrument | ~Value | What it measures |
+|------------|--------|------------------|
+| **Surface Visibility** | ~40 | Demand-weighted **ownership** of served answer surfaces on money keywords |
+| **Top of Page / “Where you stand” capture** | ToP ~49 / capture ~23 | **Different** formulae (slot quality vs capture share) — not interchangeable with SV |
+| **GAIO / AI Health 5-pillar** | ~77 | Authority .30 / Content·Schema .25 / Visibility .20 / Local Entity .15 / Service Area .10 — **not** components of SV |
+
+“Weakest class” labels now name the score family: **(Surface Visibility)** on Main Dashboard Ranking tile vs **(Top-of-Page)** on Ranking & AI hero.
+
+### Main Dashboard “Search visibility” card
+
+- **Before:** dial titled Surface Visibility + radar of full **GAIO pillars** (including dead-ish Local Entity / Service Area ~100) under one heading — two systems, one label; legacy strip “Visibility **80**” was old GSC-position pillar, not SV 40.
+- **After (Alan-approved):**
+  - Card title **Search visibility**
+  - **Dial** = Surface Visibility only
+  - **Search visibility levers** radar/strip: five independent 0–100 action levers — **Surface Visibility, Top of Page, Authority, Content/Schema, CTR vs target** (money-page CTR as % of **2.5%** target, capped 100 — same progress as Money Pages tile). Local Entity / Service Area / legacy Visibility **removed** from this card.
+  - Caption copy: “CTR **uses** money-page % of 2.5% target…” (typo “speaks use” fixed same day).
+- Deliberately **not** identical to AI Health radar (that one keeps **Brand demand** instead of CTR vs target).
+
+### Ranking & AI tab panel reconcile
+
+Surface Outcomes, Where you stand, and Surface ownership census now share **stack-gated** PAA/FS definitions (no flag-hybrid 8/111 vs outcomes 5/108 split). Organic labels: top-3 on capture tile vs top-10 on census/outcomes as instrument design.
+
+### Key ai-geo-audit commits (this round)
+
+| Hash | Topic |
+|------|--------|
+| `1e9d578` | Google AI Overview rename; diagnostic AI Mode row |
+| `64ae87f` | Retire regional-money; overall = local + national |
+| `cde2bf0` / `9f705da` / `760dea8` | Outcomes / Pages labels + base weights |
+| `3410d84` / `6acb753` | KP show-only |
+| `90a37d5` | PAA scored (organic-funded weights) |
+| `2c0e982` | Soften PAA gap callout (volatility) |
+| `b156b45` | SV footers, tips, Featured snippet wording |
+| `f80edc4` | Stack-gate census/standings PAA; weakest-class labels |
+| `76eb0de` | Main Dashboard 5-spoke Search visibility levers |
+| *(typo fix same day)* | Caption “CTR uses…“ — see latest main after that commit |
+
+### Open / optional
+
+- PAA **informational content** play — not started.
+- Config integrity RED (~40) still tracked as **MC-53**.
+
+Drive RESPONSES for this round live under `Claude shared resources/Cursor Outputs for Claude/` (`RESPONSE-2026-08-10-*`).
