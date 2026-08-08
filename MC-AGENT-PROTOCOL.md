@@ -101,27 +101,32 @@ Per hotel booking: decision task due at the booking’s free-cancellation deadli
 
 | Who | Does | Does not |
 |-----|------|----------|
-| **Cursor** | Plans slots, adjudicates, builds detectors, Supabase, repos, **routing API** (`/api/mc/drive-time` + Google Distance Matrix), calendar **READ-ONLY** | Write Google Calendar; invent business rulings |
-| **Claude** | Calendar **read and write**, Gmail, Drive, Supabase SQL | HTTP to the MC app; run deterministic diary code; **choose slots** |
+| **Cursor** | Plans slots, adjudicates, builds detectors, Supabase, repos, **routing API** (`/api/mc/drive-time` + Google Distance Matrix), Google Calendar **read** (`gcal-lib`) **+ write** (`gcal-write-lib`, auto-sync, scripts) | Invent business rulings; assume Claude MCP is required to apply diary |
+| **Claude** | Drive handoff, Gmail, Supabase SQL; may use calendar MCP when it works | HTTP to the MC app; run deterministic diary code; **choose slots**; route production GCal applies through Anthropic MCP |
 | **Alan** | Rules on unplaceable / policy | — |
 
-**Cursor plans → Claude writes → Alan rules.** Claude does not pick slots to “make it fit.”
+**Cursor plans → Cursor applies GCal (OAuth) → Alan rules.** Claude does not pick slots to “make it fit.” (Legacy “Claude writes” pathway retired 2026-07-27+.)
 
-### Diary tab (26 Jul 2026) — DB master + consolidated push
+### Diary tab (26 Jul 2026) — DB master + GCal apply
 
-Mission Control **Diary** tab (`/mission-control` → Diary): Outlook-style 4-week grid for reschedule without depending on live GCal writes.
+Mission Control **Diary** tab (`/mission-control` → Diary): Outlook-style 4-week grid. Edits land in DB + `gcal_push_queue`; production calendar apply is **Cursor GCal API**, not Claude Desktop.
 
 | Piece | Role |
 |-------|------|
 | `GET /api/mc/diary` | Busy map (GCal **READ**) + DB tasks/habits/travel/away |
 | `POST /api/mc/diary-action` | Drag/menu → DB + upsert `gcal_push_queue` (latest state wins per `related_id`) |
-| `GET/PATCH /api/mc/gcal-push` | Consolidated manifest; `mark_ready` when `gcal_writes_available=true` |
+| `GET/PATCH /api/mc/gcal-push` | Queue manifest; **legacy** “mark ready for Claude” only when `gcal_writes_available=true` |
+| `gcal-write-lib` / auto-sync | **Production writes** since **`19daf4e`** (2026-07-27) |
 | Warn-checks | `habit-placer-lib.requiredGapMins` / `dayCapLimits` / `awaySpansFromTravelBlocks` — never a flat reimplementation |
 
-**Push button does not write Google.** It marks the queue `ready` for Claude. While Anthropic GCal writes are down, `scheduling_rules.gcal_writes_available=false` and the button stays disabled. Away-span backlog remains in `pending_diary_changes` and is listed beside the queue for the **same** Claude flush path.
+### Google Calendar write path (2026-08-10 — RETIRE Anthropic blocker)
 
-**UI (26 Jul evening):** Diary top has a standout **Google Calendar flush** panel (amber when writes available + items waiting; red when blocked). Counts = diary edit queue + away-span backlog. Button copy: “Hand N to Claude → Google” / “Blocked · N waiting”. Explainer on-panel: edits already save to DB + `gcal_push_queue` (latest `related_id` wins); Push only marks `ready`.
+- **Anthropic Claude MCP write failures (#575) are RETIRED** as a production blocker — not because Claude’s tool necessarily works, but because **Cursor writes Google** via OAuth.
+- Proven apply: **75/75** baseline flush 2026-07-27; later diary↔GCal reconcile **aligned**. Away-span **37-row** Claude apply set: **0 pending** under the old filter (2026-08-10) — **superseded**, not waiting.
+- `scheduling_rules.gcal_writes_available` may still be **`false`**: that only gates the **legacy “Hand N to Claude → Google”** UI, **not** Cursor write-lib / crons.
+- Session state: `STATUS-2026-08-10-end-of-session-LATEST.md` (supersedes 26 Jul blocker banner in handoff status).
 
+**UI note:** Flush panel button copy may still say “Blocked · waiting for Claude” — treat as lagging label if writes are landing via Cursor.
 ### Alan capacity model — LOCKED (26 Jul 2026)
 
 Do **not** invent alternate denominators. Fuel gauge + 8-week horizon board use this only (`weekCapacity` in `api/mc/diary-lib.js`).
@@ -160,7 +165,7 @@ The busy map must extend to the **further** of the two.
 
 ### Busy-map fingerprint + re-read-before-write
 
-Every placement/amendment plan returns the **exact list of real-commitment events** planned against (event id, start, end, calendar) for every day touched. Claude re-reads those days live immediately before writing. Match → apply. Differ → **that day is held** and returns to Cursor for re-planning. Claude does not adjust a slot himself.
+Every placement/amendment plan returns the **exact list of real-commitment events** planned against (event id, start, end, calendar) for every day touched. Before Cursor/`gcal-write-lib` apply (or any Claude assist), **re-read those days live**. Match → apply. Differ → **that day is held** and re-planned. Do not invent slots.
 
 ### Validator independence
 
@@ -168,12 +173,12 @@ A validator that shares the placer’s busy-map assumption proves nothing (23 Ju
 
 ### Agent tool inventory (do not re-guess)
 
-- **Cursor:** calendar READ-ONLY (Google Calendar MCP), Gmail (OAuth mint + Label_209 reconcile), Supabase (`igzvwbvgvmzvvzoclufx`), git repos, **live routing** via Mission Control drive-time API / Distance Matrix, Vercel crons in `apps-dashboard`.
-- **Claude:** calendar read **and** write, Gmail, Drive handoff folders, Supabase SQL; **no** HTTP to the MC app; cannot run the Node adjudicator.
+- **Cursor:** Google Calendar **read + write** (`gcal-lib` / `gcal-write-lib` + Vercel/scripts/auto-sync), Gmail (OAuth mint + Label_209 reconcile), Supabase (`igzvwbvgvmzvvzoclufx`), git repos, **live routing** via Mission Control drive-time API / Distance Matrix, Vercel crons in `apps-dashboard`.
+- **Claude:** Drive handoff folders, Gmail, Supabase SQL; calendar MCP optional; **no** HTTP to the MC app; cannot run the Node adjudicator. **Do not** route production GCal applies through Claude MCP (stale 26 Jul Anthropic write blocker — retired).
 
 ## Recurring tasks tab (Reclaim replacement)
 
-Google Calendar **writes** stay **Claude-only**. Mission Control may **read** Calendar (diary-drift / Diary tab via `gcal-lib`) and stores habits in `recurring_tasks`. Apps-dashboard never performs Calendar writes.
+Mission Control **reads and writes** Google Calendar for diary masters via apps-dashboard OAuth. Habits live in `recurring_tasks`. Claude Monday-sweep prose below is historical booking style — apply/repair path is Cursor GCal API unless Alan assigns Claude explicitly.
 
 ### Diary booking horizon (Alan-ruled — updated 25 Jul)
 
