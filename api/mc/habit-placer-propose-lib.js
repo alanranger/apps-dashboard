@@ -1,7 +1,9 @@
 /**
  * Wire joint habit placer → pending_diary_changes (proposals only; no Calendar writes).
  */
-const { ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate } = require('./scheduling-rules-lib');
+const {
+  ruleMapFromRows, bankHolidaySet, addDays, isoToLondonDate, isSchedulableDay,
+} = require('./scheduling-rules-lib');
 const {
   buildBusyIntervals, datedTasksToIntervals, findTaskBumps, findBlockedDayTaskBumps,
   findAwayIntervalTaskBumps, findAdminGapTaskBumps, findAfterHoursTaskBumps,
@@ -568,6 +570,7 @@ async function applyIncompleteHabitRolls(ctx) {
     });
   }
   const used = { ...(dayUsed || {}) };
+  const maxRolls = Number(ruleMap.missed_habit_max_rolls || ruleMap.max_habit_rolls || 3);
 
   for (const habit of habits || []) {
     const ideals = idealsInHorizon(habit.rrule, lookback, addDays(today, -1), 40, today);
@@ -584,9 +587,21 @@ async function applyIncompleteHabitRolls(ctx) {
       );
       if (doneRows?.[0]) continue;
 
+      // Load pin first: still-future slots stay; past incomplete pins re-roll.
+      const logRows = await sb(
+        `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
+        + '&select=id,calendar_event_id,scheduled_date,change&order=at.desc&limit=1',
+      );
+      const existingSched = logRows?.[0]?.scheduled_date
+        ? String(logRows[0].scheduled_date).slice(0, 10)
+        : null;
+      if (existingSched && existingSched >= today) continue;
+
       const prop = computeMissedProposal({
-        habit, lastDue: ideal, today, ruleMap, holidays, maxRolls: Number(ruleMap.max_habit_rolls || 3),
+        habit, lastDue: ideal, today, ruleMap, holidays, maxRolls,
       });
+      // Only time-critical/anchor unplaceable blocks auto-roll. Cap messages
+      // ("wait for next occurrence") must NOT leave a dead incomplete pin.
       if (/UNPLACEABLE/i.test(prop.proposed || '')) {
         if (writePending && existingPending) {
           const relatedId = `habit:${habit.id}:${ideal}`;
@@ -612,22 +627,22 @@ async function applyIncompleteHabitRolls(ctx) {
       }
 
       let slot = null;
-      for (let i = 0; i < 14; i += 1) {
-        const day = addDays(today, i);
-        if (dayBlockedForHabits(day, awaySpans || [])) continue;
-        const trial = trySlotOnDay(
-          day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
-          habit.title, busyWork, placements || [], used, ruleMap,
-        );
-        if (trial) { slot = trial; break; }
+      for (let pass = 0; pass < 2 && !slot; pass += 1) {
+        const slotOpts = pass === 0 ? {} : { allowEvening: true };
+        for (let i = 0; i < 14; i += 1) {
+          const day = addDays(today, i);
+          if (!isSchedulableDay(day, ruleMap, holidays)) continue;
+          if (dayBlockedForHabits(day, awaySpans || [])) continue;
+          const trial = trySlotOnDay(
+            day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
+            habit.title, busyWork, placements || [], used, ruleMap, slotOpts,
+          );
+          if (trial) { slot = trial; break; }
+        }
       }
       if (!slot) continue;
 
       const pinChange = `diary_pin:${slot.startIso}|${slot.endIso}`;
-      const logRows = await sb(
-        `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
-        + '&select=id,calendar_event_id&order=at.desc&limit=1',
-      );
       const keepId = logRows?.[0]?.id || null;
       const evtId = logRows?.[0]?.calendar_event_id || null;
       const logBody = {
@@ -645,7 +660,7 @@ async function applyIncompleteHabitRolls(ctx) {
       } else {
         await sb('recurring_log', {
           method: 'POST', prefer: 'return=minimal',
-          body: { recurring_task_id: habit.id, actor: 'cursor-auto-roll', ...logBody },
+          body: { recurring_task_id: habit.id, actor: 'cursor', ...logBody },
         });
       }
       await sb(`recurring_tasks?id=eq.${habit.id}`, {
@@ -888,23 +903,6 @@ async function runHabitPlacerPropose(ctx) {
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
     }
-    try {
-      habitRolls = await applyIncompleteHabitRolls({
-        sb,
-        habits: habits || [],
-        ruleMap,
-        holidays,
-        hardBusy,
-        placements,
-        fromYmd,
-        awaySpans: blockedSpans,
-        existingPending,
-        inserted,
-        writePending,
-      });
-    } catch (e) {
-      habitRolls = { rolled: 0, error: e.message };
-    }
   } else if (writePending && !proofOk) {
     // Proof failed — surface intents as pending only; do not pin or bump into clashes.
     for (const a of amendments) {
@@ -944,6 +942,28 @@ async function runHabitPlacerPropose(ctx) {
       const id = Array.isArray(out) ? out[0]?.id : out?.id;
       if (id && inserted) inserted.push(id);
       if (id) pendingWrote += 1;
+    }
+  }
+
+  // Incomplete occurrences re-pin even when pack §5 proof fails — never leave
+  // past incomplete diary blocks dropped on a finished day.
+  if (writePending) {
+    try {
+      habitRolls = await applyIncompleteHabitRolls({
+        sb,
+        habits: habits || [],
+        ruleMap,
+        holidays,
+        hardBusy,
+        placements,
+        fromYmd,
+        awaySpans: blockedSpans,
+        existingPending,
+        inserted,
+        writePending,
+      });
+    } catch (e) {
+      habitRolls = { rolled: 0, error: e.message };
     }
   }
 

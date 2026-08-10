@@ -107,8 +107,10 @@ function computeMissedProposal(ctx) {
     };
   }
 
+  // Cap tracks how many intentional make-ups Alan has already taken, but an
+  // incomplete occurrence must still land on a next legal slot — never drop.
+  const target = firstLegalForward(today, ruleMap, holidays, 14);
   if (rolls < maxRolls) {
-    const target = firstLegalForward(today, ruleMap, holidays, 14);
     return {
       proposed: `Roll forward to next working day ${target} at ${idealTime} (roll ${rolls + 1}/${maxRolls}). Title: ${recPrefix} ${habit.title}`,
       reason: `Missed occurrence ${lastDue}; policy roll_forward_capped`,
@@ -117,8 +119,8 @@ function computeMissedProposal(ctx) {
     };
   }
   return {
-    proposed: `Max rolls (${maxRolls}) used — wait for next natural occurrence of "${habit.title}". Do not auto-clear.`,
-    reason: `Missed ${lastDue}; rolls_used=${rolls} at cap`,
+    proposed: `Roll forward to next working day ${target} at ${idealTime} (rolls_used=${rolls} at cap ${maxRolls} — still re-pin incomplete; do not drop). Title: ${recPrefix} ${habit.title}`,
+    reason: `Missed ${lastDue}; rolls_used=${rolls} at cap; incomplete still rolls`,
     urgency: 'normal',
     rollsDelta: 0,
   };

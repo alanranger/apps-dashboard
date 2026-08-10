@@ -92,6 +92,21 @@ describe('missed-habit-lib — directional make-up', () => {
     assert.ok(!prop.proposed.includes('Roll BACK'));
     assert.ok(!/2026-07-3[01]/.test(prop.proposed));
   });
+
+  it('at max rolls still rolls incomplete forward (never drop)', () => {
+    const prop = computeMissedProposal({
+      ...base,
+      habit: {
+        title: 'Hotel bookings — Alan actions', ideal_time: '11:00', rolls_used: 3,
+        time_critical: false,
+      },
+      lastDue: '2026-07-20',
+    });
+    assert.equal(prop.rollsDelta, 0);
+    assert.ok(prop.proposed.includes('Roll forward'));
+    assert.ok(!/UNPLACEABLE/i.test(prop.proposed));
+    assert.ok(!/wait for next natural/i.test(prop.proposed));
+  });
 });
 
 describe('fixture-coverage-lib — block window', () => {
