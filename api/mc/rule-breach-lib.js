@@ -19,10 +19,17 @@ function isTravelOrBuffer(block, ruleMap) {
     || t.includes('Prep —') || t.includes('Decompress —');
 }
 
+/**
+ * Mission Control managed diary blocks — by explicit flag or title prefix only.
+ * NEVER treat colour alone as MC: Google colour "10" (basil/green) is also used
+ * for ordinary Primary appointments. Using colorId alone stripped personal timed
+ * events (CT Scan, Sandra Garden, …) from the busy map so habits scheduled on top.
+ */
 function isMcBlock(block) {
-  if (block.is_mc === true || block.colorId === '10') return true;
+  if (block.is_mc === true) return true;
   const t = String(block.summary || block.title || '');
-  return t.includes('MC ') || t.includes('MC-');
+  if (t.includes('MC ') || t.includes('MC-')) return true;
+  return /^MC\b/u.test(t);
 }
 
 /**

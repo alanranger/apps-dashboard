@@ -716,6 +716,136 @@ async function applyIncompleteHabitRolls(ctx) {
 }
 
 /**
+ * Pins that already sit on top of hard busy (personal timed, workshops,
+ * other habits) re-find the next free slot. Uses the same busy map as placers —
+ * Primary personal Busy must already be in hardBusy after isMcBlock fix.
+ */
+async function rehomePinsOverHardBusy(ctx) {
+  const {
+    sb, habits, ruleMap, holidays, hardBusy, placements, dayUsed, fromYmd, awaySpans,
+  } = ctx;
+  const today = fromYmd;
+  const horizon = addDays(today, 21);
+  let rehomed = 0;
+  const busyWork = (hardBusy || []).slice();
+  for (const p of placements || []) {
+    busyWork.push({
+      startMs: Date.parse(p.startIso),
+      endMs: Date.parse(p.endIso),
+      summary: p.title,
+      habit_id: p.habit_id,
+      ideal_date: p.ideal_date,
+    });
+  }
+  const used = { ...(dayUsed || {}) };
+
+  for (const habit of habits || []) {
+    const rows = await sb(
+      `recurring_log?recurring_task_id=eq.${habit.id}`
+      + `&scheduled_date=gte.${today}&scheduled_date=lte.${horizon}`
+      + `&change=like.${encodeURIComponent('diary_pin%')}`
+      + '&select=id,calendar_event_id,scheduled_date,change,ideal_date&order=at.desc&limit=40',
+    );
+    const seenIdeal = new Set();
+    for (const row of rows || []) {
+      const ideal = String(row.ideal_date || row.scheduled_date || '');
+      if (!ideal || seenIdeal.has(ideal)) continue;
+      seenIdeal.add(ideal);
+      if (habit.last_done && String(habit.last_done) >= ideal) continue;
+      const pin = parseDiaryPinTimes(row.change);
+      if (!pin) continue;
+      const startMs = Date.parse(pin.startIso);
+      const endMs = Date.parse(pin.endIso);
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
+
+      const busySansSelf = busyWork.filter(
+        (b) => !(b.habit_id === habit.id && String(b.ideal_date || '') === ideal),
+      );
+      const clashes = busySansSelf.some(
+        (b) => Number.isFinite(b.startMs) && Number.isFinite(b.endMs)
+          && startMs < b.endMs && b.startMs < endMs,
+      );
+      if (!clashes) continue;
+
+      let slot = null;
+      for (let pass = 0; pass < 2 && !slot; pass += 1) {
+        const slotOpts = pass === 0 ? {} : { allowEvening: true };
+        for (let i = 0; i < 21; i += 1) {
+          const day = addDays(today, i);
+          if (!isSchedulableDay(day, ruleMap, holidays)) continue;
+          if (dayBlockedForHabits(day, awaySpans || [])) continue;
+          const trial = trySlotOnDay(
+            day, Number(habit.duration_min) || 60, habit.ideal_time || '09:00',
+            habit.title, busySansSelf, placements || [], used, ruleMap, slotOpts,
+          );
+          if (trial) { slot = trial; break; }
+        }
+      }
+      if (!slot) continue;
+
+      const pinChange = `diary_pin:${slot.startIso}|${slot.endIso}`;
+      const evtId = row.calendar_event_id || null;
+      await sb(`recurring_log?id=eq.${row.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          change: pinChange,
+          scheduled_date: slot.day,
+          roll_reason: 'rehome_over_hard_busy',
+          calendar_event_id: evtId,
+          ideal_date: ideal,
+          projection_key: `rehome:${habit.id}:${ideal}`,
+        },
+      });
+      await sb(`recurring_tasks?id=eq.${habit.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: {
+          last_scheduled: slot.day,
+          scheduled_note: `${slot.day} rehome (off busy ${ideal})`,
+          updated_at: new Date().toISOString(),
+        },
+      });
+      await upsertPushRow(sb, {
+        related_id: relatedIdForHabit(habit.id, ideal, evtId),
+        entity_type: 'habit',
+        change_kind: 'move',
+        summary: `Rehome habit ${habit.title} → ${slot.day} (off hard busy)`,
+        proposed_action: [
+          `MOVE/CREATE habit "${habit.title}" block to ${slot.startIso} – ${slot.endIso}.`,
+          evtId ? `event_id=${evtId}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
+          `ideal_date=${ideal}; cleared personal/client hard-busy clash.`,
+        ].join(' '),
+        payload: {
+          habit_id: habit.id,
+          title: habit.title,
+          ideal_date: ideal,
+          new_start: slot.startIso,
+          new_end: slot.endIso,
+          calendar_event_id: evtId,
+        },
+      });
+      for (let bi = busyWork.length - 1; bi >= 0; bi -= 1) {
+        const b = busyWork[bi];
+        if (b.habit_id === habit.id && String(b.ideal_date || '') === ideal) {
+          busyWork.splice(bi, 1);
+          continue;
+        }
+        if (b.startMs === startMs && b.endMs === endMs) busyWork.splice(bi, 1);
+      }
+      used[slot.day] = (used[slot.day] || 0) + slot.durationMin;
+      busyWork.push({
+        startMs: Date.parse(slot.startIso),
+        endMs: Date.parse(slot.endIso),
+        summary: habit.title,
+        habit_id: habit.id,
+        ideal_date: ideal,
+      });
+      rehomed += 1;
+    }
+  }
+  return { rehomed };
+}
+
+/**
  * Run placer + amendments; optionally insert pending rows (idempotent on related_id).
  * @returns summary for notes / spike JSON
  */
@@ -946,7 +1076,8 @@ async function runHabitPlacerPropose(ctx) {
   }
 
   // Incomplete occurrences re-pin even when pack §5 proof fails — never leave
-  // past incomplete diary blocks dropped on a finished day.
+  // past incomplete diary blocks dropped on a finished day. Then re-home any
+  // pins still sat on top of personal/client hard busy.
   if (writePending) {
     try {
       habitRolls = await applyIncompleteHabitRolls({
@@ -964,6 +1095,21 @@ async function runHabitPlacerPropose(ctx) {
       });
     } catch (e) {
       habitRolls = { rolled: 0, error: e.message };
+    }
+    try {
+      const rehome = await rehomePinsOverHardBusy({
+        sb,
+        habits: habits || [],
+        ruleMap,
+        holidays,
+        hardBusy,
+        placements,
+        fromYmd,
+        awaySpans: blockedSpans,
+      });
+      habitRolls = { ...habitRolls, ...rehome };
+    } catch (e) {
+      habitRolls = { ...habitRolls, rehomed: 0, rehome_error: e.message };
     }
   }
 
@@ -1043,6 +1189,7 @@ module.exports = {
   applyHabitAmendmentToDb,
   clearHabitsDatedOnBlockedDays,
   applyIncompleteHabitRolls,
+  rehomePinsOverHardBusy,
   runHabitPlacerPropose,
   ruleMapFromRows,
   bankHolidaySet,

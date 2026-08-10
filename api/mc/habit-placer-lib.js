@@ -452,10 +452,11 @@ function buildBusyIntervals(events, ruleMap = {}) {
   const buffer = Number(ruleMap.fixture_buffer_min || 60);
   const out = [];
   for (const e of events || []) {
-    const calId = e._calendarId || e.calendarId;
+    const calId = e._calendarId || e.calendarId || 'primary';
     const force = isForceBusyCalendar(calId);
     const fixtureMc = isFixtureBlock(e, ruleMap);
     // MC admin/habits out of busy; fixture flanks stay in (hard-busy).
+    // Title (not colour) decides MC — personal Primary timed Busy must fence habits.
     if (isMcBlock(e) && !fixtureMc) continue;
     if (e.transparency === 'transparent' && !force && !fixtureMc) {
       // All-day "Easy Moving" / leave etc. are often Free in Google so they

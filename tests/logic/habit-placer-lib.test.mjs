@@ -69,7 +69,7 @@ describe('habit-placer-lib — topology then hardest-first', () => {
 });
 
 describe('habit-placer-lib — busy map', () => {
-  it('strips MC and MC ⚽; expands Ipswich by buffer', () => {
+  it('strips MC admin; keeps fixture flanks + expands Ipswich by buffer', () => {
     const busy = buildBusyIntervals([
       {
         summary: 'MC 🔁 Blog', colorId: '10',
@@ -94,13 +94,58 @@ describe('habit-placer-lib — busy map', () => {
         end: { dateTime: '2026-08-11T16:00:00+01:00' },
       },
     ], rules);
-    assert.equal(busy.length, 2);
+    // Blog stripped; fixture flank + buffered Ipswich + workshop remain.
+    assert.equal(busy.length, 3);
     assert.ok(busy.some((b) => b.summary.includes('Workshop')));
+    assert.ok(busy.some((b) => String(b.summary).includes('MC ⚽')));
     const fix = busy.find((b) => b.summary.includes('Ipswich Town'));
     assert.ok(fix);
     // 15:00–17:00 London ±60m → 14:00–18:00
     assert.equal(isoHm(fix.startMs), '14:00');
     assert.equal(isoHm(fix.endMs), '18:00');
+  });
+
+  it('keeps Primary personal timed events busy even when colour is also 10', () => {
+    const busy = buildBusyIntervals([
+      {
+        summary: 'CT Scan - Chest - Lungs',
+        colorId: '10',
+        _calendarId: 'primary',
+        start: { dateTime: '2026-08-10T09:50:00+01:00' },
+        end: { dateTime: '2026-08-10T11:00:00+01:00' },
+      },
+      {
+        summary: 'Sandra Garden',
+        colorId: '10',
+        _calendarId: 'primary',
+        start: { dateTime: '2026-08-10T10:30:00+01:00' },
+        end: { dateTime: '2026-08-10T14:00:00+01:00' },
+      },
+      {
+        summary: 'MC 🔁 Hotel bookings — Alan actions',
+        colorId: '10',
+        _calendarId: 'primary',
+        start: { dateTime: '2026-08-10T11:00:00+01:00' },
+        end: { dateTime: '2026-08-10T11:30:00+01:00' },
+      },
+    ], rules);
+    assert.equal(busy.length, 2);
+    assert.ok(busy.every((b) => !String(b.summary).includes('MC ')));
+    const from = '2026-08-10';
+    const habits = [{
+      id: 'h1', title: 'SEO Performance Review', priority: 'p1', duration_min: 30,
+      ideal_time: '10:00', window_days: 2, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=MO',
+    }];
+    const { placements } = placeHabits(
+      habits, [], busy, rules, holidays, from, '2026-08-16',
+    );
+    assert.equal(placements.length, 1);
+    const startMs = Date.parse(placements[0].startIso);
+    for (const b of busy) {
+      assert.ok(!(startMs < b.endMs && Date.parse(placements[0].endIso) > b.startMs),
+        'habit must not land on primary personal timed busy');
+    }
   });
 });
 

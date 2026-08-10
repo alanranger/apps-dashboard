@@ -90,13 +90,15 @@ describe('rule-breach-lib — overlap + busy map', () => {
       { id: 'a', summary: 'P0 · MC 🔁 Blog', colorId: '10', start: { dateTime: `${day}T10:00:00+01:00` }, end: { dateTime: `${day}T12:00:00+01:00` } },
       { id: 'b', summary: 'Josh Birthday', start: { date: '2026-09-01' }, end: { date: '2026-09-02' } },
       { id: 'c', summary: 'Other free', transparency: 'transparent', start: { dateTime: `${day}T15:00:00+01:00` }, end: { dateTime: `${day}T17:00:00+01:00` } },
+      // Colour 10 alone is NOT MC — personal Primary timed events stay busy.
+      { id: 'd', summary: 'CT Scan - Chest', colorId: '10', start: { dateTime: `${day}T09:50:00+01:00` }, end: { dateTime: `${day}T10:20:00+01:00` } },
     ];
     const { mc, busy } = splitMcAndBusy(events, rules);
     assert.equal(mc.length, 1);
-    assert.equal(busy.length, 2);
-    assert.equal(busy[0].summary, 'Josh Birthday');
-    assert.equal(busy[1].summary, 'Other free');
-    assert.equal(busy[1].show_as_free, true);
+    assert.equal(busy.length, 3);
+    assert.ok(busy.some((b) => b.summary === 'Josh Birthday'));
+    assert.ok(busy.some((b) => b.summary === 'Other free' && b.show_as_free));
+    assert.ok(busy.some((b) => b.summary === 'CT Scan - Chest' && !b.show_as_free));
   });
 
   it('routes Ipswich fixtures to the fixtures bucket, NOT the busy map (informational)', () => {
