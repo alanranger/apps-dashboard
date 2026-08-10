@@ -132,19 +132,28 @@ describe('habit-placer-lib — busy map', () => {
     assert.equal(busy.length, 2);
     assert.ok(busy.every((b) => !String(b.summary).includes('MC ')));
     const from = '2026-08-10';
+    // MC 🔁 on Primary is re-seeded as hard busy separately by placer propose.
+    const gcalMc = [{
+      startMs: Date.parse('2026-08-10T11:00:00+01:00'),
+      endMs: Date.parse('2026-08-10T11:30:00+01:00'),
+      summary: 'MC 🔁 Hotel bookings — Alan actions',
+      calendar_event_id: 'evt1',
+      is_mc_recurring_gcal: true,
+    }];
     const habits = [{
       id: 'h1', title: 'SEO Performance Review', priority: 'p1', duration_min: 30,
-      ideal_time: '10:00', window_days: 2, time_critical: false,
+      ideal_time: '11:00', window_days: 2, time_critical: false,
       rrule: 'FREQ=WEEKLY;BYDAY=MO',
     }];
+    const hard = busy.concat(gcalMc);
     const { placements } = placeHabits(
-      habits, [], busy, rules, holidays, from, '2026-08-16',
+      habits, [], hard, rules, holidays, from, '2026-08-16',
     );
     assert.equal(placements.length, 1);
     const startMs = Date.parse(placements[0].startIso);
-    for (const b of busy) {
+    for (const b of hard) {
       assert.ok(!(startMs < b.endMs && Date.parse(placements[0].endIso) > b.startMs),
-        'habit must not land on primary personal timed busy');
+        'habit must not land on personal or other MC recurring busy');
     }
   });
 });

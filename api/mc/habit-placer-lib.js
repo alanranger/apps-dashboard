@@ -1204,9 +1204,14 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
     || b.restDay);
 
   function tryDays(habit, ideal, days, fence, slotOpts = {}) {
+    const selfEvt = (opts.eventIdByKey && opts.eventIdByKey.get(`${habit.id}|${ideal}`)) || null;
     const busySansSelf = busyWork
       .concat(fence)
-      .filter((b) => !(b.habit_id === habit.id && b.ideal_date === ideal));
+      .filter((b) => {
+        if (b.habit_id === habit.id && b.ideal_date === ideal) return false;
+        if (selfEvt && b.calendar_event_id === selfEvt) return false;
+        return true;
+      });
     for (const day of days) {
       if (day > toYmd) continue;
       if (dayBlockedForHabits(day, awaySpans)) continue;

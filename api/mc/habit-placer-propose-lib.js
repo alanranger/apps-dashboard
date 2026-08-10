@@ -32,6 +32,98 @@ function relatedId(habitId, idealDate) {
   return `habit_place:${habitId}:${idealDate}`;
 }
 
+/** Primary MC 🔁 habit events — must block placement; buildBusyIntervals strips them. */
+function primaryRecurringGcalBusy(gcalEvents) {
+  const out = [];
+  for (const e of gcalEvents || []) {
+    if ((e._calendarId || e.calendarId || 'primary') !== 'primary') continue;
+    if (!e.start?.dateTime || e.status === 'cancelled') continue;
+    const title = String(e.summary || '');
+    if (!/^MC\s*🔁/u.test(title)) continue;
+    const startMs = Date.parse(e.start.dateTime);
+    const endMs = Date.parse(e.end?.dateTime || e.start.dateTime);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+    out.push({
+      startMs,
+      endMs,
+      summary: title,
+      calendar_event_id: e.id,
+      is_mc_recurring_gcal: true,
+    });
+  }
+  return out;
+}
+
+/**
+ * Delete Primary MC 🔁 Google events not tied to a diary pin (duplicates / orphans).
+ * Stale pinned events (wrong day) remain for MOVE via placer amendments.
+ */
+async function retireOrphanMcRecurringGcal(sb, gcalEvents, logs, fromYmd, toYmd) {
+  const tied = new Set((logs || []).map((r) => r.calendar_event_id).filter(Boolean));
+  let retired = 0;
+  for (const e of gcalEvents || []) {
+    if ((e._calendarId || e.calendarId || 'primary') !== 'primary') continue;
+    if (!e.id || !e.start?.dateTime || e.status === 'cancelled') continue;
+    if (!/^MC\s*🔁/u.test(String(e.summary || ''))) continue;
+    const day = isoToLondonDate(e.start.dateTime);
+    if (!day || day < fromYmd || day > toYmd) continue;
+    if (tied.has(e.id)) continue;
+    await upsertPushRow(sb, {
+      related_id: `gcal:orphan_mc_recurring:${e.id}`,
+      entity_type: 'habit',
+      change_kind: 'skip',
+      summary: `Retire orphan MC 🔁 ${e.summary} (${day})`,
+      proposed_action: `DELETE Primary event ${e.id} (no diary pin — orphan/duplicate).`,
+      payload: {
+        calendar_event_id: e.id,
+        title: e.summary,
+        day,
+        new_start: e.start.dateTime,
+        new_end: e.end?.dateTime || e.start.dateTime,
+      },
+    });
+    retired += 1;
+  }
+  // Exact twin Primary events (same title + start) — keep one, delete the rest.
+  const groups = new Map();
+  for (const e of gcalEvents || []) {
+    if ((e._calendarId || e.calendarId || 'primary') !== 'primary') continue;
+    if (!e.id || !e.start?.dateTime || e.status === 'cancelled') continue;
+    if (!/^MC\s*🔁/u.test(String(e.summary || ''))) continue;
+    const day = isoToLondonDate(e.start.dateTime);
+    if (!day || day < fromYmd || day > toYmd) continue;
+    const key = `${String(e.summary).trim()}|${Date.parse(e.start.dateTime)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(e);
+  }
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    list.sort((a, b) => {
+      const at = tied.has(a.id) ? 0 : 1;
+      const bt = tied.has(b.id) ? 0 : 1;
+      if (at !== bt) return at - bt;
+      return String(a.id).localeCompare(String(b.id));
+    });
+    for (const e of list.slice(1)) {
+      await upsertPushRow(sb, {
+        related_id: `gcal:dup_mc_recurring:${e.id}`,
+        entity_type: 'habit',
+        change_kind: 'skip',
+        summary: `Retire duplicate MC 🔁 ${e.summary}`,
+        proposed_action: `DELETE Primary event ${e.id} (exact duplicate of another Primary block).`,
+        payload: {
+          calendar_event_id: e.id,
+          title: e.summary,
+          new_start: e.start.dateTime,
+          new_end: e.end?.dateTime || e.start.dateTime,
+        },
+      });
+      retired += 1;
+    }
+  }
+  return { retired };
+}
+
 /** Existing keyed habit blocks — calendar event times only (live diary = truth). */
 function parseDiaryPinTimes(change) {
   const m = String(change || '').match(/^diary_pin:([^|]+)\|([^|]+)/);
@@ -723,6 +815,7 @@ async function applyIncompleteHabitRolls(ctx) {
 async function rehomePinsOverHardBusy(ctx) {
   const {
     sb, habits, ruleMap, holidays, hardBusy, placements, dayUsed, fromYmd, awaySpans,
+    gcalEvents,
   } = ctx;
   const today = fromYmd;
   const horizon = addDays(today, 21);
@@ -738,6 +831,10 @@ async function rehomePinsOverHardBusy(ctx) {
     });
   }
   const used = { ...(dayUsed || {}) };
+  const byEvt = new Map();
+  for (const e of gcalEvents || []) {
+    if (e?.id) byEvt.set(e.id, e);
+  }
 
   for (const habit of habits || []) {
     const rows = await sb(
@@ -752,15 +849,25 @@ async function rehomePinsOverHardBusy(ctx) {
       if (!ideal || seenIdeal.has(ideal)) continue;
       seenIdeal.add(ideal);
       if (habit.last_done && String(habit.last_done) >= ideal) continue;
-      const pin = parseDiaryPinTimes(row.change);
-      if (!pin) continue;
-      const startMs = Date.parse(pin.startIso);
-      const endMs = Date.parse(pin.endIso);
+      let startMs = null;
+      let endMs = null;
+      const ev = row.calendar_event_id ? byEvt.get(row.calendar_event_id) : null;
+      if (ev?.start?.dateTime && ev.status !== 'cancelled') {
+        startMs = Date.parse(ev.start.dateTime);
+        endMs = Date.parse(ev.end?.dateTime || ev.start.dateTime);
+      } else {
+        const pin = parseDiaryPinTimes(row.change);
+        if (!pin) continue;
+        startMs = Date.parse(pin.startIso);
+        endMs = Date.parse(pin.endIso);
+      }
       if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) continue;
 
-      const busySansSelf = busyWork.filter(
-        (b) => !(b.habit_id === habit.id && String(b.ideal_date || '') === ideal),
-      );
+      const busySansSelf = busyWork.filter((b) => {
+        if (b.habit_id === habit.id && String(b.ideal_date || '') === ideal) return false;
+        if (row.calendar_event_id && b.calendar_event_id === row.calendar_event_id) return false;
+        return true;
+      });
       const clashes = busySansSelf.some(
         (b) => Number.isFinite(b.startMs) && Number.isFinite(b.endMs)
           && startMs < b.endMs && b.startMs < endMs,
@@ -782,6 +889,11 @@ async function rehomePinsOverHardBusy(ctx) {
         }
       }
       if (!slot) continue;
+      // Already at this free slot (wrong duplicate GCal only) — skip rewrite.
+      if (slot.startIso === new Date(startMs).toISOString()
+        && slot.endIso === new Date(endMs).toISOString()) {
+        continue;
+      }
 
       const pinChange = `diary_pin:${slot.startIso}|${slot.endIso}`;
       const evtId = row.calendar_event_id || null;
@@ -900,25 +1012,36 @@ async function runHabitPlacerPropose(ctx) {
   const restSpans = restDaySpansFromWorkshopEvents(gcalEvents || [], ruleMap)
     .concat(restDaySpansFromDbRows(restDb || []));
   const blockedSpans = awaySpans.concat(teachingSpans).concat(restSpans);
-  // Existing habit blocks must occupy the busy map (buildBusyIntervals skips MC titles).
+  // Existing habit pins + live Primary MC 🔁 GCal blocks (striped from clientBusy).
   const existingHabitBusy = (existingLog || []).map((e) => ({
     startMs: Date.parse(e.startIso),
     endMs: Date.parse(e.endIso),
     summary: e.title,
     habit_id: e.habit_id,
     ideal_date: e.ideal_date,
+    calendar_event_id: e.calendar_event_id || null,
   })).filter((b) => Number.isFinite(b.startMs) && Number.isFinite(b.endMs));
+  const gcalMcBusy = primaryRecurringGcalBusy(gcalEvents || []);
+  // Dedup GCal intervals already covered by pinned log event ids
+  const knownEvt = new Set(existingHabitBusy.map((b) => b.calendar_event_id).filter(Boolean));
+  const gcalMcExtra = gcalMcBusy.filter((b) => !b.calendar_event_id || !knownEvt.has(b.calendar_event_id));
+  const eventIdByKey = new Map(
+    (existingLog || [])
+      .filter((e) => e.calendar_event_id)
+      .map((e) => [`${e.habit_id}|${e.ideal_date}`, e.calendar_event_id]),
+  );
   const hardBusy = clientBusy.concat(pinnedBusy).concat(blockedSpans)
     .concat(existingHabitBusy)
+    .concat(gcalMcExtra)
     .sort((a, b) => a.startMs - b.startMs);
 
   const { placements, unplaced } = placeHabits(
     habits || [], deps || [], hardBusy.slice(), ruleMap, holidays, fromYmd, toYmd,
-    // existingHabitIntervals: self-strip only (intervals already in hardBusy)
     {
       softTaskIntervals: softTasks,
       existingHabitIntervals: existingHabitBusy,
       phaseAnchorYmd: phaseAnchorYmd || fromYmd,
+      eventIdByKey,
     },
   );
   const existing = enrichExistingFromGcalTitles(
@@ -1106,10 +1229,19 @@ async function runHabitPlacerPropose(ctx) {
         placements,
         fromYmd,
         awaySpans: blockedSpans,
+        gcalEvents: gcalEvents || [],
       });
       habitRolls = { ...habitRolls, ...rehome };
     } catch (e) {
       habitRolls = { ...habitRolls, rehomed: 0, rehome_error: e.message };
+    }
+    try {
+      const orphans = await retireOrphanMcRecurringGcal(
+        sb, gcalEvents || [], logs || [], fromYmd, toYmd,
+      );
+      habitRolls = { ...habitRolls, orphans_retired: orphans.retired };
+    } catch (e) {
+      habitRolls = { ...habitRolls, orphans_retired: 0, orphan_error: e.message };
     }
   }
 
