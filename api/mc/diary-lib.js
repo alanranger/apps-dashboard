@@ -88,6 +88,7 @@ function toBlock(opts) {
     duration_min: Math.max(0, eMin - sMin),
     editable: !!opts.editable,
     slot_pinned: !!opts.slot_pinned,
+    has_diary_pin: !!opts.has_diary_pin,
     display_id: opts.display_id || null,
     habit_id: opts.habit_id || null,
     ideal_date: opts.ideal_date || null,
@@ -319,12 +320,25 @@ function isSkippedChange(change) {
   return /^skipped\b/i.test(String(change || ''));
 }
 
+/** Strip MC emoji prefix so diary habits and GCal orphans match by title. */
+function normalizeMcTitle(title) {
+  return String(title || '')
+    .replace(/^DONE\s+/i, '')
+    .replace(/^MC\s*/i, '')
+    .replace(/^[🔁⏳⚽⏰🚫🛌🚗✅☐\s]+/u, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function habitLogsToBlocks(logs, habitMap) {
+  // One visible pin per habit *ideal* (not scheduled_date). Two ideals can land same day.
   const best = new Map();
   for (const log of logs || []) {
     if (!log.scheduled_date || !log.recurring_task_id) continue;
     if (isSkippedChange(log.change)) continue; // this occurrence removed from schedule
-    const key = `${log.recurring_task_id}:${log.scheduled_date}`;
+    const ideal = log.ideal_date || log.scheduled_date;
+    const key = `${log.recurring_task_id}:${ideal}`;
     const prev = best.get(key);
     if (!prev) {
       best.set(key, log);
@@ -371,13 +385,16 @@ function habitLogsToBlocks(logs, habitMap) {
       endIso = new Date(startMs + dur * 60000).toISOString();
     }
     const habitBlock = toBlock({
-      id: `habit:${habit.id}:${day}`,
+      id: `habit:${habit.id}:${ideal}`,
       kind: 'habit',
       title: habit.title,
       start: startIso,
       end: endIso,
       editable: !done,
-      slot_pinned: !!(pin && !done),
+      // Lock badge = user-locked feels wrong on every pin; keep false for drag UX.
+      // GCal baseline still wins from diary_pin via awaiting_push path only when drifted.
+      slot_pinned: false,
+      has_diary_pin: !!(pin && !done),
       habit_id: habit.id,
       ideal_date: ideal,
       calendar_event_id: log.calendar_event_id || null,
@@ -388,6 +405,36 @@ function habitLogsToBlocks(logs, habitMap) {
     if (habitBlock) out.push(habitBlock);
   }
   return out;
+}
+
+/**
+ * Hide Google-only MC 🔁 copies when Diary already owns a same-day habit (or same event
+ * is twin of a tied pin). Those orphans steal clicks and look like undraggable CONFLICTs.
+ */
+function titlesSameHabit(a, b) {
+  const na = normalizeMcTitle(a);
+  const nb = normalizeMcTitle(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.startsWith(nb) || nb.startsWith(na)) return true;
+  const wa = na.split(/\s+/).slice(0, 3).join(' ');
+  const wb = nb.split(/\s+/).slice(0, 3).join(' ');
+  return wa.length >= 4 && wa === wb;
+}
+
+function suppressOrphanMcTwins(blocks) {
+  const ownedIds = new Set();
+  const ownedTitles = [];
+  for (const b of blocks || []) {
+    if (!b || b.gcal_orphan || b.kind !== 'habit' || b.done) continue;
+    ownedTitles.push({ day: b.day, title: b.title });
+    if (b.calendar_event_id) ownedIds.add(b.calendar_event_id);
+  }
+  return (blocks || []).filter((b) => {
+    if (!b?.gcal_orphan || b.kind !== 'habit') return true;
+    if (b.calendar_event_id && ownedIds.has(b.calendar_event_id)) return false;
+    return !ownedTitles.some((o) => o.day === b.day && titlesSameHabit(o.title, b.title));
+  });
 }
 
 const GCAL_DRIFT_TOLERANCE_MIN = 5;
@@ -412,7 +459,7 @@ function indexGcalEventsById(events) {
 
 /**
  * Align tied blocks with Google when DB is not intentionally pinned.
- * After a diary drag, slot_pinned / diary_pin means DB wins until Push.
+ * After a diary drag, diary pin / awaiting push means DB wins until Push.
  */
 function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOLERANCE_MIN) {
   let driftCount = 0;
@@ -454,8 +501,8 @@ function applyGcalBaselineTimes(blocks, eventById, toleranceMin = GCAL_DRIFT_TOL
       };
     }
     driftCount += 1;
-    // User moved / pinned in MC — keep DB slot visible; Push will update Google.
-    if (b.slot_pinned) {
+    // Habit/task diary pin or explicit lock — keep DB slot; Push updates Google.
+    if (b.slot_pinned || b.has_diary_pin) {
       return {
         ...b,
         gcal_baseline: false,
@@ -848,6 +895,8 @@ module.exports = {
   allDayBannersFromBusy,
   holidayMapFromRows,
   habitLogsToBlocks,
+  normalizeMcTitle,
+  suppressOrphanMcTwins,
   parseDiaryPin,
   parseCompleteMeta,
   isSkippedChange,

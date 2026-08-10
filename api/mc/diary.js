@@ -8,7 +8,7 @@ const { fetchHorizonEvents, gcalConfigured } = require('./gcal-lib');
 const {
   londonToday, addDaysYmd, mondayOnOrBefore, weeksFrom, ruleMapFromRows, splitMcAndBusy,
   awaySpansFromTravelBlocks, teachingDaySpansFromEvents, restDaySpansFromWorkshopEvents,
-  tasksToBlocks, travelToBlocks, busyToBlocks,
+  tasksToBlocks, travelToBlocks, busyToBlocks, suppressOrphanMcTwins,
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, awayBusySegments,
   indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks, hotelDeadlineBlocks,
@@ -123,7 +123,10 @@ module.exports = async function handler(req, res) {
       if (d.calendar_event_id) tiedIds.add(d.calendar_event_id);
     }
     const orphans = untiedMcBlocks(mcEvents, tiedIds);
-    const blocks = insertDecompressStrips([...baselined, ...deadlines, ...orphans], ruleMap);
+    // Drop Google-only MC 🔁 twins when Diary already owns that habit that day — they
+    // steal clicks / show CONFLICT and aren't draggable until retired by Push.
+    const merged = suppressOrphanMcTwins([...baselined, ...deadlines, ...orphans]);
+    const blocks = insertDecompressStrips(merged, ruleMap);
 
     const awayDays = {};
     for (const span of awaySpans) {

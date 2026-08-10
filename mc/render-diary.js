@@ -543,7 +543,12 @@ function stackClass(kind, isBuffer) {
   return 'dy-z-mc';
 }
 
-/** Mark genuine time conflicts between non-buffer, non-done blocks. */
+function isMovableDiaryBlock(b) {
+  return !!(b && !b.done && !b.is_buffer && !b.synthetic && !b.gcal_orphan
+    && (b.kind === 'habit' || b.kind === 'mc_task'));
+}
+
+/** Mark overlaps that need action (habit/task vs something). Personal×personal is not CONFLICT. */
 function conflictIds(dayBlocks) {
   const timed = (dayBlocks || [])
     .filter((b) => !b.is_buffer && !b.synthetic && !b.done
@@ -553,10 +558,13 @@ function conflictIds(dayBlocks) {
     for (let j = i + 1; j < timed.length; j += 1) {
       const a = timed[i];
       const b = timed[j];
-      if (a.start_min < b.end_min && b.start_min < a.end_min) {
-        bad.add(a.id);
-        bad.add(b.id);
+      if (!(a.start_min < b.end_min && b.start_min < a.end_min)) continue;
+      // Pure calendar noise (CT Scan vs Camera setup, etc.) — not something Drag can fix.
+      if (!isMovableDiaryBlock(a) && !isMovableDiaryBlock(b) && !a.gcal_orphan && !b.gcal_orphan) {
+        continue;
       }
+      bad.add(a.id);
+      bad.add(b.id);
     }
   }
   return bad;
@@ -586,7 +594,8 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const h = heightPct(b.duration_min || 30, axis);
   const cls = KIND_CLASS[b.kind] || 'dy-personal';
   const icon = KIND_ICON[b.kind] || '•';
-  const locked = !!(b.slot_pinned || b.client_fixed);
+  // Tasks: slot_pinned = user lock. Habits: no lock icon for ordinary diary pins.
+  const locked = !!(b.client_fixed || (b.kind === 'mc_task' && b.slot_pinned));
   const isBuffer = !!(b.is_buffer || b.synthetic);
   const done = !!b.done;
   const tall = (b.duration_min || 30) >= 90 ? 'dy-tall' : '';
@@ -596,7 +605,7 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     b.running_late ? 'dy-late' : '',
     locked ? 'dy-pinned' : '',
     b.editable && !locked ? 'dy-unlocked' : '',
-    b.editable ? 'dy-edit' : 'dy-ro',
+    b.editable && !b.gcal_orphan ? 'dy-edit' : 'dy-ro',
     isBuffer ? 'dy-buffer-strip' : '',
     b.client_fixed ? 'dy-client-fixed' : '',
     done ? 'dy-done-block' : '',
@@ -608,15 +617,15 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     lane > 0 ? `dy-lane-${Math.min(lane, 2)}` : '',
   ].filter(Boolean).join(' ');
   const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
-  // Allow drag even when pinned — drop will unlock. Client-fixed / deadlines stay undragged.
+  // Allow drag even when task is pinned — drop will unlock. Client-fixed / deadlines stay undragged.
   const canDrag = !!(canEdit && !b.client_fixed && b.kind !== 'deadline');
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
     b.gcal_baseline ? 'Time from Google Calendar' : '',
     b.awaiting_push ? 'Moved in Diary — Push to update Google' : '',
     b.out_of_sync && !b.awaiting_push ? '⚠ DB pin differs from Google — showing Google' : '',
-    b.gcal_orphan ? 'On Google only (not linked in MC DB)' : '',
-    conflict ? '⚠ Overlap — drag sideways lane to shuffle' : '',
+    b.gcal_orphan ? 'On Google only (not linked in MC DB) — Push to clear duplicates' : '',
+    conflict ? '⚠ Overlap with fixed time — drag habit/task clear of it' : '',
     done && b.actual_minutes != null ? `Completed · ${b.actual_minutes}m actual · can’t move` : '',
     done && b.actual_minutes == null ? 'Completed · can’t move' : '',
     b.client_fixed ? 'Fixed client booking · can’t move' : '',
@@ -923,8 +932,23 @@ function showDropPreview(root, grid, clientY, axis, durMin) {
 
 function wireDiary(root, data, refresh) {
   const axis = data.day_axis || { start_min: 300, end_min: 1380, step_min: 30 };
+  // Re-paint replaces innerHTML but keeps listeners on root — update refs only.
+  root._dyData = data;
+  root._dyRefresh = refresh;
+  root._dyAxis = axis;
+  if (root._dyWired) return;
+  root._dyWired = true;
+
   let dragStarted = false;
   let ptr = null;
+
+  function live() {
+    return {
+      data: root._dyData || { blocks: [] },
+      refresh: root._dyRefresh || (async () => {}),
+      axis: root._dyAxis || { start_min: 300, end_min: 1380, step_min: 30 },
+    };
+  }
 
   function clearDrag() {
     ptr?.ghost?.remove();
@@ -940,7 +964,22 @@ function wireDiary(root, data, refresh) {
     ptr.ghost.style.top = `${clientY - ptr.offY}px`;
   }
 
+  function dayGridUnderPoint(clientX, clientY) {
+    const stack = typeof document.elementsFromPoint === 'function'
+      ? document.elementsFromPoint(clientX, clientY)
+      : [document.elementFromPoint(clientX, clientY)].filter(Boolean);
+    for (const el of stack) {
+      if (!el || el.classList?.contains('dy-drag-ghost')) continue;
+      const grid = el.classList?.contains('dy-day-grid')
+        ? el
+        : el.closest?.('.dy-day-grid');
+      if (grid && root.contains(grid)) return grid;
+    }
+    return null;
+  }
+
   root.addEventListener('click', async (e) => {
+    const { data: d, refresh: r } = live();
     const blockEl = e.target.closest('.dy-block');
     if (!blockEl || !root.contains(blockEl)) return;
     e.preventDefault();
@@ -949,13 +988,13 @@ function wireDiary(root, data, refresh) {
       dragStarted = false;
       return;
     }
-    const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
+    const block = (d.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
     if (!block || block.is_buffer || block.synthetic) return;
 
     if (e.target.closest('[data-dy-done]')) {
       if (!block.editable || block.done) return;
       try {
-        await runMenuAction('complete', block, refresh);
+        await runMenuAction('complete', block, r);
       } catch (err) {
         alert(err.message || 'Complete failed');
       }
@@ -963,7 +1002,7 @@ function wireDiary(root, data, refresh) {
     }
 
     blockEl.classList.add('dy-expanded');
-    showMenu(block, e.clientX, e.clientY, refresh);
+    showMenu(block, e.clientX, e.clientY, r);
   });
 
   root.addEventListener('pointerdown', (e) => {
@@ -971,8 +1010,9 @@ function wireDiary(root, data, refresh) {
     if (e.target.closest('[data-dy-done], .dy-menu, a, input, textarea, select')) return;
     const blockEl = e.target.closest('.dy-block.dy-edit');
     if (!blockEl || !root.contains(blockEl)) return;
-    const block = (data.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
-    if (!block || block.done || block.client_fixed || block.is_buffer) return;
+    const { data: d } = live();
+    const block = (d.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
+    if (!block || block.done || block.client_fixed || block.is_buffer || block.gcal_orphan) return;
     const r = blockEl.getBoundingClientRect();
     ptr = {
       block,
@@ -991,6 +1031,7 @@ function wireDiary(root, data, refresh) {
 
   root.addEventListener('pointermove', (e) => {
     if (!ptr || e.pointerId !== ptr.pid) return;
+    const { axis: ax } = live();
     const dx = e.clientX - ptr.x0;
     const dy = e.clientY - ptr.y0;
     if (!ptr.moved && (dx * dx + dy * dy) < 36) return;
@@ -1013,16 +1054,16 @@ function wireDiary(root, data, refresh) {
     }
     e.preventDefault();
     positionGhost(e.clientX, e.clientY);
-    const under = document.elementFromPoint(e.clientX, e.clientY);
-    const grid = under?.closest?.('.dy-day-grid') || null;
+    const grid = dayGridUnderPoint(e.clientX, e.clientY);
     ptr.grid = grid;
     ptr.day = grid?.getAttribute('data-day') || null;
     const dur = ptr.block.duration_min || 60;
-    ptr.slot = showDropPreview(root, grid, e.clientY, axis, dur);
+    ptr.slot = showDropPreview(root, grid, e.clientY, ax, dur);
   });
 
   root.addEventListener('pointerup', async (e) => {
     if (!ptr || e.pointerId !== ptr.pid) return;
+    const { refresh: r } = live();
     const wasDrag = ptr.moved;
     const block = ptr.block;
     const slot = ptr.slot;
@@ -1041,7 +1082,7 @@ function wireDiary(root, data, refresh) {
         fmtHm(slot.startMin),
         fmtHm(slot.endMin),
         false,
-        refresh,
+        r,
         `${fmtDayLabel(day)} · ${fmtHm(slot.startMin)}–${fmtHm(slot.endMin)}`,
       );
     } catch (err) {

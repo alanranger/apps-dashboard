@@ -193,6 +193,54 @@ describe('diary calendar feeds', () => {
     assert.equal(blocks.length, 1);
     assert.equal(blocks[0].start, '2026-08-10T13:00:00.000Z');
     assert.equal(blocks[0].editable, true);
+    assert.equal(blocks[0].has_diary_pin, true);
+    assert.equal(blocks[0].slot_pinned, false);
+    assert.equal(blocks[0].id, 'habit:h1:2026-08-10');
+  });
+
+  it('keeps two ideals of same habit when both land on one scheduled day', () => {
+    const { habitLogsToBlocks } = require('../../api/mc/diary-lib.js');
+    const habitId = 'h-review';
+    const habitMap = new Map([[habitId, {
+      id: habitId, title: 'Review', duration_min: 30, ideal_time: '09:00:00',
+    }]]);
+    const blocks = habitLogsToBlocks([
+      {
+        recurring_task_id: habitId, scheduled_date: '2026-08-11', ideal_date: '2026-07-27',
+        change: 'diary_pin:2026-08-11T08:00:00.000Z|2026-08-11T08:30:00.000Z', at: 'a',
+      },
+      {
+        recurring_task_id: habitId, scheduled_date: '2026-08-11', ideal_date: '2026-08-10',
+        change: 'diary_pin:2026-08-11T12:00:00.000Z|2026-08-11T12:30:00.000Z', at: 'b',
+      },
+    ], habitMap);
+    assert.equal(blocks.length, 2);
+    assert.deepEqual(blocks.map((b) => b.id).sort(), [
+      'habit:h-review:2026-07-27', 'habit:h-review:2026-08-10',
+    ].sort());
+  });
+
+  it('suppresses GCAL orphan when Diary owns same habit title that day', () => {
+    const { suppressOrphanMcTwins, normalizeMcTitle } = require('../../api/mc/diary-lib.js');
+    assert.equal(normalizeMcTitle('MC 🔁 Hotel bookings — Alan'), 'hotel bookings — alan');
+    const blocks = suppressOrphanMcTwins([
+      {
+        id: 'habit:1:2026-08-11', kind: 'habit', day: '2026-08-11',
+        title: 'Hotel bookings — Alan', gcal_orphan: false, done: false,
+        calendar_event_id: 'e1',
+      },
+      {
+        id: 'gcal-mc:x', kind: 'habit', day: '2026-08-11',
+        title: 'MC 🔁 Hotel bookings — Alan actions', gcal_orphan: true,
+        calendar_event_id: 'orphan1',
+      },
+      {
+        id: 'gcal-mc:y', kind: 'habit', day: '2026-08-12',
+        title: 'MC 🔁 Other', gcal_orphan: true, calendar_event_id: 'orphan2',
+      },
+    ]);
+    assert.equal(blocks.some((b) => b.id === 'gcal-mc:x'), false);
+    assert.equal(blocks.some((b) => b.id === 'gcal-mc:y'), true);
   });
 
   it('hides skipped occurrence; keeps completed visible at actual minutes', () => {

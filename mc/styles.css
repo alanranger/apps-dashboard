@@ -784,11 +784,13 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block.dy-tall .dy-block-label { white-space:normal; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 .dy-block.dy-expanded { z-index:8 !important; min-height:48px; box-shadow:0 4px 14px rgba(0,0,0,0.5); }
 .dy-block.dy-expanded .dy-block-label { white-space:normal; -webkit-line-clamp:unset; display:block; }
-.dy-block.dy-edit { cursor:grab; outline:1px solid rgba(255,255,255,0.35); }
+.dy-block.dy-edit { cursor:grab; outline:1px solid rgba(255,255,255,0.35); touch-action:none; }
 .dy-block.dy-edit:active { cursor:grabbing; }
-.dy-block.dy-lane-1 { left:42% !important; right:4px !important; z-index:6 !important; }
-.dy-block.dy-lane-2 { left:22% !important; right:22% !important; z-index:7 !important; }
+.dy-block.dy-lane-1 { left:42% !important; right:4px !important; z-index:12 !important; }
+.dy-block.dy-lane-2 { left:22% !important; right:22% !important; z-index:13 !important; }
 .dy-block.dy-ro { cursor:default; opacity:0.92; }
+.dy-block.dy-edit.dy-conflict { z-index:14 !important; }
+.dy-block.dy-gcal-orphan { pointer-events:none; opacity:0.55; }
 .dy-edit-badge {
   flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:0.04em;
   padding:0 4px; border-radius:3px; line-height:14px;
@@ -807,7 +809,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-z-personal { z-index:2; left:4px; right:36%; }
 .dy-z-travel { z-index:3; }
 .dy-z-client { z-index:4; }
-.dy-z-mc { z-index:5; left:10px; }
+.dy-z-mc { z-index:10; left:10px; }
 .dy-conflict {
   outline:2px solid #ef4444 !important; outline-offset:0;
   box-shadow:0 0 0 2px rgba(239,68,68,0.35);
