@@ -336,6 +336,29 @@ async function runMenuAction(act, block, refresh) {
   }
 }
 
+function resolveDiaryMove(block) {
+  if (!block || block.done || block.gcal_orphan || block.is_buffer || block.synthetic || block.client_fixed) {
+    return null;
+  }
+  const id = String(block.id || '');
+  if (block.kind === 'mc_task' || id.startsWith('task:')) {
+    const taskId = id.startsWith('task:') ? id.slice(5) : id;
+    if (!taskId) return null;
+    return { kind: 'mc_task', task_id: taskId };
+  }
+  if (block.kind === 'habit' || id.startsWith('habit:')) {
+    const fromId = id.match(/^habit:([^:]+):/);
+    const habitId = block.habit_id || (fromId ? fromId[1] : null);
+    if (!habitId) return null;
+    return {
+      kind: 'habit',
+      habit_id: habitId,
+      ideal_date: block.ideal_date || block.day || null,
+    };
+  }
+  return null;
+}
+
 async function dropBlock(block, day, startHm, endHm, override, refresh, destLabel) {
   if (dropBlock._busy) return;
   dropBlock._busy = true;
@@ -353,6 +376,16 @@ async function dropBlock(block, day, startHm, endHm, override, refresh, destLabe
   });
   try {
     ui.setPhase(0, `moving to ${where}…`);
+    const target = resolveDiaryMove(block);
+    if (!target) {
+      const kind = block?.kind || 'unknown';
+      ui.fail(new Error(
+        kind === 'deadline'
+          ? 'Hotel deadlines can’t be dragged — use ☐ complete or Skip from the menu.'
+          : `Only green habits and blue tasks can be dragged (this is “${kind}”).`,
+      ));
+      return;
+    }
     const body = {
       action: 'move',
       new_start: londonYmdHmToIso(day, startHm),
@@ -361,15 +394,12 @@ async function dropBlock(block, day, startHm, endHm, override, refresh, destLabe
       override: !!override,
       calendar_event_id: block.calendar_event_id || undefined,
     };
-    if (block.kind === 'mc_task') {
-      body.task_id = block.id.replace(/^task:/, '');
+    if (target.kind === 'mc_task') {
+      body.task_id = target.task_id;
       body.unlock_if_pinned = true;
-    } else if (block.kind === 'habit') {
-      body.habit_id = block.habit_id;
-      body.ideal_date = block.ideal_date || block.day;
     } else {
-      ui.fail(new Error('This block cannot be moved'));
-      return;
+      body.habit_id = target.habit_id;
+      body.ideal_date = target.ideal_date;
     }
     let res = await api('/api/mc/diary-action', { method: 'POST', body });
     if (res.needs_override) {
@@ -600,12 +630,15 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const done = !!b.done;
   const tall = (b.duration_min || 30) >= 90 ? 'dy-tall' : '';
   const conflict = conflicts?.has(b.id) ? 'dy-conflict' : '';
+  const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
+  // Allow drag even when task is pinned — drop will unlock. Client-fixed / deadlines stay undragged.
+  const canDrag = !!(canEdit && !b.client_fixed && resolveDiaryMove(b));
   const status = [
     b.overdue ? 'dy-overdue' : '',
     b.running_late ? 'dy-late' : '',
     locked ? 'dy-pinned' : '',
     b.editable && !locked ? 'dy-unlocked' : '',
-    b.editable && !b.gcal_orphan ? 'dy-edit' : 'dy-ro',
+    canDrag ? 'dy-edit' : 'dy-ro',
     isBuffer ? 'dy-buffer-strip' : '',
     b.client_fixed ? 'dy-client-fixed' : '',
     done ? 'dy-done-block' : '',
@@ -616,9 +649,6 @@ function renderBlock(b, axis, conflicts, lane = 0) {
     tall,
     lane > 0 ? `dy-lane-${Math.min(lane, 2)}` : '',
   ].filter(Boolean).join(' ');
-  const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
-  // Allow drag even when task is pinned — drop will unlock. Client-fixed / deadlines stay undragged.
-  const canDrag = !!(canEdit && !b.client_fixed && b.kind !== 'deadline');
   const tipBits = [
     `${b.title} (${fmtHm(b.start_min)}–${fmtHm(b.end_min)})`,
     b.gcal_baseline ? 'Time from Google Calendar' : '',
@@ -1022,7 +1052,7 @@ function wireDiary(root, data, refresh) {
     if (!blockEl || !root.contains(blockEl)) return;
     const { data: d } = live();
     const block = (d.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
-    if (!block || block.done || block.client_fixed || block.is_buffer || block.gcal_orphan) return;
+    if (!block || !resolveDiaryMove(block)) return;
     const r = blockEl.getBoundingClientRect();
     ptr = {
       block,
