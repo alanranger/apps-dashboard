@@ -124,6 +124,8 @@ function showMenu(block, x, y, refresh) {
         : 'Already completed. It stays on the day for the record — you can’t move it.';
     } else if (block.client_fixed) {
       why = 'Fixed client booking from Google Calendar (workshop / Zoom / 1-2-1). You can’t move it here.';
+    } else if (block.gcal_orphan) {
+      why = 'Google-only copy (GCAL badge) — not linked to a Diary habit/task, so it can’t be dragged. Use Push / Full horizon to clear duplicates, then drag the real green habit.';
     } else {
       why = 'This comes from Google Calendar (travel, personal, lesson feed, etc.). Only green habits and blue tasks are editable in Diary.';
     }
@@ -147,7 +149,10 @@ function showMenu(block, x, y, refresh) {
     items.push(['complete', 'Mark complete']);
     items.push(['skip', 'Skip / dismiss reminder']);
   }
-  menu.innerHTML = items.map(([a, label]) => (
+  const deadlineNote = block.kind === 'deadline'
+    ? '<div class="dy-menu-note">Deadlines can’t be dragged — complete or skip only.</div>'
+    : '';
+  menu.innerHTML = deadlineNote + items.map(([a, label]) => (
     `<button type="button" data-dy-act="${a}">${label}</button>`
   )).join('');
   document.body.appendChild(menu);
@@ -1048,8 +1053,23 @@ function wireDiary(root, data, refresh) {
   root.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('[data-dy-done], .dy-menu, a, input, textarea, select')) return;
+    const anyBlock = e.target.closest('.dy-block');
     const blockEl = e.target.closest('.dy-block.dy-edit');
-    if (!blockEl || !root.contains(blockEl)) return;
+    if (!blockEl || !root.contains(blockEl)) {
+      // Explain why a non-draggable block won’t move (deadlines / GCAL orphans / locked).
+      if (anyBlock && root.contains(anyBlock) && !anyBlock.classList.contains('dy-edit')) {
+        const { data: d } = live();
+        const block = (d.blocks || []).find((b) => b.id === anyBlock.dataset.blockId);
+        if (block?.kind === 'deadline') {
+          toast('Hotel deadlines can’t be dragged — click for Complete / Skip');
+        } else if (block?.gcal_orphan) {
+          toast('GCAL-only copy — not linked in Diary, so it can’t be dragged');
+        } else if (block?.client_fixed || block?.kind === 'workshop' || block?.kind === 'lesson') {
+          toast('Locked client / workshop time — can’t drag');
+        }
+      }
+      return;
+    }
     const { data: d } = live();
     const block = (d.blocks || []).find((b) => b.id === blockEl.dataset.blockId);
     if (!block || !resolveDiaryMove(block)) return;
