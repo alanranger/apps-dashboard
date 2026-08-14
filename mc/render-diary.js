@@ -725,14 +725,6 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlay
     .filter((b) => b.day === day)
     .map((b) => `<div class="dy-allday" title="${b.title}">${b.title}</div>`)
     .join('');
-  const hours = [];
-  const step = axis.step_min || 30;
-  for (let m = axis.start_min; m < axis.end_min; m += step) {
-    const half = m % 60 !== 0;
-    hours.push(
-      `<div class="dy-hour${half ? ' dy-hour-half' : ''}" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`,
-    );
-  }
   const wd = WEEKDAYS[weekdayIndex(day)];
   return `
     <div class="dy-day${dayCls}" data-day="${day}">
@@ -747,8 +739,25 @@ function renderDayColumn(day, blocks, away, axis, banners, holidayTitle, overlay
         ${dayBanners ? `<div class="dy-allday-stack">${dayBanners}</div>` : ''}
         ${statusBanner}
         ${renderAwayOverlays(day, overlays, away, axis)}
-        ${hours.join('')}
         ${dayBlocks.map((b) => renderBlock(b, axis, conflicts, lanes.get(b.id) || 0)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderTimeGutter(axis) {
+  const ticks = [];
+  const step = axis.step_min || 30;
+  for (let m = axis.start_min; m < axis.end_min; m += step) {
+    const half = m % 60 !== 0;
+    ticks.push(
+      `<div class="dy-time-tick${half ? ' dy-time-tick-half' : ''}" style="top:${minsToTop(m, axis)}%">${fmtHm(m)}</div>`,
+    );
+  }
+  return `
+    <div class="dy-time-gutter" aria-hidden="true">
+      <div class="dy-time-gutter-head">Time</div>
+      <div class="dy-time-gutter-grid" style="height:${axis.grid_px || 1152}px;--dy-step:${axis.px_per_step || 36}px">
+        ${ticks.join('')}
       </div>
     </div>`;
 }
@@ -890,6 +899,7 @@ function renderWeek(week, blocks, awayDays, axis, banners, holidays, overlays) {
     <div class="dy-week-wrap">
       ${renderWeekGauge(week)}
       <div class="dy-week">
+        ${renderTimeGutter(axis)}
         ${week.days.map((d) => renderDayColumn(
     d, blocks, awayDays[d], axis, banners, holidays?.[d], overlays,
   )).join('')}

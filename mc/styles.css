@@ -669,13 +669,71 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   margin:0 0 10px;
 }
 .dy-scroll { overflow:auto; max-height:calc(100vh - 260px); border:1px solid var(--border); border-radius:8px; }
-.dy-week { display:grid; grid-template-columns:repeat(7, minmax(120px, 1fr)); border-bottom:2px solid var(--border); min-width:980px; }
-.dy-week-wrap { min-width:980px; border-bottom:3px solid var(--border); }
+.dy-week {
+  display:grid;
+  grid-template-columns:56px repeat(7, minmax(120px, 1fr));
+  border-bottom:2px solid var(--border);
+  min-width:1036px;
+}
+.dy-week-wrap { min-width:1036px; border-bottom:3px solid var(--border); }
 .dy-fuel {
   padding:8px 10px 10px; background:var(--panel-2); border-bottom:1px solid var(--border);
   position:sticky; top:0; z-index:4;
 }
-.dy-week-wrap .dy-day-head { top:72px; } /* sit under sticky week fuel + breakdown */
+.dy-week-wrap .dy-day-head,
+.dy-week-wrap .dy-time-gutter-head { top:72px; } /* sit under sticky week fuel + breakdown */
+.dy-time-gutter {
+  position:sticky;
+  left:0;
+  z-index:5;
+  background:var(--panel-2);
+  border-right:1px solid var(--border);
+  box-shadow:4px 0 10px rgba(0,0,0,0.35);
+}
+.dy-time-gutter-head {
+  padding:8px 4px 6px;
+  background:var(--panel-2);
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  z-index:6;
+  text-align:center;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:#ffffff;
+}
+.dy-time-gutter-grid {
+  position:relative;
+  height:1152px;
+  --dy-step:36px;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0, transparent calc(var(--dy-step) - 1px),
+    rgba(255,255,255,0.12) calc(var(--dy-step) - 1px), rgba(255,255,255,0.12) var(--dy-step)
+  );
+}
+.dy-time-tick {
+  position:absolute;
+  left:2px;
+  right:4px;
+  transform:translateY(-50%);
+  text-align:right;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  color:#ffffff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.85);
+  pointer-events:none;
+  z-index:1;
+}
+.dy-time-tick-half {
+  font-size:10px;
+  font-weight:600;
+  color:#f3f4f6;
+  opacity:0.9;
+}
 .dy-fuel-meta { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:baseline; margin-bottom:6px; font-size:13px; }
 .dy-fuel-track { height:10px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; border:1px solid var(--border); }
 .dy-fuel-fill { height:100%; border-radius:999px; background:#22c55e; transition:width .25s ease; }
@@ -713,8 +771,9 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
     rgba(255,255,255,0.07) calc(var(--dy-step) - 1px), rgba(255,255,255,0.07) var(--dy-step)
   );
 }
-.dy-hour { position:absolute; left:2px; font-size:10px; color:var(--text-faint,#9ca3af); pointer-events:none; z-index:0; }
-.dy-hour-half { font-size:9px; opacity:0.55; }
+/* Legacy per-day hour labels (unused; times live in .dy-time-gutter) */
+.dy-hour { position:absolute; left:2px; font-size:11px; font-weight:700; color:#ffffff; pointer-events:none; z-index:0; }
+.dy-hour-half { font-size:10px; color:#f3f4f6; opacity:0.85; }
 .dy-dragging { user-select:none; }
 .dy-dragging .dy-block { pointer-events:none !important; }
 .dy-dragging .dy-day-grid { outline:1px dashed rgba(96,165,250,0.35); }
