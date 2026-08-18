@@ -91,7 +91,9 @@ test.describe('Recurring — Mark done (API + DB evidence)', () => {
     });
 
     const after = await recurringSnapshot(id);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
     console.log('MARK-DONE EVIDENCE', JSON.stringify({
       before: pickRow(before.task, COLS),
       after: pickRow(after.task, COLS),
@@ -100,7 +102,7 @@ test.describe('Recurring — Mark done (API + DB evidence)', () => {
 
     expect(after.task.last_done).toBe(today);
     expect(after.task.rolls_used).toBe(0);
-    expect(after.recent_log[0].change).toMatch(/^marked done/);
+    expect(after.recent_log[0].change).toMatch(/^completed |^marked done/);
 
     // Delete the throwaway habit (cascade removes its recurring_log rows).
     await sbWrite(`recurring_tasks?id=eq.${id}`, { method: 'DELETE' });

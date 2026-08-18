@@ -8,6 +8,7 @@ const {
 } = require('./gcal-push-lib');
 const { autoSyncIfAllowed } = require('./gcal-auto-sync-lib');
 const { retireGapBuffersAfter } = require('./buffer-gap-lib');
+const { completeHabitOccurrence, findOccurrenceToComplete } = require('./habit-complete-lib');
 
 function addDaysYmd(ymd, n) {
   const d = new Date(`${ymd}T12:00:00Z`);
@@ -116,19 +117,45 @@ async function patchRecurring(id, body, actor) {
 }
 
 async function markDone(id, actor) {
-  const today = new Date().toISOString().slice(0, 10);
-  const rows = await sb(`recurring_tasks?id=eq.${id}`, {
-    method: 'PATCH',
-    body: { last_done: today, rolls_used: 0, updated_at: new Date().toISOString() },
-  });
-  const row = rows?.[0];
-  if (!row) {
+  const curRows = await sb(
+    `recurring_tasks?id=eq.${id}&select=id,title,rrule,last_done,duration_min`,
+  );
+  const cur = curRows?.[0];
+  if (!cur) {
     const err = new Error('recurring task not found');
     err.status = 404;
     throw err;
   }
-  await logRecurring(id, actor, `marked done ${today}`);
-  return row;
+  const occ = await findOccurrenceToComplete(sb, cur);
+  if (!occ?.ideal) {
+    const err = new Error('this occurrence is already marked done');
+    err.status = 400;
+    throw err;
+  }
+  const evtId = occ.log?.calendar_event_id || null;
+  const result = await completeHabitOccurrence(sb, {
+    habitId: id,
+    actor,
+    idealDate: occ.ideal,
+    scheduledDate: occ.log?.scheduled_date || occ.ideal,
+    calendarEventId: evtId,
+    completedAt: new Date().toISOString(),
+    actualMinutes: cur.duration_min,
+    rollReason: 'recurring_mark_done',
+  });
+  let calendar_sync = { skipped: true, reason: 'no_event' };
+  try {
+    calendar_sync = await autoSyncIfAllowed(sb, actor || 'recurring-mark-done');
+  } catch (e) {
+    calendar_sync = { skipped: true, error: e.message };
+  }
+  return {
+    ...cur,
+    ...result,
+    last_done: result.last_done,
+    calendar_writes: calendar_sync.skipped ? 0 : Number(calendar_sync.flush?.applied || 0),
+    calendar_sync,
+  };
 }
 
 /**

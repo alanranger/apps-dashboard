@@ -638,6 +638,9 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const canEdit = !!(b.editable && !isBuffer && !done && !b.gcal_orphan);
   // Allow drag even when task is pinned — drop will unlock. Client-fixed / deadlines stay undragged.
   const canDrag = !!(canEdit && !b.client_fixed && resolveDiaryMove(b));
+  const canComplete = !!(!done && !isBuffer && (
+    canEdit || (b.kind === 'habit' && b.habit_id) || (b.kind === 'deadline' && b.editable)
+  ));
   const status = [
     b.overdue ? 'dy-overdue' : '',
     b.running_late ? 'dy-late' : '',
@@ -671,7 +674,7 @@ function renderBlock(b, axis, conflicts, lane = 0) {
   const lock = locked
     ? '<span class="dy-lock" aria-label="pinned">🔒</span>'
     : '';
-  const doneBtn = canEdit && (b.kind === 'mc_task' || b.kind === 'habit' || b.kind === 'deadline')
+  const doneBtn = canComplete && (b.kind === 'mc_task' || b.kind === 'habit' || b.kind === 'deadline')
     ? `<button type="button" class="dy-done" data-dy-done title="Mark complete">☐</button>`
     : '';
   const grab = canDrag
@@ -1037,7 +1040,8 @@ function wireDiary(root, data, refresh) {
     if (!block || block.is_buffer || block.synthetic) return;
 
     if (e.target.closest('[data-dy-done]')) {
-      if (!block.editable || block.done) return;
+      if (block.done) return;
+      if (!block.editable && !(block.kind === 'habit' && block.habit_id)) return;
       try {
         await runMenuAction('complete', block, r);
       } catch (err) {

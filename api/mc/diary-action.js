@@ -14,6 +14,7 @@ const {
 const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
 const { autoSyncIfAllowed } = require('./gcal-auto-sync-lib');
 const { retireGapBuffersAfter } = require('./buffer-gap-lib');
+const { completeHabitOccurrence } = require('./habit-complete-lib');
 
 async function respondAfterChange(res, payload, actor) {
   let calendar_sync = { skipped: true, reason: 'not_attempted' };
@@ -406,92 +407,18 @@ module.exports = async function handler(req, res) {
         const scheduledDate = String(body.scheduled_date || body.completed_on || today).slice(0, 10);
         const ideal = String(body.ideal_date || scheduledDate).slice(0, 10);
         const completedAt = body.completed_at || new Date().toISOString();
-        const completedOn = isoToLondonDate(completedAt) || today;
-        const habit = (await sb(
-          `recurring_tasks?id=eq.${habitId}&select=id,title,last_done,duration_min`,
-        ))?.[0];
-        if (!habit) return json(res, 404, { error: 'habit not found' });
-        const mins = Number.isFinite(actualMin) && actualMin > 0
-          ? Math.round(actualMin)
-          : Number(habit.duration_min || 60);
-        const startMs = Date.parse(completedAt);
-        const scheduledStart = new Date(startMs).toISOString();
-        const scheduledEnd = new Date(startMs + mins * 60000).toISOString();
-        await sb(`recurring_tasks?id=eq.${habitId}`, {
-          method: 'PATCH', prefer: 'return=minimal',
-          body: {
-            last_done: completedOn,
-            rolls_used: 0,
-            updated_at: new Date().toISOString(),
-          },
-        });
-        const existing = await sb(
-          `recurring_log?recurring_task_id=eq.${habitId}&scheduled_date=eq.${scheduledDate}`
-          + '&select=id&order=at.desc&limit=1',
-        );
-        const logBody = {
-          change: `completed ${completedOn}|actual=${mins}|at=${scheduledStart}`,
-          roll_reason: 'diary_complete',
-          ideal_date: ideal,
-          // Keep occurrence key on original day; paint uses completion timestamp.
-          scheduled_date: scheduledDate,
-          calendar_event_id: body.calendar_event_id || null,
-          at: new Date().toISOString(),
-        };
-        if (existing?.[0]?.id) {
-          await sb(`recurring_log?id=eq.${existing[0].id}`, {
-            method: 'PATCH', prefer: 'return=minimal', body: logBody,
-          });
-        } else {
-          await sb('recurring_log', {
-            method: 'POST', prefer: 'return=minimal',
-            body: {
-              recurring_task_id: habitId,
-              actor,
-              ...logBody,
-              projection_key: `diary-complete:${habitId}:${ideal}`,
-            },
-          });
-        }
-        const related = relatedIdForHabit(habitId, ideal, body.calendar_event_id || null);
-        const habitEvtId = body.calendar_event_id || null;
-        await retireGapBuffersAfter(sb, upsertPushRow, {
-          afterEventId: habitEvtId,
-          labelHints: [habit.title],
-        });
-        await upsertPushRow(sb, {
-          related_id: related,
-          entity_type: 'habit',
-          change_kind: 'complete',
-          summary: `Complete habit ${habit.title} (${mins}m actual) @ ${completedOn}`,
-          proposed_action: `Move GCal event ${habitEvtId || '(create)'} to ${scheduledStart}–${scheduledEnd}`,
-          payload: {
-            habit_id: habitId,
-            title: habit.title,
-            completed_on: completedOn,
-            ideal_date: ideal,
-            scheduled_date: scheduledDate,
-            actual_minutes: mins,
-            scheduled_start: scheduledStart,
-            scheduled_end: scheduledEnd,
-            calendar_event_id: habitEvtId,
-          },
-        });
-        await supersedeSiblingHabitRows(sb, {
+        const mins = Number.isFinite(actualMin) && actualMin > 0 ? Math.round(actualMin) : null;
+        const moved = await completeHabitOccurrence(sb, {
           habitId,
-          keepRelatedId: related,
-          calendarEventId: habitEvtId,
-          idealDate: ideal,
-          scheduledDate: scheduledDate,
           actor,
+          idealDate: ideal,
+          scheduledDate,
+          calendarEventId: body.calendar_event_id || null,
+          completedAt,
+          actualMinutes: mins,
+          rollReason: 'diary_complete',
         });
-        return respondAfterChange(res, {
-          habit_id: habitId,
-          last_done: completedOn,
-          actual_minutes: mins,
-          scheduled_start: scheduledStart,
-          scheduled_end: scheduledEnd,
-        }, actor);
+        return respondAfterChange(res, moved, actor);
       }
       const completedAt = body.completed_at || new Date().toISOString();
       // Stamp on the moment of completion (UK calendar day), not the old planned day.

@@ -535,11 +535,47 @@ export async function handleRecurringClick(e, onSave) {
   }
   const done = e.target.closest('[data-rec-done]');
   if (done) {
-    await api('/api/mc/recurring', {
-      method: 'POST',
-      body: { action: 'mark_done', id: done.getAttribute('data-rec-done') },
+    if (skipBusy) return true;
+    const btn = done;
+    const label = btn.textContent;
+    skipBusy = true;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    const ui = openMcBusyModal({
+      title: 'Marking habit done',
+      doneTitle: 'Done saved',
+      failTitle: 'Mark done failed',
+      phases: [
+        'Save this occurrence as done',
+        'Move the Google Calendar block to now',
+        'Auto-sync with Google (can take 20–40s)',
+        'Refresh Occurrences list',
+      ],
     });
-    if (onSave) await onSave();
+    try {
+      ui.setPhase(0, 'saving…');
+      ui.setPhase(1, 'queue Google move…');
+      const res = await api('/api/mc/recurring', {
+        method: 'POST',
+        body: { action: 'mark_done', id: btn.getAttribute('data-rec-done') },
+      });
+      ui.setPhase(2, 'Google sync…');
+      const writes = res?.task?.calendar_writes ?? res?.calendar_writes ?? 0;
+      ui.setPhase(3, 'refreshing…');
+      if (onSave) await onSave();
+      ui.finish(
+        writes > 0
+          ? `Marked done today. Google updated (${writes} write${writes === 1 ? '' : 's'}).`
+          : 'Marked done today. Google sync skipped or had nothing to write.',
+      );
+    } catch (err) {
+      ui.fail(err);
+      window.alert(err.message || 'Mark done failed');
+    } finally {
+      skipBusy = false;
+      btn.disabled = false;
+      btn.textContent = label;
+    }
     return true;
   }
   const skip = e.target.closest('[data-rec-skip]');

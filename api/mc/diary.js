@@ -12,6 +12,7 @@ const {
   fixtureFlanksToBlocks, allDayBannersFromBusy, holidayMapFromRows,
   habitLogsToBlocks, insertDecompressStrips, attachWeekCapacity, awayBusySegments,
   indexGcalEventsById, applyGcalBaselineTimes, untiedMcBlocks, hotelDeadlineBlocks,
+  attachHabitIdsToOrphans,
   DAY_START_MIN, DAY_END_MIN, AXIS_STEP_MIN, PX_PER_STEP, GRID_PX,
 } = require('./diary-lib');
 const { listOpenPush, listAwaySpanBacklog, BACKLOG_SQL_HINT } = require('./gcal-push-lib');
@@ -60,7 +61,7 @@ module.exports = async function handler(req, res) {
     const [tasks, travel, habits, logs, pushOpen, backlog, fixtureRows, bhRows, flushPlan, hotels] = await Promise.all([
       sb(`tasks?select=id,display_id,title,state,priority,due_date,completed_on,last_activity_at,scheduled_start,scheduled_end,slot_pinned,calendar_event_id,est_minutes,actual_minutes&scheduled_start=gte.${timeMin}&scheduled_start=lt.${timeMax}&order=scheduled_start.asc`),
       sb(`travel_blocks?select=*&starts_at=gte.${timeMin}&starts_at=lt.${timeMax}&order=starts_at.asc`),
-      sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done&active=eq.true'),
+      sb('recurring_tasks?select=id,title,duration_min,ideal_time,priority,active,last_done,rrule&active=eq.true'),
       sb(`recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at&scheduled_date=gte.${from}&scheduled_date=lte.${to}&order=scheduled_date.asc`),
       listOpenPush(sb),
       listAwaySpanBacklog(sb),
@@ -122,7 +123,7 @@ module.exports = async function handler(req, res) {
     for (const d of deadlines) {
       if (d.calendar_event_id) tiedIds.add(d.calendar_event_id);
     }
-    const orphans = untiedMcBlocks(mcEvents, tiedIds);
+    const orphans = attachHabitIdsToOrphans(untiedMcBlocks(mcEvents, tiedIds), habits);
     // Drop Google-only MC 🔁 twins when Diary already owns that habit that day — they
     // steal clicks / show CONFLICT and aren't draggable until retired by Push.
     const merged = suppressOrphanMcTwins([...baselined, ...deadlines, ...orphans]);

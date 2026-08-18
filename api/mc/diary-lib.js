@@ -11,6 +11,7 @@ const {
   londonYmdHmToUtcMs,
 } = require('./habit-placer-lib');
 const { isForceBusyCalendar, EXPECTED_CALENDARS } = require('./gcal-lib');
+const { lastDueOnOrBefore } = require('./rrule-core');
 
 /** 05:00–23:00 so Peak sunrise / early travel legs are visible (was 07:00). */
 const DAY_START_MIN = 5 * 60;
@@ -574,6 +575,22 @@ function untiedMcBlocks(mcEvents, tiedIds) {
   return out;
 }
 
+/** Link Google-only MC habit copies to the recurring row so ☐ complete works. */
+function attachHabitIdsToOrphans(orphans, habits) {
+  const list = habits || [];
+  return (orphans || []).map((b) => {
+    if (!b || b.kind !== 'habit' || b.habit_id || b.done) return b;
+    const hit = list.find((h) => titlesSameHabit(h.title, b.title));
+    if (!hit) return b;
+    let ideal = b.ideal_date || b.day;
+    try {
+      const due = lastDueOnOrBefore(hit.rrule, b.day || b.start);
+      if (due) ideal = due;
+    } catch (_) { /* keep day */ }
+    return { ...b, habit_id: hit.id, ideal_date: ideal };
+  });
+}
+
 /**
  * Hotel / room-release reminders → editable deadline blocks (Mark complete / Skip).
  * Linked via workshop_hotels.reminder_event_id when present.
@@ -897,6 +914,7 @@ module.exports = {
   habitLogsToBlocks,
   normalizeMcTitle,
   suppressOrphanMcTwins,
+  attachHabitIdsToOrphans,
   parseDiaryPin,
   parseCompleteMeta,
   isSkippedChange,
