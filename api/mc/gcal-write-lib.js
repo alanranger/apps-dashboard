@@ -30,12 +30,30 @@ async function gcalFetch(method, path, body) {
   return data;
 }
 
-function timedEventBody({ summary, startIso, endIso, description, location }) {
+function mcShowsAsFree(summary) {
+  const t = String(summary || '');
+  if (/MC\s*🚗|Travel out|Travel back|Travel —/i.test(t)) return false;
+  if (/MC\s*⏳|Decompress|Prep —/i.test(t)) return false;
+  if (/MC\s*🚫|MC\s*🛌|AWAY —|REST —/i.test(t)) return false;
+  if (/MC\s*⚽/i.test(t)) return false;
+  if (/MC\s*🔁/.test(t)) return true;
+  if (/^P\d\s*·\s*MC-/i.test(t)) return true;
+  if (/^MC\b/i.test(t)) return true;
+  return false;
+}
+
+function transparencyForSummary(summary, explicit) {
+  if (explicit === 'transparent' || explicit === 'opaque') return explicit;
+  return mcShowsAsFree(summary) ? 'transparent' : 'opaque';
+}
+
+function timedEventBody({ summary, startIso, endIso, description, location, transparency }) {
   const body = {
     summary: summary || 'MC event',
     start: { dateTime: startIso, timeZone: 'Europe/London' },
     end: { dateTime: endIso, timeZone: 'Europe/London' },
     colorId: '10',
+    transparency: transparencyForSummary(summary, transparency),
     reminders: { useDefault: false, overrides: [] },
   };
   if (description) body.description = description;
@@ -74,6 +92,9 @@ async function patchPrimaryEvent(eventId, opts) {
   }
   if (opts.colorId != null) body.colorId = opts.colorId;
   if (opts.reminders != null) body.reminders = opts.reminders;
+  if (opts.transparency != null || opts.summary != null) {
+    body.transparency = transparencyForSummary(opts.summary, opts.transparency);
+  }
   return gcalFetch(
     'PATCH',
     `/calendars/${encodeURIComponent(PRIMARY)}/events/${encodeURIComponent(eventId)}`,
@@ -174,8 +195,26 @@ async function testWriteRoundTrip() {
   }
 }
 
+async function applyMcShowAsFree(events, { limit = 40 } = {}) {
+  const patched = [];
+  const skipped = [];
+  for (const e of events || []) {
+    if (patched.length >= limit) break;
+    if ((e._calendarId || 'primary') !== 'primary' || !e.id) continue;
+    if (!mcShowsAsFree(e.summary)) continue;
+    if (e.transparency === 'transparent') {
+      skipped.push(e.id);
+      continue;
+    }
+    await patchPrimaryEvent(e.id, { transparency: 'transparent' });
+    patched.push({ id: e.id, summary: e.summary });
+  }
+  return { patched, already_free: skipped.length };
+}
+
 module.exports = {
   PRIMARY,
+  mcShowsAsFree,
   insertPrimaryEvent,
   insertPrimaryAllDayEvent,
   patchPrimaryEvent,
@@ -185,4 +224,5 @@ module.exports = {
   testWriteRoundTrip,
   timedEventBody,
   allDayEventBody,
+  applyMcShowAsFree,
 };

@@ -6,11 +6,12 @@
  */
 const { ruleMapFromRows } = require('./scheduling-rules-lib');
 const { buildFlushPlan, applyFlushPlan } = require('./gcal-flush-lib');
-const { gcalConfigured } = require('./gcal-lib');
+const { gcalConfigured, fetchHorizonEvents } = require('./gcal-lib');
 const { runRuleEventMasterSync } = require('./rule-event-masters-lib');
 const {
   defaultHorizon, loadDbMasters, snapshotPrimaryMc,
 } = require('./gcal-rebuild-lib');
+const { applyMcShowAsFree } = require('./gcal-write-lib');
 
 function flagsFromRules(ruleMap) {
   return {
@@ -118,6 +119,14 @@ async function pushSync(sb, actor, {
     const plan = await buildFlushPlan(sb, { includeBacklog: !!includeBacklog });
     const batchLimit = Math.max(1, Math.min(40, Number(limit) || 25));
     const flush = await applyFlushPlan(sb, plan, actor || 'cursor-push', { limit: batchLimit });
+    let show_as_free = null;
+    try {
+      const hz = defaultHorizon();
+      const snap = await fetchHorizonEvents(hz.timeMin, hz.timeMax);
+      show_as_free = await applyMcShowAsFree(snap.events || [], { limit: 40 });
+    } catch (e) {
+      show_as_free = { error: e.message };
+    }
     let rule_masters = null;
     // Only refresh rule masters on the final batch (nothing left) — avoids timeout.
     const moreLeft = (flush.remaining_planned || 0) > 0;
@@ -131,6 +140,13 @@ async function pushSync(sb, actor, {
     return {
       mode: 'manual_push',
       flags,
+      show_as_free: show_as_free
+        ? {
+          patched: (show_as_free.patched || []).length,
+          already_free: show_as_free.already_free || 0,
+          error: show_as_free.error || null,
+        }
+        : null,
       flush: {
         planned: plan.write_count,
         applied: flush.applied,

@@ -50,12 +50,27 @@ test('flush plan refuses move when only changelog title available', () => {
   assert.equal(plan.reason, 'move_missing_db_title');
 });
 
-test('writer body sets colorId 10 and no reminders', () => {
-  const body = timedEventBody({
+test('writer body sets colorId 10, no reminders, habits/tasks Free', () => {
+  const habit = timedEventBody({
     summary: 'MC 🔁 Test',
     startIso: '2026-08-01T09:00:00.000Z',
     endIso: '2026-08-01T10:00:00.000Z',
   });
-  assert.equal(body.colorId, '10');
-  assert.deepEqual(body.reminders, { useDefault: false, overrides: [] });
+  assert.equal(habit.colorId, '10');
+  assert.equal(habit.transparency, 'transparent');
+  assert.deepEqual(habit.reminders, { useDefault: false, overrides: [] });
+
+  const task = timedEventBody({
+    summary: 'P2 · MC-12 · Page-3 competitor sign-off',
+    startIso: '2026-08-01T09:00:00.000Z',
+    endIso: '2026-08-01T10:00:00.000Z',
+  });
+  assert.equal(task.transparency, 'transparent');
+
+  const travel = timedEventBody({
+    summary: 'MC 🚗 Travel out — Kenilworth',
+    startIso: '2026-08-01T09:00:00.000Z',
+    endIso: '2026-08-01T10:00:00.000Z',
+  });
+  assert.equal(travel.transparency, 'opaque');
 });

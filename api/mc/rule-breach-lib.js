@@ -406,7 +406,6 @@ function splitMcAndBusy(events, ruleMap = {}) {
     const showAsFree = e.transparency === 'transparent';
 
     if (isMcBlock(e)) {
-      if (showAsFree) continue;
       mc.push({
         id: e.id,
         summary: e.summary,
@@ -415,6 +414,7 @@ function splitMcAndBusy(events, ruleMap = {}) {
         display_id: e.display_id,
         slot_pinned: e.slot_pinned,
         is_mc: true,
+        show_as_free: showAsFree || undefined,
         start: e.start?.dateTime || e.start,
         end: e.end?.dateTime || e.end,
       });
