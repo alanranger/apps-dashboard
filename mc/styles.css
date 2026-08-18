@@ -849,7 +849,6 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block.dy-lane-2 { left:22% !important; right:22% !important; z-index:13 !important; }
 .dy-block.dy-ro { cursor:default; opacity:0.92; }
 .dy-block.dy-edit.dy-conflict { z-index:14 !important; }
-.dy-block.dy-gcal-orphan { pointer-events:none; opacity:0.55; }
 .dy-edit-badge {
   flex-shrink:0; font-size:9px; font-weight:800; letter-spacing:0.04em;
   padding:0 4px; border-radius:3px; line-height:14px;
@@ -1015,6 +1014,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-orphan-badge { background:#64748b; color:#fff; }
 .dy-block.dy-oos { outline:2px dashed #f59e0b; }
 .dy-block.dy-gcal-orphan { opacity:0.88; border-style:dashed; }
+.dy-block.dy-habit.dy-gcal-orphan { cursor:pointer; }
 .dy-drift-banner {
   margin:8px 0; padding:8px 10px; border-radius:6px;
   border:1px solid rgba(245,158,11,0.5); background:rgba(245,158,11,0.12);
