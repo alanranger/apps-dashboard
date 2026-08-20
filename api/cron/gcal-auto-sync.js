@@ -15,6 +15,7 @@ const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-
 const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
 const { ruleMapFromRows } = require('../mc/scheduling-rules-lib');
 const { londonToday, addDaysYmd } = require('../mc/diary-lib');
+const { purgeUntiedMcOrphansDaily } = require('../mc/gcal-orphan-purge-lib');
 
 function authOk(req) {
   const secret = process.env.CRON_SECRET || process.env.MC_CRON_SECRET;
@@ -99,12 +100,20 @@ module.exports = async function handler(req, res) {
       ? null
       : await dryRunSync(sb);
 
+    let orphan_purge = null;
+    try {
+      orphan_purge = await purgeUntiedMcOrphansDaily(sb, { limit: 40 });
+    } catch (e) {
+      orphan_purge = { skipped: true, error: e.message || 'orphan_purge_failed' };
+    }
+
     return json(res, 200, {
       ok: true,
       ran_at: new Date().toISOString(),
       client_buffers,
       reconcile,
       auto,
+      orphan_purge,
       pending_dry_if_blocked: dry?.flush || null,
     });
   } catch (e) {
