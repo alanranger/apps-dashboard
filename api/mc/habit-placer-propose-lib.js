@@ -17,6 +17,40 @@ const { relatedIdForTask, relatedIdForHabit, upsertPushRow } = require('./gcal-p
 const { idealsInHorizon } = require('./rrule-core');
 const { computeMissedProposal } = require('./missed-habit-lib');
 const { priorityRank } = require('./priority-lib');
+const { retireGapBuffersAfter } = require('./buffer-gap-lib');
+
+/** Monday of the Mon–Sun week containing London YMD. */
+function mondayOnOrBeforeYmd(ymd) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  const dow = d.getUTCDay();
+  const back = dow === 0 ? 6 : dow - 1;
+  return addDays(ymd, -back);
+}
+
+function isOpenDiaryPinChange(change) {
+  return /^diary_pin:/i.test(String(change || ''));
+}
+
+/**
+ * Among open pins, if two+ land in the same week, skip older ideals.
+ * Keep the newest ideal_date in each habit×week group.
+ */
+function pickOlderSameWeekSkips(pins) {
+  const byHabitWeek = new Map();
+  for (const p of pins || []) {
+    if (!p?.habit_id || !p.scheduled_date || !p.ideal_date) continue;
+    const key = `${p.habit_id}|${mondayOnOrBeforeYmd(p.scheduled_date)}`;
+    if (!byHabitWeek.has(key)) byHabitWeek.set(key, []);
+    byHabitWeek.get(key).push(p);
+  }
+  const skips = [];
+  for (const group of byHabitWeek.values()) {
+    if (group.length < 2) continue;
+    group.sort((a, b) => String(b.ideal_date).localeCompare(String(a.ideal_date)));
+    for (const older of group.slice(1)) skips.push(older);
+  }
+  return skips;
+}
 
 function londonHm(iso) {
   try {
@@ -644,6 +678,87 @@ async function clearHabitsDatedOnBlockedDays(sb, blockedSpans, fromYmd, toYmd, p
   return cleared;
 }
 
+/**
+ * If an overdue roll and the next occurrence both sit in the same Mon–Sun week,
+ * auto-skip the older ideal (queue GCal delete) and keep the newer one.
+ */
+async function collapseSameWeekOlderPins(sb, { fromYmd, toYmd, habits }) {
+  const logs = await sb(
+    'recurring_log?select=id,recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,at'
+    + `&scheduled_date=gte.${fromYmd}&scheduled_date=lte.${toYmd}`
+    + '&order=at.desc&limit=8000',
+  ) || [];
+  const habitMap = new Map((habits || []).map((h) => [h.id, h]));
+  const best = new Map();
+  for (const log of logs) {
+    if (!isOpenDiaryPinChange(log.change)) continue;
+    if (!log.recurring_task_id || !log.scheduled_date) continue;
+    const ideal = log.ideal_date || log.scheduled_date;
+    const key = `${log.recurring_task_id}:${ideal}`;
+    if (!best.has(key)) best.set(key, log);
+  }
+  const pins = [...best.values()].map((log) => ({
+    log_id: log.id,
+    habit_id: log.recurring_task_id,
+    title: habitMap.get(log.recurring_task_id)?.title || 'habit',
+    ideal_date: log.ideal_date || log.scheduled_date,
+    scheduled_date: log.scheduled_date,
+    calendar_event_id: log.calendar_event_id || null,
+  }));
+  const skips = pickOlderSameWeekSkips(pins);
+  let skipped = 0;
+  for (const p of skips) {
+    const note = `skipped occurrence ${p.ideal_date}: same_week_as_next`;
+    const logBody = {
+      change: note,
+      ideal_date: p.ideal_date,
+      scheduled_date: p.scheduled_date,
+      calendar_event_id: p.calendar_event_id,
+      roll_reason: 'same_week_collapse',
+      at: new Date().toISOString(),
+    };
+    if (p.log_id) {
+      await sb(`recurring_log?id=eq.${p.log_id}`, {
+        method: 'PATCH', prefer: 'return=minimal', body: logBody,
+      });
+    } else {
+      await sb('recurring_log', {
+        method: 'POST', prefer: 'return=minimal',
+        body: {
+          recurring_task_id: p.habit_id,
+          actor: 'cursor',
+          ...logBody,
+          projection_key: `same-week-skip:${p.habit_id}:${p.ideal_date}`,
+        },
+      });
+    }
+    if (p.calendar_event_id) {
+      await retireGapBuffersAfter(sb, upsertPushRow, {
+        afterEventId: p.calendar_event_id,
+        labelHints: [p.title],
+      }).catch(() => {});
+    }
+    await upsertPushRow(sb, {
+      related_id: relatedIdForHabit(p.habit_id, p.ideal_date, p.calendar_event_id),
+      entity_type: 'habit',
+      change_kind: 'skip',
+      summary: `Same-week collapse: skip older ${p.title} (${p.ideal_date})`,
+      proposed_action: p.calendar_event_id
+        ? `Delete GCal event ${p.calendar_event_id} — newer occurrence already in same week.`
+        : `Log skipped only — newer occurrence already in same week.`,
+      payload: {
+        habit_id: p.habit_id,
+        ideal_date: p.ideal_date,
+        scheduled_date: p.scheduled_date,
+        calendar_event_id: p.calendar_event_id,
+        action: p.calendar_event_id ? 'delete_event' : undefined,
+      },
+    });
+    skipped += 1;
+  }
+  return { skipped, sample: skips.slice(0, 8).map((p) => `${p.title} ${p.ideal_date}→${p.scheduled_date}`) };
+}
+
 /** Past habit ideals with no Complete/Skip → concrete next-slot pin + GCal queue. */
 async function applyIncompleteHabitRolls(ctx) {
   const {
@@ -1220,6 +1335,16 @@ async function runHabitPlacerPropose(ctx) {
       habitRolls = { rolled: 0, error: e.message };
     }
     try {
+      const collapsed = await collapseSameWeekOlderPins(sb, {
+        fromYmd,
+        toYmd,
+        habits: habits || [],
+      });
+      habitRolls = { ...habitRolls, same_week_skipped: collapsed.skipped, same_week_sample: collapsed.sample };
+    } catch (e) {
+      habitRolls = { ...habitRolls, same_week_skipped: 0, same_week_error: e.message };
+    }
+    try {
       const rehome = await rehomePinsOverHardBusy({
         sb,
         habits: habits || [],
@@ -1321,6 +1446,9 @@ module.exports = {
   applyHabitAmendmentToDb,
   clearHabitsDatedOnBlockedDays,
   applyIncompleteHabitRolls,
+  collapseSameWeekOlderPins,
+  pickOlderSameWeekSkips,
+  mondayOnOrBeforeYmd,
   rehomePinsOverHardBusy,
   runHabitPlacerPropose,
   ruleMapFromRows,
