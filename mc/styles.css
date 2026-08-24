@@ -176,7 +176,20 @@
       border-radius: 12px; padding: 16px; max-height: 90vh; overflow: auto;
     }
     .modal label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 4px; }
-    .modal input, .modal select, .modal textarea { width: 100%; padding: 8px; }
+    /* Light fields: inputs sit inside <label>, so color:inherit was picking dim label text. */
+    .modal input:not([type="checkbox"]),
+    .modal select,
+    .modal textarea {
+      width: 100%;
+      padding: 8px;
+      color: #0d1117;
+      background: #e8edf5;
+      border: 1px solid #9aa4b8;
+    }
+    .modal input:not([type="checkbox"])::placeholder,
+    .modal textarea::placeholder {
+      color: #64708a;
+    }
     .lightbox {
       position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none;
       align-items: center; justify-content: center; z-index: 70; padding: 16px;
