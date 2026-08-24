@@ -1,6 +1,10 @@
 import { store } from './store.js';
 import { $, esc, fmtTime, fmtDate } from './util.js';
-import { nextDueFromRrule, lastDueOnOrBefore, occurrencesInRange, RRULE_PRESETS } from './rrule.js';
+import {
+  nextDueFromRrule, lastDueOnOrBefore, idealsInHorizon,
+  parseBuilder, buildRrule, humanCadence, setPhaseStart, dowCodeFromYmd,
+  CADENCE_PATTERNS, DOW_NAME, DOW_CODE,
+} from './rrule.js';
 import { api } from './api.js';
 import { prioritySelectOptions } from './priority.js';
 export const DIARY_HORIZON_DAYS = 28;
@@ -61,25 +65,6 @@ function nextDue(task) {
   }
 }
 
-function matchPresetId(rrule) {
-  const r = String(rrule || '');
-  const exact = RRULE_PRESETS.find((p) => p.rrule === r);
-  if (exact) return exact.id;
-  if (/FREQ=MONTHLY;INTERVAL=3;BYDAY=/i.test(r)) return 'quarterly-nth';
-  if (/FREQ=MONTHLY;INTERVAL=2;BYDAY=/i.test(r)) return 'monthly-nth-bi';
-  if (/FREQ=MONTHLY;BYDAY=/i.test(r)) return 'monthly-nth';
-  if (/FREQ=MONTHLY;BYMONTHDAY=/i.test(r)) return 'monthly-dom';
-  if (/FREQ=WEEKLY/i.test(r)) return 'weekly';
-  return 'custom';
-}
-
-function presetOptions(selectedRrule) {
-  const sel = matchPresetId(selectedRrule);
-  return RRULE_PRESETS.map((p) =>
-    `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(p.label)}</option>`,
-  ).join('');
-}
-
 /** London wall-clock ymd+HH:MM → ISO (same correction as diary). */
 function londonYmdHmToIso(ymd, hm) {
   const want = Number(hm.slice(0, 2)) * 60 + Number(hm.slice(3, 5));
@@ -112,30 +97,256 @@ function fmtOccDay(ymd) {
   });
 }
 
-function wirePreset(prefix) {
-  $(`${prefix}Preset`).onchange = (e) => {
-    const p = RRULE_PRESETS.find((x) => x.id === e.target.value);
-    if (p && p.id !== 'custom') {
-      $(`${prefix}Rrule`).value = p.rrule;
-      if (p.cadence) $(`${prefix}Cadence`).value = p.cadence;
-    }
-  };
+function addMinutesHm(hm, mins) {
+  const [h, m] = String(hm || '09:00').slice(0, 5).split(':').map(Number);
+  const total = ((h * 60 + m) + Number(mins || 0) + 24 * 60) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function patternOptions(selected) {
+  return CADENCE_PATTERNS.map((p) =>
+    `<option value="${esc(p.id)}" ${p.id === selected ? 'selected' : ''}>${esc(p.label)}</option>`,
+  ).join('');
+}
+
+function dowOptions(selected) {
+  return DOW_CODE.map((c) =>
+    `<option value="${c}" ${c === selected ? 'selected' : ''}>${esc(DOW_NAME[c])}</option>`,
+  ).join('');
+}
+
+function nthOptions(selected) {
+  return [1, 2, 3, 4, -1].map((n) => {
+    const label = n === -1 ? 'Last' : `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
+    return `<option value="${n}" ${Number(selected) === n ? 'selected' : ''}>${label}</option>`;
+  }).join('');
 }
 
 function formFields(prefix, t = {}) {
+  const b = parseBuilder(t.rrule || 'FREQ=WEEKLY;BYDAY=TH');
   return `
     <label>Title<input id="${prefix}Title" value="${esc(t.title || '')}" placeholder="e.g. Backup Photos to Portable Drive" /></label>
+    <div class="rec-builder">
+      <label>Pattern<select id="${prefix}Pattern">${patternOptions(b.pattern)}</select></label>
+      <label>Every N<input id="${prefix}Interval" type="number" min="1" value="${b.interval}" title="Weeks or months depending on pattern" /></label>
+      <label class="rec-bld-dow">Weekday<select id="${prefix}Byday">${dowOptions(b.byday)}</select></label>
+      <label class="rec-bld-nth">Nth<select id="${prefix}Nth">${nthOptions(b.nth)}</select></label>
+      <label class="rec-bld-dom">Day of month<input id="${prefix}Monthday" type="number" min="1" max="31" value="${b.monthday}" /></label>
+      <label class="rec-bld-custom">Custom RRULE<input id="${prefix}CustomRrule" value="${esc(b.customRrule || '')}" /></label>
+    </div>
     <label>Cadence (human)<input id="${prefix}Cadence" value="${esc(t.cadence_text || '')}" placeholder="Every Thursday" /></label>
-    <label>Preset pattern<select id="${prefix}Preset">${presetOptions(t.rrule || '')}</select></label>
-    <label>RRULE<input id="${prefix}Rrule" value="${esc(t.rrule || 'FREQ=WEEKLY;BYDAY=TH')}" /></label>
+    <p class="meta">Derived RRULE: <code id="${prefix}RrulePreview">${esc(t.rrule || 'FREQ=WEEKLY;BYDAY=TH')}</code></p>
+    <input type="hidden" id="${prefix}Rrule" value="${esc(t.rrule || 'FREQ=WEEKLY;BYDAY=TH')}" />
+    <input type="hidden" id="${prefix}PhaseStart" value="${esc(b.phaseStart || '')}" />
     <label>Duration (min)<input id="${prefix}Dur" type="number" min="5" value="${t.duration_min || 60}" /></label>
     <label>Priority<select id="${prefix}Pri">${prioritySelectOptions(t.priority || 'p1')}</select></label>
     <label>Ideal time<input id="${prefix}Time" type="time" value="${String(t.ideal_time || '09:00').slice(0, 5)}" /></label>
     <label>Window days (how far slot may drift from ideal)<input id="${prefix}Win" type="number" min="0" value="${t.window_days != null ? t.window_days : 2}" /></label>
     <label class="rec-toggle"><input id="${prefix}Crit" type="checkbox" ${t.time_critical ? 'checked' : ''} /> Time-critical (deadline: roll <strong>earlier</strong>; month-day / 1MO anchors always roll <strong>forward</strong> only)</label>
+    <div class="rec-reanchor inset">
+      <h3 style="font-size:13px;margin:0 0 6px">Re-anchor series (optional)</h3>
+      <p class="meta" style="margin:0 0 6px">Sets the next ideal date and recalculates later dates from your frequency. Leave blank to keep the current phase.</p>
+      <label>Next due / re-anchor date<input id="${prefix}Reanchor" type="date" value="" /></label>
+      <label class="rec-toggle"><input id="${prefix}ReanchorGo" type="checkbox" /> Rebuild series from this date on Save</label>
+    </div>
+    <div class="rec-planned" id="${prefix}PlannedWrap">
+      <h3 style="font-size:13px;margin:8px 0 4px">Planned dates</h3>
+      <p class="meta" style="margin:0 0 6px">Change date/time on a row to override that occurrence only. Cadence stays; other dates keep the calculated schedule.</p>
+      <div id="${prefix}Planned" class="rec-planned-list"></div>
+    </div>
     <label>Legacy note (optional)<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Ignored by Occurrences column — diary log is truth" /></label>
     <label>Notes<textarea id="${prefix}Notes" rows="3">${esc(t.notes_md || '')}</textarea></label>
-    <p class="meta">Occurrences on this tab come from <strong>recurring_log</strong> (placer / Diary drag / skip). Push writes Google; this tab never invents a pin.</p>`;
+    <p class="meta">Overrides write to <strong>recurring_log</strong> (same as Diary drag). Push syncs Google.</p>`;
+}
+
+function readBuilderState(prefix) {
+  const pattern = $(`${prefix}Pattern`)?.value || 'weekly';
+  return {
+    pattern,
+    interval: Number($(`${prefix}Interval`)?.value) || 1,
+    byday: $(`${prefix}Byday`)?.value || 'WE',
+    nth: Number($(`${prefix}Nth`)?.value) || 1,
+    monthday: Number($(`${prefix}Monthday`)?.value) || 1,
+    customRrule: $(`${prefix}CustomRrule`)?.value || '',
+    phaseStart: $(`${prefix}PhaseStart`)?.value || null,
+  };
+}
+
+function syncBuilderVisibility(prefix) {
+  const pattern = $(`${prefix}Pattern`)?.value || 'weekly';
+  const show = (cls, on) => {
+    document.querySelectorAll(`#modal .${cls}`).forEach((el) => {
+      el.style.display = on ? '' : 'none';
+    });
+  };
+  show('rec-bld-dow', pattern === 'weekly' || pattern === 'monthly_nth');
+  show('rec-bld-nth', pattern === 'monthly_nth');
+  show('rec-bld-dom', pattern === 'monthly_dom');
+  show('rec-bld-custom', pattern === 'custom');
+  const ivLabel = $(`${prefix}Interval`)?.closest('label');
+  if (ivLabel && ivLabel.childNodes[0]) {
+    ivLabel.childNodes[0].textContent = pattern === 'monthly_dom' || pattern === 'monthly_nth'
+      ? 'Every N months '
+      : 'Every N weeks ';
+  }
+}
+
+function applyBuilderToHidden(prefix, { syncCadence = true } = {}) {
+  const state = readBuilderState(prefix);
+  const rrule = buildRrule(state);
+  const hidden = $(`${prefix}Rrule`);
+  const preview = $(`${prefix}RrulePreview`);
+  if (hidden) hidden.value = rrule;
+  if (preview) preview.textContent = rrule;
+  if (syncCadence) {
+    const auto = humanCadence(state);
+    const cad = $(`${prefix}Cadence`);
+    if (cad && auto) cad.value = auto;
+  }
+  return rrule;
+}
+
+function plannedRowHtml(prefix, task, ideal, rowState) {
+  const st = occurrenceStatus(task || { id: '', last_done: null }, ideal);
+  const day = rowState.day || ideal;
+  const start = rowState.start || String(task?.ideal_time || '09:00').slice(0, 5);
+  const end = rowState.end || addMinutesHm(start, task?.duration_min || 60);
+  const dirty = rowState.dirty ? ' rec-planned-dirty' : '';
+  const locked = st.kind === 'done' || st.kind === 'skipped';
+  return `<div class="rec-planned-row${dirty}" data-ideal="${esc(ideal)}">
+    <div class="rec-planned-ideal"><strong>${esc(fmtOccDay(ideal))}</strong>
+      <span class="meta">${esc(st.kind)}</span></div>
+    <label>Date<input type="date" data-pl-day="${esc(ideal)}" value="${esc(day)}" ${locked ? 'disabled' : ''} /></label>
+    <label>Start<input type="time" data-pl-start="${esc(ideal)}" value="${esc(start)}" ${locked ? 'disabled' : ''} /></label>
+    <label>End<input type="time" data-pl-end="${esc(ideal)}" value="${esc(end)}" ${locked ? 'disabled' : ''} /></label>
+  </div>`;
+}
+
+function defaultPlannedState(task, ideal) {
+  const st = occurrenceStatus(task || { id: '', last_done: null }, ideal);
+  let day = ideal;
+  let start = String(task?.ideal_time || '09:00').slice(0, 5);
+  let end = addMinutesHm(start, task?.duration_min || 60);
+  if (st.kind === 'pinned') {
+    const log = latestLogForIdeal(task.id, ideal);
+    if (log?.scheduled_date) day = log.scheduled_date;
+    const m = String(log?.change || '').match(/^diary_pin:([^|]+)\|([^|]+)/);
+    if (m) {
+      const hm = londonHmFromIso(m[1]);
+      const hmEnd = londonHmFromIso(m[2]);
+      if (hm) start = hm;
+      if (hmEnd) end = hmEnd;
+    }
+  }
+  return { day, start, end, dirty: false };
+}
+
+function renderPlannedList(prefix, task, overrides) {
+  const wrap = $(`${prefix}Planned`);
+  if (!wrap) return;
+  const rrule = $(`${prefix}Rrule`)?.value || task?.rrule || '';
+  const fake = { ...(task || {}), id: task?.id || '', rrule, ideal_time: $(`${prefix}Time`)?.value || task?.ideal_time || '09:00', duration_min: Number($(`${prefix}Dur`)?.value) || task?.duration_min || 60 };
+  const ideals = upcomingIdeals(fake, 8);
+  wrap.innerHTML = ideals.length
+    ? ideals.map((ideal) => {
+      const base = overrides.get(ideal) || defaultPlannedState(fake, ideal);
+      return plannedRowHtml(prefix, fake, ideal, base);
+    }).join('')
+    : '<p class="meta">No upcoming dates from this cadence.</p>';
+}
+
+function collectDirtyOverrides(prefix) {
+  const rows = [];
+  document.querySelectorAll(`#${prefix}Planned .rec-planned-row.rec-planned-dirty`).forEach((row) => {
+    const ideal = row.getAttribute('data-ideal');
+    const day = row.querySelector('[data-pl-day]')?.value;
+    const start = row.querySelector('[data-pl-start]')?.value;
+    const end = row.querySelector('[data-pl-end]')?.value;
+    if (!ideal || !day || !start || !end) return;
+    rows.push({ ideal, day, start, end, dirty: true });
+  });
+  return rows;
+}
+
+function wireCadenceBuilder(prefix, task) {
+  const overrides = new Map();
+  const cadenceTouched = { v: false };
+  const cad = $(`${prefix}Cadence`);
+  if (cad) cad.addEventListener('input', () => { cadenceTouched.v = true; });
+
+  const refresh = () => {
+    applyBuilderToHidden(prefix, { syncCadence: !cadenceTouched.v });
+    renderPlannedList(prefix, task, overrides);
+  };
+
+  syncBuilderVisibility(prefix);
+  applyBuilderToHidden(prefix, { syncCadence: !tHasCadence(task) });
+  renderPlannedList(prefix, task, overrides);
+
+  ['Pattern', 'Interval', 'Byday', 'Nth', 'Monthday', 'CustomRrule', 'Time', 'Dur'].forEach((suf) => {
+    const el = $(`${prefix}${suf}`);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      syncBuilderVisibility(prefix);
+      overrides.clear();
+      refresh();
+    });
+    el.addEventListener('input', () => {
+      if (suf === 'CustomRrule' || suf === 'Interval' || suf === 'Monthday') {
+        syncBuilderVisibility(prefix);
+        overrides.clear();
+        refresh();
+      }
+    });
+  });
+
+  const planned = $(`${prefix}Planned`);
+  if (planned) {
+    planned.addEventListener('change', (e) => {
+      const t = e.target;
+      const ideal = t.getAttribute('data-pl-day') || t.getAttribute('data-pl-start') || t.getAttribute('data-pl-end');
+      if (!ideal) return;
+      const row = t.closest('.rec-planned-row');
+      if (!row) return;
+      row.classList.add('rec-planned-dirty');
+      overrides.set(ideal, {
+        day: row.querySelector('[data-pl-day]')?.value || ideal,
+        start: row.querySelector('[data-pl-start]')?.value || '09:00',
+        end: row.querySelector('[data-pl-end]')?.value || '10:00',
+        dirty: true,
+      });
+    });
+  }
+
+  const reGo = $(`${prefix}ReanchorGo`);
+  const reDate = $(`${prefix}Reanchor`);
+  if (reGo && reDate) {
+    reGo.addEventListener('change', () => {
+      if (!reGo.checked || !reDate.value) return;
+      const ymd = reDate.value;
+      $(`${prefix}PhaseStart`).value = ymd;
+      const pattern = $(`${prefix}Pattern`)?.value;
+      if (pattern === 'weekly' || pattern === 'monthly_nth') {
+        $(`${prefix}Byday`).value = dowCodeFromYmd(ymd);
+      }
+      overrides.clear();
+      refresh();
+      renderPlannedList(prefix, task, overrides);
+    });
+    reDate.addEventListener('change', () => {
+      if (reGo.checked && reDate.value) {
+        $(`${prefix}PhaseStart`).value = reDate.value;
+        overrides.clear();
+        refresh();
+      }
+    });
+  }
+
+  return { overrides, collectDirtyOverrides: () => collectDirtyOverrides(prefix) };
+}
+
+function tHasCadence(task) {
+  return !!(task && String(task.cadence_text || '').trim());
 }
 
 function addDaysYmd(ymd, n) {
@@ -199,17 +410,15 @@ function occurrenceStatus(task, idealYmd) {
 
 function upcomingIdeals(task, count = 4) {
   const today = todayStr();
-  // Anchor from a real prior due so WEEKLY INTERVAL=8 does not invent every Monday.
-  let from = today;
-  try {
-    const last = lastDueOnOrBefore(task.rrule, addDaysYmd(today, -1));
-    if (last) from = last;
-  } catch (_) { /* ignore */ }
   const to = addDaysYmd(today, 180);
   try {
-    const all = occurrencesInRange(task.rrule, from, to);
-    const upcoming = all.filter((d) => d >= today);
-    return (upcoming.length ? upcoming : all).slice(0, count);
+    let phaseAnchor = today;
+    try {
+      const last = lastDueOnOrBefore(task.rrule, addDaysYmd(today, -1));
+      if (last) phaseAnchor = last;
+    } catch (_) { /* ignore */ }
+    const all = idealsInHorizon(task.rrule, today, to, 200, phaseAnchor);
+    return (all.length ? all : []).slice(0, count);
   } catch (_) {
     const n = nextDue(task);
     return n && n !== '—' ? [n] : [];
@@ -263,10 +472,25 @@ function otherHabitOptions(habitId) {
 }
 
 function readForm(prefix) {
+  applyBuilderToHidden(prefix, { syncCadence: false });
+  let rrule = $(`${prefix}Rrule`).value.trim();
+  const reGo = $(`${prefix}ReanchorGo`);
+  const reDate = $(`${prefix}Reanchor`);
+  let reanchor_ymd = null;
+  if (reGo?.checked && reDate?.value) {
+    reanchor_ymd = reDate.value;
+    const pattern = $(`${prefix}Pattern`)?.value;
+    if (pattern === 'weekly' || pattern === 'monthly_nth') {
+      $(`${prefix}Byday`).value = dowCodeFromYmd(reanchor_ymd);
+    }
+    $(`${prefix}PhaseStart`).value = reanchor_ymd;
+    rrule = setPhaseStart(buildRrule(readBuilderState(prefix)), reanchor_ymd);
+    $(`${prefix}Rrule`).value = rrule;
+  }
   return {
     title: $(`${prefix}Title`).value.trim(),
     cadence_text: $(`${prefix}Cadence`).value.trim(),
-    rrule: $(`${prefix}Rrule`).value.trim(),
+    rrule,
     duration_min: Number($(`${prefix}Dur`).value) || 60,
     priority: $(`${prefix}Pri`).value || 'p1',
     ideal_time: $(`${prefix}Time`).value || '09:00',
@@ -274,6 +498,8 @@ function readForm(prefix) {
     time_critical: $(`${prefix}Crit`).checked,
     scheduled_note: $(`${prefix}Sched`).value.trim() || null,
     notes_md: $(`${prefix}Notes`).value.trim() || null,
+    reanchor_ymd,
+    cull_obsolete_pins: !!reanchor_ymd,
   };
 }
 
@@ -339,16 +565,20 @@ export function openRecurringCreate(onSave) {
       <button type="button" id="reSave" class="btn-verify">Create habit</button>
       <button type="button" id="reCancel" class="btn-secondary">Cancel</button>
     </div>`;
-  wirePreset('re');
-  $('reCancel').onclick = () => modal.classList.remove('open');
+  modal.classList.add('wide');
+  wireCadenceBuilder('re', { ideal_time: '09:00', duration_min: 60, rrule: 'FREQ=WEEKLY;BYDAY=TH' });
+  $('reCancel').onclick = () => { modal.classList.remove('open'); modal.classList.remove('wide'); };
   $('reSave').onclick = async () => {
     const body = readForm('re');
     if (!body.title || !body.rrule || !body.cadence_text) {
-      alert('Title, cadence, and RRULE are required.');
+      alert('Title, cadence, and pattern/RRULE are required.');
       return;
     }
-    await api('/api/mc/recurring', { method: 'POST', body });
+    const { reanchor_ymd, cull_obsolete_pins, ...taskBody } = body;
+    void reanchor_ymd; void cull_obsolete_pins;
+    await api('/api/mc/recurring', { method: 'POST', body: taskBody });
     modal.classList.remove('open');
+    modal.classList.remove('wide');
     if (onSave) await onSave();
   };
   modal.classList.add('open');
@@ -388,8 +618,9 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
       <button type="button" id="reSave">${occurrence ? 'Save habit + move occurrence' : 'Save'}</button>
       <button type="button" id="reCancel" class="btn-secondary">Cancel</button>
     </div>`;
-  wirePreset('re');
-  $('reCancel').onclick = () => modal.classList.remove('open');
+  modal.classList.add('wide');
+  const builder = wireCadenceBuilder('re', t);
+  $('reCancel').onclick = () => { modal.classList.remove('open'); modal.classList.remove('wide'); };
   $('reSave').onclick = async () => {
     const body = readForm('re');
     const dayEl = $('reOccDay');
@@ -397,18 +628,28 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
     const endEl = $('reOccEnd');
     const willMove = !!(occurrence && dayEl && startEl && endEl
       && dayEl.value && startEl.value && endEl.value);
+    const dirty = builder.collectDirtyOverrides();
     const saveBtn = $('reSave');
     const cancelBtn = $('reCancel');
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.textContent = willMove ? 'Saving + syncing…' : 'Saving…';
+      saveBtn.textContent = (willMove || dirty.length || body.reanchor_ymd) ? 'Saving + syncing…' : 'Saving…';
     }
     if (cancelBtn) cancelBtn.disabled = true;
 
-    if (!willMove) {
+    const { reanchor_ymd, cull_obsolete_pins, ...taskBody } = body;
+    const patchBody = {
+      id: t.id,
+      ...taskBody,
+      reanchor_ymd: reanchor_ymd || undefined,
+      cull_obsolete_pins: cull_obsolete_pins || undefined,
+    };
+
+    if (!willMove && !dirty.length) {
       try {
-        await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
+        await api('/api/mc/recurring', { method: 'PATCH', body: patchBody });
         modal.classList.remove('open');
+        modal.classList.remove('wide');
         if (onSave) await onSave();
       } catch (err) {
         window.alert(err.message || 'Save failed');
@@ -421,48 +662,68 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
       return;
     }
 
-    const moveDay = dayEl.value;
-    const moveStart = startEl.value;
-    const moveEnd = endEl.value;
     const ui = openMcBusyModal({
-      title: 'Saving diary occurrence',
-      doneTitle: 'Occurrence saved',
+      title: 'Saving recurring habit',
+      doneTitle: 'Saved',
       failTitle: 'Save failed',
       phases: [
         'Update habit settings',
-        'Pin new diary slot',
+        willMove ? 'Pin diary occurrence' : 'Apply date overrides',
         'Auto-sync with Google (can take 20–40s)',
-        'Refresh diary',
+        'Refresh',
       ],
     });
     try {
       ui.setPhase(0, 'saving habit…');
-      await api('/api/mc/recurring', { method: 'PATCH', body: { id: t.id, ...body } });
-      ui.setPhase(1, `moving to ${moveDay} ${moveStart}…`);
-      const res = await api('/api/mc/diary-action', {
-        method: 'POST',
-        body: {
-          action: 'move',
-          habit_id: t.id,
-          title: body.title || t.title,
-          ideal_date: idealDay,
-          new_start: londonYmdHmToIso(moveDay, moveStart),
-          new_end: londonYmdHmToIso(moveDay, moveEnd),
-          override: true,
-          calendar_event_id: occurrence?.calendar_event_id || undefined,
-        },
-      });
+      await api('/api/mc/recurring', { method: 'PATCH', body: patchBody });
+      let writes = 0;
+      if (willMove) {
+        ui.setPhase(1, `moving to ${dayEl.value} ${startEl.value}…`);
+        const res = await api('/api/mc/diary-action', {
+          method: 'POST',
+          body: {
+            action: 'move',
+            habit_id: t.id,
+            title: body.title || t.title,
+            ideal_date: idealDay,
+            new_start: londonYmdHmToIso(dayEl.value, startEl.value),
+            new_end: londonYmdHmToIso(dayEl.value, endEl.value),
+            override: true,
+            calendar_event_id: occurrence?.calendar_event_id || undefined,
+          },
+        });
+        writes += res?.calendar_writes ?? 0;
+      }
+      if (dirty.length) {
+        ui.setPhase(1, `overriding ${dirty.length} date(s)…`);
+        for (const row of dirty) {
+          const res = await api('/api/mc/diary-action', {
+            method: 'POST',
+            body: {
+              action: 'move',
+              habit_id: t.id,
+              title: body.title || t.title,
+              ideal_date: row.ideal,
+              new_start: londonYmdHmToIso(row.day, row.start),
+              new_end: londonYmdHmToIso(row.day, row.end),
+              override: true,
+            },
+          });
+          writes += res?.calendar_writes ?? 0;
+        }
+      }
       ui.setPhase(2, 'Google sync…');
-      const writes = res?.calendar_writes ?? 0;
       ui.setPhase(3, 'refreshing…');
       if (onSave) await onSave();
       ui.finish(
         writes > 0
-          ? `Moved to ${moveDay} ${moveStart}–${moveEnd} and synced to Google (${writes} write${writes === 1 ? '' : 's'}).`
-          : `Moved to ${moveDay} ${moveStart}–${moveEnd}. Google sync skipped or had nothing to write.`,
+          ? `Saved and synced to Google (${writes} write${writes === 1 ? '' : 's'}).`
+          : 'Saved. Google sync skipped or had nothing to write.',
       );
+      modal.classList.remove('wide');
     } catch (err) {
       ui.fail(err);
+      modal.classList.remove('wide');
     }
   };
   modal.classList.add('open');

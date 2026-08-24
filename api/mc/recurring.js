@@ -94,6 +94,63 @@ async function createRecurring(body, actor) {
   return row;
 }
 
+/**
+ * After RRULE / phase re-anchor: skip future open pins whose ideal is no longer
+ * on the series. Keeps done/skipped history.
+ */
+async function cullObsoleteFuturePins(task, actor) {
+  const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
+  const to = addDaysYmd(today, 400);
+  const keep = new Set(idealsInHorizon(task.rrule, today, to, 200) || []);
+  const logs = await sb(
+    `recurring_log?recurring_task_id=eq.${task.id}&ideal_date=gte.${today}`
+    + '&select=id,change,ideal_date,scheduled_date,calendar_event_id,at&order=at.desc&limit=120',
+  ) || [];
+  const latestByIdeal = new Map();
+  for (const l of logs) {
+    if (!l.ideal_date || latestByIdeal.has(l.ideal_date)) continue;
+    latestByIdeal.set(l.ideal_date, l);
+  }
+  const culled = [];
+  for (const [ideal, log] of latestByIdeal) {
+    if (keep.has(ideal)) continue;
+    if (isDoneChange(log.change) || isSkippedChange(log.change)) continue;
+    if (!/^diary_pin:|^unplaced/i.test(String(log.change || '')) && log.change) continue;
+    const evtId = log.calendar_event_id || null;
+    const note = `skipped occurrence ${ideal}: reanchor_phase`;
+    await sb(`recurring_log?id=eq.${log.id}`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: {
+        change: note,
+        ideal_date: ideal,
+        scheduled_date: log.scheduled_date || ideal,
+        calendar_event_id: evtId,
+        roll_reason: 'reanchor_phase',
+        at: new Date().toISOString(),
+      },
+    });
+    if (evtId) {
+      const related = relatedIdForHabit(task.id, ideal, evtId);
+      await upsertPushRow(sb, {
+        related_id: related,
+        entity_type: 'habit',
+        change_kind: 'skip',
+        summary: `Re-anchor cull: ${task.title} (${ideal})`,
+        proposed_action: `Delete/cancel GCal event ${evtId} — ideal dropped after re-anchor.`,
+        payload: {
+          habit_id: task.id,
+          ideal_date: ideal,
+          scheduled_date: log.scheduled_date || ideal,
+          calendar_event_id: evtId,
+          action: 'delete_event',
+        },
+      });
+    }
+    culled.push(ideal);
+  }
+  return culled;
+}
+
 async function patchRecurring(id, body, actor) {
   const curRows = await sb(`recurring_tasks?id=eq.${id}`);
   const cur = curRows?.[0];
@@ -113,7 +170,17 @@ async function patchRecurring(id, body, actor) {
   const rows = await sb(`recurring_tasks?id=eq.${id}`, { method: 'PATCH', body: patch });
   const row = rows?.[0] || cur;
   await logRecurring(id, actor, `updated: ${Object.keys(patch).filter((k) => k !== 'updated_at').join(', ')}`);
-  return row;
+  let culled_ideals = [];
+  if (body.cull_obsolete_pins === true || body.reanchor_ymd) {
+    culled_ideals = await cullObsoleteFuturePins(row, actor);
+    if (culled_ideals.length) {
+      await logRecurring(id, actor, `reanchor cull: ${culled_ideals.join(', ')}`);
+      try {
+        await autoSyncIfAllowed(sb, actor || 'recurring-reanchor');
+      } catch (_) { /* non-fatal */ }
+    }
+  }
+  return { ...row, culled_ideals };
 }
 
 async function markDone(id, actor) {

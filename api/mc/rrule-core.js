@@ -125,11 +125,18 @@ function occurrencesInRange(rrule, startYmd, endYmd, maxSteps = 60) {
   return out;
 }
 
+function phaseStartOf(rrule) {
+  const p = parseRrule(rrule);
+  const v = p['X-PHASE-START'];
+  return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+}
+
 /** Most recent due date on or before today (missed / skip target). */
 function lastDueOnOrBefore(rrule, today) {
   const end = today instanceof Date ? toYmd(today) : String(today || toYmd(new Date())).slice(0, 10);
   const endD = fromYmd(end);
-  let cur = addDays(endD, -420);
+  const phase = phaseStartOf(rrule);
+  let cur = phase ? addDays(fromYmd(phase), -1) : addDays(endD, -420);
   let last = null;
   for (let i = 0; i < 80; i += 1) {
     const n = nextDueFromRrule(rrule, cur);
@@ -145,19 +152,24 @@ function lastDueOnOrBefore(rrule, today) {
 
 /**
  * Ideals in [startYmd, endYmd] on the true INTERVAL phase.
- * phaseAnchorYmd (optional): date whose lastDue defines the phase — required for
- * chunked windows so Sep–Nov chunks do not lock onto a different bi-monthly Monday.
+ * X-PHASE-START on the RRULE re-anchors INTERVAL series (Edit modal re-anchor).
+ * phaseAnchorYmd (optional): date whose lastDue defines the phase when no X-PHASE-START.
  */
 function idealsInHorizon(rrule, startYmd, endYmd, maxSteps = 200, phaseAnchorYmd = null) {
   const from = String(startYmd).slice(0, 10);
   const to = String(endYmd).slice(0, 10);
-  const anchor = String(phaseAnchorYmd || from).slice(0, 10);
+  const phase = phaseStartOf(rrule);
   let expandFrom = from;
-  try {
-    const dayBefore = toYmd(addDays(fromYmd(anchor), -1));
-    const last = lastDueOnOrBefore(rrule, dayBefore);
-    if (last) expandFrom = last;
-  } catch (_) { /* keep from */ }
+  if (phase) {
+    expandFrom = phase;
+  } else {
+    const anchor = String(phaseAnchorYmd || from).slice(0, 10);
+    try {
+      const dayBefore = toYmd(addDays(fromYmd(anchor), -1));
+      const last = lastDueOnOrBefore(rrule, dayBefore);
+      if (last) expandFrom = last;
+    } catch (_) { /* keep from */ }
+  }
   return occurrencesInRange(rrule, expandFrom, to, maxSteps)
     .filter((d) => d >= from && d <= to);
 }
@@ -186,6 +198,7 @@ module.exports = {
   idealsInHorizon,
   nextDueFromRrule,
   lastDueOnOrBefore,
+  phaseStartOf,
   toYmd,
   fromYmd,
   addDays,

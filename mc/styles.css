@@ -175,6 +175,7 @@
       width: min(520px, 100%); background: var(--panel); border: 1px solid var(--border);
       border-radius: 12px; padding: 16px; max-height: 90vh; overflow: auto;
     }
+    .modal.wide .box { width: min(720px, 100%); }
     .modal label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 4px; }
     /* Light fields: inputs sit inside <label>, so color:inherit was picking dim label text. */
     .modal input:not([type="checkbox"]),
@@ -1062,3 +1063,23 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   min-width:160px; box-shadow:0 8px 24px rgba(0,0,0,0.35);
 }
 .dy-menu button { text-align:left; padding:6px 10px; }
+.rec-builder { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.rec-builder label { margin-top:8px; }
+.rec-bld-custom { grid-column:1 / -1; }
+.rec-reanchor.inset {
+  margin-top:10px; padding:10px; border:1px solid var(--border); border-radius:8px;
+  background:rgba(0,0,0,0.2);
+}
+.rec-planned-list { display:flex; flex-direction:column; gap:8px; max-height:280px; overflow:auto; }
+.rec-planned-row {
+  display:grid; grid-template-columns:1.2fr 1fr 0.8fr 0.8fr; gap:8px; align-items:end;
+  padding:8px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15);
+}
+.rec-planned-row.rec-planned-dirty { border-color: var(--accent); }
+.rec-planned-row label { margin:0; }
+.rec-planned-ideal { font-size:12px; color:var(--text-dim); }
+.rec-planned-ideal strong { display:block; color:var(--text); font-size:13px; }
+@media (max-width:640px) {
+  .rec-builder { grid-template-columns:1fr; }
+  .rec-planned-row { grid-template-columns:1fr 1fr; }
+}
