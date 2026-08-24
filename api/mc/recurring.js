@@ -98,7 +98,7 @@ async function createRecurring(body, actor) {
  * After RRULE / phase re-anchor: skip future open pins whose ideal is no longer
  * on the series. Keeps done/skipped history.
  */
-async function cullObsoleteFuturePins(task, actor) {
+async function cullObsoleteFuturePins(task, actor, preserveEventId = null) {
   const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
   const to = addDaysYmd(today, 400);
   const keep = new Set(idealsInHorizon(task.rrule, today, to, 200) || []);
@@ -129,6 +129,11 @@ async function cullObsoleteFuturePins(task, actor) {
         at: new Date().toISOString(),
       },
     });
+    // Keep this Google event if the client will re-pin it onto the new first ideal.
+    if (evtId && preserveEventId && evtId === preserveEventId) {
+      culled.push(ideal);
+      continue;
+    }
     if (evtId) {
       const related = relatedIdForHabit(task.id, ideal, evtId);
       await upsertPushRow(sb, {
@@ -172,7 +177,11 @@ async function patchRecurring(id, body, actor) {
   await logRecurring(id, actor, `updated: ${Object.keys(patch).filter((k) => k !== 'updated_at').join(', ')}`);
   let culled_ideals = [];
   if (body.cull_obsolete_pins === true || body.reanchor_ymd) {
-    culled_ideals = await cullObsoleteFuturePins(row, actor);
+    culled_ideals = await cullObsoleteFuturePins(
+      row,
+      actor,
+      body.preserve_calendar_event_id || null,
+    );
     if (culled_ideals.length) {
       await logRecurring(id, actor, `reanchor cull: ${culled_ideals.join(', ')}`);
       try {

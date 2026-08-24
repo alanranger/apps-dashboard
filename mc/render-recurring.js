@@ -255,7 +255,7 @@ function renderPlannedList(prefix, task, overrides) {
     : '<p class="meta">No upcoming dates from this cadence.</p>';
 }
 
-function collectDirtyOverrides(prefix) {
+function collectDirtyOverrides(prefix, habitId) {
   const rows = [];
   document.querySelectorAll(`#${prefix}Planned .rec-planned-row.rec-planned-dirty`).forEach((row) => {
     const ideal = row.getAttribute('data-ideal');
@@ -263,13 +263,39 @@ function collectDirtyOverrides(prefix) {
     const start = row.querySelector('[data-pl-start]')?.value;
     const end = row.querySelector('[data-pl-end]')?.value;
     if (!ideal || !day || !start || !end) return;
-    rows.push({ ideal, day, start, end, dirty: true });
+    const log = habitId ? latestLogForIdeal(habitId, ideal) : null;
+    rows.push({
+      ideal,
+      day,
+      start,
+      end,
+      dirty: true,
+      calendar_event_id: log?.calendar_event_id || null,
+    });
   });
   return rows;
 }
 
+/** Snapshot first planned row (ideal / day / times / event id). */
+function readFirstPlannedRow(prefix, habitId) {
+  const row = document.querySelector(`#${prefix}Planned .rec-planned-row`);
+  if (!row) return null;
+  const ideal = row.getAttribute('data-ideal');
+  const day = row.querySelector('[data-pl-day]')?.value || '';
+  const start = row.querySelector('[data-pl-start]')?.value || '';
+  const end = row.querySelector('[data-pl-end]')?.value || '';
+  const log = habitId && ideal ? latestLogForIdeal(habitId, ideal) : null;
+  return {
+    ideal,
+    day,
+    start,
+    end,
+    calendar_event_id: log?.calendar_event_id || null,
+  };
+}
+
 /** First planned date → series re-anchor so later ideals recalculate from that day. */
-function reanchorFromPlannedDate(prefix, ymd, overrides, refresh) {
+function reanchorFromPlannedDate(prefix, ymd, overrides, refresh, keepTimes = null, task = null) {
   const day = String(ymd || '').slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
   const reDate = $(`${prefix}Reanchor`);
@@ -281,15 +307,22 @@ function reanchorFromPlannedDate(prefix, ymd, overrides, refresh) {
   if (pattern === 'weekly' || pattern === 'monthly_nth') {
     $(`${prefix}Byday`).value = dowCodeFromYmd(day);
   }
-  // Monthly Nth → day-of-month so “every N months from this date” lands on the picked day
-  // (e.g. 24 Aug → 24 Nov), not the next 3rd Monday.
   if (pattern === 'monthly_nth' || pattern === 'monthly_dom') {
     $(`${prefix}Pattern`).value = 'monthly_dom';
     $(`${prefix}Monthday`).value = String(Number(day.slice(8, 10)));
   }
   overrides.clear();
+  if (keepTimes?.start && keepTimes?.end) {
+    overrides.set(day, {
+      day,
+      start: keepTimes.start,
+      end: keepTimes.end,
+      dirty: true,
+    });
+  }
   syncBuilderVisibility(prefix);
-  refresh();
+  applyBuilderToHidden(prefix, { syncCadence: true });
+  renderPlannedList(prefix, task, overrides);
 }
 
 function wireCadenceBuilder(prefix, task) {
@@ -306,6 +339,16 @@ function wireCadenceBuilder(prefix, task) {
   syncBuilderVisibility(prefix);
   applyBuilderToHidden(prefix, { syncCadence: !tHasCadence(task) });
   renderPlannedList(prefix, task, overrides);
+
+  // If first row is already pinned off its ideal (e.g. Oct ideal on Aug date),
+  // rebuild the preview immediately so later dates shift.
+  const first = readFirstPlannedRow(prefix, task?.id);
+  if (first?.day && first?.ideal && first.day !== first.ideal) {
+    reanchorFromPlannedDate(prefix, first.day, overrides, refresh, {
+      start: first.start,
+      end: first.end,
+    }, task);
+  }
 
   ['Pattern', 'Interval', 'Byday', 'Nth', 'Monthday', 'CustomRrule', 'Time', 'Dur'].forEach((suf) => {
     const el = $(`${prefix}${suf}`);
@@ -332,20 +375,18 @@ function wireCadenceBuilder(prefix, task) {
       if (!ideal) return;
       const row = t.closest('.rec-planned-row');
       if (!row) return;
-      const first = planned.querySelector('.rec-planned-row');
-      const isFirst = first === row;
+      const firstRow = planned.querySelector('.rec-planned-row');
+      const isFirst = firstRow === row;
       const isDateField = t.hasAttribute('data-pl-day');
-      if (isFirst && isDateField && t.value) {
-        reanchorFromPlannedDate(prefix, t.value, overrides, refresh);
+      const day = row.querySelector('[data-pl-day]')?.value || '';
+      const start = row.querySelector('[data-pl-start]')?.value || '09:00';
+      const end = row.querySelector('[data-pl-end]')?.value || '10:00';
+      if (isFirst && isDateField && day) {
+        reanchorFromPlannedDate(prefix, day, overrides, refresh, { start, end }, task);
         return;
       }
       row.classList.add('rec-planned-dirty');
-      overrides.set(ideal, {
-        day: row.querySelector('[data-pl-day]')?.value || ideal,
-        start: row.querySelector('[data-pl-start]')?.value || '09:00',
-        end: row.querySelector('[data-pl-end]')?.value || '10:00',
-        dirty: true,
-      });
+      overrides.set(ideal, { day, start, end, dirty: true });
     });
   }
 
@@ -354,16 +395,39 @@ function wireCadenceBuilder(prefix, task) {
   if (reGo && reDate) {
     reGo.addEventListener('change', () => {
       if (!reGo.checked || !reDate.value) return;
-      reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh);
+      const snap = readFirstPlannedRow(prefix, task?.id);
+      reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh, {
+        start: snap?.start,
+        end: snap?.end,
+      }, task);
     });
     reDate.addEventListener('change', () => {
       if (reGo.checked && reDate.value) {
-        reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh);
+        const snap = readFirstPlannedRow(prefix, task?.id);
+        reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh, {
+          start: snap?.start,
+          end: snap?.end,
+        }, task);
       }
     });
   }
 
-  return { overrides, collectDirtyOverrides: () => collectDirtyOverrides(prefix) };
+  return {
+    overrides,
+    collectDirtyOverrides: () => collectDirtyOverrides(prefix, task?.id),
+    readFirstPlannedRow: () => readFirstPlannedRow(prefix, task?.id),
+    forceReanchorIfDrifted: () => {
+      const snap = readFirstPlannedRow(prefix, task?.id);
+      if (snap?.day && snap?.ideal && snap.day !== snap.ideal) {
+        reanchorFromPlannedDate(prefix, snap.day, overrides, refresh, {
+          start: snap.start,
+          end: snap.end,
+        }, task);
+        return snap;
+      }
+      return null;
+    },
+  };
 }
 
 function tHasCadence(task) {
@@ -643,13 +707,38 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
   const builder = wireCadenceBuilder('re', t);
   $('reCancel').onclick = () => { modal.classList.remove('open'); modal.classList.remove('wide'); };
   $('reSave').onclick = async () => {
+    // Capture event id from current first pin BEFORE re-anchor rebuilds the list.
+    const preSnap = builder.readFirstPlannedRow();
+    builder.forceReanchorIfDrifted();
     const body = readForm('re');
     const dayEl = $('reOccDay');
     const startEl = $('reOccStart');
     const endEl = $('reOccEnd');
     const willMove = !!(occurrence && dayEl && startEl && endEl
       && dayEl.value && startEl.value && endEl.value);
-    const dirty = builder.collectDirtyOverrides();
+    let dirty = builder.collectDirtyOverrides();
+    // After re-anchor, first ideal is the new day — pin times + transfer old GCal id.
+    const postSnap = builder.readFirstPlannedRow();
+    const preserveEvt = preSnap?.calendar_event_id || null;
+    if (body.reanchor_ymd && postSnap?.day && (preSnap?.start || postSnap.start)) {
+      const already = dirty.find((r) => r.ideal === postSnap.day || r.day === postSnap.day);
+      if (!already) {
+        dirty = [{
+          ideal: postSnap.day,
+          day: postSnap.day,
+          start: postSnap.start || preSnap?.start || body.ideal_time,
+          end: postSnap.end || preSnap?.end || addMinutesHm(body.ideal_time, body.duration_min),
+          dirty: true,
+          calendar_event_id: preserveEvt,
+        }, ...dirty];
+      } else if (preserveEvt && !already.calendar_event_id) {
+        already.calendar_event_id = preserveEvt;
+      }
+    }
+    // Keep habit ideal_time in sync when first occurrence time was edited.
+    if (postSnap?.start && postSnap.start !== body.ideal_time) {
+      body.ideal_time = postSnap.start;
+    }
     const saveBtn = $('reSave');
     const cancelBtn = $('reCancel');
     if (saveBtn) {
@@ -662,8 +751,10 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
     const patchBody = {
       id: t.id,
       ...taskBody,
+      ideal_time: body.ideal_time,
       reanchor_ymd: reanchor_ymd || undefined,
       cull_obsolete_pins: cull_obsolete_pins || undefined,
+      preserve_calendar_event_id: preserveEvt || undefined,
     };
 
     if (!willMove && !dirty.length) {
@@ -710,7 +801,7 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
             new_start: londonYmdHmToIso(dayEl.value, startEl.value),
             new_end: londonYmdHmToIso(dayEl.value, endEl.value),
             override: true,
-            calendar_event_id: occurrence?.calendar_event_id || undefined,
+            calendar_event_id: occurrence?.calendar_event_id || preserveEvt || undefined,
           },
         });
         writes += res?.calendar_writes ?? 0;
@@ -728,6 +819,7 @@ export function openRecurringEdit(id, onSave, occurrence = null) {
               new_start: londonYmdHmToIso(row.day, row.start),
               new_end: londonYmdHmToIso(row.day, row.end),
               override: true,
+              calendar_event_id: row.calendar_event_id || preserveEvt || undefined,
             },
           });
           writes += res?.calendar_writes ?? 0;

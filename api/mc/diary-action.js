@@ -102,6 +102,22 @@ async function moveTask(body, actor) {
   return { task_id: task.id, display_id: task.display_id, due_date: task.due_date, slot_pinned: true, queued: true };
 }
 
+async function resolveHabitCalendarEventId(habitId, ideal, bodyEvtId) {
+  if (bodyEvtId) return bodyEvtId;
+  const byIdeal = await sb(
+    `recurring_log?recurring_task_id=eq.${habitId}&ideal_date=eq.${ideal}`
+    + '&select=calendar_event_id,change&order=at.desc&limit=8',
+  ) || [];
+  const fromIdeal = byIdeal.find((l) => l.calendar_event_id)?.calendar_event_id;
+  if (fromIdeal) return fromIdeal;
+  const recent = await sb(
+    `recurring_log?recurring_task_id=eq.${habitId}`
+    + '&select=calendar_event_id,change,ideal_date,scheduled_date&order=at.desc&limit=30',
+  ) || [];
+  const pin = recent.find((l) => l.calendar_event_id && /^diary_pin:/i.test(String(l.change || '')));
+  return pin?.calendar_event_id || null;
+}
+
 async function moveHabit(body, actor) {
   const habitId = body.habit_id;
   const ideal = body.ideal_date || body.new_start?.slice(0, 10);
@@ -116,6 +132,7 @@ async function moveHabit(body, actor) {
   const pinChange = `diary_pin:${body.new_start}|${body.new_end}`;
   const note = `${day} ${String(body.new_start).slice(11, 16)} (diary pin)`;
   const projectionKey = body.projection_key || `diary:${habit.id}:${ideal}`;
+  const evtId = await resolveHabitCalendarEventId(habit.id, ideal, body.calendar_event_id || null);
   await sb(`recurring_tasks?id=eq.${habit.id}`, {
     method: 'PATCH', prefer: 'return=minimal',
     body: {
@@ -129,10 +146,10 @@ async function moveHabit(body, actor) {
     `recurring_log?recurring_task_id=eq.${habit.id}&ideal_date=eq.${ideal}`
     + '&select=id&order=at.desc&limit=5',
   );
-  if (!existing?.[0] && body.calendar_event_id) {
+  if (!existing?.[0] && evtId) {
     existing = await sb(
       `recurring_log?recurring_task_id=eq.${habit.id}`
-      + `&calendar_event_id=eq.${encodeURIComponent(body.calendar_event_id)}`
+      + `&calendar_event_id=eq.${encodeURIComponent(evtId)}`
       + '&select=id&order=at.desc&limit=5',
     );
   }
@@ -147,7 +164,7 @@ async function moveHabit(body, actor) {
     change: pinChange,
     scheduled_date: day,
     roll_reason: 'diary_manual_pin',
-    calendar_event_id: body.calendar_event_id || null,
+    calendar_event_id: evtId,
     ideal_date: ideal,
     projection_key: projectionKey,
   };
@@ -173,10 +190,10 @@ async function moveHabit(body, actor) {
   }
   const action = [
     `MOVE/CREATE habit "${habit.title}" block to ${body.new_start} – ${body.new_end}.`,
-    body.calendar_event_id ? `event_id=${body.calendar_event_id}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
+    evtId ? `event_id=${evtId}` : 'Create Primary event then PATCH recurring_log.calendar_event_id',
     `ideal_date=${ideal}; scheduled_date=${day}.`,
   ].join(' ');
-  const related = relatedIdForHabit(habit.id, ideal, body.calendar_event_id || null);
+  const related = relatedIdForHabit(habit.id, ideal, evtId);
   await upsertPushRow(sb, {
     related_id: related,
     entity_type: 'habit',
@@ -189,14 +206,14 @@ async function moveHabit(body, actor) {
       ideal_date: ideal,
       new_start: body.new_start,
       new_end: body.new_end,
-      calendar_event_id: body.calendar_event_id || null,
+      calendar_event_id: evtId,
     },
   });
-  if (body.calendar_event_id) {
+  if (evtId) {
     await supersedeSiblingHabitRows(sb, {
       habitId: habit.id,
       keepRelatedId: related,
-      calendarEventId: body.calendar_event_id,
+      calendarEventId: evtId,
       idealDate: ideal,
       scheduledDate: day,
       actor,
