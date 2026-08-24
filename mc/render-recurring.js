@@ -151,7 +151,7 @@ function formFields(prefix, t = {}) {
     </div>
     <div class="rec-planned" id="${prefix}PlannedWrap">
       <h3 style="font-size:13px;margin:8px 0 4px">Planned dates</h3>
-      <p class="meta" style="margin:0 0 6px">Change date/time on a row to override that occurrence only. Cadence stays; other dates keep the calculated schedule.</p>
+      <p class="meta" style="margin:0 0 6px">Change the <strong>first</strong> date to rebuild later occurrences from that point (same as re-anchor). Change a <strong>later</strong> row to override that occurrence only.</p>
       <div id="${prefix}Planned" class="rec-planned-list"></div>
     </div>
     <label>Legacy note (optional)<input id="${prefix}Sched" value="${esc(t.scheduled_note || '')}" placeholder="Ignored by Occurrences column — diary log is truth" /></label>
@@ -268,6 +268,30 @@ function collectDirtyOverrides(prefix) {
   return rows;
 }
 
+/** First planned date → series re-anchor so later ideals recalculate from that day. */
+function reanchorFromPlannedDate(prefix, ymd, overrides, refresh) {
+  const day = String(ymd || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+  const reDate = $(`${prefix}Reanchor`);
+  const reGo = $(`${prefix}ReanchorGo`);
+  if (reDate) reDate.value = day;
+  if (reGo) reGo.checked = true;
+  $(`${prefix}PhaseStart`).value = day;
+  const pattern = $(`${prefix}Pattern`)?.value || 'weekly';
+  if (pattern === 'weekly' || pattern === 'monthly_nth') {
+    $(`${prefix}Byday`).value = dowCodeFromYmd(day);
+  }
+  // Monthly Nth → day-of-month so “every N months from this date” lands on the picked day
+  // (e.g. 24 Aug → 24 Nov), not the next 3rd Monday.
+  if (pattern === 'monthly_nth' || pattern === 'monthly_dom') {
+    $(`${prefix}Pattern`).value = 'monthly_dom';
+    $(`${prefix}Monthday`).value = String(Number(day.slice(8, 10)));
+  }
+  overrides.clear();
+  syncBuilderVisibility(prefix);
+  refresh();
+}
+
 function wireCadenceBuilder(prefix, task) {
   const overrides = new Map();
   const cadenceTouched = { v: false };
@@ -308,6 +332,13 @@ function wireCadenceBuilder(prefix, task) {
       if (!ideal) return;
       const row = t.closest('.rec-planned-row');
       if (!row) return;
+      const first = planned.querySelector('.rec-planned-row');
+      const isFirst = first === row;
+      const isDateField = t.hasAttribute('data-pl-day');
+      if (isFirst && isDateField && t.value) {
+        reanchorFromPlannedDate(prefix, t.value, overrides, refresh);
+        return;
+      }
       row.classList.add('rec-planned-dirty');
       overrides.set(ideal, {
         day: row.querySelector('[data-pl-day]')?.value || ideal,
@@ -323,21 +354,11 @@ function wireCadenceBuilder(prefix, task) {
   if (reGo && reDate) {
     reGo.addEventListener('change', () => {
       if (!reGo.checked || !reDate.value) return;
-      const ymd = reDate.value;
-      $(`${prefix}PhaseStart`).value = ymd;
-      const pattern = $(`${prefix}Pattern`)?.value;
-      if (pattern === 'weekly' || pattern === 'monthly_nth') {
-        $(`${prefix}Byday`).value = dowCodeFromYmd(ymd);
-      }
-      overrides.clear();
-      refresh();
-      renderPlannedList(prefix, task, overrides);
+      reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh);
     });
     reDate.addEventListener('change', () => {
       if (reGo.checked && reDate.value) {
-        $(`${prefix}PhaseStart`).value = reDate.value;
-        overrides.clear();
-        refresh();
+        reanchorFromPlannedDate(prefix, reDate.value, overrides, refresh);
       }
     });
   }
