@@ -12,6 +12,21 @@ Map page: https://apps-dashboard-lilac.vercel.app/handoff
 - Server rejects `verified` for agent role. Never attempt to verify.
 - Pass `actor: claude` or `actor: cursor` on API writes so the log is accurate.
 
+## STANDING RULE — Academy emails are not “LIVE” on a flag
+
+**No Academy email stage may be recorded or reported as LIVE on the strength of a code flag (`cronEnabled: true`) alone.** Render, preview, “it’s built”, and tool-reports are never proof.
+
+“Live” requires:
+
+- a verified send row in `academy_email_events` (`dry_run=false`, `status=sent`), **or**
+- for a stage with nobody eligible yet, a heartbeat in `academy_email_cron_runs` proving the cron ran with `auth_ok=true`.
+
+This rule was broken on **9 Jun 2026** (v11 tracker signed off “ENTIRE EMAIL SYSTEM COMPLETE & LIVE”). `triggered-email-webhook` rejected Vercel Cron’s `Bearer CRON_SECRET` (401). Trial nudges and paid-state mail did not fire for **~11 weeks** (9 Jun → 29 Aug 2026). The dashboard’s silent “0” looked like “nobody eligible”.
+
+Fixes: `8964f3c` dual-auth; `51526b3` `login`/`member_login` + `SUPABASE_URL` first; first verified live send **16 paid-quiet, 29 Aug 2026** (events + heartbeats + Gmail Sent). Daily watchdog (`1838b30`) emails **info@ every day** whether healthy or not.
+
+Drive record: `Claude shared resources/Academy/ACADEMY-EMAIL-11-WEEK-CRON-FAILURE-2026-08-29.md`. v11 tracker is **SUPERSEDED**.
+
 ## When instructed on MC-{n}
 
 1. Open the task. **Read all notes and screenshots first** — that is Alan’s reply channel.
