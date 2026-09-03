@@ -134,6 +134,18 @@ function closeEnough(a, b) {
 /** Read-back: title + times must match before a write may be marked applied. */
 async function verifyPrimaryEvent(eventId, expect) {
   const live = await getPrimaryEvent(eventId);
+  if (!live?.id || live.status === 'cancelled') {
+    return {
+      ok: false,
+      event_id: eventId,
+      live: null,
+      expect,
+      titleOk: false,
+      startOk: false,
+      endOk: false,
+      cancelled: live?.status === 'cancelled',
+    };
+  }
   const liveStart = eventWallIso(live, 'start');
   const liveEnd = eventWallIso(live, 'end');
   const titleOk = expect.summary == null || String(live.summary || '') === String(expect.summary);

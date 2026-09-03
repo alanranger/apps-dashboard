@@ -38,9 +38,11 @@ function flankWindows(parent, prepMin, decompMin) {
 function clientWorkshopTitle(summary) {
   const s = String(summary || '');
   const name = s.split(':')[0].trim();
-  if (/1\s*[-–]?\s*2\s*[-–]?\s*1/i.test(s) || /\bzoom\b/i.test(s)) {
-    return `${name} 1-2-1 Zoom`;
+  if (/\bzoom\b|\bonline\b/i.test(s)) return `${name} 1-2-1 Zoom`;
+  if (/1\s*[-–]?\s*2\s*[-–]?\s*1/i.test(s) && /\bprivate\b/i.test(s)) {
+    return `${name} 1-2-1 Private`;
   }
+  if (/1\s*[-–]?\s*2\s*[-–]?\s*1/i.test(s)) return `${name} 1-2-1 Zoom`;
   return name || s.slice(0, 48);
 }
 

@@ -12,7 +12,7 @@ const { addDaysYmd, londonToday } = require('./diary-lib');
 const { fetchHorizonEvents } = require('./gcal-lib');
 const {
   insertPrimaryAllDayEvent, insertPrimaryEvent,
-  deletePrimaryEvent, verifyPrimaryEvent, getPrimaryEvent,
+  deletePrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
 const { restDayGcalTitle, awaySpanGcalTitle } = require('./gcal-title-lib');
 const { flankWindows, matchLabel } = require('./fixture-coverage-lib');
@@ -330,16 +330,22 @@ async function syncFixtureBuffers(sb, ruleMap, {
       continue;
     }
 
+    // Must be live (not cancelled) AND match expected title/times — else recreate.
+    // League Cup / late feed fixtures often kept stale IDs after cancel/wrong-day paint.
     if (row.before_event_id && row.after_event_id) {
       let beforeOk = false;
       let afterOk = false;
       try {
-        const b = await getPrimaryEvent(row.before_event_id);
-        beforeOk = !!b?.id;
+        const vb = await verifyPrimaryEvent(row.before_event_id, {
+          summary: beforeTitle, startIso: win.before_start, endIso: win.before_end,
+        });
+        beforeOk = vb.ok;
       } catch (_) { beforeOk = false; }
       try {
-        const a = await getPrimaryEvent(row.after_event_id);
-        afterOk = !!a?.id;
+        const va = await verifyPrimaryEvent(row.after_event_id, {
+          summary: afterTitle, startIso: win.after_start, endIso: win.after_end,
+        });
+        afterOk = va.ok;
       } catch (_) { afterOk = false; }
       if (beforeOk && afterOk) {
         already.push(row.id);

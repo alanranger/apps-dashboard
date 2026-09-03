@@ -29,10 +29,21 @@ describe('client-buffer-reconcile — flank windows', () => {
     );
   });
 
+  it('titles Private 1-2-1 clients (not as Zoom)', () => {
+    assert.equal(
+      clientWorkshopTitle('jackie evans: 2hr 1-2-1 Anytime Private (Alan Ranger Photography)'),
+      'jackie evans 1-2-1 Private',
+    );
+  });
+
   it('detects client parents and skips MC events', () => {
     assert.equal(isClientParent({
       summary: 'Jo Galloway: Online 1-2-1 Tuition - Zoom',
       start: { dateTime: '2026-08-12T14:30:00Z' },
+    }), true);
+    assert.equal(isClientParent({
+      summary: 'jackie evans: 2hr 1-2-1 Anytime Private (Alan Ranger Photography)',
+      start: { dateTime: '2026-09-08T10:00:00+01:00' },
     }), true);
     assert.equal(isClientParent({
       summary: 'MC ⏳ Prep — Jo Galloway 1-2-1 Zoom',

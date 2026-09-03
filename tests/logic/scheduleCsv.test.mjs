@@ -93,4 +93,13 @@ describe('scheduleCsv — online client = home buffers', () => {
       title: 'Away Workshop', address: 'Buxton', postcode: 'SK17', location_name: 'Peak',
     }, 'CV4 9HW'), false);
   });
+
+  it('treats in-person Private 1-2-1 as home buffers', () => {
+    assert.equal(
+      isOnlineClientHome('jackie evans: 2hr 1-2-1 Anytime Private (Alan Ranger Photography)'),
+      true,
+    );
+    assert.equal(isOnlineClientHome('Sam: 1-2-1 Private Lesson'), true);
+    assert.equal(isOnlineClientHome('Sam: Camera Basics Class'), false);
+  });
 });

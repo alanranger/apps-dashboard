@@ -271,7 +271,10 @@ async function loadScheduleEvents() {
   return { sources, events, errors };
 }
 
-/** Zoom / online 1-2-1 / mentoring — home buffers (Decision 3), not travel. */
+/**
+ * Client sessions that need home Prep/Decompress (Decision 3), not travel:
+ * Zoom/online 1-2-1 / mentoring, and in-person Private / Anytime Private 1-2-1s.
+ */
 function isOnlineClientHome(title) {
   const t = String(title || '').toLowerCase();
   const is121 = /1\s*[-–]?\s*2\s*[-–]?\s*1|\b121\b/.test(t);
@@ -280,6 +283,8 @@ function isOnlineClientHome(title) {
   if (/\bzoom\b/.test(t) && /(tuition|mentoring|1\s*[-–]?\s*2\s*[-–]?\s*1)/.test(t)) return true;
   // Acuity often titles mentoring without "1-2-1" (e.g. Monthly Mentoring Feedback - Zoom).
   if (/\bzoom\b/.test(t) && /\bmentoring\b/.test(t)) return true;
+  // In-person private at home studio (e.g. "2hr 1-2-1 Anytime Private").
+  if (is121 && /\bprivate\b/.test(t)) return true;
   return false;
 }
 
