@@ -7,7 +7,7 @@ const {
   listOpenPush, listAwaySpanBacklog, markPushStatus, collapsePushManifest,
 } = require('./gcal-push-lib');
 const {
-  insertPrimaryEvent, patchPrimaryEvent, deletePrimaryEvent, verifyPrimaryEvent,
+  insertPrimaryEvent, patchPrimaryEvent, deletePrimaryEvent, getPrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
 const { ruleMapFromRows } = require('./scheduling-rules-lib');
 const {
@@ -739,49 +739,60 @@ async function applyFlushPlan(sb, plan, actor, opts = {}) {
           results.push({ ...w, ok: false, error: 'patch_missing_live_times' });
           continue;
         }
+        // Cancelled events still return HTTP 200 — treat like 404 and recreate.
+        let deadId = false;
         try {
-          await patchPrimaryEvent(w.event_id, w.patch);
-        } catch (patchErr) {
-          // Dead event id → recreate instead of failing the pin forever.
-          if (patchErr.status === 404 || patchErr.status === 410) {
-            const insert = {
-              summary: w.patch.summary || w.summary,
-              startIso: w.patch.startIso,
-              endIso: w.patch.endIso,
-            };
-            if (w.patch.location) insert.location = w.patch.location;
-            if (w.patch.description) insert.description = w.patch.description;
-            const created = await insertPrimaryEvent(insert);
-            eventId = created.id;
-            if (w.habit_id && w.ideal_date) {
-              await sb(
-                `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${w.ideal_date}`,
-                {
-                  method: 'PATCH', prefer: 'return=minimal',
-                  body: { calendar_event_id: eventId },
-                },
-              );
-            }
-            if (w.task_id) {
-              await sb(`tasks?id=eq.${w.task_id}`, {
-                method: 'PATCH', prefer: 'return=minimal',
-                body: { calendar_event_id: eventId },
-              });
-            }
-            if (w.travel_block_id) {
-              await sb(`travel_blocks?id=eq.${w.travel_block_id}`, {
-                method: 'PATCH', prefer: 'return=minimal',
-                body: { calendar_event_id: eventId },
-              });
-            }
-            await syncRecurringLogAfterFlush(sb, w, eventId);
-            if (w.source === 'gcal_push_queue' && w.source_id) {
-              await markPushStatus(sb, [w.source_id], 'applied', actorSafe);
-            }
-            results.push({ ...w, ok: true, event_id: eventId, recovered: 'insert_after_404' });
-            continue;
+          const existing = await getPrimaryEvent(w.event_id);
+          deadId = !existing?.id || existing.status === 'cancelled';
+        } catch (getErr) {
+          if (getErr.status === 404 || getErr.status === 410) deadId = true;
+          else throw getErr;
+        }
+        if (!deadId) {
+          try {
+            await patchPrimaryEvent(w.event_id, w.patch);
+          } catch (patchErr) {
+            if (patchErr.status === 404 || patchErr.status === 410) deadId = true;
+            else throw patchErr;
           }
-          throw patchErr;
+        }
+        if (deadId) {
+          const insert = {
+            summary: w.patch.summary || w.summary,
+            startIso: w.patch.startIso,
+            endIso: w.patch.endIso,
+          };
+          if (w.patch.location) insert.location = w.patch.location;
+          if (w.patch.description) insert.description = w.patch.description;
+          const created = await insertPrimaryEvent(insert);
+          eventId = created.id;
+          if (w.habit_id && w.ideal_date) {
+            await sb(
+              `recurring_log?recurring_task_id=eq.${w.habit_id}&ideal_date=eq.${w.ideal_date}`,
+              {
+                method: 'PATCH', prefer: 'return=minimal',
+                body: { calendar_event_id: eventId },
+              },
+            );
+          }
+          if (w.task_id) {
+            await sb(`tasks?id=eq.${w.task_id}`, {
+              method: 'PATCH', prefer: 'return=minimal',
+              body: { calendar_event_id: eventId },
+            });
+          }
+          if (w.travel_block_id) {
+            await sb(`travel_blocks?id=eq.${w.travel_block_id}`, {
+              method: 'PATCH', prefer: 'return=minimal',
+              body: { calendar_event_id: eventId },
+            });
+          }
+          await syncRecurringLogAfterFlush(sb, w, eventId);
+          if (w.source === 'gcal_push_queue' && w.source_id) {
+            await markPushStatus(sb, [w.source_id], 'applied', actorSafe);
+          }
+          results.push({ ...w, ok: true, event_id: eventId, recovered: 'insert_after_dead' });
+          continue;
         }
         const v = await verifyPrimaryEvent(w.event_id, {
           summary: w.patch?.summary,
