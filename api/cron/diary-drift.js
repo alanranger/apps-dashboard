@@ -203,6 +203,9 @@ async function handler(req, res) {
     return json(res, 405, { error: 'method not allowed' });
   }
   if (!authOk(req)) return json(res, 401, { error: 'unauthorized' });
+  if (req.query?.probe === '1' || req.query?.probe === 'true') {
+    return json(res, 200, { ok: true, probe: true, route: 'diary-drift' });
+  }
   if (!(process.env.MC_SUPABASE_URL && (process.env.MC_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY))) {
     return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
   }

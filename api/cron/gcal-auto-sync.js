@@ -84,6 +84,9 @@ module.exports = async function handler(req, res) {
     return json(res, 405, { error: 'method not allowed' });
   }
   if (!authOk(req)) return json(res, 401, { error: 'unauthorized' });
+  if (req.query?.probe === '1' || req.query?.probe === 'true') {
+    return json(res, 200, { ok: true, probe: true, route: 'gcal-auto-sync' });
+  }
   if (!envReady()) return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
 
   try {
