@@ -16,7 +16,8 @@ const MAX_MESSAGES = 120;
 
 function authOk(req) {
   const secret = process.env.CRON_SECRET || process.env.MC_CRON_SECRET;
-  if (!secret) return true;
+  // Fail closed in production — missing secret must not leave crons public.
+  if (!secret) return process.env.VERCEL_ENV !== 'production' && process.env.NODE_ENV !== 'production';
   const h = req.headers.authorization || '';
   const q = req.query || {};
   return h === `Bearer ${secret}` || q.force === '1';

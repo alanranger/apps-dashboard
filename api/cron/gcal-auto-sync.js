@@ -19,7 +19,7 @@ const { purgeUntiedMcOrphansDaily } = require('../mc/gcal-orphan-purge-lib');
 
 function authOk(req) {
   const secret = process.env.CRON_SECRET || process.env.MC_CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.VERCEL_ENV !== 'production' && process.env.NODE_ENV !== 'production';
   const h = req.headers.authorization || '';
   return h === `Bearer ${secret}`;
 }
