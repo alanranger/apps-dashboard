@@ -1404,6 +1404,20 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
   }
   for (const [k, e] of have) {
     if (plan.has(k)) continue;
+    // Decision 4 / Alan: diary_manual_pin must not silent-vanish when placer
+    // fails to re-pack (gap/cap). KEEP existing slot; do not DELETE.
+    if (e.manual_pin && e.startIso && e.endIso) {
+      out.push({
+        action: 'KEEP',
+        habit_id: e.habit_id,
+        title: e.title,
+        ideal_date: e.ideal_date,
+        startIso: e.startIso,
+        endIso: e.endIso,
+        calendar_event_id: e.calendar_event_id,
+      });
+      continue;
+    }
     out.push({
       action: 'DELETE', habit_id: e.habit_id, title: e.title,
       ideal_date: e.ideal_date, startIso: e.startIso, endIso: e.endIso,

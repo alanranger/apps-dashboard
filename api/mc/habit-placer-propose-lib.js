@@ -201,6 +201,9 @@ function loadExistingFromLog(logs, habits, gcalEvents) {
       startIso,
       endIso,
       calendar_event_id: (ev?.status === 'cancelled') ? null : (row.calendar_event_id || null),
+      // Alan diary-grid / Drag pins — placer must not silent-DELETE these (Decision 4).
+      manual_pin: String(row.roll_reason || '') === 'diary_manual_pin',
+      roll_reason: row.roll_reason || null,
     });
   }
   return [...best.values()];
@@ -453,7 +456,7 @@ async function applyHabitAmendmentToDb(sb, a) {
   if (!a || !a.habit_id || !a.ideal_date) return false;
   const logRows = await sb(
     `recurring_log?recurring_task_id=eq.${a.habit_id}&ideal_date=eq.${a.ideal_date}`
-    + '&select=id,calendar_event_id,scheduled_date,change&order=at.desc&limit=1',
+    + '&select=id,calendar_event_id,scheduled_date,change,roll_reason&order=at.desc&limit=1',
   );
   const keepId = logRows?.[0]?.id || null;
   // CREATE must never reuse a stale calendar_event_id — that queues a patch on a
@@ -495,7 +498,10 @@ async function applyHabitAmendmentToDb(sb, a) {
       body: {
         change: pinChange,
         scheduled_date: day,
-        roll_reason: 'habit_placer_keep_sync',
+        // Preserve Alan's sticky manual pin across KEEP syncs
+        roll_reason: String(log?.roll_reason || '') === 'diary_manual_pin'
+          ? 'diary_manual_pin'
+          : 'habit_placer_keep_sync',
         calendar_event_id: evtId,
         ideal_date: a.ideal_date,
         projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
@@ -507,6 +513,14 @@ async function applyHabitAmendmentToDb(sb, a) {
   // Unplaced / dropped: never leave a dated scheduled_date (esp. on rest/away).
   // Queue Google delete BEFORE clearing calendar_event_id so the id is never lost.
   if (a.action === 'DELETE') {
+    // Sticky: Alan's diary_manual_pin must not vanish on Full Horizon / proof-fail.
+    const reasonRows = await sb(
+      `recurring_log?recurring_task_id=eq.${a.habit_id}&ideal_date=eq.${a.ideal_date}`
+      + '&select=id,roll_reason&order=at.desc&limit=1',
+    );
+    if (String(reasonRows?.[0]?.roll_reason || '') === 'diary_manual_pin') {
+      return false;
+    }
     if (evtId) {
       await upsertPushRow(sb, {
         related_id: relatedIdForHabit(a.habit_id, a.ideal_date, evtId),
@@ -1087,7 +1101,7 @@ async function runHabitPlacerPropose(ctx) {
     sb('recurring_tasks?select=id,title,priority,duration_min,ideal_time,window_days,time_critical,rrule,last_done,rolls_used&active=eq.true'),
     sb('recurring_task_deps?select=habit_id,depends_on_habit_id,dep_type,within_hours'),
     sb(
-      'recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change'
+      'recurring_log?select=recurring_task_id,ideal_date,scheduled_date,calendar_event_id,change,roll_reason'
       + `&or=(and(scheduled_date.gte.${fromYmd},scheduled_date.lte.${toYmd}),and(ideal_date.gte.${fromYmd},ideal_date.lte.${toYmd}))`
       + '&order=at.desc&limit=8000',
     ),

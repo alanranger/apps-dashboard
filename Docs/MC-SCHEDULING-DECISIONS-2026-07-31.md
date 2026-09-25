@@ -40,6 +40,8 @@ Placement order:
 
 **Never** delete or omit an occurrence without an alert. Cap is a preference, not a silent drop.
 
+**Manual diary pins are sticky (2026-09-25):** if Alan placed a habit via Diary grid / drag (`roll_reason=diary_manual_pin`), Full Horizon / habit placer must **KEEP** that pin — may MOVE for gap/rules later, but must **not DELETE** / cancel the Google block just because re-packing failed (e.g. 15m decompress clash). Unplace only when Alan **Skip**s or the day is a hard blocked away/rest day.
+
 ## Decision 5 — Horizons
 
 | Layer | Horizon |
