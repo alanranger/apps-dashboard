@@ -8,6 +8,7 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
+    body:has(.shell-diary-wide) { overflow-x: auto; }
     a { color: var(--accent); }
     button, input, select, textarea {
       font: inherit;
@@ -26,6 +27,12 @@
       outline-offset: 2px;
     }
     .shell { max-width: min(1600px, 100%); margin: 0 auto; padding: 16px 20px; width: 100%; }
+    /* Diary: widen page so two weeks keep readable day columns (not crammed). */
+    .shell.shell-diary-wide {
+      max-width: min(2400px, 100%);
+      padding-left: 10px;
+      padding-right: 10px;
+    }
     .topnav {
       display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
       border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 12px;
@@ -682,36 +689,34 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
   margin:0 0 10px;
 }
-/* Two weeks side-by-side so Mon→next-week drag stays on one screen (Alan 9 Oct 2026). */
+/* Two weeks side-by-side with real width — page widens via .shell-diary-wide. */
 .dy-scroll {
   overflow:auto;
   max-height:calc(100vh - 260px);
   border:1px solid var(--border);
   border-radius:8px;
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:0;
+  grid-template-columns:repeat(2, minmax(980px, 1fr));
+  gap:8px;
   align-items:start;
 }
 .dy-week {
   display:grid;
-  grid-template-columns:40px repeat(7, minmax(0, 1fr));
+  grid-template-columns:48px repeat(7, minmax(120px, 1fr));
   border-bottom:2px solid var(--border);
-  min-width:0;
+  min-width:980px;
   width:100%;
 }
 .dy-week-wrap {
-  min-width:0;
+  min-width:980px;
   width:100%;
   border-bottom:3px solid var(--border);
   border-right:1px solid var(--border);
   box-sizing:border-box;
 }
-@media (max-width: 1400px) {
+@media (max-width: 1600px) {
   .dy-scroll { grid-template-columns:1fr; }
   .dy-week-wrap { border-right:none; }
-  .dy-week { grid-template-columns:48px repeat(7, minmax(96px, 1fr)); min-width:720px; }
-  .dy-week-wrap { min-width:720px; }
 }
 .dy-fuel {
   padding:8px 10px 10px; background:var(--panel-2); border-bottom:1px solid var(--border);
@@ -877,7 +882,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block-label {
   flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   color:#fff;
-  font-size:11px;
+  font-size:12px;
 }
 .dy-block.dy-tall .dy-block-label { white-space:normal; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 .dy-block.dy-expanded { z-index:8 !important; min-height:48px; box-shadow:0 4px 14px rgba(0,0,0,0.5); }

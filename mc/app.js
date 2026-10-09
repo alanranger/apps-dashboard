@@ -50,6 +50,8 @@ function setView(name) {
     el.setAttribute('aria-selected', on ? 'true' : 'false');
   });
   $(`view-${name}`).classList.add('active');
+  const shell = document.querySelector('.shell');
+  if (shell) shell.classList.toggle('shell-diary-wide', name === 'diary');
   const label = $('sectionLabel');
   if (label) {
     const labels = {
