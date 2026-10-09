@@ -405,7 +405,32 @@ function habitLogsToBlocks(logs, habitMap) {
     });
     if (habitBlock) out.push(habitBlock);
   }
-  return out;
+  // One block per Google event — two ideals sharing one calendar_event_id
+  // (e.g. old monthly ideal rolled onto the new weekly Monday) painted as twins.
+  const byEvt = new Map();
+  const deduped = [];
+  for (const b of out) {
+    const eid = b.calendar_event_id;
+    if (!eid) {
+      deduped.push(b);
+      continue;
+    }
+    const prev = byEvt.get(eid);
+    if (!prev) {
+      byEvt.set(eid, b);
+      deduped.push(b);
+      continue;
+    }
+    // Prefer the block whose ideal matches scheduled day (correct phase).
+    const prevBetter = prev.ideal_date === prev.day;
+    const curBetter = b.ideal_date === b.day;
+    if (curBetter && !prevBetter) {
+      const idx = deduped.indexOf(prev);
+      if (idx >= 0) deduped[idx] = b;
+      byEvt.set(eid, b);
+    }
+  }
+  return deduped;
 }
 
 /**

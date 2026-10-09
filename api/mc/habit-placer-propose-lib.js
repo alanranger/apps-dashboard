@@ -114,6 +114,7 @@ async function retireOrphanMcRecurringGcal(sb, gcalEvents, logs, fromYmd, toYmd)
         day,
         new_start: e.start.dateTime,
         new_end: e.end?.dateTime || e.start.dateTime,
+        action: 'delete_event',
       },
     });
     retired += 1;
@@ -1239,22 +1240,26 @@ async function runHabitPlacerPropose(ctx) {
         // Restricting to blocked/clash only left zombie wrong-phase pins on Primary.
         mayWrite = true;
       }
+      let dbApplied = false;
       if (mayWrite) {
         try {
-          if (await applyHabitAmendmentToDb(sb, writeAction)) habitDbApplied += 1;
+          dbApplied = !!(await applyHabitAmendmentToDb(sb, writeAction));
+          if (dbApplied) habitDbApplied += 1;
         } catch (_) { /* pending row still written below */ }
       }
       const row = amendmentToPending(a);
       if (!row) continue;
       if (existingPending && await existingPending(row.change_type, row.related_id)) continue;
-      const applied = mayWrite && a.action !== 'KEEP';
+      // Never mark applied unless DB/GCal queue actually took the write (sticky
+      // diary_manual_pin can refuse DELETE — lying "applied" left Bank Genie orphans).
+      const applied = (mayWrite && a.action !== 'KEEP' && dbApplied) || a.action === 'KEEP';
       const out = await sb('pending_diary_changes', {
         method: 'POST',
         body: {
           ...row,
-          status: applied ? 'applied' : (a.action === 'KEEP' ? 'applied' : row.status),
-          resolved_at: (applied || a.action === 'KEEP') ? new Date().toISOString() : null,
-          resolved_by: (applied || a.action === 'KEEP') ? 'habit_placer_enforce' : null,
+          status: applied ? 'applied' : row.status,
+          resolved_at: applied ? new Date().toISOString() : null,
+          resolved_by: applied ? 'habit_placer_enforce' : null,
         },
       });
       const id = Array.isArray(out) ? out[0]?.id : out?.id;
@@ -1288,9 +1293,11 @@ async function runHabitPlacerPropose(ctx) {
   } else if (writePending && !proofOk) {
     // Proof failed — surface intents as pending only; do not pin or bump into clashes.
     for (const a of amendments) {
+      let deleted = false;
       if (a.action === 'DELETE') {
         try {
-          if (await applyHabitAmendmentToDb(sb, a)) habitDbApplied += 1;
+          deleted = !!(await applyHabitAmendmentToDb(sb, a));
+          if (deleted) habitDbApplied += 1;
         } catch (_) { /* ignore */ }
       }
       const row = amendmentToPending(a);
@@ -1301,9 +1308,9 @@ async function runHabitPlacerPropose(ctx) {
         body: {
           ...row,
           summary: `[proof-blocked] ${row.summary || a.title || 'habit'}`,
-          status: a.action === 'DELETE' ? 'applied' : 'pending',
-          resolved_at: a.action === 'DELETE' ? new Date().toISOString() : null,
-          resolved_by: a.action === 'DELETE' ? 'habit_placer_enforce' : null,
+          status: deleted ? 'applied' : 'pending',
+          resolved_at: deleted ? new Date().toISOString() : null,
+          resolved_by: deleted ? 'habit_placer_enforce' : null,
         },
       });
       const id = Array.isArray(out) ? out[0]?.id : out?.id;

@@ -95,19 +95,26 @@ async function createRecurring(body, actor) {
 }
 
 /**
- * After RRULE / phase re-anchor: skip future open pins whose ideal is no longer
- * on the series. Keeps done/skipped history.
+ * After RRULE / phase re-anchor: skip open pins whose ideal is no longer on the
+ * series. Includes rolled pins (ideal in the past, scheduled_date still ahead) —
+ * ideal_date>=today alone left those as Diary/GCal zombies after frequency changes.
  */
 async function cullObsoleteFuturePins(task, actor, preserveEventId = null) {
   const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
   const to = addDaysYmd(today, 400);
   const keep = new Set(idealsInHorizon(task.rrule, today, to, 200) || []);
-  const logs = await sb(
-    `recurring_log?recurring_task_id=eq.${task.id}&ideal_date=gte.${today}`
-    + '&select=id,change,ideal_date,scheduled_date,calendar_event_id,at&order=at.desc&limit=120',
-  ) || [];
+  const [byIdeal, bySched] = await Promise.all([
+    sb(
+      `recurring_log?recurring_task_id=eq.${task.id}&ideal_date=gte.${today}`
+      + '&select=id,change,ideal_date,scheduled_date,calendar_event_id,at&order=at.desc&limit=200',
+    ),
+    sb(
+      `recurring_log?recurring_task_id=eq.${task.id}&scheduled_date=gte.${today}`
+      + '&select=id,change,ideal_date,scheduled_date,calendar_event_id,at&order=at.desc&limit=200',
+    ),
+  ]);
   const latestByIdeal = new Map();
-  for (const l of logs) {
+  for (const l of [...(byIdeal || []), ...(bySched || [])]) {
     if (!l.ideal_date || latestByIdeal.has(l.ideal_date)) continue;
     latestByIdeal.set(l.ideal_date, l);
   }
@@ -118,19 +125,20 @@ async function cullObsoleteFuturePins(task, actor, preserveEventId = null) {
     if (!/^diary_pin:|^unplaced/i.test(String(log.change || '')) && log.change) continue;
     const evtId = log.calendar_event_id || null;
     const note = `skipped occurrence ${ideal}: reanchor_phase`;
+    // Clear event id on skip so Diary/orphan logic cannot claim a dead pin.
+    const keepEvt = !!(evtId && preserveEventId && evtId === preserveEventId);
     await sb(`recurring_log?id=eq.${log.id}`, {
       method: 'PATCH', prefer: 'return=minimal',
       body: {
         change: note,
         ideal_date: ideal,
         scheduled_date: log.scheduled_date || ideal,
-        calendar_event_id: evtId,
+        calendar_event_id: keepEvt ? evtId : null,
         roll_reason: 'reanchor_phase',
         at: new Date().toISOString(),
       },
     });
-    // Keep this Google event if the client will re-pin it onto the new first ideal.
-    if (evtId && preserveEventId && evtId === preserveEventId) {
+    if (keepEvt) {
       culled.push(ideal);
       continue;
     }
@@ -156,6 +164,44 @@ async function cullObsoleteFuturePins(task, actor, preserveEventId = null) {
   return culled;
 }
 
+/** Push new title onto future Primary habit pins after rename. */
+async function syncHabitTitleOnGcal(task, oldTitle) {
+  if (!task?.id || !task.title || task.title === oldTitle) return 0;
+  const today = isoToLondonDate(new Date().toISOString()) || new Date().toISOString().slice(0, 10);
+  const logs = await sb(
+    `recurring_log?recurring_task_id=eq.${task.id}&scheduled_date=gte.${today}`
+    + '&change=like.diary_pin:*&calendar_event_id=not.is.null'
+    + '&select=id,ideal_date,scheduled_date,calendar_event_id,change&order=at.desc&limit=80',
+  ) || [];
+  const seen = new Set();
+  let n = 0;
+  for (const log of logs) {
+    const evtId = log.calendar_event_id;
+    if (!evtId || seen.has(evtId)) continue;
+    const pin = String(log.change || '').match(/^diary_pin:([^|]+)\|([^|]+)/);
+    if (!pin) continue;
+    seen.add(evtId);
+    await upsertPushRow(sb, {
+      related_id: relatedIdForHabit(task.id, log.ideal_date || log.scheduled_date, evtId),
+      entity_type: 'habit',
+      change_kind: 'move',
+      summary: `Rename habit on GCal: ${oldTitle || '?'} → ${task.title}`,
+      proposed_action: `PATCH Primary event ${evtId} summary → "MC 🔁 ${task.title}".`,
+      payload: {
+        habit_id: task.id,
+        title: task.title,
+        ideal_date: log.ideal_date,
+        scheduled_date: log.scheduled_date,
+        calendar_event_id: evtId,
+        new_start: pin[1],
+        new_end: pin[2],
+      },
+    });
+    n += 1;
+  }
+  return n;
+}
+
 async function patchRecurring(id, body, actor) {
   const curRows = await sb(`recurring_tasks?id=eq.${id}`);
   const cur = curRows?.[0];
@@ -172,11 +218,16 @@ async function patchRecurring(id, body, actor) {
   for (const f of fields) {
     if (Object.prototype.hasOwnProperty.call(body, f)) patch[f] = body[f];
   }
+  const rruleChanged = Object.prototype.hasOwnProperty.call(body, 'rrule')
+    && String(body.rrule || '') !== String(cur.rrule || '');
+  const titleChanged = Object.prototype.hasOwnProperty.call(body, 'title')
+    && String(body.title || '') !== String(cur.title || '');
   const rows = await sb(`recurring_tasks?id=eq.${id}`, { method: 'PATCH', body: patch });
   const row = rows?.[0] || cur;
   await logRecurring(id, actor, `updated: ${Object.keys(patch).filter((k) => k !== 'updated_at').join(', ')}`);
   let culled_ideals = [];
-  if (body.cull_obsolete_pins === true || body.reanchor_ymd) {
+  // Frequency/RRULE edits must cull even when Alan does not tick "re-anchor".
+  if (body.cull_obsolete_pins === true || body.reanchor_ymd || rruleChanged) {
     culled_ideals = await cullObsoleteFuturePins(
       row,
       actor,
@@ -184,12 +235,21 @@ async function patchRecurring(id, body, actor) {
     );
     if (culled_ideals.length) {
       await logRecurring(id, actor, `reanchor cull: ${culled_ideals.join(', ')}`);
-      try {
-        await autoSyncIfAllowed(sb, actor || 'recurring-reanchor');
-      } catch (_) { /* non-fatal */ }
     }
   }
-  return { ...row, culled_ideals };
+  let title_patches = 0;
+  if (titleChanged) {
+    title_patches = await syncHabitTitleOnGcal(row, cur.title);
+    if (title_patches) {
+      await logRecurring(id, actor, `gcal title sync queued: ${title_patches} event(s)`);
+    }
+  }
+  if (culled_ideals.length || title_patches) {
+    try {
+      await autoSyncIfAllowed(sb, actor || 'recurring-reanchor');
+    } catch (_) { /* non-fatal */ }
+  }
+  return { ...row, culled_ideals, title_patches };
 }
 
 async function markDone(id, actor) {
