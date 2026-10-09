@@ -682,14 +682,37 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
   margin:0 0 10px;
 }
-.dy-scroll { overflow:auto; max-height:calc(100vh - 260px); border:1px solid var(--border); border-radius:8px; }
+/* Two weeks side-by-side so Mon→next-week drag stays on one screen (Alan 9 Oct 2026). */
+.dy-scroll {
+  overflow:auto;
+  max-height:calc(100vh - 260px);
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  align-items:start;
+}
 .dy-week {
   display:grid;
-  grid-template-columns:56px repeat(7, minmax(120px, 1fr));
+  grid-template-columns:40px repeat(7, minmax(0, 1fr));
   border-bottom:2px solid var(--border);
-  min-width:1036px;
+  min-width:0;
+  width:100%;
 }
-.dy-week-wrap { min-width:1036px; border-bottom:3px solid var(--border); }
+.dy-week-wrap {
+  min-width:0;
+  width:100%;
+  border-bottom:3px solid var(--border);
+  border-right:1px solid var(--border);
+  box-sizing:border-box;
+}
+@media (max-width: 1400px) {
+  .dy-scroll { grid-template-columns:1fr; }
+  .dy-week-wrap { border-right:none; }
+  .dy-week { grid-template-columns:48px repeat(7, minmax(96px, 1fr)); min-width:720px; }
+  .dy-week-wrap { min-width:720px; }
+}
 .dy-fuel {
   padding:8px 10px 10px; background:var(--panel-2); border-bottom:1px solid var(--border);
   position:sticky; top:0; z-index:4;
@@ -730,11 +753,11 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 }
 .dy-time-tick {
   position:absolute;
-  left:2px;
-  right:4px;
+  left:1px;
+  right:2px;
   transform:translateY(-50%);
   text-align:right;
-  font-size:13px;
+  font-size:11px;
   font-weight:800;
   line-height:1;
   color:#ffffff;
@@ -743,7 +766,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
   z-index:1;
 }
 .dy-time-tick-half {
-  font-size:11px;
+  font-size:9px;
   font-weight:700;
   color:#ffffff;
   opacity:0.92;
@@ -764,8 +787,9 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-bd-chip .dy-leg-swatch { width:16px; height:12px; font-size:0; }
 .dy-day { border-right:1px solid var(--border); background:var(--panel); }
 .dy-day-head {
-  padding:8px 8px 6px; background:var(--panel-2); border-bottom:1px solid var(--border);
+  padding:6px 4px 4px; background:var(--panel-2); border-bottom:1px solid var(--border);
   position:sticky; top:0; z-index:2; text-align:center;
+  font-size:11px;
 }
 .dy-wd { font-size:13px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; line-height:1.2; color:var(--text, #e5e7eb); }
 .dy-date {
@@ -853,6 +877,7 @@ tr.sched-urgent td { background: rgba(220, 38, 38, 0.12); }
 .dy-block-label {
   flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   color:#fff;
+  font-size:11px;
 }
 .dy-block.dy-tall .dy-block-label { white-space:normal; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; }
 .dy-block.dy-expanded { z-index:8 !important; min-height:48px; box-shadow:0 4px 14px rgba(0,0,0,0.5); }

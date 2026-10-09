@@ -1214,7 +1214,7 @@ async function paintDiary(el, opts = {}) {
       ${renderHorizonBoard(data.weeks || [], weekIdx)}
       <div class="dy-week-nav">
         <button type="button" class="btn-secondary" data-dy-week-prev title="Previous week">‹ Prev week</button>
-        <span class="meta">Landing on actionable week · use tiles or arrows to page</span>
+        <span class="meta">Two weeks side-by-side · drag across to next week · tiles/arrows page</span>
         <button type="button" class="btn-secondary" data-dy-week-next title="Next week">Next week ›</button>
       </div>
       <div class="dy-scroll">
