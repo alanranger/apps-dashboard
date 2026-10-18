@@ -6,12 +6,14 @@ const {
   isPurgeableMc, isProtectedMc, listUntiedOrphans,
 } = require('../../api/mc/gcal-orphan-purge-lib.js');
 
-test('habits/tasks purgeable; travel/decompress protected', () => {
+test('habits/tasks purgeable; travel protected; unclaimed prep/decompress purgeable', () => {
   assert.equal(isPurgeableMc('MC 🔁 Monthly Accounts — Bank Genie'), true);
   assert.equal(isPurgeableMc('P1 · MC-12 · Something'), true);
   assert.equal(isProtectedMc('MC 🚗 Travel out — Kenilworth'), true);
   assert.equal(isPurgeableMc('MC 🚗 Travel out — Kenilworth'), false);
-  assert.equal(isPurgeableMc('MC ⏳ Decompress — after X'), false);
+  assert.equal(isProtectedMc('MC ⏳ Decompress — Camera Courses'), false);
+  assert.equal(isPurgeableMc('MC ⏳ Decompress — after X'), true);
+  assert.equal(isPurgeableMc('MC ⏳ Prep — Camera Courses Wk2'), true);
 });
 
 test('listUntiedOrphans skips claimed and protected', () => {

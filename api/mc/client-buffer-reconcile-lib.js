@@ -212,18 +212,71 @@ async function resolveMissingBufferPending(sb, parentId) {
   } catch (_) { /* non-fatal */ }
 }
 
+/** True when a dead prep/decompress row must be deleted, not recreated. */
+function deadBufferIsOrphan(row, liveParentIds) {
+  if (!row?.parent_event_id) return true;
+  if (liveParentIds) return !liveParentIds.has(row.parent_event_id);
+  return false;
+}
+
+function titleWordHits(workshopTitle, csvTitle) {
+  const words = String(csvTitle || '').toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+  const wt = String(workshopTitle || '').toLowerCase();
+  return words.filter((w) => wt.includes(w)).length;
+}
+
+/**
+ * CSV cancelled a lesson/workshop — delete matching HOME prep/decompress
+ * (and their Primary GCal events) so Diary Push cannot leave orphans.
+ */
+async function retireCsvOrphanBuffers(sb, old, notes = []) {
+  const day = old?.start_date;
+  if (!day || !old?.title) return { deleted: 0 };
+  const next = (() => {
+    const d = new Date(`${day}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  let rows = [];
+  try {
+    rows = await sb(
+      'travel_blocks?select=id,calendar_event_id,workshop_title,block_type'
+      + '&block_type=in.(prep,decompress)'
+      + `&starts_at=gte.${day}T00:00:00.000Z&starts_at=lt.${next}T00:00:00.000Z`
+      + '&limit=40',
+    ) || [];
+  } catch (e) {
+    notes.push(`csv_orphan_buffer_read_error: ${e.message}`);
+    return { deleted: 0 };
+  }
+  let deleted = 0;
+  for (const row of rows) {
+    if (titleWordHits(row.workshop_title, old.title) < 2) continue;
+    if (row.calendar_event_id) {
+      try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* gone ok */ }
+    }
+    await sb(`travel_blocks?id=eq.${row.id}`, { method: 'DELETE' });
+    deleted += 1;
+    notes.push(`csv_orphan_buffer_delete: ${row.block_type} ${row.workshop_title || ''}`);
+  }
+  return { deleted };
+}
+
 /**
  * Diary paints MISSING GCAL when travel_blocks.calendar_event_id is dead.
  * Nightly cleanups sometimes delete Primary decompress while DB rows remain.
- * Recreate those events so Push stays empty but Diary is truthful.
+ * Recreate only when a live parent_event_id still owns the buffer — never
+ * zombie-recreate soft-linked / cancelled course prep+decompress.
  */
-async function healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes) {
-  const stats = { checked: 0, recreated: 0, skipped: 0 };
+async function healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes, opts = {}) {
+  const liveParentIds = opts.liveParentIds || null;
+  const stats = { checked: 0, recreated: 0, deleted: 0, skipped: 0 };
   if (!gcalConfigured()) return stats;
   let rows = [];
   try {
     rows = await sb(
-      'travel_blocks?select=id,block_type,starts_at,ends_at,calendar_event_id,workshop_title,venue_name'
+      'travel_blocks?select=id,block_type,starts_at,ends_at,calendar_event_id,'
+      + 'workshop_title,venue_name,parent_event_id'
       + '&block_type=in.(prep,decompress)'
       + `&starts_at=gte.${today}T00:00:00Z&starts_at=lte.${horizonEnd}T23:59:59Z`
       + '&order=starts_at.asc&limit=400',
@@ -251,6 +304,28 @@ async function healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes
     }
     if (!dead) continue;
 
+    let orphan = deadBufferIsOrphan(row, liveParentIds);
+    if (!orphan && row.parent_event_id && !liveParentIds) {
+      try {
+        const p = await getPrimaryEvent(row.parent_event_id);
+        orphan = !(p && p.status !== 'cancelled');
+      } catch (_) {
+        orphan = true;
+      }
+    }
+
+    if (orphan) {
+      if (row.calendar_event_id) {
+        try { await deletePrimaryEvent(row.calendar_event_id); } catch (_) { /* gone ok */ }
+      }
+      await sb(`travel_blocks?id=eq.${row.id}`, { method: 'DELETE' });
+      stats.deleted += 1;
+      notes.push(
+        `travel_buffer_heal: deleted orphan ${row.block_type} ${row.workshop_title || ''}`,
+      );
+      continue;
+    }
+
     const meta = {
       block_type: row.block_type,
       workshop_title: row.workshop_title,
@@ -269,8 +344,11 @@ async function healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes
     });
     stats.recreated += 1;
   }
-  if (stats.recreated) {
-    notes.push(`travel_buffer_heal: recreated=${stats.recreated} checked=${stats.checked}`);
+  if (stats.recreated || stats.deleted) {
+    notes.push(
+      `travel_buffer_heal: recreated=${stats.recreated} deleted=${stats.deleted}`
+      + ` checked=${stats.checked}`,
+    );
   }
   return stats;
 }
@@ -357,13 +435,17 @@ async function runClientBufferReconcile(ctx) {
 
   await retireOrphans(runCtx, liveIds, today, horizonEnd);
 
-  const deadHeal = await healDeadTravelBufferEvents(sb, prefixes, today, horizonEnd, notes);
+  const deadHeal = await healDeadTravelBufferEvents(
+    sb, prefixes, today, horizonEnd, notes, { liveParentIds: liveIds },
+  );
   stats.recreated = deadHeal.recreated;
+  stats.deleted += deadHeal.deleted || 0;
 
   notes.push(
     `client_buffer_reconcile: parents=${parents.length} `
     + `created=${stats.created} moved=${stats.moved} deleted=${stats.deleted} `
-    + `ok=${stats.ok} clash=${stats.clash} dead_recreated=${deadHeal.recreated}`,
+    + `ok=${stats.ok} clash=${stats.clash} dead_recreated=${deadHeal.recreated}`
+    + ` dead_deleted=${deadHeal.deleted || 0}`,
   );
   return stats;
 }
@@ -371,6 +453,9 @@ async function runClientBufferReconcile(ctx) {
 module.exports = {
   runClientBufferReconcile,
   healDeadTravelBufferEvents,
+  deadBufferIsOrphan,
+  retireCsvOrphanBuffers,
+  titleWordHits,
   flankWindows,
   clientWorkshopTitle,
   isClientParent,

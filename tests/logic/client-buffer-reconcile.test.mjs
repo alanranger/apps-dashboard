@@ -5,6 +5,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const {
   flankWindows, clientWorkshopTitle, isClientParent, isoClose,
+  deadBufferIsOrphan, titleWordHits,
 } = require('../../api/mc/client-buffer-reconcile-lib.js');
 
 describe('client-buffer-reconcile — flank windows', () => {
@@ -54,5 +55,16 @@ describe('client-buffer-reconcile — flank windows', () => {
   it('isoClose tolerates small drift', () => {
     assert.equal(isoClose('2026-08-12T14:00:00Z', '2026-08-12T14:01:00Z', 2), true);
     assert.equal(isoClose('2026-08-12T14:00:00Z', '2026-08-12T14:10:00Z', 2), false);
+  });
+
+  it('dead buffers without live parent are orphans (no recreate)', () => {
+    assert.equal(deadBufferIsOrphan({ parent_event_id: null }, new Set(['a'])), true);
+    assert.equal(deadBufferIsOrphan({ parent_event_id: 'gone' }, new Set(['a'])), true);
+    assert.equal(deadBufferIsOrphan({ parent_event_id: 'a' }, new Set(['a'])), false);
+  });
+
+  it('titleWordHits needs two meaningful CSV words', () => {
+    assert.ok(titleWordHits('Camera Courses For Beginners Wk2', 'Camera Courses For Beginners - Week 2') >= 2);
+    assert.equal(titleWordHits('Woodland Masterclass', 'Camera Courses For Beginners'), 0);
   });
 });

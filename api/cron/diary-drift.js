@@ -19,9 +19,13 @@ const {
   runPendingRetirement,
   hotelReminderLeadDays,
 } = require('../mc/travel-coverage-lib');
-const { runClientBufferReconcile } = require('../mc/client-buffer-reconcile-lib');
+const {
+  runClientBufferReconcile,
+  retireCsvOrphanBuffers,
+} = require('../mc/client-buffer-reconcile-lib');
 const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-lib');
 const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
+const { runTravelFollowLive } = require('../mc/travel-regenerate-apply-lib');
 
 async function insertProposals(proposals, inserted) {
   for (const p of proposals) {
@@ -452,11 +456,13 @@ async function handler(req, res) {
     }
   }
 
-  // Cancelled / removed from CSV vs last snapshot
+  // Cancelled / removed from CSV vs last snapshot — delete HOME buffers now
+  // (pending alone never reached GCal; heal used to recreate them).
   if (!isBaseline) {
     for (const old of prev || []) {
       if (currentKeys.has(old.row_key)) continue;
       if (old.start_date < today) continue;
+      const retired = await retireCsvOrphanBuffers(sb, old, notes);
       const relatedId = `orphan:${old.row_key}`;
       if (await existingPending('orphaned_block', relatedId)) continue;
       const row = await sb('pending_diary_changes', {
@@ -466,10 +472,16 @@ async function handler(req, res) {
           target_date: old.start_date,
           summary: `Removed from CSV: ${old.title}`,
           proposed_action: `Remove orphaned ${travelPrefix}/${bufferPrefix} MC blocks for "${old.title}" on ${old.start_date} (no longer in workshop/lesson CSV).`,
-          reason: 'Present in previous snapshot, absent from current CSV export',
+          reason: retired.deleted
+            ? `CSV absent; deleted ${retired.deleted} prep/decompress row(s)`
+            : 'Present in previous snapshot, absent from current CSV export',
           urgency: 'normal',
-          status: 'pending',
+          status: retired.deleted ? 'resolved_externally' : 'pending',
           related_id: relatedId,
+          ...(retired.deleted ? {
+            resolved_at: new Date().toISOString(),
+            resolved_by: 'diary_drift_csv_orphan',
+          } : {}),
         },
       });
       const id = Array.isArray(row) ? row[0]?.id : row?.id;
@@ -640,6 +652,22 @@ async function handler(req, res) {
         ruleMap,
         venues: drives,
       });
+      // Auto-apply: travel follows live workshop positions (no Alan/Cursor nudge).
+      try {
+        const follow = await runTravelFollowLive({
+          sb,
+          actor: 'cron-diary-drift',
+          weeks: horizonWeeks,
+          apply: true,
+          gcalEvents: calEvents,
+          notes,
+        });
+        if ((follow.applied || []).length) {
+          notes.push(`travel_follow_live: applied ${follow.applied.length} trip(s)`);
+        }
+      } catch (e) {
+        notes.push(`travel_follow_live_error: ${e.message}`);
+      }
       await runClientBufferReconcile({
         sb,
         existingPending,
