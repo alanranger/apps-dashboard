@@ -57,9 +57,19 @@ function matchLabel(fixture) {
   return (fixture.summary || 'Ipswich fixture').replace(/^⚽️\s*/, '').trim();
 }
 
+// DB returns "2026-12-02 20:00:00+00", the feed "2026-12-01T20:00:00Z" — compare instants.
+function toMs(v) {
+  const s = String(v || '').trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00');
+  return Date.parse(s);
+}
+
+function sameInstant(a, b) {
+  return toMs(a) === toMs(b);
+}
+
 function timesMoved(row, win) {
-  return String(row.fixture_start) !== String(win.fixture_start)
-    || String(row.fixture_end) !== String(win.fixture_end);
+  return !sameInstant(row.fixture_start, win.fixture_start)
+    || !sameInstant(row.fixture_end, win.fixture_end);
 }
 
 function rowBody(fixture, win, bufferMin) {
@@ -176,5 +186,5 @@ async function runFixtureBlockScan(ctx) {
 }
 
 module.exports = {
-  runFixtureBlockScan, flankWindows, blockWindow, londonHm, matchLabel, fixtureIsPast,
+  runFixtureBlockScan, flankWindows, blockWindow, londonHm, matchLabel, fixtureIsPast, timesMoved,
 };

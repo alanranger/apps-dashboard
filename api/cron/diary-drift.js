@@ -784,13 +784,12 @@ async function handler(req, res) {
   }
 
   // Fixture blocks — dedicated season-length fetch (main busy-map horizon is only
-  // 12w; the feed runs ~11 months). Informational MC ⚽ proposals only.
-  if (gcalConfigured() && !lightFull) {
+  // 12w; the feed runs ~11 months). Runs on EVERY check (incl. manual Full): the
+  // flank sync repaints at the row's kick-off, so the row must follow the feed first.
+  if (gcalConfigured()) {
     await maybeRunFixtureScan({
       sb, existingPending, inserted, notes, ruleMap, today,
     });
-  }
-  if (gcalConfigured()) {
     await runOrphanCleanup({ notes, ruleMap });
   }
 

@@ -4,8 +4,27 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const {
-  flankWindows, londonHm, matchLabel,
+  flankWindows, londonHm, matchLabel, timesMoved, fixtureIsPast,
 } = require('../../api/mc/fixture-coverage-lib.js');
+
+describe('fixture-coverage-lib — feed vs DB kick-off', () => {
+  const dbRow = { fixture_start: '2026-12-02 20:00:00+00', fixture_end: '2026-12-02 22:00:00+00' };
+
+  it('same instant in DB and feed formats is not a move', () => {
+    const win = flankWindows({ start: '2026-12-02T20:00:00Z', end: '2026-12-02T22:00:00Z' }, 60);
+    assert.equal(timesMoved(dbRow, win), false);
+  });
+
+  it('Coventry moved Wed 2 Dec → Tue 1 Dec is a move', () => {
+    const win = flankWindows({ start: '2026-12-01T20:00:00Z', end: '2026-12-01T22:00:00Z' }, 60);
+    assert.equal(timesMoved(dbRow, win), true);
+  });
+
+  it('past fixtures are history', () => {
+    assert.equal(fixtureIsPast({ fixture_end: '2020-01-01 00:00:00+00' }), true);
+    assert.equal(fixtureIsPast({ fixture_end: '2099-01-01 00:00:00+00' }), false);
+  });
+});
 
 describe('fixture-coverage-lib — two flanks off real feed time', () => {
   it('Sunderland Sat 15:00 London → Before 14:00–15:00, After 17:00–18:00', () => {
