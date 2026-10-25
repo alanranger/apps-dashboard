@@ -54,12 +54,20 @@ async function collectClaimedIds(sb) {
   return claimed;
 }
 
-function listUntiedOrphans(events, claimed) {
+// Frequent runs must not race a writer that has created the event but not yet saved its claim.
+function touchedRecently(e, minAgeMinutes, nowMs) {
+  if (!minAgeMinutes) return false;
+  const t = Date.parse(e.updated || e.created || '');
+  return Number.isFinite(t) && nowMs - t < minAgeMinutes * 60000;
+}
+
+function listUntiedOrphans(events, claimed, { minAgeMinutes = 0, nowMs = Date.now() } = {}) {
   const out = [];
   for (const e of events || []) {
     if ((e._calendarId || 'primary') !== 'primary' || !e.start?.dateTime || !e.id) continue;
     if (!isPurgeableMc(e.summary)) continue;
     if (claimed.has(e.id)) continue;
+    if (touchedRecently(e, minAgeMinutes, nowMs)) continue;
     out.push({
       id: e.id,
       day: isoToLondonDate(e.start.dateTime),
@@ -75,6 +83,7 @@ async function purgeUntiedMcOrphans(sb, {
   limit = 40,
   lookbackDays = 21,
   aheadDays = 280,
+  minAgeMinutes = 0,
 } = {}) {
   const claimed = await collectClaimedIds(sb);
   let pool = events;
@@ -86,7 +95,7 @@ async function purgeUntiedMcOrphans(sb, {
     );
     pool = snap.events || [];
   }
-  const orphans = listUntiedOrphans(pool, claimed);
+  const orphans = listUntiedOrphans(pool, claimed, { minAgeMinutes });
   const deleted = [];
   const failed = [];
   for (const o of orphans.slice(0, Math.max(1, limit))) {

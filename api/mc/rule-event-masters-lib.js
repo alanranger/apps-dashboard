@@ -308,11 +308,36 @@ async function syncAwayDays(sb, travel, events, { writeGcal = true } = {}) {
   };
 }
 
+function withinMinute(a, b) {
+  const x = Date.parse(a || '');
+  const y = Date.parse(b || '');
+  return Number.isFinite(x) && Number.isFinite(y) && Math.abs(x - y) < 60000;
+}
+
+/** Flank is live with the expected title/times. Uses the pre-fetched event when present. */
+async function flankLiveOk(liveById, eventId, expect) {
+  const ev = liveById.get(eventId);
+  if (ev) {
+    return ev.status !== 'cancelled'
+      && String(ev.summary || '') === String(expect.summary)
+      && withinMinute(ev.start?.dateTime, expect.startIso)
+      && withinMinute(ev.end?.dateTime, expect.endIso);
+  }
+  try {
+    const v = await verifyPrimaryEvent(eventId, expect);
+    return v.ok;
+  } catch (_) {
+    return false;
+  }
+}
+
 async function syncFixtureBuffers(sb, ruleMap, {
   writeGcal = true, events = [],
 } = {}) {
   const prefix = ruleMap.title_prefix_fixture || 'MC ⚽';
   const rows = await sb('fixture_blocks?status=eq.active&select=*') || [];
+  // A pre-fetched horizon (15-min self-heal) avoids two GETs per fixture per run.
+  const liveById = new Map((events || []).filter((e) => e?.id).map((e) => [e.id, e]));
   const linked = [];
   const created = [];
   const failed = [];
@@ -341,20 +366,12 @@ async function syncFixtureBuffers(sb, ruleMap, {
     // Must be live (not cancelled) AND match expected title/times — else recreate.
     // League Cup / late feed fixtures often kept stale IDs after cancel/wrong-day paint.
     if (row.before_event_id && row.after_event_id) {
-      let beforeOk = false;
-      let afterOk = false;
-      try {
-        const vb = await verifyPrimaryEvent(row.before_event_id, {
-          summary: beforeTitle, startIso: win.before_start, endIso: win.before_end,
-        });
-        beforeOk = vb.ok;
-      } catch (_) { beforeOk = false; }
-      try {
-        const va = await verifyPrimaryEvent(row.after_event_id, {
-          summary: afterTitle, startIso: win.after_start, endIso: win.after_end,
-        });
-        afterOk = va.ok;
-      } catch (_) { afterOk = false; }
+      const beforeOk = await flankLiveOk(liveById, row.before_event_id, {
+        summary: beforeTitle, startIso: win.before_start, endIso: win.before_end,
+      });
+      const afterOk = await flankLiveOk(liveById, row.after_event_id, {
+        summary: afterTitle, startIso: win.after_start, endIso: win.after_end,
+      });
       if (beforeOk && afterOk) {
         already.push(row.id);
         continue;

@@ -33,6 +33,22 @@ test('unclaimed MC ⚽ fixture flanks purge; claimed ones are kept', () => {
   assert.deepEqual(orphans.map((o) => o.id), ['stale-flank']);
 });
 
+test('orphans touched in the last 30 min are left for a later run', () => {
+  const nowMs = Date.parse('2026-10-25T18:00:00Z');
+  const events = [
+    {
+      id: 'fresh', _calendarId: 'primary', summary: 'MC 🔁 Hotel bookings',
+      start: { dateTime: '2026-11-02T12:00:00Z' }, updated: '2026-10-25T17:50:00Z',
+    },
+    {
+      id: 'old', _calendarId: 'primary', summary: 'MC 🔁 Hotel bookings',
+      start: { dateTime: '2026-11-03T12:00:00Z' }, updated: '2026-10-20T09:00:00Z',
+    },
+  ];
+  const orphans = listUntiedOrphans(events, new Set(), { minAgeMinutes: 30, nowMs });
+  assert.deepEqual(orphans.map((o) => o.id), ['old']);
+});
+
 test('listUntiedOrphans skips claimed and protected', () => {
   const claimed = new Set(['keep-me']);
   const events = [

@@ -7,8 +7,7 @@ const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
 const { holidaySetFromRows, bankHolidaySet } = require('../mc/scheduling-rules-lib');
 const { buildRuleBreachProposals, splitMcAndBusy } = require('../mc/rule-breach-lib');
-const { gcalConfigured, fetchHorizonEvents, fetchFixtureEvents } = require('../mc/gcal-lib');
-const { runFixtureBlockScan } = require('../mc/fixture-coverage-lib');
+const { gcalConfigured, fetchHorizonEvents } = require('../mc/gcal-lib');
 const { computeMissedProposal } = require('../mc/missed-habit-lib');
 const { runHabitPlacerPropose } = require('../mc/habit-placer-propose-lib');
 const {
@@ -25,9 +24,9 @@ const {
   retireCsvOrphanBuffers,
 } = require('../mc/client-buffer-reconcile-lib');
 const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-lib');
-const { runRuleEventMasterSync, syncFixtureBuffers } = require('../mc/rule-event-masters-lib');
+const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
 const { runTravelFollowLive } = require('../mc/travel-regenerate-apply-lib');
-const { purgeUntiedMcOrphans } = require('../mc/gcal-orphan-purge-lib');
+const { runScheduleSelfHeal } = require('../mc/schedule-self-heal-lib');
 
 async function insertProposals(proposals, inserted) {
   for (const p of proposals) {
@@ -165,71 +164,6 @@ async function retireStaleWindowBreaches(ctx) {
     n += 1;
   }
   notes.push(`stale_window_breach_retirement: ${n} row(s)`);
-}
-
-async function maybeRunFixtureScan(ctx) {
-  const {
-    sb, existingPending, inserted, notes, ruleMap, today,
-  } = ctx;
-  try {
-    const fixWeeks = Number(ruleMap.fixture_horizon_weeks || 60);
-    const fixEnd = addDaysYmd(today, fixWeeks * 7);
-    const { fixtures, health } = await fetchFixtureEvents(
-      `${today}T00:00:00Z`, `${fixEnd}T23:59:59Z`,
-    );
-    await runFixtureBlockScan({
-      sb,
-      existingPending,
-      inserted,
-      notes,
-      fixtures,
-      prefix: ruleMap.title_prefix_fixture || 'MC ⚽',
-      bufferMin: Number(ruleMap.fixture_buffer_min || 60),
-    });
-    const feed = health.map((h) => `${h.id}:${h.ok ? h.count : 'FAIL'}`).join(' | ');
-    notes.push(`fixture_feed: ${feed} (horizon ${fixWeeks}w → ${fixEnd})`);
-  } catch (e) {
-    notes.push(`fixture_scan_error: ${e.message}`);
-  }
-}
-
-// Fixture flanks are repainted automatically, so their old proposals are noise.
-async function dismissAutomatedFixtureProposals(notes) {
-  try {
-    await sb('pending_diary_changes?status=eq.pending&change_type=in.(fixture_block,fixture_block_retire)', {
-      method: 'PATCH',
-      prefer: 'return=minimal',
-      body: {
-        status: 'dismissed',
-        resolved_at: new Date().toISOString(),
-        resolved_by: 'fixture_auto_sync',
-      },
-    });
-  } catch (e) {
-    notes.push(`fixture_proposal_dismiss_error: ${e.message}`);
-  }
-}
-
-/**
- * Every run (cron + manual, any scope): repaint MC ⚽ flanks at each fixture's
- * current kick-off, then delete Primary MC events no DB row claims (orphans).
- */
-async function runOrphanCleanup({ notes, ruleMap }) {
-  let flanksOk = false;
-  try {
-    const fx = await syncFixtureBuffers(sb, ruleMap, { writeGcal: true });
-    flanksOk = fx.failed.length === 0;
-    notes.push(`fixture_flanks: ${fx.rows} active; ${fx.already_linked_live} ok; ${fx.recreated} repainted; ${fx.failed.length} failed`);
-  } catch (e) {
-    notes.push(`fixture_flanks_error: ${e.message}`);
-  }
-  try {
-    const p = await purgeUntiedMcOrphans(sb, { limit: 80 });
-    notes.push(`orphan_purge: ${p.orphans_found} found; ${p.deleted} deleted; ${p.remaining} left for next run`);
-  } catch (e) {
-    notes.push(`orphan_purge_error: ${e.message}`);
-  }
-  if (flanksOk) await dismissAutomatedFixtureProposals(notes);
 }
 
 async function existingPending(changeType, relatedId) {
@@ -787,10 +721,11 @@ async function handler(req, res) {
   // 12w; the feed runs ~11 months). Runs on EVERY check (incl. manual Full): the
   // flank sync repaints at the row's kick-off, so the row must follow the feed first.
   if (gcalConfigured()) {
-    await maybeRunFixtureScan({
-      sb, existingPending, inserted, notes, ruleMap, today,
-    });
-    await runOrphanCleanup({ notes, ruleMap });
+    try {
+      await runScheduleSelfHeal(sb, { ruleMap, notes });
+    } catch (e) {
+      notes.push(`schedule_self_heal_error: ${e.message}`);
+    }
   }
 
   // Joint habit placer → pending amendments (KEEP omitted; no calendar writes).
