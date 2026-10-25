@@ -1,6 +1,7 @@
 /**
  * MC-43 nightly diary-drift detector.
- * Writes pending_diary_changes ONLY — never Google Calendar.
+ * Mostly writes pending_diary_changes. Auto-applied Google writes: travel follow-live,
+ * client buffer / workshop travel reconcile, MC ⚽ fixture flanks, and the orphan purge.
  */
 const { json, sb } = require('../mc/_lib');
 const { loadScheduleEvents, isHomeBased } = require('../mc/scheduleCsv');
@@ -24,8 +25,9 @@ const {
   retireCsvOrphanBuffers,
 } = require('../mc/client-buffer-reconcile-lib');
 const { runWorkshopTravelReconcile } = require('../mc/workshop-travel-reconcile-lib');
-const { runRuleEventMasterSync } = require('../mc/rule-event-masters-lib');
+const { runRuleEventMasterSync, syncFixtureBuffers } = require('../mc/rule-event-masters-lib');
 const { runTravelFollowLive } = require('../mc/travel-regenerate-apply-lib');
+const { purgeUntiedMcOrphans } = require('../mc/gcal-orphan-purge-lib');
 
 async function insertProposals(proposals, inserted) {
   for (const p of proposals) {
@@ -189,6 +191,45 @@ async function maybeRunFixtureScan(ctx) {
   } catch (e) {
     notes.push(`fixture_scan_error: ${e.message}`);
   }
+}
+
+// Fixture flanks are repainted automatically, so their old proposals are noise.
+async function dismissAutomatedFixtureProposals(notes) {
+  try {
+    await sb('pending_diary_changes?status=eq.pending&change_type=in.(fixture_block,fixture_block_retire)', {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: {
+        status: 'dismissed',
+        resolved_at: new Date().toISOString(),
+        resolved_by: 'fixture_auto_sync',
+      },
+    });
+  } catch (e) {
+    notes.push(`fixture_proposal_dismiss_error: ${e.message}`);
+  }
+}
+
+/**
+ * Every run (cron + manual, any scope): repaint MC ⚽ flanks at each fixture's
+ * current kick-off, then delete Primary MC events no DB row claims (orphans).
+ */
+async function runOrphanCleanup({ notes, ruleMap }) {
+  let flanksOk = false;
+  try {
+    const fx = await syncFixtureBuffers(sb, ruleMap, { writeGcal: true });
+    flanksOk = fx.failed.length === 0;
+    notes.push(`fixture_flanks: ${fx.rows} active; ${fx.already_linked_live} ok; ${fx.recreated} repainted; ${fx.failed.length} failed`);
+  } catch (e) {
+    notes.push(`fixture_flanks_error: ${e.message}`);
+  }
+  try {
+    const p = await purgeUntiedMcOrphans(sb, { limit: 80 });
+    notes.push(`orphan_purge: ${p.orphans_found} found; ${p.deleted} deleted; ${p.remaining} left for next run`);
+  } catch (e) {
+    notes.push(`orphan_purge_error: ${e.message}`);
+  }
+  if (flanksOk) await dismissAutomatedFixtureProposals(notes);
 }
 
 async function existingPending(changeType, relatedId) {
@@ -748,6 +789,9 @@ async function handler(req, res) {
     await maybeRunFixtureScan({
       sb, existingPending, inserted, notes, ruleMap, today,
     });
+  }
+  if (gcalConfigured()) {
+    await runOrphanCleanup({ notes, ruleMap });
   }
 
   // Joint habit placer → pending amendments (KEEP omitted; no calendar writes).

@@ -15,7 +15,7 @@ const {
   deletePrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
 const { restDayGcalTitle, awaySpanGcalTitle } = require('./gcal-title-lib');
-const { flankWindows, matchLabel } = require('./fixture-coverage-lib');
+const { flankWindows, matchLabel, fixtureIsPast } = require('./fixture-coverage-lib');
 const { ruleMapFromRows, isoToLondonDate } = require('./scheduling-rules-lib');
 
 function sleep(ms) {
@@ -118,6 +118,13 @@ async function syncRestDays(sb, events, ruleMap, { writeGcal = true } = {}) {
     const title = restDayGcalTitle(span.workshop_title || span.summary);
     const endExclusive = addDaysYmd(span.restDay, 1);
     let row = byDate.get(key);
+    // Revive retired row on the same date (unique key) instead of INSERT fail.
+    if (!row) {
+      const prior = await sb(
+        `rest_day_blocks?rest_date=eq.${key}&select=*&limit=1`,
+      );
+      if (prior?.[0]) row = prior[0];
+    }
     const body = {
       rest_date: span.restDay,
       workshop_event_id: span.workshop_event_id,
@@ -314,6 +321,7 @@ async function syncFixtureBuffers(sb, ruleMap, {
   // Liveable/placer: flank vs existing non-MC is OK; other MC must not land in window.
 
   for (const row of rows) {
+    if (fixtureIsPast(row)) continue; // history — never repaint finished matches
     const label = matchLabel({ summary: row.title });
     const beforeTitle = `${prefix} Before: ${label}`;
     const afterTitle = `${prefix} After: ${label}`;

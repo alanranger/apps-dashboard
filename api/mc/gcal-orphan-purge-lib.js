@@ -9,11 +9,11 @@ const { isoToLondonDate } = require('./scheduling-rules-lib');
 
 function isProtectedMc(summary) {
   const t = String(summary || '');
-  // Prep/Decompress are NOT title-protected: travel_blocks.calendar_event_id
-  // claims keep live ones; unclaimed zombies (cancelled courses) must purge.
+  // Prep/Decompress and MC ⚽ fixture flanks are NOT title-protected: their
+  // calendar_event_id / before_event_id / after_event_id claims keep live ones;
+  // unclaimed zombies (cancelled courses, moved or dropped fixtures) must purge.
   return /MC\s*🚗|Travel out|Travel back|Travel —/i.test(t)
-    || /MC\s*🚫|MC\s*🛌|AWAY —|REST —/i.test(t)
-    || /MC\s*⚽/i.test(t);
+    || /MC\s*🚫|MC\s*🛌|AWAY —|REST —/i.test(t);
 }
 
 function isPurgeableMc(summary) {

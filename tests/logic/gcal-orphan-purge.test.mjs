@@ -16,6 +16,23 @@ test('habits/tasks purgeable; travel protected; unclaimed prep/decompress purgea
   assert.equal(isPurgeableMc('MC ⏳ Prep — Camera Courses Wk2'), true);
 });
 
+test('unclaimed MC ⚽ fixture flanks purge; claimed ones are kept', () => {
+  assert.equal(isProtectedMc('MC ⚽ Before: Coventry City vs Ipswich Town'), false);
+  assert.equal(isPurgeableMc('MC ⚽ After: Coventry City vs Ipswich Town'), true);
+  const events = [
+    {
+      id: 'stale-flank', _calendarId: 'primary', summary: 'MC ⚽ Before: Coventry City vs Ipswich Town',
+      start: { dateTime: '2026-12-02T19:00:00Z' },
+    },
+    {
+      id: 'live-flank', _calendarId: 'primary', summary: 'MC ⚽ Before: Coventry City vs Ipswich Town',
+      start: { dateTime: '2026-12-01T19:00:00Z' },
+    },
+  ];
+  const orphans = listUntiedOrphans(events, new Set(['live-flank']));
+  assert.deepEqual(orphans.map((o) => o.id), ['stale-flank']);
+});
+
 test('listUntiedOrphans skips claimed and protected', () => {
   const claimed = new Set(['keep-me']);
   const events = [

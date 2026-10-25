@@ -1,7 +1,9 @@
 /**
  * Ipswich fixture flank blocks — informational MC ⚽ Before / After.
- * Proposals only (Claude applies). Tie-back: fixture_blocks.before_event_id +
- * after_event_id. Retirement re-keys on fixture_event_id every run.
+ * Self-healing, no proposals: this scan keeps fixture_blocks in step with the feed
+ * (new / moved kick-offs) and deletes flanks of fixtures that left the feed;
+ * rule-event-masters-lib syncFixtureBuffers then (re)paints flanks at the row's
+ * current kick-off. Tie-back: fixture_blocks.before_event_id + after_event_id.
  *
  * Shape (per match start S / end E from the live feed):
  *   Before: S−buffer → S
@@ -10,7 +12,8 @@
  *
  * Flank blocks are NOT binding: rule-breach-lib excludes MC ⚽ from breach checks.
  */
-const { isoToLondonDate, isoToLondonMinutes } = require('./scheduling-rules-lib');
+const { isoToLondonMinutes } = require('./scheduling-rules-lib');
+const { deletePrimaryEvent } = require('./gcal-write-lib');
 
 function shiftIso(iso, minutes) {
   return new Date(Date.parse(iso) + minutes * 60000).toISOString();
@@ -54,33 +57,9 @@ function matchLabel(fixture) {
   return (fixture.summary || 'Ipswich fixture').replace(/^⚽️\s*/, '').trim();
 }
 
-function createAction(prefix, win, fixture) {
-  const label = matchLabel(fixture);
-  const day = isoToLondonDate(win.fixture_start);
-  return `Create TWO informational ${prefix} blocks on ${day} for "${label}" `
-    + `(match itself stays on Ipswich feed — do not duplicate):\n`
-    + `1) "${prefix} Before: ${label}" ${londonHm(win.before_start)}–${londonHm(win.before_end)}\n`
-    + `2) "${prefix} After: ${label}" ${londonHm(win.after_start)}–${londonHm(win.after_end)}\n`
-    + 'NOT binding — never displaces a class or MC admin, never costs a roll. '
-    + 'Then set before_event_id + after_event_id on the fixture_blocks row.';
-}
-
-function moveAction(prefix, win, fixture) {
-  const label = matchLabel(fixture);
-  const day = isoToLondonDate(win.fixture_start);
-  return `Move BOTH ${prefix} flanks on ${day} for "${label}" to `
-    + `Before ${londonHm(win.before_start)}–${londonHm(win.before_end)} and `
-    + `After ${londonHm(win.after_start)}–${londonHm(win.after_end)} `
-    + '(kick-off/end shifted). Informational only.';
-}
-
 function timesMoved(row, win) {
   return String(row.fixture_start) !== String(win.fixture_start)
     || String(row.fixture_end) !== String(win.fixture_end);
-}
-
-function flanksPlaced(row) {
-  return !!(row?.before_event_id && row?.after_event_id);
 }
 
 function rowBody(fixture, win, bufferMin) {
@@ -110,94 +89,52 @@ async function writeRow(sb, fixture, row, win, bufferMin) {
   });
 }
 
-async function insertPending(sb, existingPending, inserted, row) {
-  if (await existingPending(row.change_type, row.related_id)) return;
-  const out = await sb('pending_diary_changes', { method: 'POST', body: row });
-  const id = Array.isArray(out) ? out[0]?.id : out?.id;
-  if (id) inserted.push(id);
-}
-
-async function proposeCreateOrMove(ctx, fixture, row) {
-  const {
-    sb, existingPending, inserted, prefix, bufferMin,
-  } = ctx;
+/** Keep the row's kick-off in step with the feed; flanks are repainted by syncFixtureBuffers. */
+async function upsertFixtureRow(ctx, fixture, row) {
+  const { sb, bufferMin } = ctx;
   const win = flankWindows(fixture, bufferMin);
   if (!win) return false;
+  const isNew = !row || row.status !== 'active';
+  const retitled = !isNew && (fixture.summary || null) !== (row.title || null);
+  if (!isNew && !retitled && !timesMoved(row, win)) return false;
   await writeRow(sb, fixture, row, win, bufferMin);
-  const day = isoToLondonDate(win.fixture_start);
-
-  if (!flanksPlaced(row)) {
-    await insertPending(sb, existingPending, inserted, {
-      change_type: 'fixture_block',
-      target_date: day,
-      summary: `Fixture flanks: ${fixture.summary || 'Ipswich Town'} — ${day}`,
-      proposed_action: createAction(prefix, win, fixture),
-      reason: 'Ipswich fixture needs MC ⚽ Before + After (informational; two blocks)',
-      urgency: 'low',
-      status: 'pending',
-      related_id: `fixture:${fixture.id}`,
-    });
-    return true;
-  }
-  if (timesMoved(row, win)) {
-    // Unique related_id per kick-off left prior move rows forever. Clear siblings first.
-    try {
-      const old = await sb(
-        `pending_diary_changes?status=eq.pending&change_type=eq.fixture_block`
-        + `&related_id=like.${encodeURIComponent(`fixture_move:${fixture.id}:*`)}`
-        + '&select=id',
-      );
-      for (const p of old || []) {
-        await sb(`pending_diary_changes?id=eq.${p.id}`, {
-          method: 'PATCH', prefer: 'return=minimal',
-          body: {
-            status: 'dismissed',
-            resolved_at: new Date().toISOString(),
-            resolved_by: 'fixture_move_supersede',
-            proposed_action: 'DISMISSED — superseded by newer fixture kick-off',
-          },
-        });
-      }
-    } catch (_) { /* non-fatal */ }
-    await insertPending(sb, existingPending, inserted, {
-      change_type: 'fixture_block',
-      target_date: day,
-      summary: `Fixture moved: ${fixture.summary || 'Ipswich Town'} — ${day}`,
-      proposed_action: moveAction(prefix, win, fixture),
-      reason: `Fixture time changed; was ${row.fixture_start}`,
-      urgency: 'low',
-      status: 'pending',
-      related_id: `fixture_move:${fixture.id}:${win.fixture_start}`,
-    });
-    return true;
-  }
-  return false;
+  return true;
 }
 
+async function deleteFlankEvents(row) {
+  const ids = [row.before_event_id, row.after_event_id, row.calendar_event_id].filter(Boolean);
+  for (const id of ids) {
+    try { await deletePrimaryEvent(id); } catch (_) { /* already gone — purge sweep catches leftovers */ }
+  }
+  return ids.length;
+}
+
+function fixtureIsPast(row, nowMs = Date.now()) {
+  const end = Date.parse(row.fixture_end || row.fixture_start || '');
+  return Number.isFinite(end) && end < nowMs;
+}
+
+/**
+ * Upcoming fixture left the feed: delete its flanks now and retire the row (no proposal).
+ * Past fixtures are never in the feed (it starts today) — leave them as history.
+ */
 async function retireGoneFixtures(ctx, feedIds, activeRows) {
-  const {
-    sb, existingPending, inserted, prefix,
-  } = ctx;
+  const { sb } = ctx;
   let retired = 0;
   for (const row of activeRows) {
-    if (feedIds.has(row.fixture_event_id)) continue;
+    if (feedIds.has(row.fixture_event_id) || fixtureIsPast(row)) continue;
+    await deleteFlankEvents(row);
     await sb(`fixture_blocks?id=eq.${row.id}`, {
       method: 'PATCH',
-      body: { status: 'retired', updated_at: new Date().toISOString() },
+      prefer: 'return=minimal',
+      body: {
+        status: 'retired',
+        before_event_id: null,
+        after_event_id: null,
+        calendar_event_id: null,
+        updated_at: new Date().toISOString(),
+      },
     });
-    if (row.before_event_id || row.after_event_id || row.calendar_event_id) {
-      await insertPending(sb, existingPending, inserted, {
-        change_type: 'fixture_block_retire',
-        target_date: isoToLondonDate(row.fixture_start),
-        summary: `Fixture gone: ${row.title || 'Ipswich fixture'}`,
-        proposed_action: `Delete BOTH ${prefix} Before and After blocks for this fixture `
-          + '(and any legacy single block) — it left the feed. Informational only.',
-        reason: `fixture_event_id ${row.fixture_event_id} absent from current feed`,
-        urgency: 'low',
-        status: 'pending',
-        related_id: `fixture_retire:${row.fixture_event_id}`,
-      });
-    }
     retired += 1;
   }
   return retired;
@@ -220,20 +157,24 @@ async function runFixtureBlockScan(ctx) {
   }
   const rowByFixture = new Map(allRows.map((r) => [r.fixture_event_id, r]));
   const feedIds = new Set();
-  let proposed = 0;
+  let updated = 0;
   for (const fixture of fixtures || []) {
     if (!fixture.id) continue;
     feedIds.add(fixture.id);
-    const changed = await proposeCreateOrMove(ctx, fixture, rowByFixture.get(fixture.id));
-    if (changed) proposed += 1;
+    if (await upsertFixtureRow(ctx, fixture, rowByFixture.get(fixture.id))) updated += 1;
+  }
+  // An empty/failed feed must never retire the whole season.
+  if (!feedIds.size) {
+    notes.push('fixture_block_scan: feed returned 0 fixtures — retire step skipped');
+    return;
   }
   const activeRows = allRows.filter((r) => r.status === 'active');
   const retired = await retireGoneFixtures(ctx, feedIds, activeRows);
   notes.push(
-    `fixture_block_scan: ${fixtures?.length || 0} feed fixtures; ${proposed} create/move proposal(s); ${retired} retired`,
+    `fixture_block_scan: ${fixtures?.length || 0} feed fixtures; ${updated} new/moved; ${retired} retired (flanks deleted)`,
   );
 }
 
 module.exports = {
-  runFixtureBlockScan, flankWindows, blockWindow, londonHm, matchLabel,
+  runFixtureBlockScan, flankWindows, blockWindow, londonHm, matchLabel, fixtureIsPast,
 };
