@@ -96,6 +96,26 @@ async function runClientBufferPass() {
   };
 }
 
+// Last-run timings (cost watch — this route logs nothing to Vercel). One row, overwritten each run.
+async function stampRun(summary) {
+  const key = 'gcal_auto_sync_last_run';
+  const body = {
+    key,
+    value: JSON.stringify(summary),
+    value_type: 'string',
+    description: 'Last 15-min gcal-auto-sync run: timings + self-heal notes',
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    const rows = await sb(`scheduling_rules?key=eq.${key}&select=key`);
+    if (rows?.[0]) {
+      await sb(`scheduling_rules?key=eq.${key}`, { method: 'PATCH', prefer: 'return=minimal', body });
+    } else {
+      await sb('scheduling_rules', { method: 'POST', prefer: 'return=minimal', body });
+    }
+  } catch (_) { /* timing stamp must never fail the sync */ }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'POST') {
     return json(res, 405, { error: 'method not allowed' });
@@ -106,6 +126,7 @@ module.exports = async function handler(req, res) {
   }
   if (!envReady()) return json(res, 503, { error: 'MC_SUPABASE_NOT_CONFIGURED' });
 
+  const startedMs = Date.now();
   try {
     let client_buffers = null;
     try {
@@ -124,13 +145,21 @@ module.exports = async function handler(req, res) {
     let self_heal = null;
     if (gcalConfigured()) {
       const healNotes = [];
+      const healStartMs = Date.now();
       try {
         const r = await runScheduleSelfHeal(sb, { notes: healNotes, purgeLimit: 40 });
         self_heal = { notes: healNotes, purge_failed: r.purge?.failed?.length || 0 };
       } catch (e) {
         self_heal = { skipped: true, error: e.message || 'self_heal_failed', notes: healNotes };
       }
+      self_heal.duration_ms = Date.now() - healStartMs;
     }
+    await stampRun({
+      ran_at: new Date().toISOString(),
+      total_ms: Date.now() - startedMs,
+      self_heal_ms: self_heal?.duration_ms ?? null,
+      self_heal_notes: self_heal?.notes || [],
+    });
 
     return json(res, 200, {
       ok: true,
