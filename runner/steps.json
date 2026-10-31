@@ -1,0 +1,93 @@
+[
+  {
+    "id": "preflight", "ord": 1, "name": "Pre-flight checks",
+    "calls": "runner checks: UTC day, fault_monitor_runs, AlanSharedResourcesAutoSync task, Schema Tools/scripts/faq-layout-fixtures.mjs, .env key names, GET https://www.alanranger.com/",
+    "where": "pc", "inputs": [".env.local files (names only)", "fault_monitor_runs", "Windows scheduled task"], "outputs": [],
+    "prechecks": [], "success": "not Monday UTC; no ① in progress; auto-sync paused; FAQ fixture gate passes; secrets present; site returns 200",
+    "dry_run": "same checks; Monday / ① running / auto-sync on are warnings instead of hard fails", "duration": "under 1 min", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "build_csvs", "ord": 2, "name": "Build CSVs 01–05, 08 and raw-01",
+    "calls": "PILOT scripts/build-exact.mjs (feeds → 01–05, 08) + scripts/build-raw01-api.mjs (Commerce Products API, CARRY_HIDDEN_CATEGORIES=1) + scripts/byte-compare.mjs",
+    "where": "pc", "inputs": ["public feeds (?format=json)", "Squarespace Commerce Products API (GET)"], "outputs": ["csv/01–05, 08, raw-01"],
+    "prechecks": ["preflight ok"], "success": "every file written; header/BOM/EOL identical to the previous export",
+    "dry_run": "uses the cached feeds and API responses; writes into the sandbox csv folder only", "duration": "1–3 min (fresh fetch 5–10 min, paced)", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "ingest_preliminary", "ord": 3, "name": "Preliminary ingest (steps 1–4) + mappings export",
+    "calls": "Chat AI Bot api/csv-import.js (metadata) — steps 2–4 and Export Mappings are browser-only today",
+    "where": "vercel", "inputs": ["csv/01–08"], "outputs": ["csv_metadata", "page_entities", "csv processed/05-event-product-mappings-latest.csv"],
+    "prechecks": ["build_csvs ok"], "success": "0 duplicates; no unexpected deletes",
+    "dry_run": "real handler against the recording mock over a production snapshot (no database writes)", "duration": "10–40 min live; ~1 min dry", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "reviews", "ord": 4, "name": "Reviews: Google fetch, frozen Trustpilot, lock + merge, hold list",
+    "calls": "Schema Tools scripts/fetch-google-reviews.py (live only) + scripts/merge-reviews.py (includes shadow matcher)",
+    "where": "pc", "inputs": ["Google reviews API", "csv/raw-03a-trustpilot-attributed-FROZEN.csv", "csv processed/15-review-attribution-overrides.csv"], "outputs": ["csv processed/03 – combined_product_reviews.csv", "03b-google-pending-alan-review.csv", "outputs/reports/shadow-review-matcher-LATEST.json"],
+    "prechecks": ["DB snapshot present"], "success": "frozen Trustpilot guard passes; new Google reviews held for Alan",
+    "dry_run": "Google fetch skipped (paid API); merge runs in the sandbox copy", "duration": "2–4 min", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "product_schema", "ord": 5, "name": "Product schema + 07",
+    "calls": "Schema Tools scripts/clean-products-csv.py → scripts/generate-product-schema.py --write-07 → check-review-dates.py, check-product-review-homes.py",
+    "where": "pc", "inputs": ["csv/raw-01", "02/03/04", "combined reviews"], "outputs": ["outputs/schema/products/*_schema.json, *_faq.json", "csv processed/04 …RATINGS.csv", "csv/07-product-schema-with-review-ratings.csv"],
+    "prechecks": ["reviews ok"], "success": "all products generated; review dates and homes guards pass; FAQ unknown = 0",
+    "dry_run": "SCHEMA_TOOLS_DRY_RUN=1 in the sandbox (no tool-run-report POST); page fetches are paced", "duration": "2–3 min", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "event_posts", "ord": 6, "name": "Event Posts + hub FAQs",
+    "calls": "Schema Tools Event Posts (generateEventPostBundle, Electron) + scripts/generate-event-hub-faqs.mjs",
+    "where": "pc", "inputs": ["csv/02, 03", "05-event-product-mappings-latest.csv"], "outputs": ["*_event_schema.json", "events-manifest.json", "hub *_faq.json"],
+    "prechecks": ["mappings file present"], "success": "every event in 02/03 has a schema file",
+    "dry_run": "not wired yet (Electron-only bundle) — reported as skipped", "duration": "5–20 min", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "blog_index", "ord": 7, "name": "Blog index",
+    "calls": "Schema Tools Blog Index tab", "where": "pc", "inputs": ["csv/01"], "outputs": ["blog-schema.json"],
+    "prechecks": ["build_csvs ok"], "success": "index validates as a 4-node graph",
+    "dry_run": "not wired yet (UI-only) — reported as skipped", "duration": "2–5 min", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "blog_posts", "ord": 8, "name": "Blog posts — new or changed only",
+    "calls": "runner: sitemap lastmod vs outputs/schema/blogs-manifest.json → scripts/bulk-regen-blog-howto-faq.mjs for the changed list (live)",
+    "where": "pc", "inputs": ["https://www.alanranger.com/sitemap.xml", "blogs-manifest.json"], "outputs": ["changed-post list", "*_faq.json / *_howto.json (live)"],
+    "prechecks": ["FAQ fixture gate passed"], "success": "every new/changed post regenerated; body-hash gate passes",
+    "dry_run": "detects new/changed posts and writes the manifest baseline in the sandbox; no regeneration", "duration": "1 min dry; minutes per changed post live", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "landing_pages", "ord": 9, "name": "Landing pages",
+    "calls": "Schema Tools Landing / Service pages tab", "where": "pc", "inputs": ["csv/08", "live HTML"], "outputs": ["*_landing_schema.json", "landings-manifest.json"],
+    "prechecks": ["build_csvs ok"], "success": "every 08 page has a schema file",
+    "dry_run": "not wired yet (UI-only) — reported as skipped", "duration": "10–30 min", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "deploy", "ord": 10, "name": "Deploy + CDN wait + sample live checks",
+    "calls": "Schema Tools scripts/deploy-product-schemas-cli.mjs (live) + GET schema.alanranger.com",
+    "where": "pc", "inputs": ["outputs/schema/products"], "outputs": ["alanranger-schema commit (live)"],
+    "prechecks": ["product_schema ok"], "success": "manifest on the CDN shows the new generatedAt; sample pages return 200",
+    "dry_run": "counts the files that would change in alanranger-schema; no copy, commit or push; samples the CDN read-only", "duration": "2–6 min", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "final_ingest", "ord": 11, "name": "Final ingest",
+    "calls": "Chat AI Bot api/csv-import.js (incl. product_schema from the new 07)", "where": "vercel", "inputs": ["csv/01–08"], "outputs": ["csv_metadata"],
+    "prechecks": ["deploy ok"], "success": "0 duplicates; product_schema rows = products + 2 kept",
+    "dry_run": "recording mock again, now including the sandbox 07", "duration": "10–40 min live; ~1 min dry", "retry": true, "on_fail": "stop"
+  },
+  {
+    "id": "export_09", "ord": 12, "name": "Export 09 keywords",
+    "calls": "AI GEO Audit scripts/export-09-url-target-keywords.mjs (live)", "where": "pc", "inputs": ["traditional_seo_target_keyword_overrides"], "outputs": ["csv/09-url-target-keywords.csv"],
+    "prechecks": [], "success": "repo 09 = DB",
+    "dry_run": "reads the DB row count only; writes nothing", "duration": "under 1 min", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "audit", "ord": 13, "name": "① Full audit → broken links → ② score",
+    "calls": "AI GEO Audit /api/aigeo/traditional-seo-render (ticks) + broken-links + score", "where": "vercel", "inputs": ["06", "hosted schema"], "outputs": ["traditional_seo_render_pages", "scores"],
+    "prechecks": ["deploy + final_ingest ok", "not Monday"], "success": "run finished; 0 new fails vs baseline",
+    "dry_run": "simulated (no requests)", "duration": "100–150 min live", "retry": true, "on_fail": "warn"
+  },
+  {
+    "id": "summary", "ord": 14, "name": "Summary",
+    "calls": "runner", "where": "pc", "inputs": ["all step rows"], "outputs": ["update_all_runs.summary"],
+    "prechecks": [], "success": "always", "dry_run": "same", "duration": "seconds", "retry": true, "on_fail": "warn"
+  }
+]

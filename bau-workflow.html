@@ -3,932 +3,219 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BAU Monthly Workflow - Alan Ranger Tools</title>
+  <title>BAU Update all - Alan Ranger Tools</title>
   <style>
     :root {
-      --bg: #0f1419;
-      --panel: #1a1f2e;
-      --text: #e2e8f0;
-      --text-muted: #9ca3af;
-      --brand: #f59e0b;
-      --success: #10b981;
-      --border: #374151;
-      --blue: #3b82f6;
+      --bg: #0f1419; --panel: #1a1f2e; --text: #e2e8f0; --text-muted: #9ca3af; --brand: #f59e0b;
+      --success: #10b981; --border: #374151; --blue: #3b82f6; --red: #ef4444; --warn: #f59e0b;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      background: var(--bg); 
-      color: var(--text); 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      line-height: 1.6;
-      padding: 20px;
-    }
-
-    .container { max-width: 1400px; margin: 0 auto; }
-    
-    .header { 
-      text-align: center; 
-      margin-bottom: 40px; 
-      padding-bottom: 20px;
-      border-bottom: 2px solid var(--border);
-    }
-    .header h1 { 
-      font-size: 2.5rem; 
-      margin-bottom: 8px; 
-      color: var(--brand);
-    }
-    .header p { 
-      color: var(--text-muted); 
-      font-size: 1.1rem;
-    }
-
-    .step {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 20px;
-    }
-
-    .step-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .step-number {
-      background: var(--brand);
-      color: #000;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    .step-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .action-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .action-list li {
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .action-list li:last-child {
-      border-bottom: none;
-    }
-
-    .action-list li::before {
-      content: "→";
-      color: var(--brand);
-      font-weight: bold;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .file-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.9rem;
-    }
-
-    .file-table th {
-      background: rgba(245, 158, 11, 0.1);
-      color: var(--brand);
-      padding: 10px;
-      text-align: left;
-      border-bottom: 2px solid var(--border);
-      font-weight: 600;
-    }
-
-    .file-table td {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text-muted);
-      vertical-align: top;
-    }
-
-    .file-table code {
-      background: rgba(0, 0, 0, 0.3);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      color: var(--brand);
-      font-size: 0.85em;
-    }
-
-    .file-table a {
-      color: var(--blue);
-      text-decoration: none;
-      word-break: break-all;
-    }
-
-    .file-table a:hover {
-      text-decoration: underline;
-    }
-
-    .file-table .notes {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    .tool-link {
-      display: inline-block;
-      margin-top: 16px;
-      padding: 10px 20px;
-      background: var(--brand);
-      color: #000;
-      text-decoration: none;
-      border-radius: 6px;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .tool-link:hover {
-      background: #d97706;
-      transform: translateY(-2px);
-    }
-
-    .warning {
-      background: rgba(245, 158, 11, 0.1);
-      border-left: 4px solid var(--brand);
-      padding: 12px 16px;
-      margin: 16px 0;
-      border-radius: 4px;
-      font-size: 0.9rem;
-    }
-
-    .warning strong {
-      color: var(--brand);
-    }
-
-    .note {
-      background: rgba(59, 130, 246, 0.1);
-      border-left: 4px solid var(--blue);
-      padding: 12px 16px;
-      margin: 16px 0;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .note strong {
-      color: var(--blue);
-    }
-
-    .skip {
-      opacity: 0.6;
-      font-style: italic;
-    }
-
-    .runner {
-      background: linear-gradient(180deg, rgba(59,130,246,0.12), rgba(16,185,129,0.08));
-      border: 1px solid var(--blue);
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-
-    .runner h2 {
-      color: #93c5fd;
-      margin-bottom: 8px;
-      font-size: 1.4rem;
-    }
-
-    .runner-intro {
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      font-size: 0.95rem;
-    }
-
-    .runner-status {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .status-chip {
-      background: rgba(0,0,0,0.25);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.85rem;
-      color: var(--text);
-    }
-
-    .runner-progress-wrap {
-      margin: 8px 0 18px 0;
-    }
-
-    .runner-progress {
-      height: 10px;
-      width: 100%;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.12);
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .runner-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--blue), var(--success));
-      transition: width 0.2s ease;
-    }
-
-    .runner-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .phase {
-      background: rgba(0,0,0,0.2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-    }
-
-    .phase.locked {
-      opacity: 0.6;
-    }
-
-    .phase-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .phase-title {
-      font-weight: 700;
-      color: var(--text);
-      font-size: 1rem;
-    }
-
-    .phase-badge {
-      font-size: 0.75rem;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      background: rgba(0,0,0,0.2);
-    }
-
-    .phase ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    .phase li {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 6px 0;
-      border-bottom: 1px dashed rgba(255,255,255,0.08);
-      font-size: 0.9rem;
-    }
-
-    .phase li:last-child {
-      border-bottom: none;
-    }
-
-    .phase input[type="checkbox"] {
-      margin-top: 3px;
-      flex-shrink: 0;
-    }
-
-    .runner-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .runner-btn {
-      border: 1px solid var(--border);
-      background: rgba(0,0,0,0.25);
-      color: var(--text);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .runner-btn:hover {
-      border-color: var(--blue);
-    }
-
-    .quick-links {
-      margin-top: 10px;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .quick-links a {
-      color: #93c5fd;
-      text-decoration: none;
-      margin-right: 12px;
-    }
-
-    .quick-links a:hover {
-      text-decoration: underline;
-    }
-
-    .runner-warn {
-      margin-top: 12px;
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid var(--brand);
-      border-left: 4px solid var(--brand);
-      border-radius: 8px;
-      padding: 10px 12px;
-      color: #fde68a;
-      font-size: 0.9rem;
-    }
-
-    .runner-warn strong {
-      color: #fbbf24;
-    }
-
-    .runner-verify {
-      margin-top: 10px;
-      background: rgba(30, 64, 175, 0.2);
-      border: 1px solid #3b82f6;
-      border-radius: 8px;
-      padding: 10px 12px;
-      color: #dbeafe;
-      font-size: 0.9rem;
-    }
-
-    .runner-verify h4 {
-      margin: 0 0 6px 0;
-      font-size: 0.95rem;
-      color: #bfdbfe;
-    }
-
-    .runner-verify ul {
-      margin: 0;
-      padding-left: 18px;
-    }
-
-    .runner-verify li {
-      margin: 4px 0;
-    }
-
-    @media (max-width: 768px) {
-      .header h1 {
-        font-size: 2rem;
-      }
-      .step {
-        padding: 16px;
-      }
-      .file-table {
-        font-size: 0.8rem;
-      }
-    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; padding: 20px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 28px; padding-bottom: 18px; border-bottom: 2px solid var(--border); }
+    .header h1 { font-size: 2.2rem; color: var(--brand); margin-bottom: 6px; }
+    .header p { color: var(--text-muted); }
+    .header a { color: var(--blue); }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 18px; }
+    .panel h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text); }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    button { background: var(--brand); color: #000; border: 0; border-radius: 6px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 600; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .mode { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .mode label { padding: 8px 14px; cursor: pointer; color: var(--text-muted); }
+    .mode input { display: none; }
+    .mode input:checked + span { color: #000; background: var(--brand); padding: 8px 14px; margin: -8px -14px; display: inline-block; }
+    .mode label.disabled { opacity: 0.45; cursor: not-allowed; }
+    .muted { color: var(--text-muted); font-size: 0.9rem; }
+    .run-meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: 0.92rem; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .b-ok, .b-succeeded { background: rgba(16,185,129,0.18); color: var(--success); }
+    .b-warn, .b-warned, .b-skipped { background: rgba(245,158,11,0.18); color: var(--warn); }
+    .b-fail, .b-failed { background: rgba(239,68,68,0.18); color: var(--red); }
+    .b-running, .b-requested { background: rgba(59,130,246,0.18); color: var(--blue); }
+    .b-pending, .b-cancelled { background: rgba(156,163,175,0.15); color: var(--text-muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    th { text-align: left; color: var(--brand); background: rgba(245,158,11,0.08); padding: 8px; border-bottom: 2px solid var(--border); }
+    td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    td.n { width: 34px; color: var(--text-muted); }
+    .counts { color: var(--text-muted); font-size: 0.85rem; word-break: break-word; }
+    .warnings { color: var(--warn); font-size: 0.85rem; margin-top: 4px; }
+    .err { color: var(--red); font-size: 0.85rem; margin-top: 4px; }
+    #errorPanel { border-color: rgba(239,68,68,0.5); display: none; }
+    #needsPanel ul, #errorPanel ul { margin-left: 18px; }
+    .login { display: none; gap: 10px; align-items: center; }
+    input[type=password] { background: #0b0f14; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; }
+    .summary-grid { display: flex; gap: 14px; flex-wrap: wrap; }
+    .summary-grid div { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; min-width: 110px; }
+    .summary-grid strong { display: block; font-size: 1.4rem; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔄 BAU Monthly Workflow</h1>
-      <p>Simple step-by-step guide for monthly updates</p>
+      <h1>Update all</h1>
+      <p>One button for the monthly CSV → schema → ingest → audit round trip. The runner on Alan's PC does the work; this page shows progress from any device.
+        <br><a href="bau-workflow-checklist.html">Old manual checklist</a> · <a href="/">Mission Control</a></p>
     </div>
 
-    <div class="runner" id="smartRunner">
-      <h2>✅ Smart 1-2-3 Runner</h2>
-      <p class="runner-intro">
-        Follow this panel top-to-bottom. It remembers your progress and blocks later phases until prerequisites are complete.
-      </p>
-
-      <div class="runner-status">
-        <span class="status-chip" id="runnerCycleLabel">Cycle: Not started</span>
-        <span class="status-chip" id="runnerNextAction">Next: Start Phase 1</span>
-      </div>
-
-      <div class="runner-progress-wrap">
-        <div class="runner-progress">
-          <div class="runner-progress-fill" id="runnerProgressFill"></div>
-        </div>
-      </div>
-
-      <div class="runner-grid">
-        <div class="phase" id="phase1">
-          <div class="phase-head">
-            <div class="phase-title">Phase 1: Prepare + Preliminary Ingest</div>
-            <span class="phase-badge" id="phase1Badge">Waiting</span>
-          </div>
-          <ul>
-            <li><label><input type="checkbox" data-check="csv_exports_updated"> <span>All monthly CSV exports updated in <code>alan-shared-resources/csv/</code></span></label></li>
-            <li><label><input type="checkbox" data-check="landing_csv_prepared"> <span><code>08-landing-and-service-pages.csv</code> refreshed and categorised</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_prelim_import"> <span>Preliminary ingest: Step 1 (Import Metadata) complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_prelim_content"> <span>Preliminary ingest: Step 2 (Ingest Content) complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_prelim_mappings"> <span>Preliminary ingest: Step 3 (Build Mappings) complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_prelim_finalize"> <span>Preliminary ingest: Step 4 (Finalize) complete</span></label></li>
-            <li><label><input type="checkbox" data-check="mapping_file_verified"> <span><code>05-event-product-mappings-latest.csv</code> verified in <code>csv processed/</code></span></label></li>
-          </ul>
-        </div>
-
-        <div class="phase" id="phase2">
-          <div class="phase-head">
-            <div class="phase-title">Phase 2: Generate + Deploy Schemas</div>
-            <span class="phase-badge" id="phase2Badge">Locked</span>
-          </div>
-          <ul>
-            <li><label><input type="checkbox" data-check="schema_electron_confirmed"> <span>Confirmed Schema Tools is running in Electron mode (not browser mode)</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_product_done"> <span>Product Schema tab complete (includes files for Event tab)</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_event_done"> <span>Event Schema tab complete (used mappings + generated required outputs)</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_blog_index_done"> <span>Blog Index Schema generated, tested, deployed</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_blog_posts_done"> <span>Blog Posts batch generated/deployed (or intentionally skipped this cycle)</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_landing_service_done"> <span>Landing / Service pages updated for this cycle</span></label></li>
-            <li><label><input type="checkbox" data-check="schema_deploy_confirmed"> <span><code>alanranger-schema</code> push complete and schema URLs live</span></label></li>
-          </ul>
-        </div>
-
-        <div class="phase" id="phase3">
-          <div class="phase-head">
-            <div class="phase-title">Phase 3: Final Ingest + Verify</div>
-            <span class="phase-badge" id="phase3Badge">Locked</span>
-          </div>
-          <ul>
-            <li><label><input type="checkbox" data-check="ingest_final_import"> <span>Final ingest rerun: Step 1 complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_final_content"> <span>Final ingest rerun: Step 2 complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_final_mappings"> <span>Final ingest rerun: Step 3 complete</span></label></li>
-            <li><label><input type="checkbox" data-check="ingest_final_finalize"> <span>Final ingest rerun: Step 4 complete</span></label></li>
-            <li><label><input type="checkbox" data-check="qa_validator_done"> <span>Schema validation spot checks complete (index, event, sample blog post, service page)</span></label></li>
-            <li><label><input type="checkbox" data-check="monitoring_done"> <span>AI GEO / quality checks reviewed and cycle signed off</span></label></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="quick-links">
-        Quick links:
-        <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener">Ingest Pipeline</a>
-        <a href="https://schema-tools-six.vercel.app/" target="_blank" rel="noopener">Schema Generator</a>
-        <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" rel="noopener">AI GEO Audit</a>
-      </div>
-
-      <div class="runner-warn">
-        <strong>Electron Required for Phase 2:</strong> Use your local Schema Tools Electron app for save/deploy automation.
-        Browser mode is read-only for deployment workflows and can cause missing TEST/deploy behavior.
-      </div>
-
-      <div class="runner-verify">
-        <h4>Electron Verification Checklist (before Phase 2)</h4>
-        <ul>
-          <li>Open your local Schema Tools app (not the web URL) and confirm it is the desktop app window.</li>
-          <li>In Schema Tools, verify the mode indicator shows Electron/Desktop mode and not browser/read-only mode.</li>
-          <li>Confirm deploy-capable controls are present (for example, GitHub deploy/test-save buttons in Blog/Schema workflows).</li>
-          <li>Then tick <strong>"Confirmed Schema Tools is running in Electron mode"</strong> in Phase 2 above.</li>
-        </ul>
-      </div>
-
-      <div class="runner-actions">
-        <button class="runner-btn" id="copySummaryBtn">Copy Current Summary</button>
-        <button class="runner-btn" id="startNewCycleBtn">Start New Cycle (Reset)</button>
+    <div class="panel" id="loginPanel">
+      <h2>Sign in</h2>
+      <div class="login" id="login">
+        <input type="password" id="pw" placeholder="Mission Control password" autocomplete="current-password">
+        <button id="loginBtn">Sign in</button>
+        <span class="muted" id="loginMsg"></span>
       </div>
     </div>
 
-    <!-- Step 1 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">1</div>
-        <div class="step-title">Update CSV Files</div>
+    <div class="panel" id="controlPanel" style="display:none">
+      <h2>Run</h2>
+      <div class="controls">
+        <div class="mode" role="radiogroup" aria-label="Mode">
+          <label><input type="radio" name="mode" value="dry" checked><span>Dry run</span></label>
+          <label class="disabled" title="Live is disabled until Alan enables it"><input type="radio" name="mode" value="live" disabled><span>Live</span></label>
+        </div>
+        <button id="startBtn" data-testid="update-all-start">Update all</button>
+        <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
+        <button class="secondary" id="cancelBtn" disabled>Cancel</button>
+        <span class="muted" id="actionMsg"></span>
       </div>
-      <p style="color: var(--text-muted); margin-bottom: 16px;">Export from Squarespace and update these files in <code>alan-shared-resources/csv/</code>:</p>
-      
-      <table class="file-table">
-        <thead>
-          <tr>
-            <th>Export From Squarespace</th>
-            <th>Update This File</th>
-            <th>Squarespace URL Link</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Events/Workshops</td>
-            <td><code>03-photographic-workshops-near-me.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photographic-workshops-near-me" target="_blank" rel="noopener">photographic-workshops-near-me</a></td>
-            <td class="notes">Run Generate iCal</td>
-          </tr>
-          <tr>
-            <td>Events/Workshops</td>
-            <td><code>05-photo-workshops-uk-landscape.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photo-workshops-uk" target="_blank" rel="noopener">photo-workshops-uk</a></td>
-            <td class="notes">Click Export CSV button and save to shared resources folder, then remove any hidden or outdated products.</td>
-          </tr>
-          <tr>
-            <td>Lessons/Courses</td>
-            <td><code>02-beginners-photography-lessons.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/beginners-photography-lessons" target="_blank" rel="noopener">beginners-photography-lessons</a></td>
-            <td class="notes">Run Generate iCal</td>
-          </tr>
-          <tr>
-            <td>Lessons/Courses</td>
-            <td><code>04-photography-services-courses-mentoring.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/photography-services-near-me" target="_blank" rel="noopener">photography-services-near-me</a></td>
-            <td class="notes">Click Export CSV button and save to shared resources folder, then remove any hidden or outdated products.</td>
-          </tr>
-          <tr>
-            <td>Products (all types)</td>
-            <td><code>raw-01-products-sqsp-export.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/config/commerce/products" target="_blank" rel="noopener">https://alan-ranger.squarespace.com/config/commerce/products</a></td>
-            <td class="notes">Select Services Tab then export and save to shared resources folder</td>
-          </tr>
-          <tr>
-            <td>Blog Posts</td>
-            <td><code>01-blog-posts.csv</code></td>
-            <td><a href="https://alan-ranger.squarespace.com/blog-on-photography" target="_blank" rel="noopener">https://alan-ranger.squarespace.com/blog-on-photography</a></td>
-            <td class="notes">Click Export CSV button and save to shared resources folder</td>
-          </tr>
-          <tr>
-            <td>Landing Pages</td>
-            <td><code>08-landing-and-service-pages.csv</code></td>
-            <td>—</td>
-            <td class="notes">Use site urls file and remove events, blogs etc so just landing-and-service-pages remain, then manually categorise whether landing or service page in column B</td>
-          </tr>
-          <tr>
-            <td>Site URLs</td>
-            <td><code>06-site-urls.csv</code></td>
-            <td><a href="https://docs.google.com/spreadsheets/d/1xCdB85CszPzwllWVflUpgyzIt79HFUjm9rtrTAvZY9Q/edit?pli=1&gid=0#gid=0" target="_blank" rel="noopener">Google Sheets Tool</a></td>
-            <td class="notes">Use Google Sheets Tool to generate url list from sitemap and save to shared resources folder</td>
-          </tr>
-        </tbody>
+      <div class="run-meta" id="runMeta"></div>
+      <p class="muted" style="margin-top:10px">Dry run works in a sandbox copy (no live CSV, schema repo, database or Squarespace changes). The PC runner picks up a requested run within 15 s while it is watching (<code>node runner/update-all-runner.mjs --watch</code>).</p>
+    </div>
+
+    <div class="panel" id="errorPanel" data-testid="update-all-errors">
+      <h2>Errors</h2>
+      <ul id="errorList"></ul>
+    </div>
+
+    <div class="panel" id="needsPanel" style="display:none">
+      <h2>Needs Alan</h2>
+      <ul id="needsList"></ul>
+    </div>
+
+    <div class="panel" id="summaryPanel" style="display:none">
+      <h2>Summary</h2>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="panel" id="stepsPanel" style="display:none">
+      <h2>Steps</h2>
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Status</th><th>Time</th><th>Counts / notes</th></tr></thead>
+        <tbody id="stepRows" data-testid="update-all-steps"></tbody>
       </table>
-
-      <div class="warning">
-        <strong>⚠️ Events:</strong> When rescheduling events, update ALL 5 files above (2 workshops + 2 courses + 1 product).
-      </div>
-
-      <div class="note">
-        <strong>Note:</strong> Don't edit <code>csv processed/</code> or <code>outputs/schema/</code> - those are auto-generated.
-      </div>
-    </div>
-
-    <!-- Step 2 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">2</div>
-        <div class="step-title">Run Ingest Process (Preliminary)</div>
-      </div>
-      <p style="color: var(--text-muted); margin-bottom: 16px;">Run the Chat AI Bot ingest pipeline to generate <code>05-event-product-mappings-latest.csv</code> in <code>alan-shared-resources/csv processed/</code>. This file is required for Step 3 (Generate Schemas).</p>
-      <ul class="action-list">
-        <li>Open Chat AI Bot Ingest Pipeline</li>
-        <li>Upload CSV files from Step 1 (from <code>alan-shared-resources/csv/</code>)</li>
-        <li>Run Step 1: Import Metadata</li>
-        <li>Run Step 2: Ingest Content</li>
-        <li>Run Step 3: Build Mappings</li>
-        <li>Run Step 4: Finalize</li>
-        <li>Verify <code>05-event-product-mappings-latest.csv</code> is saved to <code>alan-shared-resources/csv processed/</code></li>
-      </ul>
-      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
-      <div class="note">
-        <strong>Note:</strong> This is a preliminary run. You'll run the ingest process again in Step 5 after schemas are deployed.
-      </div>
-    </div>
-
-    <!-- Step 3 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">3</div>
-        <div class="step-title">Generate Schemas</div>
-      </div>
-      <div class="warning" style="margin-bottom: 16px;">
-        <strong>⚠️ Important:</strong> You need <code>05-event-product-mappings-latest.csv</code> from Step 2. This file should be in <code>alan-shared-resources/csv processed/</code>.
-      </div>
-      
-      <h3 style="color: var(--brand); margin: 20px 0 12px 0; font-size: 1.1rem;">Tab Order - Follow This Sequence:</h3>
-      
-      <div style="background: rgba(245, 158, 11, 0.05); border: 1px solid var(--brand); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
-        <h4 style="color: var(--brand); margin-bottom: 12px; font-size: 1rem;">1️⃣ Product Schema Tab (First - Generate Files)</h4>
-        <ul class="action-list" style="margin-left: 0;">
-          <li>Open Schema Tools (Product Schema tab is active by default)</li>
-          <li><strong>Step 1:</strong> Upload <code>raw-01-products-sqsp-export.csv</code> from <code>alan-shared-resources/csv/</code></li>
-          <li><strong>Step 2:</strong> Runs automatically - generates <code>02 – products_cleaned.xlsx</code></li>
-          <li><strong>Step 3a:</strong> (Optional) Fetch Google Reviews</li>
-          <li><strong>Step 3b:</strong> Merge Reviews - generates <code>03 – combined_product_reviews.csv</code></li>
-          <li><strong>Step 4:</strong> Generate Product Schema - creates schema files in <code>outputs/schema/products/</code></li>
-        </ul>
-        <div class="note" style="margin-top: 12px;">
-          <strong>Output Files:</strong> These files are required for Event Schema tab:
-          <ul style="margin: 8px 0 0 20px; color: var(--text-muted);">
-            <li><code>02 – products_cleaned.xlsx</code> (from Step 2)</li>
-            <li><code>03 – combined_product_reviews.csv</code> (from Step 3b)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid var(--blue); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
-        <h4 style="color: var(--blue); margin-bottom: 12px; font-size: 1rem;">2️⃣ Event Schema Tab (Second - Use Generated Files)</h4>
-        <ul class="action-list" style="margin-left: 0;">
-          <li>Switch to <strong>Event Schema</strong> tab (second tab at top)</li>
-          <li>Upload <code>events_export.csv</code> from Squarespace (from <code>alan-shared-resources/csv/</code>)</li>
-          <li>Upload <code>05-event-product-mappings-latest.csv</code> from <code>alan-shared-resources/csv processed/</code> (created in Step 2)</li>
-          <li><strong>Upload generated files from Product Schema tab:</strong>
-            <ul style="margin: 8px 0 0 20px; color: var(--text-muted);">
-              <li><code>02 – products_cleaned.xlsx</code> (optional - for SKU values)</li>
-              <li><code>03 – combined_product_reviews.csv</code> (optional - for review enrichment)</li>
-            </ul>
-          </li>
-          <li>Select category filter (Lessons or Workshops)</li>
-          <li>Click <strong>"Generate Event Schema"</strong></li>
-          <li>Save outputs to <code>alan-shared-resources/outputs/schema/</code></li>
-        </ul>
-      </div>
-
-      <a href="https://schema-tools-six.vercel.app/" target="_blank" rel="noopener" class="tool-link">Open Schema Tools →</a>
-      <div class="note" style="margin-top: 16px;">
-        <strong>Note:</strong> After generating schemas, you'll run Step 5 (Final Ingest) for the complete data ingestion.
-      </div>
-    </div>
-
-    <!-- Step 4 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">4</div>
-        <div class="step-title">Deploy Schemas</div>
-      </div>
-      <ul class="action-list">
-        <li>Copy schema JSON files from <code>outputs/schema/</code></li>
-        <li>Paste into <code>alanranger-schema</code> GitHub repo</li>
-        <li>Commit and push to GitHub</li>
-      </ul>
-      <div class="note">
-        Schemas will be available at <code>https://schema.alanranger.com/*.json</code> for Squarespace.
-      </div>
-    </div>
-
-    <!-- Step 5 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">5</div>
-        <div class="step-title">Run Final Ingest to Chat AI Bot</div>
-      </div>
-      <p style="color: var(--text-muted); margin-bottom: 16px;">After schemas are deployed, run the ingest process again to complete the data ingestion with all updated content and schemas.</p>
-      <ul class="action-list">
-        <li>Open Chat AI Bot Ingest Pipeline</li>
-        <li>Upload CSV files from Step 1 (from <code>alan-shared-resources/csv/</code>)</li>
-        <li>Run Step 1: Import Metadata</li>
-        <li>Run Step 2: Ingest Content</li>
-        <li>Run Step 3: Build Mappings</li>
-        <li>Run Step 4: Finalize</li>
-      </ul>
-      <a href="https://alan-chat-proxy.vercel.app/bulk-simple.html" target="_blank" rel="noopener" class="tool-link">Open Chat AI Bot Ingest Pipeline →</a>
-    </div>
-
-    <!-- Step 6 -->
-    <div class="step">
-      <div class="step-header">
-        <div class="step-number">6</div>
-        <div class="step-title">Monitor Performance</div>
-      </div>
-      <ul class="action-list">
-        <li>Open AI GEO Audit Dashboard</li>
-        <li>Check GSC metrics for updated pages</li>
-        <li>Review rankings and SEO performance</li>
-      </ul>
-      <a href="https://ai-geo-audit.vercel.app/audit-dashboard.html" target="_blank" rel="noopener" class="tool-link">Open AI GEO Audit Dashboard →</a>
-      <div class="note">
-        Run this after all changes are live on the website.
-      </div>
     </div>
   </div>
+
   <script>
-    (function () {
-      const STORAGE_KEY = "bau_monthly_runner_v1";
-      const CHECKBOX_SELECTOR = "input[type='checkbox'][data-check]";
+    const TOKEN_KEY = 'mc_session_token';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    let current = null;
+    let timer = null;
 
-      const phaseRequirements = {
-        phase1: [
-          "csv_exports_updated",
-          "landing_csv_prepared",
-          "ingest_prelim_import",
-          "ingest_prelim_content",
-          "ingest_prelim_mappings",
-          "ingest_prelim_finalize",
-          "mapping_file_verified"
-        ],
-        phase2: [
-          "schema_electron_confirmed",
-          "schema_product_done",
-          "schema_event_done",
-          "schema_blog_index_done",
-          "schema_blog_posts_done",
-          "schema_landing_service_done",
-          "schema_deploy_confirmed"
-        ],
-        phase3: [
-          "ingest_final_import",
-          "ingest_final_content",
-          "ingest_final_mappings",
-          "ingest_final_finalize",
-          "qa_validator_done",
-          "monitoring_done"
-        ]
-      };
+    async function api(path, opts = {}) {
+      const res = await fetch(path, { method: opts.method || 'GET', headers: { 'Content-Type': 'application/json', 'x-mc-token': sessionStorage.getItem(TOKEN_KEY) || '' },
+        body: opts.body ? JSON.stringify(opts.body) : undefined });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { showLogin(); throw new Error('Please sign in'); }
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
 
-      function defaultState() {
-        return {
-          cycleStartedAt: "",
-          checks: {}
-        };
-      }
+    function showLogin() { $('login').style.display = 'flex'; $('loginPanel').style.display = 'block'; $('controlPanel').style.display = 'none'; }
+    function showApp() { $('loginPanel').style.display = 'none'; $('controlPanel').style.display = 'block'; }
 
-      function loadState() {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-          const state = defaultState();
-          if (parsed && typeof parsed === "object") {
-            state.cycleStartedAt = parsed.cycleStartedAt || "";
-            state.checks = parsed.checks || {};
-          }
-          return state;
-        } catch (error) {
-          console.error("Failed to load BAU runner state", error);
-          return defaultState();
-        }
-      }
+    const duration = (ms) => (ms == null ? '' : ms < 60000 ? `${Math.round(ms / 1000)} s` : `${Math.round(ms / 60000)} min`);
+    const countsText = (c) => Object.entries(c || {}).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ');
 
-      function saveState(state) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      }
+    function renderSteps(steps, registry) {
+      const byId = new Map(steps.map((s) => [s.step_id, s]));
+      $('stepRows').innerHTML = registry.map((def) => {
+        const s = byId.get(def.id) || { status: 'pending' };
+        const warnings = (s.warnings || []).map((w) => `<div class="warnings">⚠ ${esc(w)}</div>`).join('');
+        const err = s.error ? `<div class="err">✖ ${esc(s.error)}</div>` : '';
+        return `<tr data-step="${def.id}" data-status="${s.status}"><td class="n">${def.ord}</td><td><strong>${esc(def.name)}</strong><div class="counts">${esc(def.where)} · ${esc(def.duration)}</div></td>
+          <td><span class="badge b-${s.status}">${s.status}</span>${s.attempt > 1 ? `<div class="counts">attempt ${s.attempt}</div>` : ''}</td>
+          <td>${duration(s.duration_ms)}</td><td><div class="counts">${esc(countsText(s.counts))}</div>${warnings}${err}</td></tr>`;
+      }).join('');
+    }
 
-      function isPhaseComplete(state, phaseName) {
-        const requirements = phaseRequirements[phaseName];
-        return requirements.every((key) => Boolean(state.checks[key]));
-      }
+    function renderMeta(run) {
+      if (!run) { $('runMeta').innerHTML = '<span class="muted">No runs yet.</span>'; return; }
+      const now = run.current_step ? `<span>Now: ${esc(run.current_step)}</span>` : '';
+      $('runMeta').innerHTML = `<span>Run <code>${esc(run.id.slice(0, 8))}</code></span><span class="badge b-${run.status}" data-testid="run-status">${run.status}</span>
+        <span>Mode: ${esc(run.mode)}</span><span>Requested: ${new Date(run.requested_at).toLocaleString()}</span>${now}`;
+    }
 
-      function countAllChecks() {
-        return document.querySelectorAll(CHECKBOX_SELECTOR).length;
-      }
+    function renderErrors(run, steps) {
+      const items = steps.filter((s) => s.status === 'fail').map((s) => `<li><strong>${esc(s.name)}</strong>: ${esc(s.error)}</li>`);
+      if (!items.length && run?.error) items.push(`<li>${esc(run.error)}</li>`);
+      $('errorPanel').style.display = items.length ? 'block' : 'none';
+      $('errorList').innerHTML = items.join('');
+    }
 
-      function countChecked(state) {
-        return Object.values(state.checks).filter(Boolean).length;
-      }
+    function renderNeeds(run) {
+      const needs = run?.needs_alan || [];
+      $('needsPanel').style.display = needs.length ? 'block' : 'none';
+      $('needsList').innerHTML = needs.map((n) => `<li>${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — <code>${esc(n.file || '')}</code></li>`).join('');
+    }
 
-      function formatDate(isoString) {
-        if (!isoString) return "Not started";
-        const date = new Date(isoString);
-        if (Number.isNaN(date.getTime())) return "Not started";
-        return date.toLocaleString();
-      }
+    function renderSummary(run, steps) {
+      const finished = ['succeeded', 'warned', 'failed'].includes(run?.status);
+      const tally = steps.reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
+      $('summaryPanel').style.display = finished ? 'block' : 'none';
+      $('summaryGrid').innerHTML = ['ok', 'warn', 'skipped', 'fail', 'pending'].map((k) => `<div><strong>${tally[k] || 0}</strong>${k}</div>`).join('');
+    }
 
-      function getNextAction(state, p1Done, p2Done, p3Done) {
-        if (!p1Done) return "Next: Complete Phase 1 (preliminary ingest + mappings)";
-        if (!p2Done) return "Next: Complete Phase 2 (all schema tabs + deploy)";
-        if (!p3Done) return "Next: Complete Phase 3 (final ingest + QA)";
-        return "Next: Cycle complete. Start a new cycle next month.";
-      }
+    function renderButtons(run) {
+      const active = ['requested', 'running'].includes(run?.status);
+      $('startBtn').disabled = active;
+      $('cancelBtn').disabled = !active;
+      $('resumeBtn').disabled = run?.status !== 'failed';
+    }
 
-      function setPhaseLock(phaseId, locked) {
-        const phase = document.getElementById(phaseId);
-        if (!phase) return;
-        phase.classList.toggle("locked", locked);
-        phase.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
-          checkbox.disabled = locked;
-        });
-      }
+    function renderRun(run, steps) {
+      renderMeta(run);
+      renderErrors(run, steps);
+      renderNeeds(run);
+      renderSummary(run, steps);
+      renderButtons(run);
+    }
 
-      function getPhaseMeta(isDone, isUnlocked) {
-        if (isDone) return { label: "Complete", type: "complete" };
-        if (isUnlocked) return { label: "Active", type: "active" };
-        return { label: "Locked", type: "locked" };
-      }
+    async function refresh() {
+      try {
+        const data = await api('/api/update-all?run=latest');
+        current = data.run;
+        showApp();
+        $('stepsPanel').style.display = 'block';
+        renderSteps(data.steps || [], data.registry || []);
+        renderRun(data.run, data.steps || []);
+      } catch (e) { $('actionMsg').textContent = e.message; }
+    }
 
-      function applyPhaseBadge(id, meta) {
-        setBadge(document.getElementById(id), meta.label, meta.type);
-      }
+    async function act(body, msg) {
+      $('actionMsg').textContent = msg;
+      try { await api('/api/update-all', { method: 'POST', body }); $('actionMsg').textContent = `${msg} — waiting for the PC runner…`; }
+      catch (e) { $('actionMsg').textContent = e.message; }
+      refresh();
+    }
 
-      function setBadge(el, label, type) {
-        el.textContent = label;
-        if (type === "complete") {
-          el.style.color = "#ecfdf5";
-          el.style.background = "rgba(16,185,129,0.2)";
-          el.style.borderColor = "#10b981";
-        } else if (type === "active") {
-          el.style.color = "#eff6ff";
-          el.style.background = "rgba(59,130,246,0.2)";
-          el.style.borderColor = "#3b82f6";
-        } else {
-          el.style.color = "#9ca3af";
-          el.style.background = "rgba(0,0,0,0.2)";
-          el.style.borderColor = "#374151";
-        }
-      }
+    $('startBtn').addEventListener('click', () => act({ action: 'start', mode: document.querySelector('input[name=mode]:checked').value }, 'Run requested'));
+    $('resumeBtn').addEventListener('click', () => current && act({ action: 'resume', run_id: current.id }, 'Resume requested'));
+    $('cancelBtn').addEventListener('click', () => current && act({ action: 'cancel', run_id: current.id }, 'Cancelled'));
+    $('loginBtn').addEventListener('click', async () => {
+      const res = await fetch('/api/mc/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('pw').value }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { $('loginMsg').textContent = data.error || 'Sign-in failed'; return; }
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      sessionStorage.setItem('mc_session_role', data.role);
+      refresh();
+    });
 
-      function render(state) {
-        const p1Done = isPhaseComplete(state, "phase1");
-        const p2Done = isPhaseComplete(state, "phase2");
-        const p3Done = isPhaseComplete(state, "phase3");
-        const p2Unlocked = p1Done;
-        const p3Unlocked = p1Done && p2Done;
-
-        setPhaseLock("phase2", !p2Unlocked);
-        setPhaseLock("phase3", !p3Unlocked);
-
-        applyPhaseBadge("phase1Badge", getPhaseMeta(p1Done, true));
-        applyPhaseBadge("phase2Badge", getPhaseMeta(p2Done, p2Unlocked));
-        applyPhaseBadge("phase3Badge", getPhaseMeta(p3Done, p3Unlocked));
-
-        document.getElementById("runnerCycleLabel").textContent = "Cycle started: " + formatDate(state.cycleStartedAt);
-        document.getElementById("runnerNextAction").textContent = getNextAction(state, p1Done, p2Done, p3Done);
-
-        const total = countAllChecks();
-        const checked = countChecked(state);
-        const progress = total > 0 ? Math.min(100, Math.round((checked / total) * 100)) : 0;
-        document.getElementById("runnerProgressFill").style.width = progress + "%";
-      }
-
-      function buildSummary(state) {
-        const lines = [
-          "BAU Monthly Runner Summary",
-          "Cycle started: " + formatDate(state.cycleStartedAt),
-          "",
-          "Phase 1: " + (isPhaseComplete(state, "phase1") ? "Complete" : "Incomplete"),
-          "Phase 2: " + (isPhaseComplete(state, "phase2") ? "Complete" : "Incomplete"),
-          "Phase 3: " + (isPhaseComplete(state, "phase3") ? "Complete" : "Incomplete"),
-          ""
-        ];
-        document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
-          const rawText = checkbox.parentElement ? checkbox.parentElement.innerText.trim() : checkbox.dataset.check;
-          const label = rawText.replaceAll(/\s+/g, " ");
-          lines.push((checkbox.checked ? "[x] " : "[ ] ") + label);
-        });
-        return lines.join("\n");
-      }
-
-      const state = loadState();
-      if (!state.cycleStartedAt) {
-        state.cycleStartedAt = new Date().toISOString();
-        saveState(state);
-      }
-
-      document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
-        const key = checkbox.dataset.check;
-        checkbox.checked = Boolean(state.checks[key]);
-        checkbox.addEventListener("change", () => {
-          state.checks[key] = checkbox.checked;
-          if (!state.cycleStartedAt) {
-            state.cycleStartedAt = new Date().toISOString();
-          }
-          saveState(state);
-          render(state);
-        });
-      });
-
-      document.getElementById("copySummaryBtn").addEventListener("click", async () => {
-        const summary = buildSummary(state);
-        try {
-          await navigator.clipboard.writeText(summary);
-          alert("BAU summary copied to clipboard.");
-        } catch (error) {
-          console.error("Failed to copy BAU summary", error);
-          alert("Could not copy automatically. You can copy manually:\n\n" + summary);
-        }
-      });
-
-      document.getElementById("startNewCycleBtn").addEventListener("click", () => {
-        const confirmed = globalThis.confirm("Start a new monthly cycle? This clears all runner checkboxes.");
-        if (!confirmed) return;
-        const fresh = defaultState();
-        fresh.cycleStartedAt = new Date().toISOString();
-        saveState(fresh);
-        document.querySelectorAll(CHECKBOX_SELECTOR).forEach((checkbox) => {
-          checkbox.checked = false;
-        });
-        state.cycleStartedAt = fresh.cycleStartedAt;
-        state.checks = {};
-        render(state);
-      });
-
-      render(state);
-    })();
+    if (sessionStorage.getItem(TOKEN_KEY)) refresh(); else showLogin();
+    timer = setInterval(() => { if (sessionStorage.getItem(TOKEN_KEY)) refresh(); }, 5000);
   </script>
 </body>
 </html>
