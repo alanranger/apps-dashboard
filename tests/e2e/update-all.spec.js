@@ -4,10 +4,9 @@
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app npx playwright test tests/e2e/update-all.spec.js
 import { test, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
-import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', '..');
+const ROOT = process.cwd(); // Playwright runs from the apps-dashboard root
 const ONLY = 'preflight,deploy,summary';
 
 function runner(args) {
@@ -32,6 +31,7 @@ async function openPage(page, token) {
 }
 
 test.describe.configure({ mode: 'serial', timeout: 600000 });
+test.use({ channel: 'chrome' });
 
 test('clicking Update all (dry) creates a run and the runner writes every step state', async ({ page }) => {
   const { token } = await mcLogin('agent');

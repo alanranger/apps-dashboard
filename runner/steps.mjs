@@ -135,7 +135,10 @@ async function buildCsvs(ctx) {
   const counts = Object.fromEntries([...BUILT, 'raw-01-products-sqsp-export.csv'].map((f) => [f, lines(path.join(csv, f))]));
   const report = cmp.stdout.split('\n').filter((l) => l.includes('.csv:'));
   const warnings = report.filter((l) => !/wholeFile=true/.test(l)).map((l) => l.replace(/ formatting=.*?genuine=/, ' genuine=').slice(0, 220));
-  return { status: 'ok', counts, warnings: warnings.length ? [`not byte-identical to the last export (content changed): ${warnings.length} files`, ...warnings] : [],
+  const newLanding = (fs.readFileSync(path.join(csv, '08-landing-and-service-pages.csv'), 'utf8').match(/,NEW-suggested/g) || []).length;
+  const needsAlan = newLanding ? [{ kind: 'new_08_pages_to_classify', count: newLanding, file: 'csv/08-landing-and-service-pages.csv (rows marked NEW-suggested)' }] : [];
+  return { status: 'ok', counts: { ...counts, new_08_pages: newLanding }, needsAlan,
+    warnings: warnings.length ? [`not byte-identical to the last export (content changed): ${warnings.length} files`, ...warnings] : [],
     outputs: [`${csv} (sandbox)`, `${PILOT}/byte-compare-update-all-${ctx.runId}.json`] };
 }
 
