@@ -42,7 +42,8 @@ test('page button only: the scheduled runner picks the run up and the full dry r
   const data = await latest(token);
   fs.writeFileSync(path.join(EVIDENCE, 'run.json'), JSON.stringify(data, null, 2));
   await page.reload();
-  await expect(page.locator('tr[data-step="summary"]')).toHaveAttribute('data-status', 'ok', { timeout: 30000 });
+  const summaryStatus = (data.run.summary?.coverage?.orphans || []).length ? 'warn' : 'ok';
+  await expect(page.locator('tr[data-step="summary"]')).toHaveAttribute('data-status', summaryStatus, { timeout: 30000 });
   await page.screenshot({ path: path.join(EVIDENCE, '3-finished.png'), fullPage: true });
 
   expect(data.run.id).toBe(runId);
