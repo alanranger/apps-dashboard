@@ -385,10 +385,27 @@ function appCliArgs(command, sb, out) {
 /** P5: landings stay report-only in LIVE runs until Alan approves the generator output against the hosted files. */
 export const LANDINGS_REPORT_ONLY = true;
 
+/** Landings: every difference against the hosted files, tied to its live source (scripts/landing-diff-explain.mjs). */
+async function landingsReport(out, report, diff, reportOnly) {
+  const file = path.join(out, 'landing-diff-explain.json');
+  const r = await sh('node', ['scripts/landing-diff-explain.mjs', out, '--json', file], { cwd: SCHEMA_TOOLS });
+  if (r.code !== 0) return { status: 'fail', error: `landing-diff-explain: ${tail(r.stderr || r.stdout)}` };
+  const ex = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const lines = ex.rows.filter((row) => row.notes.length).map((row) => `${row.file}: ${row.notes.join(' | ')}`);
+  return { status: ex.unexplained.length ? 'warn' : 'ok',
+    counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },
+    warnings: [`${reportOnly ? 'report-only in LIVE until Claude approves: ' : ''}${lines.length} of ${ex.files} hosted landing files differ, each explained by a live source (list below / landing-diff-explain.json)`, ...lines],
+    outputs: [`${out} (sandbox)`, file, path.join(out, 'compare.json')] };
+}
+
 const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
   const out = path.join(sb.root, 'app-cli', command);
+  if (command === 'landings') {
+    const rating = await sh('node', ['scripts/build-business-rating.mjs', '--out', path.join(out, 'alan-shared-resources', 'outputs', 'schema', 'business-rating-LATEST.json')], { cwd: SCHEMA_TOOLS });
+    if (rating.code !== 0) return { status: 'fail', error: `business rating: ${tail(rating.stderr || rating.stdout)}` };
+  }
   const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
   if (run.code !== 0) return { status: 'fail', error: `app-cli ${command}: ${tail(run.stderr || run.stdout)}` };
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
@@ -397,6 +414,7 @@ const appCliStep = (command) => async (ctx) => {
   const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
   const changed = [...diff.differing.map((d) => d.file || d), ...diff.new_files];
   const reportOnly = command === 'landings' && LANDINGS_REPORT_ONLY;
+  if (command === 'landings') return landingsReport(out, report, diff, reportOnly);
   return { status: 'ok', counts: { ...(reportOnly ? { live_mode: 'report-only (P5)' } : {}), files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
     warnings: changed.length ? [`${reportOnly ? 'report-only in LIVE until approved: ' : 'would deploy '}${changed.length} files that differ from alanranger-schema (see the compare in the sandbox), e.g. ${changed.slice(0, 3).join(', ')}`] : [],
     outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };

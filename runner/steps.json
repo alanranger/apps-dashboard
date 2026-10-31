@@ -58,7 +58,7 @@
     "id": "landing_pages", "ord": 9, "name": "Landing pages",
     "calls": "Schema Tools scripts/app-cli.mjs landings (the app's own regenerateAllLandingPages + deployLandingHostedSchemas, headless)", "where": "pc", "inputs": ["LANDING_HOSTED_PATHS", "live HTML"], "outputs": ["*_landing_schema.json", "landings-manifest.json"],
     "prechecks": ["build_csvs ok"], "success": "every hosted landing page has a schema file",
-    "dry_run": "output into the sandbox, then compared with alanranger-schema (run dates ignored)", "duration": "3–6 min (paced)", "retry": true, "on_fail": "warn"
+    "dry_run": "business rating built from product_reviews, then the generator runs into the sandbox; every difference against the hosted files is listed with its live source (landing-diff-explain.json). Report-only in LIVE until approved", "duration": "6–8 min (paced)", "retry": true, "on_fail": "warn"
   },
   {
     "id": "deploy", "ord": 10, "name": "Deploy + CDN wait + sample live checks",
