@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const WEB = 'G:/Dropbox/alan ranger photography/Website Code';
 export const SHARED = `${WEB}/alan-shared-resources`;
 const SCHEMA_TOOLS = `${WEB}/Schema Tools`;
-const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
+const { readCsvObjects, writeCsv } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 const PY_ENV = { PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', SCHEMA_TOOLS_DRY_RUN: '1', ALAN_SITE_GAP_SECONDS: '2' };
 
 // ---------- runner-wide pacing for alanranger.com ----------
@@ -289,8 +289,44 @@ async function reconcile(sb) {
 }
 
 function reconcileNote(x) {
-  return `${x.combined} combined = ${x.db} in DB − ${x.excluded_dropped} excluded by Alan − ${x.gone_from_google} gone from Google`
-    + ` + ${x.business_level} business-level + ${x.star_only} star-only (no text) + ${x.new_not_in_db} new${x.balanced ? '' : ' (DOES NOT BALANCE)'}`;
+  return `${x.combined} combined = ${x.db} in DB − ${x.excluded_dropped} excluded by Alan − ${x.removed_from_google} removed from Google (excluded)`
+    + ` − ${x.gone_from_google} newly gone from Google + ${x.business_level} business-level + ${x.star_only} star-only (no text)`
+    + ` + ${x.new_not_in_db} new${x.balanced ? '' : ' (DOES NOT BALANCE)'}`;
+}
+
+/** Fresh read-only product_reviews snapshot (with ids + exclusion reasons) for the reconcile script. */
+async function reviewsSnapshot(ctx, sb) {
+  const cols = ['id', 'source', 'source_review_id', 'reviewer_name', 'quote', 'product_slug', 'rating', 'review_date', 'is_excluded', 'exclude_reason'];
+  const rows = await ctx.store.queryAll(`product_reviews?select=${cols.join(',')}`);
+  writeCsv(path.join(sb.shared, 'csv processed', 'product-reviews-db-snapshot.csv'), cols,
+    rows.map((r) => ({ ...r, is_excluded: r.is_excluded ? 'yes' : 'no', exclude_reason: r.exclude_reason || '' })));
+}
+
+const MAX_AUTO_EXCLUDE = 5;
+const autoReason = (day) => `removed from Google (auto, ${day})`;
+
+/**
+ * Standing rule: a Google review no longer returned by the fetch is excluded; an automatic exclusion is lifted
+ * when the review comes back. Live only, and only after a good fetch and a balanced reconcile.
+ */
+export async function applyRemovedFromGoogleRule(ctx, rec, fetchOk) {
+  const plan = { exclude: rec?.to_exclude || [], unexclude: rec?.to_unexclude || [] };
+  const blocked = !fetchOk || !rec?.balanced || plan.exclude.length > MAX_AUTO_EXCLUDE;
+  if (ctx.mode === 'dry' || blocked) return { ...plan, applied: false, blocked };
+  const day = new Date().toISOString().slice(0, 10);
+  const patch = (id, body) => ctx.store.query(`product_reviews?id=eq.${id}`, { method: 'PATCH', body, prefer: 'return=minimal' });
+  for (const r of plan.exclude) await patch(r.id, { is_excluded: true, exclude_reason: autoReason(day) });
+  for (const r of plan.unexclude) await patch(r.id, { is_excluded: false, exclude_reason: null });
+  return { ...plan, applied: true, blocked: false };
+}
+
+function reviewInfo(rec, rule) {
+  const verb = rule.applied ? 'excluded' : 'would be excluded';
+  return [
+    ...(rec?.removed_names || []).map((n) => `${n}: removed from Google, excluded (info)`),
+    ...rule.exclude.map((r) => `${r.name}: no longer on Google, ${verb} automatically (info)`),
+    ...rule.unexclude.map((r) => `${r.name}: back on Google, automatic exclusion ${rule.applied ? 'lifted' : 'would be lifted'} (info)`)
+  ];
 }
 
 async function reviews(ctx) {
@@ -301,15 +337,19 @@ async function reviews(ctx) {
   if (r.code !== 0) return { status: 'fail', error: `merge-reviews: ${tail(r.stdout + r.stderr)}` };
   const pendingFile = path.join(sb.shared, 'csv processed', '03b-google-pending-alan-review.csv');
   const pending = fs.existsSync(pendingFile) ? lines(pendingFile) : 0;
+  await reviewsSnapshot(ctx, sb);
   const rec = await reconcile(sb);
+  const rule = await applyRemovedFromGoogleRule(ctx, rec, fetched.ok);
   const warnings = [fetched.ok ? `Google Business Profile fetch OK (read-only, sandbox): ${fetched.rows} reviews` : `Google fetch failed — merge used the last fetched reviews: ${fetched.log}`];
   if (rec) warnings.push(reconcileNote(rec));
+  if (rule.blocked && rule.exclude.length) warnings.push(`removed-from-Google rule not applied (fetch failed, unbalanced, or more than ${MAX_AUTO_EXCLUDE} at once)`);
   const needsAlan = pending ? [{ kind: 'held_reviews', count: pending, file: 'csv processed/03b-google-pending-alan-review.csv' }] : [];
-  if (rec?.gone_from_google) needsAlan.push({ kind: 'reviews_removed_from_google_still_in_db', count: rec.gone_from_google, file: rec.gone_names.join('; ') });
+  const otherGone = (rec?.gone_names || []).filter((n) => !n.startsWith('Google '));
+  if (otherGone.length) needsAlan.push({ kind: 'reviews_missing_from_combined_still_in_db', count: otherGone.length, file: otherGone.join('; ') });
   const clean = fetched.ok && Boolean(rec?.balanced);
   return { status: clean ? 'ok' : 'warn', warnings: clean ? [] : warnings,
     counts: { google_fetched: fetched.ok ? fetched.rows : 'failed', combined_reviews: rec?.combined, db_reviews: rec?.db, google_pending_for_alan: pending,
-      breakdown: warnings[1] || 'n/a' },
+      breakdown: warnings[1] || 'n/a', info: reviewInfo(rec, rule) },
     needsAlan, outputs: [`${sb.shared}/csv processed/03 – combined_product_reviews.csv (sandbox)`] };
 }
 
@@ -342,6 +382,9 @@ function appCliArgs(command, sb, out) {
   return command === 'event-posts' ? [...args, '--mappings', mappings] : args;
 }
 
+/** P5: landings stay report-only in LIVE runs until Alan approves the generator output against the hosted files. */
+export const LANDINGS_REPORT_ONLY = true;
+
 const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
@@ -353,8 +396,9 @@ const appCliStep = (command) => async (ctx) => {
   fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
   const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
   const changed = [...diff.differing.map((d) => d.file || d), ...diff.new_files];
-  return { status: 'ok', counts: { files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
-    warnings: changed.length ? [`would deploy ${changed.length} files that differ from alanranger-schema (see the compare in the sandbox), e.g. ${changed.slice(0, 3).join(', ')}`] : [],
+  const reportOnly = command === 'landings' && LANDINGS_REPORT_ONLY;
+  return { status: 'ok', counts: { ...(reportOnly ? { live_mode: 'report-only (P5)' } : {}), files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
+    warnings: changed.length ? [`${reportOnly ? 'report-only in LIVE until approved: ' : 'would deploy '}${changed.length} files that differ from alanranger-schema (see the compare in the sandbox), e.g. ${changed.slice(0, 3).join(', ')}`] : [],
     outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 };
 
@@ -404,9 +448,10 @@ async function blogPosts(ctx) {
   fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), posts: current }, null, 2));
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
+  const slugs = list.map((u) => u.split('/').pop()).join(', ');
   return { status: 'ok', counts: { posts: feed.length, new: r.fresh.length, changed: r.changed.length, updated_on_only_held_by_gate: r.touchedOnly.length,
-    would_regenerate: firstRun ? 0 : list.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
-    warnings: firstRun ? [`no live blogs-manifest.json yet: the first live run writes it and regenerates nothing; against the last 01 export ${list.length} posts changed: ${list.map((u) => u.split('/').pop()).join(', ')}`] : [],
+    would_regenerate: list.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
+    warnings: list.length ? [`would regenerate ${list.length} posts (paced), then write blogs-manifest.json${firstRun ? ' for the first time' : ''}: ${slugs}`] : [],
     outputs: [`${manifestFile} (sandbox)`, listFile] };
 }
 
@@ -459,6 +504,9 @@ async function liveAudit() {
 }
 
 async function audit(ctx) {
+  if (ctx.includeAudit === false) {
+    return { status: 'skipped', counts: { include_audit: false, info: ['① full audit not selected for this run (Monday ① runs as usual)'] }, warnings: ['skipped — not selected'] };
+  }
   const monday = new Date().getUTCDay() === 1;
   const running = await query(ctx, 'fault_monitor_runs?select=id,status&status=in.(running,started)&limit=1');
   const counts = { monday_utc: monday, audit_already_running: running?.length || 0 };
@@ -474,8 +522,9 @@ async function audit(ctx) {
 async function summary(ctx) {
   const others = ctx.steps.filter((s) => s.step_id !== 'summary');
   const tally = [...others, { status: 'ok' }].reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
-  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
-  return { status: 'ok', counts: tally };
+  const info = others.flatMap((s) => s.counts?.info || []);
+  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, info, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
+  return { status: 'ok', counts: { ...tally, info } };
 }
 
 export const HANDLERS = {

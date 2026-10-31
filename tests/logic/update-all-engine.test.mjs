@@ -3,7 +3,27 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { executeRun, firstIncomplete } from '../../runner/engine.mjs';
 import { memoryStore } from '../../runner/store.mjs';
-import { blogManifest, postsToRegenerate, csvRows } from '../../runner/steps.mjs';
+import { applyRemovedFromGoogleRule, blogManifest, postsToRegenerate, csvRows } from '../../runner/steps.mjs';
+
+test('removed-from-Google rule: excludes gone Google reviews and lifts automatic exclusions, live only, with guards', async () => {
+  const calls = [];
+  const store = { query: async (p, opts) => { calls.push({ p, body: opts.body }); return null; } };
+  const rec = { balanced: true, to_exclude: [{ id: 3328, name: 'Google X (2023-10-22)' }], to_unexclude: [{ id: 99, name: 'Google Y' }] };
+  const dry = await applyRemovedFromGoogleRule({ mode: 'dry', store }, rec, true);
+  assert.equal(dry.applied, false);
+  assert.equal(calls.length, 0);
+  const live = await applyRemovedFromGoogleRule({ mode: 'live', store }, rec, true);
+  assert.equal(live.applied, true);
+  assert.deepEqual(calls.map((c) => c.p), ['product_reviews?id=eq.3328', 'product_reviews?id=eq.99']);
+  assert.equal(calls[0].body.is_excluded, true);
+  assert.match(calls[0].body.exclude_reason, /^removed from Google \(auto, \d{4}-\d{2}-\d{2}\)$/);
+  assert.deepEqual(calls[1].body, { is_excluded: false, exclude_reason: null });
+  calls.length = 0;
+  assert.equal((await applyRemovedFromGoogleRule({ mode: 'live', store }, rec, false)).applied, false, 'never after a failed fetch');
+  const many = { ...rec, to_exclude: Array.from({ length: 6 }, (_, i) => ({ id: i, name: `G ${i}` })) };
+  assert.equal((await applyRemovedFromGoogleRule({ mode: 'live', store }, many, true)).applied, false, 'never more than 5 at once');
+  assert.equal(calls.length, 0);
+});
 
 test('csvRows counts records, not lines (multi-line quoted cells)', () => {
   assert.equal(csvRows('a,b\n1,"x\ny\nz"\n2,w\n'), 2);

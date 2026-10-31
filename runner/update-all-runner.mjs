@@ -58,6 +58,7 @@ async function process1(store, run) {
   }
   const storedFail = run.resume_from ? null : run.options?.fail_step;
   const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || storedFail || null, sandboxBase: arg('--sandbox'),
+    includeAudit: run.include_audit !== false && !has('--no-audit'),
     siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
   say(`[update-all] run ${run.id} (${run.mode}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
   holdAutoSyncLock(run.id);

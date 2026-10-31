@@ -2,7 +2,8 @@
  * Update-all API (state only — the runner on Alan's PC executes the steps).
  *   GET  /api/update-all?run=latest|<id>     → { run, steps, registry }
  *   GET  /api/update-all?runs=10             → recent runs
- *   POST { action: 'start', mode: 'dry' }    → request a run (live refused until UPDATE_ALL_LIVE_ENABLED=1 and role alan)
+ *   POST { action: 'start', mode: 'dry', include_audit } → request a run (live refused until UPDATE_ALL_LIVE_ENABLED=1 and role alan);
+ *                                            include_audit (default true) decides whether step 13 (① full audit) runs
  *   POST { action: 'resume', run_id }        → re-request a failed run from its failed step
  *   POST { action: 'cancel', run_id }
  * Auth: Mission Control session token (same login as the dashboard).
@@ -26,7 +27,8 @@ async function start(session, body) {
   }
   const active = await sb(`update_all_runs?${ACTIVE}&limit=1`);
   if (active.length) return [409, { error: 'a run is already requested or running', run: active[0] }];
-  const run = (await sb('update_all_runs', { method: 'POST', body: { mode, status: 'requested', requested_by: session.role } }))[0];
+  const run = (await sb('update_all_runs', { method: 'POST',
+    body: { mode, status: 'requested', requested_by: session.role, include_audit: body.include_audit !== false } }))[0];
   return [200, { run }];
 }
 

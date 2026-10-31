@@ -49,6 +49,9 @@
     .summary-grid { display: flex; gap: 14px; flex-wrap: wrap; }
     .summary-grid div { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; min-width: 110px; }
     .summary-grid strong { display: block; font-size: 1.4rem; }
+    .tick { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; cursor: pointer; color: var(--text); }
+    .tick input { accent-color: var(--brand); width: 16px; height: 16px; }
+    .info-list { margin: 12px 0 0 18px; color: var(--text-muted); font-size: 0.88rem; }
   </style>
 </head>
 <body>
@@ -75,6 +78,9 @@
           <label><input type="radio" name="mode" value="dry" checked><span>Dry run</span></label>
           <label class="disabled" title="Live is disabled until Alan enables it"><input type="radio" name="mode" value="live" disabled><span>Live</span></label>
         </div>
+        <label class="tick" title="Step 13: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
+          <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit (①)
+        </label>
         <button id="startBtn" data-testid="update-all-start">Update all</button>
         <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
         <button class="secondary" id="cancelBtn" disabled>Cancel</button>
@@ -97,6 +103,7 @@
     <div class="panel" id="summaryPanel" style="display:none">
       <h2>Summary</h2>
       <div class="summary-grid" id="summaryGrid"></div>
+      <ul class="info-list" id="summaryInfo" data-testid="summary-info"></ul>
     </div>
 
     <div class="panel" id="stepsPanel" style="display:none">
@@ -146,7 +153,7 @@
       if (!run) { $('runMeta').innerHTML = '<span class="muted">No runs yet.</span>'; return; }
       const now = run.current_step ? `<span>Now: ${esc(run.current_step)}</span>` : '';
       $('runMeta').innerHTML = `<span>Run <code>${esc(run.id.slice(0, 8))}</code></span><span class="badge b-${run.status}" data-testid="run-status">${run.status}</span>
-        <span>Mode: ${esc(run.mode)}</span><span>Requested: ${new Date(run.requested_at).toLocaleString()}</span>${now}`;
+        <span>Mode: ${esc(run.mode)}</span><span data-testid="run-audit">Full audit: ${run.include_audit === false ? 'not selected' : 'included'}</span><span>Requested: ${new Date(run.requested_at).toLocaleString()}</span>${now}`;
     }
 
     function renderErrors(run, steps) {
@@ -178,6 +185,8 @@
       const tally = steps.reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
       $('summaryPanel').style.display = finished ? 'block' : 'none';
       $('summaryGrid').innerHTML = ['ok', 'warn', 'skipped', 'fail', 'pending'].map((k) => `<div><strong>${tally[k] || 0}</strong>${k}</div>`).join('');
+      const info = run?.summary?.info || [];
+      $('summaryInfo').innerHTML = info.map((line) => `<li data-testid="summary-info-item">${esc(line)}</li>`).join('');
     }
 
     function renderButtons(run) {
@@ -213,7 +222,8 @@
       catch (e) { $('actionMsg').textContent = e.message; }
     }
 
-    $('startBtn').addEventListener('click', () => act({ action: 'start', mode: document.querySelector('input[name=mode]:checked').value }, 'Run requested'));
+    $('startBtn').addEventListener('click', () => act({ action: 'start', mode: document.querySelector('input[name=mode]:checked').value,
+      include_audit: $('includeAudit').checked }, 'Run requested'));
     $('resumeBtn').addEventListener('click', () => current && act({ action: 'resume', run_id: current.id }, 'Resume requested'));
     $('cancelBtn').addEventListener('click', () => current && act({ action: 'cancel', run_id: current.id }, 'Cancelled'));
     $('loginBtn').addEventListener('click', async () => {

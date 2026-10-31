@@ -52,7 +52,7 @@
     "calls": "runner: blog feed body hash + 01 row hash vs outputs/schema/blogs-manifest.json → scripts/bulk-regen-blog-howto-faq.mjs --csv=<changed list> (live, paced)",
     "where": "pc", "inputs": ["blog feed (from build_csvs)", "csv/01", "blogs-manifest.json"], "outputs": ["changed-post list", "blogs-manifest.json", "*_faq.json / *_howto.json (live)"],
     "prechecks": ["FAQ fixture gate passed"], "success": "only new posts or posts whose body / 01 row changed regenerate; an updatedOn bump alone is held",
-    "dry_run": "builds the manifest in the sandbox and lists the changed posts (against the last 01 export until blogs-manifest.json exists); no regeneration", "duration": "seconds dry; minutes per changed post live", "retry": true, "on_fail": "warn"
+    "dry_run": "lists the posts that would regenerate (against the last 01 export until blogs-manifest.json exists; the first live run regenerates those, then writes the manifest); builds the manifest in the sandbox; no regeneration", "duration": "seconds dry; minutes per changed post live", "retry": true, "on_fail": "warn"
   },
   {
     "id": "landing_pages", "ord": 9, "name": "Landing pages",
@@ -83,7 +83,7 @@
     "id": "audit", "ord": 13, "name": "① Full audit → broken links → ② score",
     "calls": "AI GEO Audit POST /api/aigeo/traditional-seo-render {action:'start', source:'trad_seo'}; the */5 trad-seo-render-tick cron advances render then broken links; runner polls GET ?runId (fault_monitor_runs)", "where": "vercel", "inputs": ["06", "hosted schema"], "outputs": ["fault_monitor_runs", "traditional_seo_render_pages", "broken links"],
     "prechecks": ["deploy + final_ingest ok", "not Monday UTC (hard fail)", "no ① already running"], "success": "run done and every page broken-link checked",
-    "dry_run": "simulated (no requests); Monday / already-running checks still evaluated", "duration": "100–150 min live", "retry": true, "on_fail": "warn"
+    "dry_run": "simulated (no requests); Monday / already-running checks still evaluated. Untick \"Include full audit (①)\" on the page to skip it (\"skipped — not selected\"); the Monday ① runs either way", "duration": "100–150 min live", "retry": true, "on_fail": "warn"
   },
   {
     "id": "summary", "ord": 14, "name": "Summary",
