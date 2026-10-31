@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -125,7 +126,7 @@ async function siteChecks(ctx, softOrHard, failures) {
   return site;
 }
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
+export const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
 
 /** Home page status; on 429 waits 60 s and retries (Squarespace rate limit). */
 async function siteStatus(tries) {
@@ -378,12 +379,25 @@ async function productSchema(ctx) {
 // ---------- 6 / 7 / 9. Schema Tools app generators via scripts/app-cli.mjs (same functions, output into the sandbox) ----------
 function appCliArgs(command, sb, out) {
   const args = ['scripts/app-cli.mjs', command, '--out', out, '--csv', path.join(sb.shared, 'csv')];
-  const mappings = path.join(sb.shared, 'csv processed', '05-event-product-mappings-latest.csv');
+  const processed = path.join(sb.shared, 'csv processed');
+  const mappings = path.join(processed, '05-event-product-mappings-latest.csv');
+  if (command === 'event-index') return [...args, '--mappings', mappings, '--processed', processed];
   return command === 'event-posts' ? [...args, '--mappings', mappings] : args;
 }
 
-/** P5: landings stay report-only in LIVE runs until Alan approves the generator output against the hosted files. */
-export const LANDINGS_REPORT_ONLY = true;
+/** Event Index: per file, events listed, past-dated events dropped and whether the hosted file would change. */
+function eventIndexReport(out, report, diff) {
+  const runs = JSON.parse(report.log || '[]');
+  const changed = new Set([...diff.differing.map((d) => String(d).split(' — ')[0]), ...diff.new_files]);
+  const counts = Object.fromEntries(runs.map((r) => [r.file, `${r.events_listed} events listed, ${r.past_dated_dropped} past-dated dropped${r.other_not_listed ? `, ${r.other_not_listed} other not listed` : ''}, ${changed.has(r.file) ? 'would change' : 'unchanged'}`]));
+  return { status: runs.length === 2 ? 'ok' : 'fail', error: runs.length === 2 ? null : 'event-index did not produce both files',
+    counts: { ...counts, seconds: report.seconds },
+    warnings: changed.size ? [`would deploy ${changed.size} changed file(s): ${[...changed].join(', ')} (events added/past events dropped since the last export)`] : [],
+    outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
+}
+
+/** P5: landings were report-only in LIVE until the difference list was approved (Claude, batch 5: switched on). */
+export const LANDINGS_REPORT_ONLY = false;
 
 /** Landings: every difference against the hosted files, tied to its live source (scripts/landing-diff-explain.mjs). */
 async function landingsReport(out, report, diff, reportOnly) {
@@ -392,8 +406,11 @@ async function landingsReport(out, report, diff, reportOnly) {
   if (r.code !== 0) return { status: 'fail', error: `landing-diff-explain: ${tail(r.stderr || r.stdout)}` };
   const ex = JSON.parse(fs.readFileSync(file, 'utf8'));
   const lines = ex.rows.filter((row) => row.notes.length).map((row) => `${row.file}: ${row.notes.join(' | ')}`);
+  const rated = ex.businessRatingFiles || [];
+  if (rated.length) return { status: 'fail', error: `business rating on landing files (P23): ${rated.join(', ')}`, outputs: [file] };
   return { status: ex.unexplained.length ? 'warn' : 'ok',
-    counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },
+    counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, landing_files: ex.landingFilesGenerated,
+      business_rating_nodes: 0, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },
     warnings: [`${reportOnly ? 'report-only in LIVE until Claude approves: ' : ''}${lines.length} of ${ex.files} hosted landing files differ, each explained by a live source (list below / landing-diff-explain.json)`, ...lines],
     outputs: [`${out} (sandbox)`, file, path.join(out, 'compare.json')] };
 }
@@ -402,10 +419,6 @@ const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
   const out = path.join(sb.root, 'app-cli', command);
-  if (command === 'landings') {
-    const rating = await sh('node', ['scripts/build-business-rating.mjs', '--out', path.join(out, 'alan-shared-resources', 'outputs', 'schema', 'business-rating-LATEST.json')], { cwd: SCHEMA_TOOLS });
-    if (rating.code !== 0) return { status: 'fail', error: `business rating: ${tail(rating.stderr || rating.stdout)}` };
-  }
   const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
   if (run.code !== 0) return { status: 'fail', error: `app-cli ${command}: ${tail(run.stderr || run.stdout)}` };
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
@@ -415,6 +428,7 @@ const appCliStep = (command) => async (ctx) => {
   const changed = [...diff.differing.map((d) => d.file || d), ...diff.new_files];
   const reportOnly = command === 'landings' && LANDINGS_REPORT_ONLY;
   if (command === 'landings') return landingsReport(out, report, diff, reportOnly);
+  if (command === 'event-index') return eventIndexReport(out, report, diff);
   return { status: 'ok', counts: { ...(reportOnly ? { live_mode: 'report-only (P5)' } : {}), files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
     warnings: changed.length ? [`${reportOnly ? 'report-only in LIVE until approved: ' : 'would deploy '}${changed.length} files that differ from alanranger-schema (see the compare in the sandbox), e.g. ${changed.slice(0, 3).join(', ')}`] : [],
     outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
@@ -536,18 +550,38 @@ async function audit(ctx) {
   return liveAudit();
 }
 
-/** Tally of all 14 steps, counting this summary step itself as ok (the page uses the same rule). */
+/** Product *_schema.json names (+ _faq.json) from 04, and blog url ids from 01 (sandbox copies when the run made them). */
+function producerInputs(ctx) {
+  const sb = sandboxFor(ctx);
+  const pick = (rel) => [path.join(sb.shared, rel), `${SHARED}/${rel}`].find((p) => fs.existsSync(p));
+  const final04 = fs.readFileSync(pick('csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
+  const schemas = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))];
+  const productFiles = new Set(schemas.flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]));
+  const blogSlugs = new Set(readCsvObjects(pick('csv/01-blog-posts.csv')).rows.map((r) => r['Url Id']).filter(Boolean));
+  return { productFiles, blogSlugs };
+}
+
+function coverageCheck(ctx) {
+  const { productFiles, blogSlugs } = producerInputs(ctx);
+  const c = coverage(`${SCHEMA_TOOLS}/alanranger-schema`, productFiles, blogSlugs);
+  const warnings = [...c.orphans.map((f) => `no producer for ${f}`), ...c.uncoveredTabs.map((t) => `generator tab ${t} produces no file in the repo`)];
+  return { c, line: coverageLine(c), warnings };
+}
+
+/** Tally of all steps (this summary counted as ok, as on the page) + the schema repo coverage check. */
 async function summary(ctx) {
   const others = ctx.steps.filter((s) => s.step_id !== 'summary');
   const tally = [...others, { status: 'ok' }].reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
   const info = others.flatMap((s) => s.counts?.info || []);
-  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, info, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
-  return { status: 'ok', counts: { ...tally, info } };
+  const cov = coverageCheck(ctx);
+  const covered = { line: cov.line, files: cov.c.total, orphans: cov.c.orphans, by_step: cov.c.byStep, tabs: TABS };
+  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, info, coverage: covered, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
+  return { status: cov.warnings.length ? 'warn' : 'ok', counts: { ...tally, coverage: cov.line, coverage_by_step: cov.c.byStep, info }, warnings: cov.warnings };
 }
 
 export const HANDLERS = {
   preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: productSchema,
-  event_posts: appCliStep('event-posts'), blog_index: appCliStep('blog-index'),
+  event_posts: appCliStep('event-posts'), event_index: appCliStep('event-index'), blog_index: appCliStep('blog-index'),
   blog_posts: blogPosts, landing_pages: appCliStep('landings'),
   deploy, final_ingest: finalIngest, export_09: export09,
   audit,

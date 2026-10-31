@@ -22,7 +22,8 @@ export function supabaseStore({ url, key }) {
   return {
     createRun: async (run) => (await call('update_all_runs', { method: 'POST', body: run }))[0],
     getRun: async (id) => (await call(`update_all_runs?id=eq.${id}`))[0] || null,
-    nextRequested: async () => (await call('update_all_runs?status=eq.requested&order=requested_at.asc&limit=1'))[0] || null,
+    /** Oldest requested run whose Squarespace cool-down (cooldown_until, live only) has passed. */
+    nextRequested: async () => (await call(`update_all_runs?status=eq.requested&or=(cooldown_until.is.null,cooldown_until.lte.${new Date().toISOString()})&order=requested_at.asc&limit=1`))[0] || null,
     updateRun: (id, patch) => call(`update_all_runs?id=eq.${id}`, { method: 'PATCH', body: patch }),
     listSteps: (runId) => call(`update_all_steps?run_id=eq.${runId}&order=ord.asc`),
     insertSteps: (rows) => call('update_all_steps?on_conflict=run_id,step_id', { method: 'POST', body: rows, prefer: 'resolution=ignore-duplicates,return=minimal' }),
@@ -48,7 +49,7 @@ export function memoryStore() {
     runs, steps,
     createRun: async (run) => { const r = { id: `run-${(n += 1)}`, status: 'requested', ...run }; runs.set(r.id, r); return r; },
     getRun: async (id) => runs.get(id) || null,
-    nextRequested: async () => [...runs.values()].find((r) => r.status === 'requested') || null,
+    nextRequested: async () => [...runs.values()].find((r) => r.status === 'requested' && !(r.cooldown_until && Date.parse(r.cooldown_until) > Date.now())) || null,
     updateRun: async (id, patch) => Object.assign(runs.get(id), patch),
     listSteps: async (runId) => steps.filter((s) => s.run_id === runId).sort((a, b) => a.ord - b.ord),
     insertSteps: async (rows) => rows.forEach((r) => { if (!steps.some((s) => s.run_id === r.run_id && s.step_id === r.step_id)) steps.push({ ...r }); }),

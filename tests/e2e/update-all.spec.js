@@ -44,7 +44,7 @@ test('clicking Update all (dry) creates a run and the runner writes every step s
   const data = await latest(token);
   expect(data.run.id).toBe(runId);
   expect(['succeeded', 'warned']).toContain(data.run.status);
-  expect(data.steps).toHaveLength(14);
+  expect(data.steps).toHaveLength(15);
   const byId = Object.fromEntries(data.steps.map((s) => [s.step_id, s.status]));
   expect(['ok', 'warn']).toContain(byId.preflight);
   expect(['ok', 'warn']).toContain(byId.deploy);

@@ -20,7 +20,8 @@ import { fileURLToPath } from 'node:url';
 import { executeRun } from './engine.mjs';
 import { acquireLock, logger, releaseLock } from './lock-log.mjs';
 import { loadEnv, supabaseStore } from './store.mjs';
-import { HANDLERS, SHARED } from './steps.mjs';
+import { HANDLERS, SHARED, UA, readSiteState, record429, siteFetch } from './steps.mjs';
+import { cooldownUntil, waitingText } from './cooldown.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -51,11 +52,26 @@ function selectedHandlers(only) {
   return Object.fromEntries(Object.entries(HANDLERS).map(([id, h]) => [id, keep.has(id) ? h : async () => ({ status: 'skipped', warnings: ['not selected for this test run (--only)'] })]));
 }
 
+/** LIVE only: one pre-flight home page check; a 429 (or one recorded in the last 30 min) parks the run until the cool-down ends. */
+async function liveCooldown(store, run) {
+  const status = await siteFetch('https://www.alanranger.com/', { headers: { 'User-Agent': UA } }).then((r) => r.status).catch(() => 0);
+  if (status === 429) record429();
+  const until = cooldownUntil({ mode: run.mode, last429At: readSiteState().last429At, status });
+  if (!until) {
+    if (run.cooldown_until) await store.updateRun(run.id, { cooldown_until: null });
+    return false;
+  }
+  await store.updateRun(run.id, { status: 'requested', cooldown_until: until });
+  say(`[update-all] run ${run.id} (live): ${waitingText(until)} — it starts automatically after that`);
+  return true;
+}
+
 async function process1(store, run) {
   if (run.mode !== 'dry' && process.env.UPDATE_ALL_LIVE_ENABLED !== '1') {
     await store.updateRun(run.id, { status: 'cancelled', error: 'LIVE mode is not enabled yet', finished_at: new Date().toISOString() });
     return 'cancelled';
   }
+  if (run.mode === 'live' && await liveCooldown(store, run)) return 'waiting';
   const storedFail = run.resume_from ? null : run.options?.fail_step;
   const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || storedFail || null, sandboxBase: arg('--sandbox'),
     includeAudit: run.include_audit !== false && !has('--no-audit'),

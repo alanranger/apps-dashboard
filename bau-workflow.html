@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BAU Update all - Alan Ranger Tools</title>
+  <title>BAU Monthly - Alan Ranger Tools</title>
   <style>
     :root {
       --bg: #0f1419; --panel: #1a1f2e; --text: #e2e8f0; --text-muted: #9ca3af; --brand: #f59e0b;
@@ -57,8 +57,9 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>Update all</h1>
-      <p>One button for the monthly CSV → schema → ingest → audit round trip. The runner on Alan's PC does the work; this page shows progress from any device.
+      <h1>BAU Monthly</h1>
+      <p data-testid="bau-summary-line">Does the full round trip in order: rebuild the CSVs from Squarespace → ingest (links events and products) → reviews → generate all schema → publish → ingest again (so the database holds the new schema) → keywords export → optional full audit ①.</p>
+      <p>The runner on Alan's PC does the work; this page shows progress from any device.
         <br><a href="bau-workflow-checklist.html">Old manual checklist</a> · <a href="/">Mission Control</a></p>
     </div>
 
@@ -103,6 +104,7 @@
     <div class="panel" id="summaryPanel" style="display:none">
       <h2>Summary</h2>
       <div class="summary-grid" id="summaryGrid"></div>
+      <p class="muted" id="coverageLine" data-testid="coverage-line" style="margin-top:12px"></p>
       <ul class="info-list" id="summaryInfo" data-testid="summary-info"></ul>
     </div>
 
@@ -175,7 +177,14 @@
       requested: 'Waiting for the PC runner (it checks every 5 minutes)…',
       running: 'Running'
     };
+    // P25: a LIVE run that hit a Squarespace 429 waits for the cool-down, then starts automatically.
+    const coolingUntil = (run) => run?.status === 'requested' && run.cooldown_until && Date.parse(run.cooldown_until) > Date.now() ? run.cooldown_until : null;
     function renderStatusText(run) {
+      const until = coolingUntil(run);
+      if (until) {
+        $('actionMsg').textContent = `Waiting for Squarespace cool-down until ${new Date(until).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}`;
+        return;
+      }
       const text = STATUS_TEXT[run?.status] || '';
       $('actionMsg').textContent = run?.status === 'running' && run.current_step ? `${text}: ${run.current_step}` : text;
     }
@@ -185,6 +194,7 @@
       const tally = steps.reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
       $('summaryPanel').style.display = finished ? 'block' : 'none';
       $('summaryGrid').innerHTML = ['ok', 'warn', 'skipped', 'fail', 'pending'].map((k) => `<div><strong>${tally[k] || 0}</strong>${k}</div>`).join('');
+      $('coverageLine').textContent = run?.summary?.coverage?.line || '';
       const info = run?.summary?.info || [];
       $('summaryInfo').innerHTML = info.map((line) => `<li data-testid="summary-info-item">${esc(line)}</li>`).join('');
     }

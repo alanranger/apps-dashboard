@@ -62,7 +62,13 @@ test('page button only: the scheduled runner picks the run up and the full dry r
     await expect(page.getByTestId('run-audit')).toHaveText('Full audit: not selected');
   }
   expect(step('blog_posts').counts.would_regenerate).toBe(Number(process.env.EXPECT_REGENERATE || 9));
-  expect(step('landing_pages').counts.live_mode).toBe('report-only (P5)');
+  expect(step('landing_pages').counts.live_mode).toBe('live');
+  expect(step('landing_pages').counts.business_rating_nodes).toBe(0);
+  expect(step('event_index').status).toBe('ok');
+  await expect(page.locator('h1')).toHaveText('BAU Monthly');
+  const coverage = data.run.summary?.coverage;
+  expect(coverage.orphans).toHaveLength(Number(process.env.EXPECT_ORPHANS || 0));
+  await expect(page.getByTestId('coverage-line')).toHaveText(coverage.line);
   const info = data.run.summary?.info || [];
   await expect(page.getByTestId('summary-info-item')).toHaveCount(info.length);
 });

@@ -4,6 +4,21 @@ import fs from 'node:fs';
 import { executeRun, firstIncomplete } from '../../runner/engine.mjs';
 import { memoryStore } from '../../runner/store.mjs';
 import { applyRemovedFromGoogleRule, blogManifest, postsToRegenerate, csvRows } from '../../runner/steps.mjs';
+import { cooldownUntil, waitingText } from '../../runner/cooldown.mjs';
+
+test('P25: a 429 in LIVE pre-flight waits 30 min then starts automatically; dry runs are unchanged', async () => {
+  const now = Date.parse('2026-11-01T10:00:00Z');
+  assert.equal(cooldownUntil({ mode: 'live', status: 429, now }), '2026-11-01T10:30:00.000Z');
+  assert.equal(cooldownUntil({ mode: 'live', status: 200, last429At: '2026-11-01T09:50:00Z', now }), '2026-11-01T10:20:00.000Z', 'a 429 recorded 10 min ago still cools down');
+  assert.equal(cooldownUntil({ mode: 'live', status: 200, last429At: '2026-11-01T09:00:00Z', now }), null, 'cool-down over: start now');
+  assert.equal(cooldownUntil({ mode: 'dry', status: 429, now }), null, 'dry runs keep the old behaviour');
+  assert.equal(waitingText('2026-11-01T10:30:00Z'), 'Waiting for Squarespace cool-down until 10:30');
+  const store = memoryStore();
+  const run = await store.createRun({ mode: 'live', cooldown_until: new Date(Date.now() + 60000).toISOString() });
+  assert.equal(await store.nextRequested(), null, 'a cooling-down run is not picked up');
+  await store.updateRun(run.id, { cooldown_until: new Date(Date.now() - 1000).toISOString() });
+  assert.equal((await store.nextRequested()).id, run.id, 'picked up automatically once the cool-down has passed');
+});
 
 test('removed-from-Google rule: excludes gone Google reviews and lifts automatic exclusions, live only, with guards', async () => {
   const calls = [];
@@ -78,9 +93,9 @@ test('a hard fail stops the run; resume continues from the failed step only', as
   assert.equal(c.status, 'ok');
 });
 
-test('registry has the 14 steps in the agreed order with complete metadata', () => {
+test('registry has the 15 steps in the agreed order with complete metadata', () => {
   const steps = JSON.parse(fs.readFileSync(new URL('../../runner/steps.json', import.meta.url), 'utf8'));
-  assert.deepEqual(steps.map((s) => s.id), ['preflight', 'build_csvs', 'ingest_preliminary', 'reviews', 'product_schema', 'event_posts',
+  assert.deepEqual(steps.map((s) => s.id), ['preflight', 'build_csvs', 'ingest_preliminary', 'reviews', 'product_schema', 'event_posts', 'event_index',
     'blog_index', 'blog_posts', 'landing_pages', 'deploy', 'final_ingest', 'export_09', 'audit', 'summary']);
   for (const s of steps) {
     for (const k of ['name', 'calls', 'where', 'inputs', 'outputs', 'prechecks', 'success', 'dry_run', 'duration', 'retry', 'on_fail']) assert.ok(k in s, `${s.id}.${k}`);
