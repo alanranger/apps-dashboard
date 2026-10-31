@@ -78,10 +78,10 @@
         <button id="startBtn" data-testid="update-all-start">Update all</button>
         <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
         <button class="secondary" id="cancelBtn" disabled>Cancel</button>
-        <span class="muted" id="actionMsg"></span>
+        <span class="muted" id="actionMsg" data-testid="action-msg"></span>
       </div>
       <div class="run-meta" id="runMeta"></div>
-      <p class="muted" style="margin-top:10px">Dry run works in a sandbox copy (no live CSV, schema repo, database or Squarespace changes). The PC runner picks up a requested run within 15 s while it is watching (<code>node runner/update-all-runner.mjs --watch</code>).</p>
+      <p class="muted" style="margin-top:10px">Dry run works in a sandbox copy (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task <code>AlanUpdateAllRunner</code>) checks every 5 minutes and picks up a requested run.</p>
     </div>
 
     <div class="panel" id="errorPanel" data-testid="update-all-errors">
@@ -89,7 +89,7 @@
       <ul id="errorList"></ul>
     </div>
 
-    <div class="panel" id="needsPanel" style="display:none">
+    <div class="panel" id="needsPanel" style="display:none" data-testid="needs-alan">
       <h2>Needs Alan</h2>
       <ul id="needsList"></ul>
     </div>
@@ -158,8 +158,19 @@
 
     function renderNeeds(run) {
       const needs = run?.needs_alan || [];
-      $('needsPanel').style.display = needs.length ? 'block' : 'none';
-      $('needsList').innerHTML = needs.map((n) => `<li>${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — <code>${esc(n.file || '')}</code></li>`).join('');
+      $('needsPanel').style.display = run ? 'block' : 'none';
+      $('needsList').innerHTML = needs.length
+        ? needs.map((n) => `<li data-testid="needs-item" data-kind="${esc(n.kind)}">${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — <code>${esc(n.file || '')}</code></li>`).join('')
+        : '<li class="muted" data-testid="needs-empty">Nothing needs you.</li>';
+    }
+
+    const STATUS_TEXT = {
+      requested: 'Waiting for the PC runner (it checks every 5 minutes)…',
+      running: 'Running'
+    };
+    function renderStatusText(run) {
+      const text = STATUS_TEXT[run?.status] || '';
+      $('actionMsg').textContent = run?.status === 'running' && run.current_step ? `${text}: ${run.current_step}` : text;
     }
 
     function renderSummary(run, steps) {
@@ -182,6 +193,7 @@
       renderNeeds(run);
       renderSummary(run, steps);
       renderButtons(run);
+      renderStatusText(run);
     }
 
     async function refresh() {
@@ -197,9 +209,8 @@
 
     async function act(body, msg) {
       $('actionMsg').textContent = msg;
-      try { await api('/api/update-all', { method: 'POST', body }); $('actionMsg').textContent = `${msg} — waiting for the PC runner…`; }
+      try { await api('/api/update-all', { method: 'POST', body }); refresh(); }
       catch (e) { $('actionMsg').textContent = e.message; }
-      refresh();
     }
 
     $('startBtn').addEventListener('click', () => act({ action: 'start', mode: document.querySelector('input[name=mode]:checked').value }, 'Run requested'));

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { executeRun, firstIncomplete } from '../../runner/engine.mjs';
 import { memoryStore } from '../../runner/store.mjs';
-import { changedPosts, csvRows } from '../../runner/steps.mjs';
+import { blogManifest, postsToRegenerate, csvRows } from '../../runner/steps.mjs';
 
 test('csvRows counts records, not lines (multi-line quoted cells)', () => {
   assert.equal(csvRows('a,b\n1,"x\ny\nz"\n2,w\n'), 2);
@@ -67,12 +67,15 @@ test('registry has the 14 steps in the agreed order with complete metadata', () 
   }
 });
 
-test('blog change detection: new, changed and unchanged posts from sitemap lastmod', () => {
-  const xml = ['a', 'b', 'c'].map((p, i) => `<url><loc>https://www.alanranger.com/blog-on-photography/${p}</loc><lastmod>2026-10-0${i + 1}</lastmod></url>`).join('')
-    + '<url><loc>https://www.alanranger.com/about</loc><lastmod>2026-10-01</lastmod></url>';
-  const manifest = { 'https://www.alanranger.com/blog-on-photography/a': { lastmod: '2026-10-01' }, 'https://www.alanranger.com/blog-on-photography/b': { lastmod: '2026-09-01' } };
-  const r = changedPosts(xml, manifest);
-  assert.equal(r.entries.length, 3);
-  assert.deepEqual(r.fresh.map((e) => e.url.split('/').pop()), ['c']);
-  assert.deepEqual(r.changed.map((e) => e.url.split('/').pop()), ['b']);
+test('blog body-hash gate: new and changed posts regenerate, an updatedOn bump alone does not', () => {
+  const item = (slug, body, updatedOn) => ({ fullUrl: `/blog-on-photography/${slug}`, body, updatedOn });
+  const row = (slug, title) => ({ 'Full Url': `https://www.alanranger.com/blog-on-photography/${slug}`, Title: title });
+  const baseline = blogManifest([item('a', 'A', 1), item('b', 'B', 1), item('c', 'C', 1), item('d', 'D', 1)], [row('a', 'A'), row('b', 'B'), row('c', 'C'), row('d', 'D')]);
+  const current = blogManifest([item('a', 'A', 1), item('b', 'B2', 2), item('c', 'C', 3), item('d', 'D', 1), item('e', 'E', 1)],
+    [row('a', 'A'), row('b', 'B'), row('c', 'C'), row('d', 'D new title'), row('e', 'E')]);
+  const r = postsToRegenerate(current, baseline);
+  const slugs = (list) => list.map((u) => u.split('/').pop());
+  assert.deepEqual(slugs(r.fresh), ['e']);
+  assert.deepEqual(slugs(r.changed), ['b', 'd']);
+  assert.deepEqual(slugs(r.touchedOnly), ['c']);
 });

@@ -27,7 +27,16 @@ export function supabaseStore({ url, key }) {
     listSteps: (runId) => call(`update_all_steps?run_id=eq.${runId}&order=ord.asc`),
     insertSteps: (rows) => call('update_all_steps?on_conflict=run_id,step_id', { method: 'POST', body: rows, prefer: 'resolution=ignore-duplicates,return=minimal' }),
     updateStep: (runId, stepId, patch) => call(`update_all_steps?run_id=eq.${runId}&step_id=eq.${stepId}`, { method: 'PATCH', body: patch }),
-    query: call
+    query: call,
+    /** Paged read of every row (PostgREST caps a single response at 1000). */
+    queryAll: async (pathAndQuery) => {
+      const rows = [];
+      for (let offset = 0; ; offset += 1000) {
+        const page = await call(`${pathAndQuery}&order=id.asc&limit=1000&offset=${offset}`);
+        rows.push(...page);
+        if (page.length < 1000) return rows;
+      }
+    }
   };
 }
 
