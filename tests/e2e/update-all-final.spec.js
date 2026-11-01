@@ -55,6 +55,7 @@ test('page button only: the scheduled runner picks the run up and the full dry r
   expect(byStatus('pending')).toEqual([]);
   await expect(page.getByTestId('needs-alan')).toBeVisible();
   const needs = data.run.needs_alan || [];
+  if (process.env.EXPECT_NEEDS_EMPTY === '1') expect(needs).toEqual([]);
   if (needs.length) await expect(page.getByTestId('needs-item')).toHaveCount(needs.length);
   else await expect(page.getByTestId('needs-empty')).toHaveText('Nothing needs you.');
   const step = (id) => data.steps.find((s) => s.step_id === id);
@@ -62,7 +63,11 @@ test('page button only: the scheduled runner picks the run up and the full dry r
     expect(step('audit').warnings).toContain('skipped — not selected');
     await expect(page.getByTestId('run-audit')).toHaveText('Full audit: not selected');
   }
-  expect(step('blog_posts').counts.would_regenerate).toBe(Number(process.env.EXPECT_REGENERATE || 9));
+  const blog = step('blog_posts').counts;
+  expect(blog.would_regenerate).toBe(Number(process.env.EXPECT_REGENERATE || 9));
+  expect(blog.regenerate_scope).toContain('all 6 file types');
+  expect(Object.keys(blog.files_per_post || {})).toHaveLength(blog.would_regenerate);
+  expect(blog.deleted_posts).toBe(0);
   expect(step('landing_pages').counts.live_mode).toBe('live');
   expect(step('landing_pages').counts.business_rating_nodes).toBe(0);
   expect(step('event_index').status).toBe('ok');

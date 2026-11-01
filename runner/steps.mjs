@@ -15,6 +15,7 @@ export const WEB = 'G:/Dropbox/alan ranger photography/Website Code';
 export const SHARED = `${WEB}/alan-shared-resources`;
 const SCHEMA_TOOLS = `${WEB}/Schema Tools`;
 const { readCsvObjects, writeCsv } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
+const { deletedBlogPosts, planDeletedPostCleanup } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/stale-schema-cleanup.mjs`).href);
 const PY_ENV = { PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', SCHEMA_TOOLS_DRY_RUN: '1', ALAN_SITE_GAP_SECONDS: '2' };
 
 // ---------- runner-wide pacing for alanranger.com ----------
@@ -480,11 +481,37 @@ async function blogPosts(ctx) {
   fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), posts: current }, null, 2));
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
+  const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [] };
+  if (regen.error) return { status: 'fail', error: regen.error };
+  const gone = deletedPostsPlan(sb, feed);
   const slugs = list.map((u) => u.split('/').pop()).join(', ');
   return { status: 'ok', counts: { posts: feed.length, new: r.fresh.length, changed: r.changed.length, updated_on_only_held_by_gate: r.touchedOnly.length,
-    would_regenerate: list.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
-    warnings: list.length ? [`would regenerate ${list.length} posts (paced), then write blogs-manifest.json${firstRun ? ' for the first time' : ''}: ${slugs}`] : [],
-    outputs: [`${manifestFile} (sandbox)`, listFile] };
+    would_regenerate: list.length, regenerate_scope: 'all 6 file types (_schema, _blogposting, _breadcrumb, _image, _faq / _howto when the page has them)',
+    files_per_post: Object.fromEntries(regen.posts.map((p) => [p.slug, `${p.files.length} files${p.removed_stale.length ? `, stale removed: ${p.removed_stale.join(' ')}` : ''}`])),
+    deleted_posts: gone.slugs.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
+    warnings: [
+      ...(list.length ? [`would regenerate ${list.length} posts (all 6 file types, paced, via the Blog Posts tab's own generator), then write blogs-manifest.json${firstRun ? ' for the first time' : ''}: ${slugs}`] : []),
+      ...gone.plan.remove.map((s) => `deleted post ${s}: its files would be removed (no longer in the sitemap or feed)`)],
+    needsAlan: gone.plan.needsAlan.length ? [{ kind: 'deleted_blog_posts_over_limit', count: gone.plan.needsAlan.length, file: gone.plan.needsAlan.join('; ') }] : [],
+    outputs: [`${manifestFile} (sandbox)`, listFile, regen.out].filter(Boolean) };
+}
+
+/** Changed posts through app-cli blog-posts (the Blog Posts tab's own single-URL generator) into the sandbox. */
+async function regenerateBlogPosts(sb, listFile) {
+  const out = path.join(sb.root, 'app-cli', 'blog-posts');
+  const run = await sh('node', ['scripts/app-cli.mjs', 'blog-posts', '--out', out, '--list', listFile], { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
+  if (run.code !== 0) return { error: `app-cli blog-posts: ${tail(run.stderr || run.stdout)}` };
+  const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
+  return { error: null, out, posts: JSON.parse(report.log || '[]') };
+}
+
+/** Posts with files in the schema repo that are in neither the blog feed nor the sitemap (live: max 5 removed per run). */
+function deletedPostsPlan(sb, feed) {
+  const repoFiles = fs.readdirSync(`${SCHEMA_TOOLS}/alanranger-schema`);
+  const sitemap = fs.readFileSync(path.join(sb.root, 'feeds', 'sitemap.xml'), 'utf8');
+  const sitemapSlugs = [...sitemap.matchAll(/\/blog-on-photography\/([^<\s/]+)<\/loc>/g)].map((m) => m[1]);
+  const slugs = deletedBlogPosts(repoFiles, feed.map((i) => i.urlId), sitemapSlugs);
+  return { slugs, plan: planDeletedPostCleanup(slugs) };
 }
 
 // ---------- 10. deploy (dry: what would change) ----------
