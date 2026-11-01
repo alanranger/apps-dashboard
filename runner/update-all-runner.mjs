@@ -17,14 +17,33 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { executeRun } from './engine.mjs';
 import { acquireLock, logger, releaseLock } from './lock-log.mjs';
 import { loadEnv, supabaseStore } from './store.mjs';
-import { HANDLERS, SHARED, UA, readSiteState, record429, siteFetch } from './steps.mjs';
+import { HANDLERS, SHARED, UA, readSiteState, record429, sandboxFor, seedSandbox, siteFetch } from './steps.mjs';
 import { cooldownUntil, waitingText } from './cooldown.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
+const { planStage, seedSources, stageHistory, stepsFor } = createRequire(import.meta.url)('./stages.cjs');
+
+/** Run all = every step; a stage run = pre-flight + its stages' steps + summary. */
+export const registryFor = (stages) => { const ids = stepsFor(stages); return ids ? REGISTRY.filter((d) => ids.includes(d.id)) : REGISTRY; };
+
+/**
+ * A stage run checks its prerequisites (never forced) and seeds its sandbox from their saved outputs.
+ * Returns null when the run can go ahead, or the reason it can't (the page then offers the chain).
+ */
+export async function prepareStageRun(store, run, ctx) {
+  if (!run.stages?.length || run.mode !== 'dry') return null;
+  const runs = await store.query(`update_all_runs?select=id,stage_results,finished_at&id=neq.${run.id}&order=requested_at.desc&limit=60`);
+  const history = stageHistory(runs, run.mode);
+  const plan = planStage(run.stages, history);
+  if (!plan.ok) return `${plan.message} (${Object.entries(plan.reasons).map(([s, r]) => `${s}: ${r}`).join('; ')}) — ${plan.chainLabel}`;
+  const seeded = seedSandbox(ctx, seedSources(run.stages, history));
+  return seeded.missing ? `saved inputs are gone from this PC: ${seeded.missing} — run that stage again` : null;
+}
 const arg = (flag) => { const i = process.argv.indexOf(flag); return i > 0 ? process.argv[i + 1] : null; };
 const has = (flag) => process.argv.includes(flag);
 
@@ -66,21 +85,35 @@ async function liveCooldown(store, run) {
   return true;
 }
 
+/** Step context for one run: stage runs include ① only when stage I is chosen; Run all follows the tick-box. */
+function runContext(store, run) {
+  const stages = run.stages?.length ? run.stages : null;
+  const includeAudit = stages ? stages.includes('I') : (run.include_audit !== false && !has('--no-audit'));
+  const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || (run.resume_from ? null : run.options?.fail_step) || null,
+    sandboxBase: arg('--sandbox'), includeAudit, stages, simulateNew08: run.mode === 'dry' ? (run.options?.simulate_new_08 || []) : [],
+    siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
+  ctx.sandboxRoot = sandboxFor({ ...ctx, runId: run.id }).root;
+  return ctx;
+}
+
 async function process1(store, run) {
   if (run.mode !== 'dry' && process.env.UPDATE_ALL_LIVE_ENABLED !== '1') {
     await store.updateRun(run.id, { status: 'cancelled', error: 'LIVE mode is not enabled yet', finished_at: new Date().toISOString() });
     return 'cancelled';
   }
   if (run.mode === 'live' && await liveCooldown(store, run)) return 'waiting';
-  const storedFail = run.resume_from ? null : run.options?.fail_step;
-  const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || storedFail || null, sandboxBase: arg('--sandbox'),
-    includeAudit: run.include_audit !== false && !has('--no-audit'),
-    siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
-  say(`[update-all] run ${run.id} (${run.mode}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
+  const ctx = runContext(store, run);
+  say(`[update-all] run ${run.id} (${run.mode}, ${ctx.stages ? `stages ${ctx.stages.join('')}` : 'run all'}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
+  const blocked = run.resume_from ? null : await prepareStageRun(store, run, { ...ctx, runId: run.id });
+  if (blocked) {
+    await store.updateRun(run.id, { status: 'failed', error: blocked, finished_at: new Date().toISOString() });
+    say(`[update-all] run ${run.id} not started: ${blocked}`);
+    return 'failed';
+  }
   holdAutoSyncLock(run.id);
   let status;
   try {
-    status = await executeRun(store, run, REGISTRY, selectedHandlers(arg('--only')), ctx);
+    status = await executeRun(store, run, registryFor(ctx.stages), selectedHandlers(arg('--only')), ctx);
   } finally {
     releaseAutoSyncLock(run.id);
   }
@@ -108,7 +141,10 @@ async function main() {
 }
 
 async function dispatch(store) {
-  if (has('--start')) return process1(store, await store.createRun({ mode: 'dry', status: 'running', requested_by: 'runner-cli', options: { fail_step: arg('--fail-step') } }));
+  if (has('--start')) {
+    const stages = arg('--stages') ? arg('--stages').split(',') : null;
+    return process1(store, await store.createRun({ mode: 'dry', status: 'running', requested_by: 'runner-cli', stages, options: { fail_step: arg('--fail-step') } }));
+  }
   if (arg('--resume')) {
     const run = await store.getRun(arg('--resume'));
     if (!run) throw new Error('run not found');

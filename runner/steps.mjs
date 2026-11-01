@@ -8,13 +8,14 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { coverage, coverageLine, TABS } from './coverage.mjs';
+import { diff07 } from './diff-07.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const WEB = 'G:/Dropbox/alan ranger photography/Website Code';
 export const SHARED = `${WEB}/alan-shared-resources`;
 const SCHEMA_TOOLS = `${WEB}/Schema Tools`;
-const { readCsvObjects, writeCsv } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
+const { readCsvObjects, writeCsv, pathKey } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 const { deletedBlogPosts, planDeletedPostCleanup } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/stale-schema-cleanup.mjs`).href);
 const PY_ENV = { PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', SCHEMA_TOOLS_DRY_RUN: '1', ALAN_SITE_GAP_SECONDS: '2' };
 
@@ -56,6 +57,15 @@ export function sh(cmd, args, { cwd, env = {}, timeoutMs = 15 * 60 * 1000 } = {}
 
 const tail = (s, n = 400) => String(s || '').slice(-n);
 const ensureDry = (ctx) => { if (ctx.mode !== 'dry') throw new Error('LIVE mode is not enabled for this step yet'); };
+
+// ---------- readable results: info (expected, nothing to do) / check (look at it, with what to do) / problem ----------
+const note = (level, text, todo) => (todo ? { level, text, todo } : { level, text });
+export const info = (text) => note('info', text);
+export const check = (text, todo) => note('check', text, todo);
+export const problem = (text, todo) => note('problem', text, todo);
+/** Dry runs say what would happen; live runs say what did. */
+export const verb = (ctx, dry, live) => (ctx.mode === 'live' ? live : dry);
+const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 /** Data rows in a CSV (quote-aware: multi-line cells count once). */
 export function csvRows(text) {
   let rows = 0; let q = false; let content = false;
@@ -100,30 +110,33 @@ async function query(ctx, pathAndQuery) {
 }
 
 async function preflight(ctx) {
-  const warnings = []; const failures = []; const counts = {};
-  const softOrHard = (msg) => (ctx.mode === 'dry' ? warnings : failures).push(msg);
-  if (new Date().getUTCDay() === 1) softOrHard('Monday (UTC): the Monday full refresh is running');
+  const checks = []; const failures = []; const counts = {};
+  const softOrHard = (msg, todo) => (ctx.mode === 'dry' ? checks.push(check(msg, todo)) : failures.push(problem(msg, todo)));
+  if (new Date().getUTCDay() === 1) softOrHard('It is Monday (UTC): the Monday full refresh is running', 'run on another day');
   const running = await query(ctx, 'fault_monitor_runs?select=id,status,last_tick_at&status=in.(running,started)&order=last_tick_at.desc&limit=1');
-  if (running?.length) softOrHard(`① audit run ${running[0].id} is in progress`);
+  if (running?.length) softOrHard(`① audit run ${running[0].id} is in progress`, 'wait for ① to finish');
   const lock = path.join(SHARED, 'csv', '.update-all.lock');
   counts.auto_sync = fs.existsSync(lock) && JSON.parse(fs.readFileSync(lock, 'utf8')).runId === ctx.runId ? 'paused (csv/.update-all.lock held by this run)' : 'NOT paused';
-  if (counts.auto_sync === 'NOT paused') softOrHard('shared-resources auto-sync is not paused (csv/.update-all.lock missing)');
+  if (counts.auto_sync === 'NOT paused') softOrHard('Shared-resources auto-sync is not paused', 'check csv/.update-all.lock on the PC');
   const gate = await sh('node', ['scripts/faq-layout-fixtures.mjs'], { cwd: SCHEMA_TOOLS });
   counts.faq_fixture_gate = gate.code === 0 ? 'pass' : 'fail';
-  if (gate.code !== 0) failures.push(`FAQ fixture gate failed: ${tail(gate.stdout + gate.stderr, 200)}`);
+  if (gate.code !== 0) failures.push(problem(`FAQ fixture gate failed: ${tail(gate.stdout + gate.stderr, 200)}`, 'fix the FAQ extractor before running'));
   const missing = missingSecrets();
-  if (missing.length) failures.push(`missing secrets: ${missing.join(', ')}`);
+  if (missing.length) failures.push(problem(`Missing keys on the PC: ${missing.join(', ')}`, 'add them to the .env.local files'));
   counts.site_status = await siteChecks(ctx, softOrHard, failures);
-  return { status: failures.length ? 'fail' : (warnings.length ? 'warn' : 'ok'), counts, warnings, error: failures.join('; ') || null };
+  const bad = failures.length || checks.length;
+  return { counts, notes: [...failures, ...checks],
+    plain: bad ? 'Pre-flight found something to look at (below).' : 'Pre-flight passed: not Monday, no ① running, auto-sync paused, FAQ gate passed, keys present, site up.',
+    details: [`site status ${counts.site_status}`, `FAQ fixture gate ${counts.faq_fixture_gate}`, `auto-sync ${counts.auto_sync}`] };
 }
 
 /** Cool-down since the last 429 seen by this PC, then the home page status (with 429 retries). */
 async function siteChecks(ctx, softOrHard, failures) {
   const last429 = Date.parse(readSiteState().last429At || 0);
-  if (Date.now() - last429 < COOL_DOWN_MS) softOrHard(`alanranger.com rate-limited this PC at ${new Date(last429).toISOString()} — cool-down is 30 min`);
+  if (Date.now() - last429 < COOL_DOWN_MS) softOrHard(`alanranger.com rate-limited this PC at ${new Date(last429).toISOString()}`, 'wait for the 30-minute cool-down');
   const site = await siteStatus(ctx.siteRetries ?? 4);
-  if (site === 429) softOrHard('alanranger.com is rate limiting (429) after retries — wait before a live run');
-  else if (site !== 200) failures.push(`alanranger.com returned ${site}`);
+  if (site === 429) softOrHard('alanranger.com is rate limiting (429) after retries', 'wait before a live run');
+  else if (site !== 200) failures.push(problem(`alanranger.com returned ${site}`, 'check the site is up'));
   return site;
 }
 
@@ -172,27 +185,46 @@ async function refreshFeeds(sb) {
   return { feeds };
 }
 
+/** P16: Alan's saved 08 choices (bau_page_choices) as { pathKey: choice } for the builder. */
+async function pageChoices(ctx, sb) {
+  const rows = (await query(ctx, 'bau_page_choices?select=url,choice')) || [];
+  const file = path.join(sb.root, '08-page-choices.json');
+  fs.writeFileSync(file, JSON.stringify(Object.fromEntries(rows.map((r) => [pathKey(r.url), r.choice]))));
+  return { file, count: rows.length };
+}
+
+/** Each page new in 06 that Alan hasn't classified: one Needs Alan item with a suggested type and three buttons. */
+function newPageItems(csv) {
+  const file = path.join(csv, '08-new-pages-pending.json');
+  const pending = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { pending: [], excluded: [] };
+  return { pending: pending.pending, excluded: pending.excluded,
+    needsAlan: pending.pending.map((p) => ({ kind: 'new_08_page', count: 1, url: p.url, suggested: p.suggested, file: 'new page in 06: choose Service, Landing or Exclude' })) };
+}
+
 async function buildCsvs(ctx) {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
   const csv = path.join(sb.shared, 'csv');
   const fresh = await refreshFeeds(sb);
-  if (fresh.error) return { status: 'fail', error: fresh.error };
-  const env = { CSV_BUILDERS_OUT: csv, CSV_BUILDERS_LIVE_CSV: `${SHARED}/csv`, CSV_BUILDERS_FEEDS: fresh.feeds };
+  if (fresh.error) return { notes: [problem(`Feed fetch failed: ${fresh.error}`, 'resume the run (fetches are retried)')] };
+  const choices = await pageChoices(ctx, sb);
+  const env = { CSV_BUILDERS_OUT: csv, CSV_BUILDERS_LIVE_CSV: `${SHARED}/csv`, CSV_BUILDERS_FEEDS: fresh.feeds, CSV_BUILDERS_08_CHOICES: choices.file,
+    CSV_BUILDERS_SIMULATE_06: (ctx.simulateNew08 || []).join(',') };
   for (const script of ['build-exact.mjs', 'build-raw01-api.mjs']) {
     const r = await sh('node', [script], { cwd: BUILDERS, env });
-    if (r.code !== 0) return { status: 'fail', error: `${script}: ${tail(r.stderr)}` };
+    if (r.code !== 0) return { notes: [problem(`${script} failed: ${tail(r.stderr)}`, 'resume the run')] };
   }
   const reportFile = path.join(sb.root, 'byte-compare-report.json');
   const cmp = await sh('node', ['byte-compare.mjs'], { cwd: BUILDERS, env: { ...env, EXACT_DIR: csv, REPORT: reportFile } });
   const counts = Object.fromEntries([...BUILT, 'raw-01-products-sqsp-export.csv'].map((f) => [f, lines(path.join(csv, f))]));
-  const report = cmp.stdout.split('\n').filter((l) => l.includes('.csv:'));
-  const warnings = report.filter((l) => !/wholeFile=true/.test(l)).map((l) => l.replace(/ formatting=.*?genuine=/, ' genuine=').slice(0, 220));
-  const newLanding = (fs.readFileSync(path.join(csv, '08-landing-and-service-pages.csv'), 'utf8').match(/,NEW-suggested/g) || []).length;
-  const needsAlan = newLanding ? [{ kind: 'new_08_pages_to_classify', count: newLanding, file: 'csv/08-landing-and-service-pages.csv (rows marked NEW-suggested)' }] : [];
-  return { status: 'ok', counts: { ...counts, new_08_pages: newLanding }, needsAlan,
-    warnings: warnings.length ? [`not byte-identical to the last export (content changed): ${warnings.length} files`, ...warnings] : [],
-    outputs: [`${csv} (sandbox)`, reportFile] };
+  const changed = cmp.stdout.split('\n').filter((l) => l.includes('.csv:') && !/wholeFile=true/.test(l)).map((l) => l.replace(/ formatting=.*?genuine=/, ' genuine=').slice(0, 220));
+  const pages = newPageItems(csv);
+  const notes = [];
+  if (changed.length) notes.push(info(`${plural(changed.length, 'CSV')} changed since the last export because the site content changed; ${verb(ctx, 'they would replace', 'they replaced')} the saved CSVs.`));
+  if (pages.pending.length) notes.push(info(`${plural(pages.pending.length, 'new page')} found in 06, waiting for your choice under Needs Alan (no schema until you choose).`));
+  return { counts: { ...counts, new_08_pages: pages.pending.length, excluded_by_choice: pages.excluded.length, saved_08_choices: choices.count }, needsAlan: pages.needsAlan, notes,
+    plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} ${BUILT.length + 1} CSVs from Squarespace${changed.length ? `; ${changed.length} changed since the last export` : '; none changed'}.`,
+    details: changed, outputs: [`${csv} (sandbox)`, reportFile] };
 }
 
 // ---------- 3 / 11. ingest (recording mock over a fresh read-only production snapshot) ----------
@@ -214,13 +246,16 @@ async function dryIngest(ctx, types, reportName) {
   const reportFile = path.join(sb.root, reportName);
   const r = await sh('node', ['--import', './register.mjs', 'run-dry-ingest.mjs'], { cwd: DRYRUN,
     env: { TEST_DIR: path.join(sb.shared, 'csv'), DRY_TYPES: types.join(','), REPORT: reportFile, DRY_SNAPSHOT: await snapshotFor(ctx, sb) } });
-  if (r.code !== 0) return { status: 'fail', error: `dry ingest: ${tail(r.stderr)}` };
+  if (r.code !== 0) return { notes: [problem(`Dry ingest failed: ${tail(r.stderr)}`, 'resume the run')], error: 'dry ingest failed' };
   const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
   const counts = Object.fromEntries(report.map((t) => [t.csvType, `${t.rows_after} rows, ${t.new_rows_vs_manual} new, ${t.duplicates_test} dup`]));
   const dups = report.filter((t) => t.duplicates_test > 0).map((t) => t.csvType);
-  const warnings = report.filter((t) => t.insert_payload_diffs.only_test).map((t) => `${t.csvType}: ${t.insert_payload_diffs.only_test} rows would change`);
-  return { status: dups.length ? 'fail' : 'ok', counts, warnings, error: dups.length ? `duplicates in ${dups.join(', ')}` : null,
-    outputs: [reportFile] };
+  const changes = report.filter((t) => t.insert_payload_diffs.only_test);
+  const total = changes.reduce((n, t) => n + t.insert_payload_diffs.only_test, 0);
+  const notes = dups.length ? [problem(`Duplicates would be created in ${dups.join(', ')}`, 'do not run live; tell Claude')] : [];
+  if (total) notes.push(info(`${plural(total, 'database row')} ${verb(ctx, 'would change', 'changed')} because the CSVs changed; 0 duplicates.`));
+  return { counts, notes, error: dups.length ? `duplicates in ${dups.join(', ')}` : null, rowsChanged: total,
+    details: changes.map((t) => `${t.csvType}: ${t.insert_payload_diffs.only_test} rows ${verb(ctx, 'would change', 'changed')}`), outputs: [reportFile] };
 }
 /** A blog post, an event and a product from the sandbox CSVs: the step-2 scrape sample (paced, read-only GETs). */
 function sampleUrls(csvDir) {
@@ -250,9 +285,9 @@ async function dryIngestSteps(ctx, sb) {
 
 const ingestPreliminary = async (ctx) => {
   const r = await dryIngest(ctx, ['blog', 'course_events', 'workshop_events', 'course_products', 'workshop_products', 'landing_service_pages'], `update-all-${ctx.runId}-prelim.json`);
-  if (r.status === 'fail') return r;
+  if (r.error) return r;
   const steps = await dryIngestSteps(ctx, buildSandbox(ctx));
-  if (steps.error) return { ...r, status: 'fail', error: steps.error };
+  if (steps.error) return { ...r, notes: [problem(steps.error, 'resume the run')] };
   const scraped = steps.rep.steps.filter((s) => s.step.startsWith('content'));
   const failedScrape = scraped.filter((s) => !s.ok).map((s) => s.url);
   const dupes = steps.rep.duplicate_page_entities;
@@ -260,14 +295,27 @@ const ingestPreliminary = async (ctx) => {
     step3_mappings_status: steps.rep.steps.find((s) => s.step.startsWith('mappings'))?.status, step4_finalize_status: steps.rep.steps.find((s) => s.step.startsWith('finalize'))?.status,
     export_rows: steps.exportRows, export_rows_live_file: steps.liveRows, export_rows_changed_vs_live: steps.rowsChanged,
     duplicates_already_in_db: steps.rep.duplicates_already_in_db.length };
-  const warnings = [...(r.warnings || []), `steps 2–4 run with the real handlers on the recording mock; step 2 scraped a ${scraped.length}-URL sample`];
-  if (failedScrape.length) warnings.push(`sample scrape failed: ${failedScrape.join(', ')}`);
+  const notes = [...r.notes];
+  if (dupes) notes.push(problem(`${dupes} duplicate page entities would be created`, 'do not run live; tell Claude'));
+  if (failedScrape.length) notes.push(check(`Sample page scrape failed: ${failedScrape.join(', ')}`, 'open the page; resume the run if it loads'));
+  if (steps.rowsChanged) notes.push(info(`The event-product links file (05) ${verb(ctx, 'would change', 'changed')} in ${plural(steps.rowsChanged, 'row')} (events added or past events dropped).`));
   const inDb = steps.rep.duplicates_already_in_db;
   const needsAlan = inDb.length ? [{ kind: 'duplicate_page_entities_already_in_db', count: inDb.length, file: inDb.join('; ') }] : [];
-  return { ...r, status: dupes ? 'fail' : (failedScrape.length ? 'warn' : 'ok'), counts, warnings, needsAlan, error: dupes ? `${dupes} duplicate page_entities created by the run` : null,
+  return { counts, notes, needsAlan,
+    plain: `${verb(ctx, 'Would ingest', 'Ingested')} the CSVs into the chat database and ${verb(ctx, 'would save', 'saved')} the event-product links (05): ${plural(r.rowsChanged || 0, 'row')} changed, 0 duplicates.`,
+    details: [...r.details, `steps 2–4 run with the real handlers ${verb(ctx, 'on the recording mock (no writes)', 'against the database')}; step 2 scraped a ${scraped.length}-URL sample`,
+      `export rows ${steps.exportRows} (live file ${steps.liveRows}, ${steps.rowsChanged} changed)`],
     outputs: [...(r.outputs || []), steps.reportFile, `${SHARED}/… sandbox csv processed/05-event-product-mappings-latest.csv`] };
 };
-const finalIngest = (ctx) => dryIngest(ctx, ['blog', 'course_events', 'workshop_events', 'course_products', 'workshop_products', 'landing_service_pages', 'product_schema'], `update-all-${ctx.runId}-final.json`);
+
+/** Final ingest (incl. product_schema from the new 07): what the run writes into the chat database. */
+async function finalIngest(ctx) {
+  const r = await dryIngest(ctx, ['blog', 'course_events', 'workshop_events', 'course_products', 'workshop_products', 'landing_service_pages', 'product_schema'], `update-all-${ctx.runId}-final.json`);
+  if (r.error) return r;
+  const written = ctx.mode === 'live' ? r.counts : null;
+  return { ...r, counts: { ...r.counts, ...(written ? { written } : {}) },
+    plain: `${verb(ctx, 'Would ingest', 'Ingested')} the CSVs again, including the new product schema (07): ${plural(r.rowsChanged || 0, 'row')} changed, 0 duplicates.` };
+}
 
 // ---------- 4. reviews ----------
 /** Google Business Profile fetch (free API) into the sandbox; OAuth files copied in for the fetch only, then removed. */
@@ -336,23 +384,37 @@ async function reviews(ctx) {
   const sb = buildSandbox(ctx);
   const fetched = await googleFetch(sb);
   const r = await sh('python', ['merge-reviews.py'], { cwd: sb.scripts, env: PY_ENV });
-  if (r.code !== 0) return { status: 'fail', error: `merge-reviews: ${tail(r.stdout + r.stderr)}` };
+  if (r.code !== 0) return { notes: [problem(`Review merge failed: ${tail(r.stdout + r.stderr)}`, 'resume the run')] };
   const pendingFile = path.join(sb.shared, 'csv processed', '03b-google-pending-alan-review.csv');
   const pending = fs.existsSync(pendingFile) ? lines(pendingFile) : 0;
   await reviewsSnapshot(ctx, sb);
   const rec = await reconcile(sb);
   const rule = await applyRemovedFromGoogleRule(ctx, rec, fetched.ok);
-  const warnings = [fetched.ok ? `Google Business Profile fetch OK (read-only, sandbox): ${fetched.rows} reviews` : `Google fetch failed — merge used the last fetched reviews: ${fetched.log}`];
-  if (rec) warnings.push(reconcileNote(rec));
-  if (rule.blocked && rule.exclude.length) warnings.push(`removed-from-Google rule not applied (fetch failed, unbalanced, or more than ${MAX_AUTO_EXCLUDE} at once)`);
+  const notes = reviewInfo(rec, rule).map(info);
+  if (!fetched.ok) notes.push(check('The Google reviews fetch failed, so the merge used the last fetched reviews', 'resume the run later; tell Claude if it fails again'));
+  if (rec && !rec.balanced) notes.push(check('The review totals do not balance (combined vs database)', 'tell Claude; see Details'));
+  if (rule.blocked && rule.exclude.length) notes.push(check(`The removed-from-Google rule was not applied (fetch failed, unbalanced, or more than ${MAX_AUTO_EXCLUDE} at once)`, 'tell Claude'));
+  const shadow = shadowSummary(sb);
+  if (shadow) notes.push(info(shadow.line));
   const needsAlan = pending ? [{ kind: 'held_reviews', count: pending, file: 'csv processed/03b-google-pending-alan-review.csv' }] : [];
   const otherGone = (rec?.gone_names || []).filter((n) => !n.startsWith('Google '));
   if (otherGone.length) needsAlan.push({ kind: 'reviews_missing_from_combined_still_in_db', count: otherGone.length, file: otherGone.join('; ') });
-  const clean = fetched.ok && Boolean(rec?.balanced);
-  return { status: clean ? 'ok' : 'warn', warnings: clean ? [] : warnings,
+  return { notes, needsAlan,
     counts: { google_fetched: fetched.ok ? fetched.rows : 'failed', combined_reviews: rec?.combined, db_reviews: rec?.db, google_pending_for_alan: pending,
-      breakdown: warnings[1] || 'n/a', info: reviewInfo(rec, rule) },
-    needsAlan, outputs: [`${sb.shared}/csv processed/03 – combined_product_reviews.csv (sandbox)`] };
+      info: reviewInfo(rec, rule), shadow_matcher: shadow?.summary || null },
+    plain: `Fetched ${fetched.ok ? fetched.rows : 'no'} Google reviews and merged them with the frozen Trustpilot reviews: ${rec?.combined ?? '?'} reviews${pending ? `, ${pending} new held for you` : ', none new to decide'}.`,
+    details: [rec ? reconcileNote(rec) : 'reconcile not run', fetched.ok ? `Google Business Profile fetch OK (read-only${ctx.mode === 'dry' ? ', sandbox' : ''})` : fetched.log],
+    outputs: [`${sb.shared}/csv processed/03 – combined_product_reviews.csv (sandbox)`, path.join(sb.shared, 'outputs', 'reports', 'shadow-review-matcher-LATEST.json')] };
+}
+
+/** Shadow matcher (report only): before/after adding Squarespace orders, from its report in the sandbox. */
+function shadowSummary(sb) {
+  const file = path.join(sb.shared, 'outputs', 'reports', 'shadow-review-matcher-LATEST.json');
+  if (!fs.existsSync(file)) return null;
+  const s = JSON.parse(fs.readFileSync(file, 'utf8')).summary || {};
+  const bt = (k) => s.backtest?.[k] || {};
+  const fmt = (t) => `${t.agree || 0} agree / ${t.held || 0} held / ${t.disagree || 0} disagree`;
+  return { summary: s, line: `Review matcher (shadow, report only): back-test on ${s.backtest?.decisions || 0} of Alan's decisions — before orders ${fmt(bt('before'))}; with orders ${fmt(bt('after'))}.` };
 }
 
 // ---------- 5. product schema ----------
@@ -360,21 +422,42 @@ async function productSchema(ctx) {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
   const clean = await sh('python', ['clean-products-csv.py'], { cwd: sb.scripts, env: PY_ENV });
-  if (clean.code !== 0) return { status: 'fail', error: `clean-products: ${tail(clean.stdout + clean.stderr)}` };
+  if (clean.code !== 0) return { notes: [problem(`Product clean-up failed: ${tail(clean.stdout + clean.stderr)}`, 'resume the run')] };
   const out07 = path.join(sb.shared, 'csv', '07-product-schema-with-review-ratings.csv');
   const gen = await sh('python', ['generate-product-schema.py', '--write-07', out07], { cwd: sb.scripts, env: PY_ENV });
-  if (gen.code !== 0) return { status: 'fail', error: `generator: ${tail(gen.stdout + gen.stderr)}` };
+  if (gen.code !== 0) return { notes: [problem(`Product schema generator failed: ${tail(gen.stdout + gen.stderr)}`, 'resume the run')] };
   const dates = await sh('python', ['check-review-dates.py'], { cwd: sb.scripts, env: PY_ENV });
   const homes = await sh('python', ['check-product-review-homes.py'], { cwd: sb.scripts, env: PY_ENV });
   const num = (re) => Number((gen.stdout.match(re) || [])[1] || 0);
+  const d07 = productDiff07(sb, out07);
   const counts = { faq_files: num(/Product FAQ files generated: (\d+)/), faq_unknown: num(/FAQ unknown[^:]*: (\d+)/), rows_07: lines(out07),
-    review_dates: dates.code === 0 ? 'pass' : 'fail', review_homes: homes.code === 0 ? 'pass' : 'fail' };
-  const failed = [dates.code && 'review dates guard', homes.code && 'review homes guard'].filter(Boolean);
+    review_dates: dates.code === 0 ? 'pass' : 'fail', review_homes: homes.code === 0 ? 'pass' : 'fail',
+    diff_07: { changed: d07.changed, added: d07.added, removed: d07.removed, unchanged: d07.unchanged, duplicates: d07.duplicates, unexplained: d07.unexplained, fields: d07.tally } };
   if (counts.faq_unknown) record429();
-  const unknownNeeds = counts.faq_unknown ? [{ kind: 'faq_unknown_after_retry', count: counts.faq_unknown, file: 'outputs/schema/products/faq-fetch-status.json' }] : [];
-  return { status: failed.length ? 'fail' : (counts.faq_unknown ? 'warn' : 'ok'), counts, error: failed.length ? `${failed.join(', ')} failed` : null, needsAlan: unknownNeeds,
-    warnings: counts.faq_unknown ? [`${counts.faq_unknown} product FAQs still unknown after one paced retry — live FAQ kept`] : [],
-    outputs: [`${sb.shared}/outputs/schema/products (sandbox)`, `${out07} (sandbox)`] };
+  return { counts, notes: productNotes(ctx, counts, d07, [dates.code && 'review dates', homes.code && 'review homes'].filter(Boolean)),
+    needsAlan: counts.faq_unknown ? [{ kind: 'faq_unknown_after_retry', count: counts.faq_unknown, file: 'outputs/schema/products/faq-fetch-status.json' }] : [],
+    plain: `${verb(ctx, 'Would generate', 'Generated')} product schema for ${d07.new_rows} products and the chat product file (07): ${d07.changed} products changed since the live 07, every change explained.`,
+    details: d07.products.map((p) => `${p.product}: ${p.change === 'changed' ? p.changes.map((c) => `${c.what} ${c.live} → ${c.new} (${c.why || 'UNEXPLAINED'})`).join('; ') : p.change}`),
+    outputs: [`${sb.shared}/outputs/schema/products (sandbox)`, `${out07} (sandbox)`, path.join(sb.root, '07-diff.json')] };
+}
+
+/** P11: the new 07 against the live 07, per product, each change tied to its source (Squarespace now / the published 04). */
+function productDiff07(sb, out07) {
+  const pick = (rel) => [path.join(sb.shared, rel), `${SHARED}/${rel}`].find((p) => fs.existsSync(p));
+  const rows04 = readCsvObjects(pick('csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv')).rows;
+  const d = diff07(readCsvObjects(`${SHARED}/csv/07-product-schema-with-review-ratings.csv`).rows, readCsvObjects(out07).rows,
+    readCsvObjects(pick('csv/raw-01-products-sqsp-export.csv')).rows, rows04);
+  fs.writeFileSync(path.join(sb.root, '07-diff.json'), JSON.stringify(d, null, 2));
+  return d;
+}
+
+function productNotes(ctx, counts, d07, failedGuards) {
+  const notes = failedGuards.map((g) => problem(`The ${g} guard failed`, 'tell Claude; nothing is published'));
+  if (d07.duplicates) notes.push(problem(`${d07.duplicates} duplicate products in the new 07`, 'tell Claude'));
+  if (d07.unexplained) notes.push(check(`${d07.unexplained} product schema changes have no matching source`, 'look at the UNEXPLAINED lines in Details'));
+  if (counts.faq_unknown) notes.push(check(`${counts.faq_unknown} product FAQs could not be read after one paced retry, so the live FAQ was kept`, 'check those product pages load'));
+  if (d07.changed) notes.push(info(`${plural(d07.changed, 'product')} ${verb(ctx, 'would get', 'got')} updated schema (prices, dates, titles and review totals now on Squarespace and in the reviews).`));
+  return notes;
 }
 
 // ---------- 6 / 7 / 9. Schema Tools app generators via scripts/app-cli.mjs (same functions, output into the sandbox) ----------
@@ -386,53 +469,69 @@ function appCliArgs(command, sb, out) {
   return command === 'event-posts' ? [...args, '--mappings', mappings] : args;
 }
 
+/** Files a generator step changed against alanranger-schema (the publish set for its stage). */
+export const changedFiles = (diff) => [...new Set([...diff.differing.map((d) => String(d.file || d).split(' — ')[0]), ...diff.new_files])];
+
 /** Event Index: per file, events listed, past-dated events dropped and whether the hosted file would change. */
-function eventIndexReport(out, report, diff) {
+function eventIndexReport(ctx, out, report, diff) {
   const runs = JSON.parse(report.log || '[]');
-  const changed = new Set([...diff.differing.map((d) => String(d).split(' — ')[0]), ...diff.new_files]);
-  const counts = Object.fromEntries(runs.map((r) => [r.file, `${r.events_listed} events listed, ${r.past_dated_dropped} past-dated dropped${r.other_not_listed ? `, ${r.other_not_listed} other not listed` : ''}, ${changed.has(r.file) ? 'would change' : 'unchanged'}`]));
-  return { status: runs.length === 2 ? 'ok' : 'fail', error: runs.length === 2 ? null : 'event-index did not produce both files',
-    counts: { ...counts, seconds: report.seconds },
-    warnings: changed.size ? [`would deploy ${changed.size} changed file(s): ${[...changed].join(', ')} (events added/past events dropped since the last export)`] : [],
-    outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
+  const changed = new Set(changedFiles(diff));
+  const counts = Object.fromEntries(runs.map((r) => [r.file, `${r.events_listed} events listed, ${r.past_dated_dropped} past-dated dropped${r.other_not_listed ? `, ${r.other_not_listed} other not listed` : ''}, ${changed.has(r.file) ? 'changed' : 'unchanged'}`]));
+  const listed = runs.reduce((n, r) => n + (r.events_listed || 0), 0);
+  const notes = runs.length === 2 ? [] : [problem('The Event Index did not produce both list files', 'resume the run; tell Claude if it fails again')];
+  if (changed.size) notes.push(info(`${plural(changed.size, 'event list file')} changed (events added or past events dropped); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`));
+  return { counts: { ...counts, would_change: changed.size, seconds: report.seconds }, notes,
+    plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} the lessons and workshops event lists: ${listed} upcoming events listed.`,
+    details: Object.entries(counts).map(([f, v]) => `${f}: ${v}`), outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 }
 
 /** P5: landings were report-only in LIVE until the difference list was approved (Claude, batch 5: switched on). */
 export const LANDINGS_REPORT_ONLY = false;
 
 /** Landings: every difference against the hosted files, tied to its live source (scripts/landing-diff-explain.mjs). */
-async function landingsReport(out, report, diff, reportOnly) {
+async function landingsReport(ctx, out, report, diff, reportOnly) {
   const file = path.join(out, 'landing-diff-explain.json');
   const r = await sh('node', ['scripts/landing-diff-explain.mjs', out, '--json', file], { cwd: SCHEMA_TOOLS });
-  if (r.code !== 0) return { status: 'fail', error: `landing-diff-explain: ${tail(r.stderr || r.stdout)}` };
+  if (r.code !== 0) return { notes: [problem(`Landing difference check failed: ${tail(r.stderr || r.stdout)}`, 'resume the run')] };
   const ex = JSON.parse(fs.readFileSync(file, 'utf8'));
   const lines = ex.rows.filter((row) => row.notes.length).map((row) => `${row.file}: ${row.notes.join(' | ')}`);
   const rated = ex.businessRatingFiles || [];
-  if (rated.length) return { status: 'fail', error: `business rating on landing files (P23): ${rated.join(', ')}`, outputs: [file] };
-  return { status: ex.unexplained.length ? 'warn' : 'ok',
-    counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, landing_files: ex.landingFilesGenerated,
+  if (rated.length) return { notes: [problem(`A business rating is on landing files (P23): ${rated.join(', ')}`, 'tell Claude; nothing is published')], outputs: [file] };
+  const notes = ex.unexplained.length ? [check(`${ex.unexplained.length} landing page differences have no live source`, 'look at the Details; tell Claude')] : [];
+  if (lines.length) notes.push(info(`${lines.length} of ${ex.files} landing pages changed, each explained by what is live on the site now; ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`));
+  return { notes,
+    counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, landing_files: ex.landingFilesGenerated, would_change: changedFiles(diff).length,
       business_rating_nodes: 0, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },
-    warnings: [`${reportOnly ? 'report-only in LIVE until Claude approves: ' : ''}${lines.length} of ${ex.files} hosted landing files differ, each explained by a live source (list below / landing-diff-explain.json)`, ...lines],
-    outputs: [`${out} (sandbox)`, file, path.join(out, 'compare.json')] };
+    plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} schema for ${ex.landingFilesGenerated} landing and service pages from what is live on the site; no business rating anywhere.`,
+    details: lines, outputs: [`${out} (sandbox)`, file, path.join(out, 'compare.json')] };
+}
+
+const APP_LABEL = { 'event-posts': ['event pages and hub FAQs', 'event'], 'blog-index': ['the blog index', 'blog index'] };
+
+async function runAppCli(command, sb) {
+  const out = path.join(sb.root, 'app-cli', command);
+  const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
+  if (run.code !== 0) return { out, error: `${command} generator failed: ${tail(run.stderr || run.stdout)}` };
+  const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
+  const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
+  fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
+  return { out, diff, report: JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8')) };
 }
 
 const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
-  const out = path.join(sb.root, 'app-cli', command);
-  const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
-  if (run.code !== 0) return { status: 'fail', error: `app-cli ${command}: ${tail(run.stderr || run.stdout)}` };
-  const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
-  const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
-  fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
-  const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
-  const changed = [...diff.differing.map((d) => d.file || d), ...diff.new_files];
+  const { out, diff, report, error } = await runAppCli(command, sb);
+  if (error) return { notes: [problem(error, 'resume the run')] };
   const reportOnly = command === 'landings' && LANDINGS_REPORT_ONLY;
-  if (command === 'landings') return landingsReport(out, report, diff, reportOnly);
-  if (command === 'event-index') return eventIndexReport(out, report, diff);
-  return { status: 'ok', counts: { ...(reportOnly ? { live_mode: 'report-only (P5)' } : {}), files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
-    warnings: changed.length ? [`${reportOnly ? 'report-only in LIVE until approved: ' : 'would deploy '}${changed.length} files that differ from alanranger-schema (see the compare in the sandbox), e.g. ${changed.slice(0, 3).join(', ')}`] : [],
-    outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
+  if (command === 'landings') return landingsReport(ctx, out, report, diff, reportOnly);
+  if (command === 'event-index') return eventIndexReport(ctx, out, report, diff);
+  const changed = changedFiles(diff);
+  const [what, kind] = APP_LABEL[command];
+  return { counts: { files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
+    notes: changed.length ? [info(`${plural(changed.length, `${kind} file`)} changed since the last publish (events or posts changed on the site); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`)] : [],
+    plain: `${verb(ctx, 'Would generate', 'Generated')} ${what} with the Schema Tools app's own generator: ${report.files_written} files, ${changed.length} changed.`,
+    details: changed.map((f) => `changed: ${f}`), outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 };
 
 // ---------- 8. blog posts: new or changed only (body-hash gate) ----------
@@ -481,17 +580,20 @@ async function blogPosts(ctx) {
   fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), posts: current }, null, 2));
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
-  const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [] };
-  if (regen.error) return { status: 'fail', error: regen.error };
+  const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [], changed: [] };
+  if (regen.error) return { notes: [problem(regen.error, 'resume the run')] };
   const gone = deletedPostsPlan(sb, feed);
-  const slugs = list.map((u) => u.split('/').pop()).join(', ');
-  return { status: 'ok', counts: { posts: feed.length, new: r.fresh.length, changed: r.changed.length, updated_on_only_held_by_gate: r.touchedOnly.length,
+  fs.writeFileSync(path.join(sb.root, 'blog-deleted-posts.json'), JSON.stringify(gone));
+  const slugs = list.map((u) => u.split('/').pop());
+  const notes = list.length ? [info(`${plural(list.length, 'blog post')} changed on the site since last month; ${verb(ctx, 'they would be updated', 'they were updated')} (all 6 schema file types each).`)] : [];
+  notes.push(...gone.plan.remove.map((s) => info(`Deleted post ${s}: its schema files ${verb(ctx, 'would be removed', 'were removed')} (no longer in the sitemap or feed).`)));
+  return { counts: { posts: feed.length, new: r.fresh.length, changed: r.changed.length, updated_on_only_held_by_gate: r.touchedOnly.length,
     would_regenerate: list.length, regenerate_scope: 'all 6 file types (_schema, _blogposting, _breadcrumb, _image, _faq / _howto when the page has them)',
     files_per_post: Object.fromEntries(regen.posts.map((p) => [p.slug, `${p.files.length} files${p.removed_stale.length ? `, stale removed: ${p.removed_stale.join(' ')}` : ''}`])),
-    deleted_posts: gone.slugs.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
-    warnings: [
-      ...(list.length ? [`would regenerate ${list.length} posts (all 6 file types, paced, via the Blog Posts tab's own generator), then write blogs-manifest.json${firstRun ? ' for the first time' : ''}: ${slugs}`] : []),
-      ...gone.plan.remove.map((s) => `deleted post ${s}: its files would be removed (no longer in the sitemap or feed)`)],
+    files_changed: regen.changed.length, deleted_posts: gone.slugs.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
+    notes, plain: list.length ? `${verb(ctx, 'Would update', 'Updated')} ${plural(list.length, 'changed blog post')} (all 6 file types each) with the Blog Posts tab's own generator: ${slugs.join(', ')}.` : 'No blog posts changed since last month.',
+    details: [`${r.touchedOnly.length} posts only had their "updated" date bumped (held by the body check)`, `baseline: ${firstRun ? 'last 01 export (blogs-manifest.json is written by the first live run)' : 'blogs-manifest.json'}`,
+      ...regen.posts.map((p) => `${p.slug}: ${p.files.join(', ')}`)],
     needsAlan: gone.plan.needsAlan.length ? [{ kind: 'deleted_blog_posts_over_limit', count: gone.plan.needsAlan.length, file: gone.plan.needsAlan.join('; ') }] : [],
     outputs: [`${manifestFile} (sandbox)`, listFile, regen.out].filter(Boolean) };
 }
@@ -500,9 +602,12 @@ async function blogPosts(ctx) {
 async function regenerateBlogPosts(sb, listFile) {
   const out = path.join(sb.root, 'app-cli', 'blog-posts');
   const run = await sh('node', ['scripts/app-cli.mjs', 'blog-posts', '--out', out, '--list', listFile], { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
-  if (run.code !== 0) return { error: `app-cli blog-posts: ${tail(run.stderr || run.stdout)}` };
+  if (run.code !== 0) return { error: `Blog posts generator failed: ${tail(run.stderr || run.stdout)}` };
   const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
-  return { error: null, out, posts: JSON.parse(report.log || '[]') };
+  const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
+  const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
+  fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
+  return { error: null, out, posts: JSON.parse(report.log || '[]'), changed: changedFiles(diff) };
 }
 
 /** Posts with files in the schema repo that are in neither the blog feed nor the sitemap (live: max 5 removed per run). */
@@ -514,30 +619,56 @@ function deletedPostsPlan(sb, feed) {
   return { slugs, plan: planDeletedPostCleanup(slugs) };
 }
 
-// ---------- 10. deploy (dry: what would change) ----------
-async function deploy(ctx) {
-  ensureDry(ctx);
-  const sb = buildSandbox(ctx);
+// ---------- publish (per stage: only that stage's files; dry = what would be published) ----------
+const REPO = `${SCHEMA_TOOLS}/alanranger-schema`;
+const readJson = (file, fallback) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
+const compareOf = (sb, command) => changedFiles(readJson(path.join(sb.root, 'app-cli', command, 'compare.json'), { differing: [], new_files: [] }));
+
+/** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo. */
+export function productPublishSet(sb) {
   const src = path.join(sb.shared, 'outputs', 'schema', 'products');
-  const repo = `${SCHEMA_TOOLS}/alanranger-schema`;
   const final04 = fs.readFileSync(path.join(sb.shared, 'csv processed', '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
-  const deploySet = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
+  const set = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
     .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]).filter((f) => fs.existsSync(path.join(src, f)));
-  const files = deploySet.filter((f) => fs.existsSync(path.join(repo, f)));
-  const added = deploySet.filter((f) => !fs.existsSync(path.join(repo, f)));
-  const changed = [...files.filter((f) => fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8')), ...added];
-  const cdn = await fetch(`https://schema.alanranger.com/products-manifest.json?t=${Date.now()}`).then((r) => r.status).catch(() => 0);
-  return { status: cdn === 200 ? 'ok' : 'warn', counts: { deploy_set: deploySet.length, would_change: changed.length, new_files: added.length, cdn_manifest_status: cdn },
-    warnings: changed.length ? [`would deploy ${changed.length} changed files, e.g. ${changed.slice(0, 3).join(', ')}`] : [],
-    outputs: [] };
+  return { publish: set.filter((f) => !fs.existsSync(path.join(REPO, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(REPO, f), 'utf8')), remove: [] };
 }
+const BLOG_SUFFIXES = ['_schema.json', '_blogposting.json', '_breadcrumb.json', '_image.json', '_faq.json', '_howto.json'];
+/** F: blog index + changed post files, and the files of deleted posts (removed). */
+export function blogPublishSet(sb) {
+  const gone = readJson(path.join(sb.root, 'blog-deleted-posts.json'), { plan: { remove: [] } });
+  const remove = gone.plan.remove.flatMap((slug) => BLOG_SUFFIXES.map((s) => `${slug}${s}`)).filter((f) => fs.existsSync(path.join(REPO, f)));
+  return { publish: [...compareOf(sb, 'blog-index'), ...compareOf(sb, 'blog-posts')], remove };
+}
+/** Publish sets per stage: each lists only its own generators' files. */
+export const PUBLISH = {
+  publish_products: { stage: 'D', set: productPublishSet, sample: 'products-manifest.json', what: 'product' },
+  publish_events: { stage: 'E', set: (sb) => ({ publish: [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')], remove: [] }), sample: 'events-manifest.json', what: 'event' },
+  publish_blogs: { stage: 'F', set: blogPublishSet, sample: 'blog-schema.json', what: 'blog' },
+  publish_landings: { stage: 'G', set: (sb) => ({ publish: compareOf(sb, 'landings'), remove: [] }), sample: 'landings-manifest.json', what: 'landing page' }
+};
+
+const publishStep = (id) => async (ctx) => {
+  ensureDry(ctx);
+  const def = PUBLISH[id];
+  const sb = buildSandbox(ctx);
+  const { publish, remove } = def.set(sb);
+  const cdn = await fetch(`https://schema.alanranger.com/${def.sample}?t=${Date.now()}`).then((r) => r.status).catch(() => 0);
+  const notes = cdn === 200 ? [] : [check(`The schema CDN sample (${def.sample}) returned ${cdn}`, 'open schema.alanranger.com; resume the run when it answers')];
+  const total = publish.length + remove.length;
+  if (total) notes.push(info(`${verb(ctx, 'Would publish', 'Published')} ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and ${verb(ctx, 'would remove', 'removed')} ${remove.length}` : ''} in the schema repo (this stage's files only).`));
+  return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, cdn_sample: `${def.sample} ${cdn}`, commit: null },
+    notes, plain: total ? `${verb(ctx, 'Would publish', 'Published')} ${plural(total, 'file')} for stage ${def.stage}, then check the CDN and a sample page.` : `Nothing to publish for stage ${def.stage}.`,
+    details: [...publish.map((f) => `${verb(ctx, 'would publish', 'published')}: ${f}`), ...remove.map((f) => `${verb(ctx, 'would remove', 'removed')}: ${f}`), `CDN sample ${def.sample}: ${cdn}`] };
+};
 
 // ---------- 12. export 09 (dry: DB count only) ----------
 async function export09(ctx) {
   ensureDry(ctx);
   const rows = await query(ctx, 'traditional_seo_target_keyword_overrides?select=id');
   const fileRows = lines(`${SHARED}/csv/09-url-target-keywords.csv`);
-  return { status: 'ok', counts: { db_override_rows: rows?.length ?? 'n/a', csv_09_rows: fileRows }, warnings: [] };
+  return { counts: { db_override_rows: rows?.length ?? 'n/a', csv_09_rows: fileRows },
+    plain: `${verb(ctx, 'Would export', 'Exported')} the target keywords (09): ${rows?.length ?? '?'} keyword rows in the database, ${fileRows} in the saved file.`,
+    details: [verb(ctx, 'dry run: database row count only; nothing written', 'csv/09-url-target-keywords.csv written from the database')] };
 }
 
 // ---------- 13. ① full audit (Traditional SEO render → broken links), advanced by the */5 trad-seo-render-tick cron ----------
@@ -562,18 +693,22 @@ async function liveAudit() {
   return { status: 'warn', counts: { run_id: start.run_id }, warnings: ['① still running after 3 h: left to the render cron'] };
 }
 
+export const AUDIT_NOT_SELECTED = 'skipped — not selected';
+
 async function audit(ctx) {
   if (ctx.includeAudit === false) {
-    return { status: 'skipped', counts: { include_audit: false, info: ['① full audit not selected for this run (Monday ① runs as usual)'] }, warnings: ['skipped — not selected'] };
+    return { status: 'skipped', counts: { include_audit: false, info: ['① full audit not selected for this run (Monday ① runs as usual)'] },
+      notes: [info(`① full audit ${AUDIT_NOT_SELECTED} for this run (the Monday ① runs as usual).`)], plain: 'Full audit ① not selected for this run.', details: [AUDIT_NOT_SELECTED] };
   }
   const monday = new Date().getUTCDay() === 1;
   const running = await query(ctx, 'fault_monitor_runs?select=id,status&status=in.(running,started)&limit=1');
   const counts = { monday_utc: monday, audit_already_running: running?.length || 0 };
   if (ctx.mode === 'dry') {
-    return { status: 'skipped', counts, warnings: [`① simulated in dry run (no requests). Live: POST ${RENDER_API} {action:'start', source:'trad_seo'}, then wait on fault_monitor_runs (render, then broken links; the */5 cron advances it)`] };
+    return { status: 'skipped', counts, notes: [info('① is simulated in a dry run (no requests sent).')], plain: 'Would start the full audit ① (simulated in a dry run).',
+      details: [`Live: POST ${RENDER_API} {action:'start', source:'trad_seo'}, then wait on fault_monitor_runs (render, then broken links; the */5 cron advances it)`] };
   }
-  if (monday) return { status: 'fail', counts, error: 'never on a Monday: the Monday cron runs ①' };
-  if (counts.audit_already_running) return { status: 'warn', counts, warnings: ['① is already running: not started again'] };
+  if (monday) return { counts, notes: [problem('Never on a Monday: the Monday cron runs ①', 'run ① on another day')] };
+  if (counts.audit_already_running) return { counts, notes: [check('① is already running, so it was not started again', 'nothing to do; it finishes on its own')] };
   return liveAudit();
 }
 
@@ -595,22 +730,48 @@ function coverageCheck(ctx) {
   return { c, line: coverageLine(c), warnings };
 }
 
-/** Tally of all steps (this summary counted as ok, as on the page) + the schema repo coverage check. */
+/** Notes per level across the steps (the page shows the same three counts). */
+export function levelCounts(notesLists) {
+  const all = notesLists.flat();
+  return { info: all.filter((n) => n.level === 'info').length, check: all.filter((n) => n.level === 'check').length, problem: all.filter((n) => n.level === 'problem').length };
+}
+
+/** Step tally + the three note levels (this summary's own notes included) + the schema repo coverage check. */
 async function summary(ctx) {
   const others = ctx.steps.filter((s) => s.step_id !== 'summary');
   const tally = [...others, { status: 'ok' }].reduce((m, s) => ({ ...m, [s.status]: (m[s.status] || 0) + 1 }), {});
-  const info = others.flatMap((s) => s.counts?.info || []);
   const cov = coverageCheck(ctx);
+  const own = [...cov.warnings.map((w) => check(w, 'tell Claude: a schema file has no producer')), info(cov.line)];
+  const levels = levelCounts([...others.map((s) => s.notes || []), own]);
   const covered = { line: cov.line, files: cov.c.total, orphans: cov.c.orphans, by_step: cov.c.byStep, tabs: TABS };
-  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, info, coverage: covered, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
-  return { status: cov.warnings.length ? 'warn' : 'ok', counts: { ...tally, coverage: cov.line, coverage_by_step: cov.c.byStep, info }, warnings: cov.warnings };
+  const infoLines = others.flatMap((s) => s.counts?.info || []);
+  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, levels, info: infoLines, coverage: covered, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
+  const needs = levels.problem ? `${plural(levels.problem, 'problem')} to fix` : levels.check ? `${plural(levels.check, 'thing')} to look at` : 'nothing needs you';
+  return { counts: { ...tally, levels, coverage: cov.line, coverage_by_step: cov.c.byStep, info: infoLines }, notes: own,
+    plain: `${verb(ctx, 'Dry run', 'Live run')} finished: ${needs}. ${cov.line}.`, details: Object.entries(tally).map(([k, v]) => `${k}: ${v} steps`) };
 }
 
 export const HANDLERS = {
-  preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: productSchema,
-  event_posts: appCliStep('event-posts'), event_index: appCliStep('event-index'), blog_index: appCliStep('blog-index'),
-  blog_posts: blogPosts, landing_pages: appCliStep('landings'),
-  deploy, final_ingest: finalIngest, export_09: export09,
+  preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: productSchema, publish_products: publishStep('publish_products'),
+  event_posts: appCliStep('event-posts'), event_index: appCliStep('event-index'), publish_events: publishStep('publish_events'),
+  blog_index: appCliStep('blog-index'), blog_posts: blogPosts, publish_blogs: publishStep('publish_blogs'),
+  landing_pages: appCliStep('landings'), publish_landings: publishStep('publish_landings'),
+  final_ingest: finalIngest, export_09: export09,
   audit,
   summary
 };
+
+/** Before a stage run: copy the prerequisite stages' saved outputs (their runs' sandboxes) into this run's sandbox. */
+export function seedSandbox(ctx, sources) {
+  const sb = buildSandbox(ctx);
+  const seeded = [];
+  for (const src of sources) {
+    for (const rel of src.seeds) {
+      const from = path.join(src.sandbox || '', rel);
+      if (!src.sandbox || !fs.existsSync(from)) return { missing: `stage ${src.stage} (run ${String(src.run_id).slice(0, 8)}): ${rel}` };
+      fs.cpSync(from, path.join(sb.root, rel), { recursive: true });
+      seeded.push(`${src.stage}: ${rel}`);
+    }
+  }
+  return { seeded, root: sb.root };
+}

@@ -53,6 +53,8 @@ export function memoryStore() {
     updateRun: async (id, patch) => Object.assign(runs.get(id), patch),
     listSteps: async (runId) => steps.filter((s) => s.run_id === runId).sort((a, b) => a.ord - b.ord),
     insertSteps: async (rows) => rows.forEach((r) => { if (!steps.some((s) => s.run_id === r.run_id && s.step_id === r.step_id)) steps.push({ ...r }); }),
-    updateStep: async (runId, stepId, patch) => Object.assign(steps.find((s) => s.run_id === runId && s.step_id === stepId), patch)
+    updateStep: async (runId, stepId, patch) => Object.assign(steps.find((s) => s.run_id === runId && s.step_id === stepId), patch),
+    /** Only the run history read is needed in tests (newest first). */
+    query: async (q) => (q.startsWith('update_all_runs') ? [...runs.values()].reverse() : [])
   };
 }
