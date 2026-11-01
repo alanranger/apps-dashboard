@@ -383,11 +383,11 @@ async function reviews(ctx) {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
   const fetched = await googleFetch(sb);
+  await reviewsSnapshot(ctx, sb);
   const r = await sh('python', ['merge-reviews.py'], { cwd: sb.scripts, env: PY_ENV });
   if (r.code !== 0) return { notes: [problem(`Review merge failed: ${tail(r.stdout + r.stderr)}`, 'resume the run')] };
   const pendingFile = path.join(sb.shared, 'csv processed', '03b-google-pending-alan-review.csv');
   const pending = fs.existsSync(pendingFile) ? lines(pendingFile) : 0;
-  await reviewsSnapshot(ctx, sb);
   const rec = await reconcile(sb);
   const rule = await applyRemovedFromGoogleRule(ctx, rec, fetched.ok);
   const notes = reviewInfo(rec, rule).map(info);
@@ -530,7 +530,7 @@ const appCliStep = (command) => async (ctx) => {
   const [what, kind] = APP_LABEL[command];
   return { counts: { files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
     notes: changed.length ? [info(`${plural(changed.length, `${kind} file`)} changed since the last publish (events or posts changed on the site); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`)] : [],
-    plain: `${verb(ctx, 'Would generate', 'Generated')} ${what} with the Schema Tools app's own generator: ${report.files_written} files, ${changed.length} changed.`,
+    plain: `${verb(ctx, 'Would generate', 'Generated')} ${what} with the Schema Tools app's own generator: ${plural(report.files_written, 'file')}, ${changed.length} changed.`,
     details: changed.map((f) => `changed: ${f}`), outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 };
 
@@ -761,6 +761,14 @@ export const HANDLERS = {
   summary
 };
 
+/** File or folder copy that overwrites (fs.cpSync fails on Windows when replacing some existing files). */
+function copyInto(from, to) {
+  if (fs.statSync(from).isDirectory()) return copyDir(from, to);
+  fs.mkdirSync(path.dirname(to), { recursive: true });
+  fs.copyFileSync(from, to);
+  return null;
+}
+
 /** Before a stage run: copy the prerequisite stages' saved outputs (their runs' sandboxes) into this run's sandbox. */
 export function seedSandbox(ctx, sources) {
   const sb = buildSandbox(ctx);
@@ -769,7 +777,7 @@ export function seedSandbox(ctx, sources) {
     for (const rel of src.seeds) {
       const from = path.join(src.sandbox || '', rel);
       if (!src.sandbox || !fs.existsSync(from)) return { missing: `stage ${src.stage} (run ${String(src.run_id).slice(0, 8)}): ${rel}` };
-      fs.cpSync(from, path.join(sb.root, rel), { recursive: true });
+      copyInto(from, path.join(sb.root, rel));
       seeded.push(`${src.stage}: ${rel}`);
     }
   }

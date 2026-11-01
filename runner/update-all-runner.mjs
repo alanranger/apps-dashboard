@@ -104,7 +104,7 @@ async function process1(store, run) {
   if (run.mode === 'live' && await liveCooldown(store, run)) return 'waiting';
   const ctx = runContext(store, run);
   say(`[update-all] run ${run.id} (${run.mode}, ${ctx.stages ? `stages ${ctx.stages.join('')}` : 'run all'}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
-  const blocked = run.resume_from ? null : await prepareStageRun(store, run, { ...ctx, runId: run.id });
+  const blocked = run.resume_from ? null : await prepareStageRun(store, run, { ...ctx, runId: run.id }).catch((e) => `could not prepare the stage inputs: ${String(e?.message || e).slice(0, 300)}`);
   if (blocked) {
     await store.updateRun(run.id, { status: 'failed', error: blocked, finished_at: new Date().toISOString() });
     say(`[update-all] run ${run.id} not started: ${blocked}`);

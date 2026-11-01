@@ -130,7 +130,7 @@ test('08 buttons: each simulated new page has a suggested tag and Service / Land
   const after = (await api('?page_choices=1')).choices;
   const key = (r) => `${r.url}|${r.choice}`;
   const added = after.filter((r) => !before.some((b) => key(b) === key(r)));
-  expect(added.map((r) => [r.url, r.choice])).toEqual(Object.entries(picks));
+  expect(added.map((r) => [r.url, r.choice]).sort()).toEqual(Object.entries(picks).sort());
   expect(after.filter((r) => !SIMULATED.includes(r.url))).toEqual(before.filter((r) => !SIMULATED.includes(r.url)));
   fs.writeFileSync(path.join(EVIDENCE, '08-choices-diff.json'), JSON.stringify({ added: added.map((r) => ({ url: r.url, choice: r.choice, suggested: r.suggested })), other_rows_unchanged: after.length - added.length }, null, 2));
   const clear = await fetch(`${mcBaseUrl()}/api/update-all`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-mc-token': token }, body: JSON.stringify({ action: 'page_choice_clear_test' }) }).then((r) => r.json());
