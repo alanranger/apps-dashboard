@@ -32,7 +32,7 @@
     .mode label.disabled { opacity: 0.45; cursor: not-allowed; }
     .muted { color: var(--text-muted); font-size: 0.9rem; }
     .run-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 0.92rem; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+    .badge { display: inline-block; white-space: nowrap; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
     .b-ok, .b-succeeded { background: rgba(16,185,129,0.18); color: var(--success); }
     .b-warn, .b-warned { background: rgba(245,158,11,0.18); color: var(--warn); }
     .b-fail, .b-failed { background: rgba(239,68,68,0.18); color: var(--red); }
@@ -41,7 +41,7 @@
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; table-layout: fixed; }
     th { text-align: left; color: var(--brand); background: rgba(245,158,11,0.08); padding: 8px; border-bottom: 2px solid var(--border); }
     td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
-    col.c-n { width: 44px; } col.c-step { width: 230px; } col.c-status { width: 96px; } col.c-time { width: 70px; }
+    col.c-n { width: 44px; } col.c-step { width: 230px; } col.c-status { width: 112px; } col.c-time { width: 70px; }
     .stage-tag { display: inline-block; min-width: 22px; text-align: center; border-radius: 4px; background: rgba(245,158,11,0.15); color: var(--brand); font-weight: 700; font-size: 0.8rem; margin-right: 6px; }
     .plain { font-size: 0.95rem; }
     .note { font-size: 0.88rem; margin-top: 4px; }

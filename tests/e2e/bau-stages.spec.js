@@ -7,10 +7,10 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
+import stages from '../../runner/stages.cjs';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';
 
-const { stepsFor } = createRequire(import.meta.url)('../../runner/stages.cjs');
+const { stepsFor } = stages;
 const EVIDENCE = process.env.EVIDENCE_DIR || path.join(process.cwd(), 'tmp', 'bau-stages');
 const FINISHED = ['succeeded', 'warned', 'failed', 'cancelled'];
 const SIMULATED = ['https://www.alanranger.com/bau-test-simulated-photography-course-1', 'https://www.alanranger.com/bau-test-simulated-landing-2',
@@ -133,6 +133,8 @@ test('08 buttons: each simulated new page has a suggested tag and Service / Land
   expect(added.map((r) => [r.url, r.choice])).toEqual(Object.entries(picks));
   expect(after.filter((r) => !SIMULATED.includes(r.url))).toEqual(before.filter((r) => !SIMULATED.includes(r.url)));
   fs.writeFileSync(path.join(EVIDENCE, '08-choices-diff.json'), JSON.stringify({ added: added.map((r) => ({ url: r.url, choice: r.choice, suggested: r.suggested })), other_rows_unchanged: after.length - added.length }, null, 2));
+  const clear = await fetch(`${mcBaseUrl()}/api/update-all`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-mc-token': token }, body: JSON.stringify({ action: 'page_choice_clear_test' }) }).then((r) => r.json());
+  expect(clear.removed).toBe(3);
 });
 
 test('page width: fluid up to 1800px; no horizontal scroll at 1920 and 390 px', async ({ page }) => {
