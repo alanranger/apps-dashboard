@@ -21,8 +21,8 @@ import { createRequire } from 'node:module';
 import { executeRun } from './engine.mjs';
 import { acquireLock, logger, releaseLock } from './lock-log.mjs';
 import { loadEnv, supabaseStore } from './store.mjs';
-import { HANDLERS, SHARED, UA, readSiteState, record429, sandboxFor, seedSandbox, siteFetch } from './steps.mjs';
-import { cooldownUntil, waitingText } from './cooldown.mjs';
+import { HANDLERS, SHARED, readSiteState, retryAfterMs, sandboxFor, seedSandbox, siteProbe } from './steps.mjs';
+import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from './cooldown.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -71,16 +71,28 @@ function selectedHandlers(only) {
   return Object.fromEntries(Object.entries(HANDLERS).map(([id, h]) => [id, keep.has(id) ? h : async () => ({ status: 'skipped', warnings: ['not selected for this test run (--only)'] })]));
 }
 
-/** LIVE only: one pre-flight home page check; a 429 (or one recorded in the last 30 min) parks the run until the cool-down ends. */
+/**
+ * LIVE only: one lightweight pre-flight probe; a 429 (or one recorded in the last 30 min) parks the run until the
+ * cool-down ends. After a park the probe changes URL; a third park in a row stops the run and asks Alan.
+ */
 async function liveCooldown(store, run) {
-  const status = await siteFetch('https://www.alanranger.com/', { headers: { 'User-Agent': UA } }).then((r) => r.status).catch(() => 0);
-  if (status === 429) record429();
-  const until = cooldownUntil({ mode: run.mode, last429At: readSiteState().last429At, status });
-  if (!until) {
-    if (run.cooldown_until) await store.updateRun(run.id, { cooldown_until: null });
+  const parks = Number(run.options?.cooldown_parks || 0);
+  const res = await siteProbe(probeFor(parks)).catch(() => null);
+  const status = res?.status || 0;
+  const until = cooldownUntil({ mode: run.mode, last429At: readSiteState().last429At, status, retryAfterMs: res ? retryAfterMs(res.headers) : 0 });
+  const decision = parkDecision({ status, until, parks });
+  if (decision === 'go') {
+    if (run.cooldown_until || parks) await store.updateRun(run.id, { cooldown_until: null, options: { ...(run.options || {}), cooldown_parks: 0 } });
     return false;
   }
-  await store.updateRun(run.id, { status: 'requested', cooldown_until: until });
+  if (decision === 'needs_alan') {
+    await store.updateRun(run.id, { status: 'failed', cooldown_until: null, finished_at: new Date().toISOString(),
+      error: rateLimitedNeed(parks).file, needs_alan: [...(run.needs_alan || []), rateLimitedNeed(parks)] });
+    say(`[update-all] run ${run.id} (live): rate-limited ${parks + 1} times in a row — stopped, listed under Needs Alan`);
+    return true;
+  }
+  const options = decision === 'park' ? { ...(run.options || {}), cooldown_parks: parks + 1 } : run.options;
+  await store.updateRun(run.id, { status: 'requested', cooldown_until: until, options });
   say(`[update-all] run ${run.id} (live): ${waitingText(until)} — it starts automatically after that`);
   return true;
 }
@@ -91,6 +103,7 @@ function runContext(store, run) {
   const includeAudit = stages ? stages.includes('I') : (run.include_audit !== false && !has('--no-audit'));
   const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || (run.resume_from ? null : run.options?.fail_step) || null,
     sandboxBase: arg('--sandbox'), includeAudit, stages, simulateNew08: run.mode === 'dry' ? (run.options?.simulate_new_08 || []) : [],
+    simulateHeld: run.mode === 'dry' ? Number(run.options?.simulate_held_reviews || 0) : 0,
     siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
   ctx.sandboxRoot = sandboxFor({ ...ctx, runId: run.id }).root;
   return ctx;

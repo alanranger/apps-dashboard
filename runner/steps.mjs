@@ -9,6 +9,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { diff07 } from './diff-07.mjs';
+import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -17,6 +18,8 @@ export const SHARED = `${WEB}/alan-shared-resources`;
 const SCHEMA_TOOLS = `${WEB}/Schema Tools`;
 const { readCsvObjects, writeCsv, pathKey } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 const { deletedBlogPosts, planDeletedPostCleanup } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/stale-schema-cleanup.mjs`).href);
+const { SITE_UA, retryAfterMs } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/site-identity.mjs`).href);
+export { retryAfterMs };
 const PY_ENV = { PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', SCHEMA_TOOLS_DRY_RUN: '1', ALAN_SITE_GAP_SECONDS: '2' };
 
 // ---------- runner-wide pacing for alanranger.com ----------
@@ -39,7 +42,10 @@ export async function siteFetch(url, opts = {}) {
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   writeSiteState({ lastRequestAt: new Date().toISOString() });
   const res = await fetch(url, opts);
-  if (res.status === 429) record429();
+  if (res.status === 429) {
+    record429();
+    writeSiteState({ last429: { url, method: opts.method || 'GET', contextId: res.headers.get('x-contextid'), retryAfterMs: retryAfterMs(res.headers) } });
+  }
   return res;
 }
 
@@ -140,15 +146,21 @@ async function siteChecks(ctx, softOrHard, failures) {
   return site;
 }
 
-export const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
+/** The same honest identity as the feed fetches (a fake Chrome UA from Node gets 429s: batch 8 diagnosis). */
+export const UA = SITE_UA;
 
-/** Home page status; on 429 waits 60 s and retries (Squarespace rate limit). */
+/** One lightweight check of the home page (HEAD, CDN-cached, no body). */
+export const siteProbe = (url = 'https://www.alanranger.com/') => siteFetch(url, { method: 'HEAD', headers: { 'User-Agent': UA } });
+
+/** Home page status; on 429 waits Retry-After (or 60 s, at most 10 min) and retries. */
 async function siteStatus(tries) {
   let status = 0;
   for (let i = 0; i < tries; i += 1) {
-    status = await siteFetch('https://www.alanranger.com/', { headers: { 'User-Agent': UA } }).then((r) => r.status).catch(() => 0);
+    const res = await siteProbe().catch(() => null);
+    status = res?.status || 0;
     if (status !== 429) return status;
-    if (i < tries - 1) await new Promise((r) => setTimeout(r, 60000));
+    const wait = Math.min(retryAfterMs(res.headers) ?? 60000, 10 * 60 * 1000);
+    if (i < tries - 1) await new Promise((r) => setTimeout(r, wait));
   }
   return status;
 }
@@ -384,10 +396,11 @@ async function reviews(ctx) {
   const sb = buildSandbox(ctx);
   const fetched = await googleFetch(sb);
   await reviewsSnapshot(ctx, sb);
+  const decided = await applyReviewChoices(ctx, sb);
   const r = await sh('python', ['merge-reviews.py'], { cwd: sb.scripts, env: PY_ENV });
   if (r.code !== 0) return { notes: [problem(`Review merge failed: ${tail(r.stdout + r.stderr)}`, 'resume the run')] };
-  const pendingFile = path.join(sb.shared, 'csv processed', '03b-google-pending-alan-review.csv');
-  const pending = fs.existsSync(pendingFile) ? lines(pendingFile) : 0;
+  const held = heldReviewCards(ctx, sb);
+  const pending = held.real;
   const rec = await reconcile(sb);
   const rule = await applyRemovedFromGoogleRule(ctx, rec, fetched.ok);
   const notes = reviewInfo(rec, rule).map(info);
@@ -396,15 +409,41 @@ async function reviews(ctx) {
   if (rule.blocked && rule.exclude.length) notes.push(check(`The removed-from-Google rule was not applied (fetch failed, unbalanced, or more than ${MAX_AUTO_EXCLUDE} at once)`, 'tell Claude'));
   const shadow = shadowSummary(sb);
   if (shadow) notes.push(info(shadow.line));
-  const needsAlan = pending ? [{ kind: 'held_reviews', count: pending, file: 'csv processed/03b-google-pending-alan-review.csv' }] : [];
+  if (decided.applied.length) notes.push(info(`${plural(decided.applied.length, 'held review')} you decided on the page ${verb(ctx, 'would be', 'were')} applied (${decided.overrides_added} new override rows).`));
+  const needsAlan = [...held.items];
   const otherGone = (rec?.gone_names || []).filter((n) => !n.startsWith('Google '));
   if (otherGone.length) needsAlan.push({ kind: 'reviews_missing_from_combined_still_in_db', count: otherGone.length, file: otherGone.join('; ') });
   return { notes, needsAlan,
     counts: { google_fetched: fetched.ok ? fetched.rows : 'failed', combined_reviews: rec?.combined, db_reviews: rec?.db, google_pending_for_alan: pending,
-      info: reviewInfo(rec, rule), shadow_matcher: shadow?.summary || null },
+      choices_applied: decided.applied.length, products_for_choice: held.products, info: reviewInfo(rec, rule), shadow_matcher: shadow?.summary || null },
     plain: `Fetched ${fetched.ok ? fetched.rows : 'no'} Google reviews and merged them with the frozen Trustpilot reviews: ${rec?.combined ?? '?'} reviews${pending ? `, ${pending} new held for you` : ', none new to decide'}.`,
     details: [rec ? reconcileNote(rec) : 'reconcile not run', fetched.ok ? `Google Business Profile fetch OK (read-only${ctx.mode === 'dry' ? ', sandbox' : ''})` : fetched.log],
     outputs: [`${sb.shared}/csv processed/03 – combined_product_reviews.csv (sandbox)`, path.join(sb.shared, 'outputs', 'reports', 'shadow-review-matcher-LATEST.json')] };
+}
+
+/** Alan's page choices for held reviews → 15 overrides (+ alias list) before the merge (dry: the sandbox copies). */
+async function applyReviewChoices(ctx, sb) {
+  const choices = ((await query(ctx, 'bau_review_choices?select=review_key,choice,product_slug,reason')) || []).filter((c) => !c.review_key.startsWith('bau-test-'));
+  const proc = path.join(sb.shared, 'csv processed');
+  const googleFile = path.join(sb.shared, 'csv', 'raw-03b-google-reviews.csv');
+  const googleRows = fs.existsSync(googleFile) ? readCsvObjects(googleFile).rows : [];
+  return applyChoices({ choices, googleRows, overridesFile: path.join(proc, '15-review-attribution-overrides.csv'), aliasFile: path.join(proc, '16-review-reviewer-aliases.csv') });
+}
+
+/** Live products Alan can pick from (raw-01, visible), for the "Choose another product" list. */
+function productsForChoice(sb) {
+  const rows = readCsvObjects(path.join(sb.shared, 'csv', 'raw-01-products-sqsp-export.csv')).rows.filter((r) => r.Title && r['Product URL'] && r.Visible !== 'No');
+  return [...new Map(rows.map((r) => [r['Product URL'], { slug: r['Product URL'], name: r.Title.trim() }])).values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** One actionable Needs Alan card per held review (+ simulated ones in a dry test run). */
+function heldReviewCards(ctx, sb) {
+  const pendingFile = path.join(sb.shared, 'csv processed', '03b-google-pending-alan-review.csv');
+  const pending = fs.existsSync(pendingFile) ? readCsvObjects(pendingFile).rows : [];
+  const report = readJson(path.join(sb.shared, 'outputs', 'reports', 'shadow-review-matcher-LATEST.json'), { results: [] });
+  const products = productsForChoice(sb);
+  const sim = ctx.mode === 'dry' ? simulatedHeld(Number(ctx.simulateHeld || 0), products) : [];
+  return { items: [...heldItems(pending, report.results || []), ...sim], real: pending.length, products };
 }
 
 /** Shadow matcher (report only): before/after adding Squarespace orders, from its report in the sandbox. */

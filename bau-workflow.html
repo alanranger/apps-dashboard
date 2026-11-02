@@ -56,6 +56,14 @@
     #needsPanel ul, #errorPanel ul { margin-left: 18px; }
     .needs-08 { list-style: none; margin-left: 0 !important; }
     .needs-08 li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .needs-held li.held { display: block; padding: 10px 0; }
+    .needs-held li.held > div { margin-top: 4px; }
+    .review-text { background: rgba(0,0,0,0.25); border-left: 3px solid var(--border); padding: 6px 10px; font-size: 0.92rem; }
+    .review-text details.more { display: inline; } .review-text summary { display: inline; cursor: pointer; color: var(--blue); }
+    .stars { color: var(--brand); letter-spacing: 1px; }
+    .held-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+    .held-actions .pick { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .held-actions input { background: #0b0f14; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; min-width: 0; width: 220px; max-width: 100%; }
     .suggested { font-size: 0.78rem; border: 1px solid var(--blue); color: var(--blue); border-radius: 999px; padding: 1px 8px; }
     .login { display: none; gap: 10px; align-items: center; }
     input[type=password] { background: #0b0f14; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; }
@@ -140,6 +148,8 @@
       <div class="panel" id="needsPanel" style="display:none" data-testid="needs-alan">
         <h2>Needs Alan</h2>
         <ul id="needsList"></ul>
+        <ul class="needs-08 needs-held" id="needsHeld"></ul>
+        <datalist id="heldProducts"></datalist>
         <ul class="needs-08" id="needs08"></ul>
       </div>
 
@@ -264,8 +274,10 @@
     async function startStages(stages) {
       $('prereq').style.display = 'none';
       $('actionMsg').textContent = `Stage ${stages.join(', ')} requested`;
-      const simulate = new URLSearchParams(location.search).get('simulate08');
-      const body = { action: 'start', mode: modeValue(), stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}) };
+      const qs = new URLSearchParams(location.search);
+      const simulate = qs.get('simulate08');
+      const body = { action: 'start', mode: modeValue(), stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
+        ...(qs.get('simulateHeld') ? { simulate_held_reviews: Number(qs.get('simulateHeld')) } : {}) };
       try { await api('/api/update-all', { method: 'POST', body }); refresh(); }
       catch (e) {
         if (e.data?.plan) showPrereq(e.data.plan, stages[stages.length - 1]);
@@ -296,16 +308,78 @@
       return `<li data-testid="needs-item" data-kind="new_08_page" data-url="${esc(n.url)}"><code>${esc(n.url)}</code><span class="suggested" data-testid="suggested">suggested: ${esc(n.suggested)}</span>${buttons}${state}</li>`;
     }
 
-    function renderNeeds(run, choices) {
+    // ---------- held reviews (batch 8): first name, date, stars, text, why held, suggestion, four actions ----------
+    let productNames = new Map();
+    const productName = (slug) => productNames.get(slug) || slug || '(none)';
+    function reviewText(t) {
+      const s = String(t || '');
+      if (s.length <= 300) return `<div class="review-text" data-testid="review-text">${esc(s)}</div>`;
+      return `<div class="review-text" data-testid="review-text">${esc(s.slice(0, 300))}… <details class="more"><summary>more</summary>${esc(s.slice(300))}</details></div>`;
+    }
+    function savedText(c) {
+      if (c.choice === 'product') return `Saved: ${productName(c.product_slug)}`;
+      return c.choice === 'exclude' ? `Saved: exclude (${c.reason})` : 'Saved: business level';
+    }
+    function heldHtml(n, saved) {
+      const dis = saved ? 'disabled' : '';
+      const alts = (n.alternatives || []).map((s) => `<button class="small secondary" data-held-alt="${esc(s)}" ${dis}>${esc(productName(s))}</button>`).join(' ');
+      return `<li class="held" data-testid="needs-item" data-kind="held_review" data-key="${esc(n.key)}">
+        <div><strong data-testid="held-name">${esc(n.first_name)}</strong> · ${esc(n.date)} · <span class="stars" data-testid="held-stars">${'★'.repeat(n.rating || 0)}${'☆'.repeat(5 - (n.rating || 0))}</span></div>
+        ${reviewText(n.text)}
+        <div class="muted" data-testid="held-why">Why held: ${esc(n.why)}</div>
+        <div>Suggested: <strong data-testid="held-suggested">${esc(productName(n.suggested))}</strong>${alts ? ` · or ${alts}` : ''}</div>
+        <div class="held-actions">
+          <button class="small" data-testid="held-accept" data-held-act="accept" ${dis || (n.suggested ? '' : 'disabled')}>Accept suggestion</button>
+          <span class="pick"><input list="heldProducts" placeholder="Choose another product…" data-testid="held-search" ${dis}><button class="small secondary" data-testid="held-choose" data-held-act="choose" ${dis}>Use this product</button></span>
+          <button class="small secondary" data-testid="held-business" data-held-act="business" ${dis}>Business-level</button>
+          <span class="pick"><input placeholder="Reason to exclude" data-testid="held-reason" ${dis}><button class="small secondary" data-testid="held-exclude" data-held-act="exclude" ${dis}>Exclude</button></span>
+        </div>
+        ${saved ? `<div data-testid="held-saved">${esc(savedText(saved))}</div>` : ''}</li>`;
+    }
+    function heldChoice(li, act, alt) {
+      const suggested = li.dataset.suggested;
+      if (alt) return { choice: 'product', product_slug: alt };
+      if (act === 'accept') return { choice: 'product', product_slug: suggested };
+      if (act === 'business') return { choice: 'business_level' };
+      if (act === 'choose') {
+        const typed = li.querySelector('[data-testid="held-search"]').value.trim();
+        const slug = [...productNames].find(([s, name]) => name === typed || s === typed)?.[0];
+        return slug ? { choice: 'product', product_slug: slug } : { error: 'Pick a product from the list' };
+      }
+      const reason = li.querySelector('[data-testid="held-reason"]').value.trim();
+      return reason ? { choice: 'exclude', reason } : { error: 'Type a reason to exclude' };
+    }
+    async function saveHeld(li, act, alt) {
+      const c = heldChoice(li, act, alt);
+      if (c.error) { $('actionMsg').textContent = c.error; return; }
+      try { await api('/api/update-all', { method: 'POST', body: { action: 'review_choice', review_key: li.dataset.key, suggested: li.dataset.suggested, ...c } }); refresh(); }
+      catch (e) { $('actionMsg').textContent = e.message; }
+    }
+    function wireHeld(held) {
+      document.querySelectorAll('li.held').forEach((li) => {
+        li.dataset.suggested = held.find((n) => n.key === li.dataset.key)?.suggested || '';
+        li.querySelectorAll('[data-held-act]').forEach((b) => b.addEventListener('click', () => saveHeld(li, b.dataset.heldAct)));
+        li.querySelectorAll('[data-held-alt]').forEach((b) => b.addEventListener('click', () => saveHeld(li, 'alt', b.dataset.heldAlt)));
+      });
+    }
+
+    function renderNeeds(run, choices, reviewChoices, steps) {
+      if (document.activeElement?.closest?.('#needsPanel input')) return;
       const needs = run?.needs_alan || [];
       const pages = needs.filter((n) => n.kind === 'new_08_page');
-      const other = needs.filter((n) => n.kind !== 'new_08_page');
+      const held = needs.filter((n) => n.kind === 'held_review');
+      const other = needs.filter((n) => !['new_08_page', 'held_review'].includes(n.kind));
+      const products = steps.find((s) => s.step_id === 'reviews')?.counts?.products_for_choice || [];
+      productNames = new Map(products.map((p) => [p.slug, p.name]));
+      $('heldProducts').innerHTML = products.map((p) => `<option value="${esc(p.name)}"></option>`).join('');
       $('needsPanel').style.display = run ? 'block' : 'none';
-      $('needsList').innerHTML = other.length || pages.length
-        ? other.map((n) => `<li data-testid="needs-item" data-kind="${esc(n.kind)}">${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — <code>${esc(n.file || '')}</code></li>`).join('')
+      $('needsList').innerHTML = other.length || pages.length || held.length
+        ? other.map((n) => `<li data-testid="needs-item" data-kind="${esc(n.kind)}">${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — ${esc(n.file || '')}</li>`).join('')
         : '<li class="muted" data-testid="needs-empty">Nothing needs you.</li>';
+      $('needsHeld').innerHTML = held.length ? `<li class="muted">Held Google reviews: choose where each belongs (saved, applied on the next run, never asked twice).</li>${held.map((n) => heldHtml(n, reviewChoices.find((c) => c.review_key === n.key))).join('')}` : '';
       $('needs08').innerHTML = pages.length ? `<li class="muted">New pages in 06: choose how each is treated (saved, never asked twice; an undecided page gets no schema and blocks nothing).</li>${pages.map((n) => page08Html(n, choices)).join('')}` : '';
       document.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => saveChoice(b.dataset.url, b.dataset.choice, b.dataset.suggested)));
+      wireHeld(held);
     }
 
     async function saveChoice(url, choice, suggested) {
@@ -349,7 +423,7 @@
       const run = data.run; const steps = data.steps || [];
       renderMeta(run);
       renderErrors(run, steps);
-      renderNeeds(run, data.page_choices || []);
+      renderNeeds(run, data.page_choices || [], data.review_choices || [], steps);
       renderSummary(run, steps);
       renderButtons(run);
       renderStatusText(run);

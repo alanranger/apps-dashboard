@@ -34,11 +34,17 @@ async function pageChoices(run) {
   return sb(`bau_page_choices?url=in.(${urls.map((u) => `"${encodeURIComponent(u)}"`).join(',')})`);
 }
 
+/** Saved decisions for this run's held reviews (so a decided review shows as saved, never asked twice). */
+async function reviewChoices(run) {
+  const keys = (run?.needs_alan || []).filter((n) => n.kind === 'held_review').map((n) => n.key).filter((k) => /^[\w-]+$/.test(k));
+  return keys.length ? sb(`bau_review_choices?review_key=in.(${keys.join(',')})`) : [];
+}
+
 async function latestRun(id) {
   const q = id && id !== 'latest' ? `update_all_runs?id=eq.${encodeURIComponent(id)}` : 'update_all_runs?order=requested_at.desc&limit=1';
   const run = (await sb(q))[0] || null;
   const steps = run ? await sb(`update_all_steps?run_id=eq.${run.id}&order=ord.asc`) : [];
-  return { run, steps, registry: REGISTRY, stages: await stagesInfo(), page_choices: await pageChoices(run) };
+  return { run, steps, registry: REGISTRY, stages: await stagesInfo(), page_choices: await pageChoices(run), review_choices: await reviewChoices(run) };
 }
 
 /** Valid stage letters in order, or null for Run all. */
@@ -65,9 +71,10 @@ async function start(session, body) {
     if (!plan.ok) return [409, { error: plan.message, plan }];
   }
   const sim = simulated(mode, body.simulate_new_08);
+  const held = mode === 'dry' ? Math.min(4, Math.max(0, Number(body.simulate_held_reviews) || 0)) : 0;
+  const options = { ...(sim.length ? { simulate_new_08: sim } : {}), ...(held ? { simulate_held_reviews: held } : {}) };
   const run = (await sb('update_all_runs', { method: 'POST',
-    body: { mode, status: 'requested', requested_by: session.role, include_audit: stages ? stages.includes('I') : body.include_audit !== false, stages,
-      options: sim.length ? { simulate_new_08: sim } : {} } }))[0];
+    body: { mode, status: 'requested', requested_by: session.role, include_audit: stages ? stages.includes('I') : body.include_audit !== false, stages, options } }))[0];
   return [200, { run }];
 }
 
@@ -101,7 +108,28 @@ async function clearTestChoices() {
   return [200, { removed: (gone || []).length }];
 }
 
-const ACTIONS = { start, resume: (s, b) => resume(b), cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices() };
+const REVIEW_CHOICES = ['product', 'business_level', 'exclude'];
+/** Batch 8: Alan's decision on a held review (key = opaque hash from the run; no name is sent). */
+async function reviewChoice(session, body) {
+  const key = String(body.review_key || '');
+  if (!/^[\w-]{6,40}$/.test(key) || !REVIEW_CHOICES.includes(body.choice)) return [400, { error: 'review_key and choice (product, business_level, exclude) required' }];
+  if (body.choice === 'product' && !/^[a-z0-9-]+$/.test(String(body.product_slug || ''))) return [400, { error: 'product_slug required' }];
+  if (body.choice === 'exclude' && !String(body.reason || '').trim()) return [400, { error: 'a reason is required to exclude' }];
+  const row = { review_key: key, choice: body.choice, product_slug: body.choice === 'product' ? body.product_slug : null,
+    reason: body.choice === 'exclude' ? String(body.reason).trim().slice(0, 200) : null, suggested: body.suggested || null,
+    decided_by: session.role, decided_at: new Date().toISOString() };
+  const saved = await sb('bau_review_choices?on_conflict=review_key', { method: 'POST', body: row, prefer: 'resolution=merge-duplicates,return=representation' });
+  return [200, { choice: saved[0] }];
+}
+
+/** Test clean-up: removes only choices saved for simulated held reviews (bau-test-…). */
+async function clearTestReviewChoices() {
+  const gone = await sb('bau_review_choices?review_key=like.bau-test-*', { method: 'DELETE' });
+  return [200, { removed: (gone || []).length }];
+}
+
+const ACTIONS = { start, resume: (s, b) => resume(b), cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
+  review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices() };
 
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
@@ -112,6 +140,7 @@ module.exports = async function handler(req, res) {
       const url = new URL(req.url, 'http://x');
       if (url.searchParams.get('runs')) return json(res, 200, { runs: await sb(`update_all_runs?order=requested_at.desc&limit=${Math.min(50, Number(url.searchParams.get('runs')) || 10)}`) });
       if (url.searchParams.get('page_choices')) return json(res, 200, { choices: await sb('bau_page_choices?order=url.asc') });
+      if (url.searchParams.get('review_choices')) return json(res, 200, { choices: await sb('bau_review_choices?order=review_key.asc') });
       return json(res, 200, await latestRun(url.searchParams.get('run')));
     }
     if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
