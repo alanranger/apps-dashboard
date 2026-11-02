@@ -47,15 +47,15 @@ test('held reviews: each page choice becomes one 15-override row (+ alias for pr
   fs.writeFileSync(overridesFile, '\uFEFFsource,reviewer_name,review_date,reference_id,product_slug,scope,priority,notes\r\nGoogle,Old Person,2025-01-01,,x,product,100,old\r\n');
   const googleRows = [{ reviewer: 'Jane Example', date: '2026-11-01', review: 'Lovely' }, { reviewer: 'Bob Sample', date: '2026-10-30', review: 'Nice' },
     { reviewer: 'Cat Third', date: '2026-10-29', review: 'Meh' }, { reviewer: 'Not Decided', date: '2026-10-28', review: '?' }];
-  const choices = [{ review_key: reviewKey('Jane Example', '2026-11-01'), choice: 'product', product_slug: 'batsford-arboretum-photography-workshops' },
+  const choices = [{ review_key: reviewKey('Jane Example', '2026-11-01'), choice: 'product', product_slug: 'batsford-arboretum-photography-workshops', decided_at: '2026-11-01T18:00:00Z' },
     { review_key: reviewKey('Bob Sample', '2026-10-30'), choice: 'business_level' }, { review_key: reviewKey('Cat Third', '2026-10-29'), choice: 'exclude', reason: 'about a print' }];
   const r = applyChoices({ choices, googleRows, overridesFile, aliasFile, today: '2026-11-02' });
   assert.equal(r.applied.length, 3);
   assert.equal(r.overrides_added, 3);
   const lines15 = fs.readFileSync(overridesFile, 'utf8').split('\r\n').filter(Boolean);
   assert.equal(lines15.length, 5, 'header + old row + 3 new rows, CRLF kept');
-  assert.deepEqual(lines15.slice(2), ['Google,Jane Example,2026-11-01,,batsford-arboretum-photography-workshops,product,100,bau_needs_alan_2026-11-02',
-    'Google,Bob Sample,2026-10-30,,,business_level,100,bau_needs_alan_2026-11-02', 'Google,Cat Third,2026-10-29,,,exclude,100,bau_needs_alan_2026-11-02_exclude_about a print']);
+  assert.deepEqual(lines15.slice(2), ['Google,Jane Example,2026-11-01,,batsford-arboretum-photography-workshops,product,100,alan_confirmed_2026-11-01',
+    'Google,Bob Sample,2026-10-30,,,business_level,100,alan_confirmed_2026-11-02', 'Google,Cat Third,2026-10-29,,,exclude,100,alan_confirmed_2026-11-02_exclude_about a print']);
   assert.match(fs.readFileSync(aliasFile, 'utf8'), /Jane Example,batsford-arboretum-photography-workshops,2026-11-02,bau_review_choice/);
   assert.equal(applyChoices({ choices, googleRows, overridesFile, aliasFile, today: '2026-11-03' }).overrides_added, 0, 'never added twice');
   const cards = heldItems([{ reviewer: 'Not Decided Person', date: '2026-10-28', rating: 'FOUR', review: 'x'.repeat(400), suggested_product_slug: '' }],

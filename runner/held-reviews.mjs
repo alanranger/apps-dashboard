@@ -28,8 +28,10 @@ function appendCsv(file, cols, rows) {
   fs.writeFileSync(file, text + head + rows.map((r) => cols.map((c) => cell(r[c])).join(',') + eol).join(''), 'utf8');
 }
 
+/** A button choice is Alan confirming: alan_confirmed_<the day he chose> (the run day when not recorded). */
 function overrideRow(review, choice, today) {
-  const note = choice.choice === 'exclude' ? `bau_needs_alan_${today}_exclude_${choice.reason}` : `bau_needs_alan_${today}`;
+  const decided = day(choice.decided_at) || today;
+  const note = choice.choice === 'exclude' ? `alan_confirmed_${decided}_exclude_${choice.reason}` : `alan_confirmed_${decided}`;
   return { source: 'Google', reviewer_name: review.reviewer, review_date: day(review.date), reference_id: '',
     product_slug: choice.choice === 'product' ? choice.product_slug : '', scope: choice.choice, priority: '100', notes: note };
 }
