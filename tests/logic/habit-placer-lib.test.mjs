@@ -240,6 +240,47 @@ describe('habit-placer-lib — place + §5 proof', () => {
     assert.equal(move[0].action, 'MOVE');
   });
 
+  it('manual pin is KEPT at Alan\'s slot even when the plan puts it elsewhere', () => {
+    const planned = [{
+      habit_id: 'h1', title: 'Bank Genie', ideal_date: '2026-11-04',
+      startIso: '2026-11-04T09:00:00.000Z', endIso: '2026-11-04T10:30:00.000Z',
+    }];
+    const out = buildAmendments(planned, [{
+      habit_id: 'h1', title: 'Bank Genie', ideal_date: '2026-11-04',
+      startIso: '2026-11-03T10:00:00.000Z', endIso: '2026-11-03T11:30:00.000Z',
+      calendar_event_id: 'ev1', manual_pin: true,
+    }]);
+    assert.equal(out.length, 1);
+    assert.equal(out[0].action, 'KEEP');
+    assert.equal(out[0].startIso, '2026-11-03T10:00:00.000Z');
+    assert.equal(out[0].manual_pin, true);
+  });
+
+  it('placer commits a manual pin to its fixed slot and fences it from others', () => {
+    const mk = (id, title) => ({
+      id, title, priority: 'p0', duration_min: 90,
+      ideal_time: '10:00', window_days: 0, time_critical: false,
+      rrule: 'FREQ=WEEKLY;BYDAY=TU',
+    });
+    const pinStart = '2026-11-03T14:00:00.000Z';
+    const pinEnd = '2026-11-03T15:30:00.000Z';
+    const pinBusy = { startMs: Date.parse(pinStart), endMs: Date.parse(pinEnd), habit_id: 'hp', ideal_date: '2026-11-03' };
+    const { placements } = placeHabits(
+      [mk('hp', 'Pinned'), mk('ho', 'Other')], [], [pinBusy], rules, holidays,
+      '2026-11-03', '2026-11-03',
+      { manualPins: new Map([['hp|2026-11-03', { startIso: pinStart, endIso: pinEnd }]]) },
+    );
+    const pinned = placements.find((p) => p.habit_id === 'hp');
+    assert.equal(pinned.startIso, pinStart);
+    assert.equal(pinned.manual_pin, true);
+    const other = placements.find((p) => p.habit_id === 'ho');
+    if (other) {
+      const clash = Date.parse(other.startIso) < Date.parse(pinEnd)
+        && Date.parse(other.endIso) > Date.parse(pinStart);
+      assert.equal(clash, false);
+    }
+  });
+
   it('KEEP when London wall clock matches despite different ISO offset strings', () => {
     const planned = [{
       habit_id: 'h1', title: 'A', ideal_date: '2026-09-03',

@@ -1189,6 +1189,22 @@ function depOk(habit, slot, placedByHabit, deps) {
   return true;
 }
 
+/** Alan's hand-moved slot for this occurrence (opts.manualPins: Map "habit|ideal" → {startIso,endIso}). */
+function manualPinSlot(manualPins, habitId, ideal) {
+  const pin = manualPins && manualPins.get(`${habitId}|${ideal}`);
+  if (!pin || !pin.startIso || !pin.endIso) return null;
+  const startMs = Date.parse(pin.startIso);
+  const endMs = Date.parse(pin.endIso);
+  if (!Number.isFinite(startMs) || !(endMs > startMs)) return null;
+  return {
+    day: isoToLondonDate(pin.startIso),
+    startIso: pin.startIso,
+    endIso: pin.endIso,
+    durationMin: Math.round((endMs - startMs) / 60000),
+    manual_pin: true,
+  };
+}
+
 function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts = {}) {
   const ordered = orderHabitsForPlacement(habits, deps);
   const placements = [];
@@ -1264,6 +1280,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
       endIso: slot.endIso,
       duration_min: slot.durationMin,
     };
+    if (slot.manual_pin) row.manual_pin = true;
     placements.push(row);
     dayUsed[slot.day] = (dayUsed[slot.day] || 0) + slot.durationMin;
     if (!placedByHabit.has(habit.id)) placedByHabit.set(habit.id, []);
@@ -1281,7 +1298,7 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
   for (const habit of ordered) {
     const phaseAnchor = opts.phaseAnchorYmd || fromYmd;
     for (const ideal of idealsInHorizon(habit.rrule, fromYmd, toYmd, 200, phaseAnchor)) {
-      const slot = findSlotAlways(habit, ideal);
+      const slot = manualPinSlot(opts.manualPins, habit.id, ideal) || findSlotAlways(habit, ideal);
       if (!slot) {
         unplaced.push({
           habit_id: habit.id, title: habit.title, ideal_date: ideal,
@@ -1304,6 +1321,8 @@ function placeHabits(habits, deps, busy, ruleMap, holidays, fromYmd, toYmd, opts
  */
 function rehomeCulledPlacements(placements, unplaced, dayUsed, busyWork, ruleMap, ctx) {
   const sorted = placements.slice().sort((a, b) => {
+    // Manual pins are kept first — anything clashing with them is the one rehomed.
+    if (!!a.manual_pin !== !!b.manual_pin) return a.manual_pin ? -1 : 1;
     const pr = priorityRank(a.priority) - priorityRank(b.priority);
     if (pr !== 0) return pr;
     return Date.parse(a.startIso) - Date.parse(b.startIso);
@@ -1364,6 +1383,23 @@ function sameLondonSlot(aIso, bIso) {
     && isoToLondonMinutes(aIso) === isoToLondonMinutes(bIso);
 }
 
+function keepManualPin(e) {
+  return {
+    action: 'KEEP',
+    habit_id: e.habit_id,
+    title: e.title,
+    ideal_date: e.ideal_date,
+    startIso: e.startIso,
+    endIso: e.endIso,
+    calendar_event_id: e.calendar_event_id,
+    manual_pin: true,
+  };
+}
+
+function isFixedPin(e) {
+  return !!(e && e.manual_pin && e.startIso && e.endIso);
+}
+
 function buildAmendments(placements, existing = [], fromYmd = null) {
   const key = (r) => `${r.habit_id}|${r.ideal_date}`;
   const plan = new Map(placements.map((p) => [key(p), p]));
@@ -1371,6 +1407,11 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
   const out = [];
   for (const [k, p] of plan) {
     const e = have.get(k);
+    // Alan 2026-11-02: a slot he moved by hand is fixed — never MOVE it to the plan's slot.
+    if (isFixedPin(e)) {
+      out.push(keepManualPin(e));
+      continue;
+    }
     if (!e) {
       out.push({
         action: 'CREATE', habit_id: p.habit_id, title: p.title,
@@ -1406,16 +1447,8 @@ function buildAmendments(placements, existing = [], fromYmd = null) {
     if (plan.has(k)) continue;
     // Decision 4 / Alan: diary_manual_pin must not silent-vanish when placer
     // fails to re-pack (gap/cap). KEEP existing slot; do not DELETE.
-    if (e.manual_pin && e.startIso && e.endIso) {
-      out.push({
-        action: 'KEEP',
-        habit_id: e.habit_id,
-        title: e.title,
-        ideal_date: e.ideal_date,
-        startIso: e.startIso,
-        endIso: e.endIso,
-        calendar_event_id: e.calendar_event_id,
-      });
+    if (isFixedPin(e)) {
+      out.push(keepManualPin(e));
       continue;
     }
     out.push({

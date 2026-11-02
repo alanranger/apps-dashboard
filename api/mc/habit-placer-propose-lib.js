@@ -452,6 +452,10 @@ async function writeUnplacedHabitAlerts(sb, unplaced, {
   return n;
 }
 
+function isManualPinLog(log) {
+  return String(log?.roll_reason || '') === 'diary_manual_pin';
+}
+
 /** Apply placer MOVE/CREATE/DELETE/KEEP(pin-sync) to recurring_log + gcal_push_queue. */
 async function applyHabitAmendmentToDb(sb, a) {
   if (!a || !a.habit_id || !a.ideal_date) return false;
@@ -567,12 +571,15 @@ async function applyHabitAmendmentToDb(sb, a) {
 
   if (a.action !== 'MOVE' && a.action !== 'CREATE') return false;
   if (!a.startIso || !a.endIso) return false;
+  const manualPin = isManualPinLog(log);
+  // Alan 2026-11-02: a slot he moved by hand is fixed — the placer never moves it.
+  if (manualPin && a.action === 'MOVE') return false;
   const pinChange = `diary_pin:${a.startIso}|${a.endIso}`;
   const day = isoToLondonDate(a.startIso) || a.ideal_date;
   const logBody = {
     change: pinChange,
     scheduled_date: day,
-    roll_reason: 'habit_placer_enforce',
+    roll_reason: manualPin ? 'diary_manual_pin' : 'habit_placer_enforce',
     calendar_event_id: evtId,
     ideal_date: a.ideal_date,
     projection_key: `placer:${a.habit_id}:${a.ideal_date}`,
@@ -1172,6 +1179,11 @@ async function runHabitPlacerPropose(ctx) {
       existingHabitIntervals: existingHabitBusy,
       phaseAnchorYmd: phaseAnchorYmd || fromYmd,
       eventIdByKey,
+      manualPins: new Map(
+        (existingLog || [])
+          .filter((e) => e.manual_pin)
+          .map((e) => [`${e.habit_id}|${e.ideal_date}`, e]),
+      ),
     },
   );
   const existing = enrichExistingFromGcalTitles(

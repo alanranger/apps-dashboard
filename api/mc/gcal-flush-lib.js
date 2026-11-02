@@ -10,6 +10,7 @@ const {
   insertPrimaryEvent, patchPrimaryEvent, deletePrimaryEvent, getPrimaryEvent, verifyPrimaryEvent,
 } = require('./gcal-write-lib');
 const { ruleMapFromRows } = require('./scheduling-rules-lib');
+const { loadPinnedEventIds } = require('./pin-busy-lib');
 const {
   taskGcalTitle, habitGcalTitle, travelGcalTitle, travelGcalLocation, travelGcalDescription,
   isChangelogTitle,
@@ -728,8 +729,12 @@ async function applyFlushPlan(sb, plan, actor, opts = {}) {
   const limit = Number(opts.limit) > 0 ? Math.min(80, Number(opts.limit)) : allWrites.length;
   const batch = allWrites.slice(0, limit);
   const liveWrites = await hydrateWritesFromDb(sb, batch, prefixes);
+  const pinnedIds = await loadPinnedEventIds(sb);
 
   for (const w of liveWrites) {
+    if (w.action === 'patch' && w.patch && pinnedIds.has(w.event_id)) {
+      w.patch = { ...w.patch, transparency: 'opaque' };
+    }
     try {
       let eventId = w.event_id || null;
       if (w.action === 'delete') {

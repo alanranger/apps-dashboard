@@ -207,19 +207,26 @@ async function testWriteRoundTrip() {
   }
 }
 
-async function applyMcShowAsFree(events, { limit = 40 } = {}) {
+/** Show As wanted for a live event: pinned → Busy, MC block → Free, else leave alone. */
+function wantedTransparency(e, busyIds) {
+  if (busyIds && busyIds.has(e.id)) return 'opaque';
+  return mcShowsAsFree(e.summary) ? 'transparent' : null;
+}
+
+async function applyMcShowAsFree(events, { limit = 40, busyIds = null } = {}) {
   const patched = [];
   const skipped = [];
   for (const e of events || []) {
     if (patched.length >= limit) break;
     if ((e._calendarId || 'primary') !== 'primary' || !e.id) continue;
-    if (!mcShowsAsFree(e.summary)) continue;
-    if (e.transparency === 'transparent') {
+    const want = wantedTransparency(e, busyIds);
+    if (!want) continue;
+    if ((e.transparency || 'opaque') === want) {
       skipped.push(e.id);
       continue;
     }
-    await patchPrimaryEvent(e.id, { transparency: 'transparent' });
-    patched.push({ id: e.id, summary: e.summary });
+    await patchPrimaryEvent(e.id, { transparency: want });
+    patched.push({ id: e.id, summary: e.summary, transparency: want });
   }
   return { patched, already_free: skipped.length };
 }
@@ -237,4 +244,5 @@ module.exports = {
   timedEventBody,
   allDayEventBody,
   applyMcShowAsFree,
+  wantedTransparency,
 };

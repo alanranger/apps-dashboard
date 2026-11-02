@@ -12,6 +12,7 @@ const {
   defaultHorizon, loadDbMasters, snapshotPrimaryMc,
 } = require('./gcal-rebuild-lib');
 const { applyMcShowAsFree } = require('./gcal-write-lib');
+const { loadPinnedEventIds } = require('./pin-busy-lib');
 
 function flagsFromRules(ruleMap) {
   return {
@@ -123,7 +124,8 @@ async function pushSync(sb, actor, {
     try {
       const hz = defaultHorizon();
       const snap = await fetchHorizonEvents(hz.timeMin, hz.timeMax);
-      show_as_free = await applyMcShowAsFree(snap.events || [], { limit: 40 });
+      const busyIds = await loadPinnedEventIds(sb);
+      show_as_free = await applyMcShowAsFree(snap.events || [], { limit: 40, busyIds });
     } catch (e) {
       show_as_free = { error: e.message };
     }
