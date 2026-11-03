@@ -43,7 +43,8 @@ async function runStep(def, handler, ctx) {
 function stageResult(stage, steps, ctx) {
   const mine = steps.filter((s) => s.stage === stage);
   const status = mine.reduce((w, s) => (RANK[s.status] > RANK[w] ? s.status : w), 'skipped');
-  const pub = mine.find((s) => s.step_id.startsWith('publish_'))?.counts || {};
+  // A / C publish from their generator step (counts.is_publish); D–G have their own publish_* step.
+  const pub = mine.find((s) => s.step_id.startsWith('publish_') || s.counts?.is_publish)?.counts || {};
   const ingest = mine.find((s) => s.step_id === 'final_ingest')?.counts?.written || null;
   return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
     published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,

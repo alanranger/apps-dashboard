@@ -852,13 +852,43 @@ async function summary(ctx) {
     plain: `${verb(ctx, 'Dry run', 'Live run')} finished: ${needs}. ${cov.line}.`, details: Object.entries(tally).map(([k, v]) => `${k}: ${v} steps`) };
 }
 
+// ---------- A / C: the stage's CSVs in alan-shared-resources (Claude 9.2: same deploy path, exact files, own commit) ----------
+const sharedRepoOf = (ctx) => ctx.sharedRepo || SHARED;
+const normText = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
+export const SHARED_PUBLISH = {
+  build_csvs: { stage: 'A', what: 'CSV', files: () => [...BUILT, 'raw-01-products-sqsp-export.csv'].map((f) => `csv/${f}`) },
+  reviews: { stage: 'C', what: 'review file', files: () => ['csv processed/03 – combined_product_reviews.csv', 'csv processed/03b-google-pending-alan-review.csv',
+    'csv processed/03b_google_matched.csv', 'csv/raw-03b-google-reviews.csv'] }
+};
+/** The stage's own files whose new (sandbox) version differs from the shared repo, line endings ignored. */
+export function sharedPublishSet(id, sb, repo) {
+  const publish = SHARED_PUBLISH[id].files().filter((rel) => fs.existsSync(path.join(sb.shared, rel))
+    && (!fs.existsSync(path.join(repo, rel)) || normText(path.join(repo, rel)) !== normText(path.join(sb.shared, rel))));
+  return { publish, remove: [] };
+}
+const sharedDef = (id) => ({ ...SHARED_PUBLISH[id], sources: (sb) => [sb.shared], filesScope: true, cdn: false });
+const NO_REMOVALS = { rows: [], unexplained: [], files_with_unexplained: [] };
+
+/** Dry: run the generator and record the stage's publish list. Live: publish exactly that list (promote), no re-generation. */
+const sharedStage = (id, handler) => async (ctx) => {
+  const repo = sharedRepoOf(ctx);
+  if (ctx.mode === 'live') {
+    const sb = buildSandbox(ctx);
+    return livePublish(sharedDef(id), sb, ctx, { ...sharedPublishSet(id, sb, repo), removals: NO_REMOVALS, repo });
+  }
+  const out = await handler(ctx);
+  const set = sharedPublishSet(id, buildSandbox(ctx), repo);
+  return { ...out, counts: { ...(out.counts || {}), files: set.publish, removed: [], publish_count: set.publish.length, is_publish: true, removals_unexplained: 0 } };
+};
+
 /** Generators never run in Live: the stage publishes the files its dry run already generated and reported. */
 const promoted = (handler) => async (ctx) => (ctx.mode !== 'live' ? handler(ctx) : {
   status: 'skipped', notes: [info(`Not regenerated in Live: this stage publishes dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)}'s files.`)],
   plain: `Promoted from dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)} (not regenerated).`, counts: { promoted_from: ctx.promote?.run_id || null } });
 
 export const HANDLERS = {
-  preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: promoted(productSchema), publish_products: publishStep('publish_products'),
+  preflight, build_csvs: sharedStage('build_csvs', buildCsvs), ingest_preliminary: ingestPreliminary, reviews: sharedStage('reviews', reviews),
+  product_schema: promoted(productSchema), publish_products: publishStep('publish_products'),
   event_posts: promoted(appCliStep('event-posts')), event_index: promoted(appCliStep('event-index')), publish_events: publishStep('publish_events'),
   blog_index: promoted(appCliStep('blog-index')), blog_posts: promoted(blogPosts), publish_blogs: publishStep('publish_blogs'),
   landing_pages: promoted(appCliStep('landings')), publish_landings: publishStep('publish_landings'),

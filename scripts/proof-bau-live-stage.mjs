@@ -11,14 +11,16 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { loadEnv, supabaseStore } from '../runner/store.mjs';
-import { HANDLERS, PUBLISH, REPO, sandboxFor } from '../runner/steps.mjs';
+import { HANDLERS, PUBLISH, REPO, SHARED_PUBLISH, sandboxFor } from '../runner/steps.mjs';
 
 const { git, undoCommit } = await import(pathToFileURL('G:/Dropbox/alan ranger photography/Website Code/Schema Tools/scripts/lib/deploy-schemas.mjs').href);
 const arg = (k) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null);
 const STAGE = arg('--stage');
 const RUN = arg('--run');
-const STEP = { D: 'publish_products', E: 'publish_events', F: 'publish_blogs', G: 'publish_landings' }[STAGE];
-if (!STEP || !RUN) throw new Error('usage: --stage D|E|F|G --run <dry run id>');
+const STEP = { A: 'build_csvs', C: 'reviews', D: 'publish_products', E: 'publish_events', F: 'publish_blogs', G: 'publish_landings' }[STAGE];
+if (!STEP || !RUN) throw new Error('usage: --stage A|C|D|E|F|G --run <dry run id>');
+const SHARED_STAGE = ['A', 'C'].includes(STAGE);
+const SHARED = 'G:/Dropbox/alan ranger photography/Website Code/alan-shared-resources';
 
 const env = loadEnv(path.resolve('.env.local'));
 const store = supabaseStore({ url: env.MC_SUPABASE_URL, key: env.MC_SUPABASE_SERVICE_KEY });
@@ -29,9 +31,31 @@ const check = (name, ok, detail = '') => results.push({ name, ok: !!ok, detail }
 const must = (r, what) => { if (r.code !== 0) throw new Error(`${what}: ${r.stderr || r.stdout}`); return r.stdout.trim(); };
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 
+/** A/C: a throwaway repo holding today's shared-resources version of every file the stage owns (plus unrelated pending work). */
+function sharedBaseline(root, remote) {
+  const work = path.join(root, 'work');
+  must(git(root, ['init', '-q', '--bare', '-b', 'main', remote]), 'bare init');
+  must(git(root, ['clone', '-q', '-c', 'core.autocrlf=false', remote, work]), 'clone');
+  must(git(work, ['checkout', '-q', '-b', 'main']), 'branch');
+  for (const rel of SHARED_PUBLISH[STEP].files()) {
+    if (!fs.existsSync(path.join(SHARED, rel))) continue;
+    fs.mkdirSync(path.dirname(path.join(work, rel)), { recursive: true });
+    fs.copyFileSync(path.join(SHARED, rel), path.join(work, rel));
+  }
+  fs.writeFileSync(path.join(work, 'other-tracked.txt'), 'baseline\n');
+  for (const [k, v] of [['user.email', 'proof@example.invalid'], ['user.name', `BAU live ${STAGE} proof`]]) must(git(work, ['config', k, v]), 'config');
+  must(git(work, ['add', '-A']), 'add');
+  must(git(work, ['commit', '-q', '-m', 'baseline: shared-resources files today']), 'commit');
+  must(git(work, ['push', '-q', '-u', 'origin', 'main']), 'push');
+  // Unrelated pending work, as in the real shared repo: it must be left alone and never committed by the stage.
+  fs.writeFileSync(path.join(work, 'other-tracked.txt'), 'someone else is editing this\n');
+  return work;
+}
+
 function throwaway() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), `bau-live-${STAGE}-proof-`));
   const remote = path.join(root, 'remote.git');
+  if (SHARED_STAGE) return { root, remote, work: sharedBaseline(root, remote), shared: path.join(root, 'work') };
   const work = path.join(root, 'work');
   must(git(root, ['clone', '-q', '--bare', REPO, remote]), 'bare clone');
   must(git(root, ['clone', '-q', '-c', 'core.autocrlf=false', remote, work]), 'clone');
@@ -41,7 +65,8 @@ function throwaway() {
 }
 
 const t = throwaway();
-const ctx = { mode: 'live', store, runId: `proof-live-${STAGE}`, steps: [], schemaRepo: t.work, sharedRoot: t.shared, cdnCheck: false,
+const ctx = { mode: 'live', store, runId: `proof-live-${STAGE}`, steps: [], cdnCheck: false,
+  ...(SHARED_STAGE ? { sharedRepo: t.work } : { schemaRepo: t.work, sharedRoot: t.shared }),
   promote: { stage: STAGE, run_id: RUN, sandbox: dry.sandbox, published: dry.published || [], removed: dry.removed || [] } };
 try {
   check(`dry run ${RUN.slice(0, 8)} stage ${STAGE}: ok/warn with 0 unexplained removals`, ['ok', 'warn'].includes(dry.status) && dry.removals_unexplained === 0, `${dry.status}, ${dry.removals_unexplained}`);
@@ -54,10 +79,14 @@ try {
     c.commit ? `${inCommit.length} files, commit ${c.commit.slice(0, 8)}` : (out.notes || []).map((n) => n.text).join(' | '));
   check(`Live ${STAGE}: pushed to the (throwaway) remote`, c.commit && must(git(t.remote, ['rev-parse', 'main']), 'remote') === c.commit);
   const sb = sandboxFor({ promote: { sandbox: dry.sandbox } });
-  const srcOf = (f) => PUBLISH[STEP].sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
+  const dirs = SHARED_STAGE ? [sb.shared] : PUBLISH[STEP].sources(sb);
+  const srcOf = (f) => dirs.map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
   check(`Live ${STAGE}: published bytes = the dry run's files`, (dry.published || []).every((f) => sha(path.join(t.work, f)) === sha(srcOf(f))));
-  const undo = undoCommit({ repo: t.work, commit: c.commit, message: `Undo BAU ${STAGE} (proof)` });
+  const pending = () => git(t.work, ['status', '--porcelain']).stdout.trim();
+  if (SHARED_STAGE) check(`Live ${STAGE}: unrelated pending work is left alone (still pending, not in the commit)`, pending() === 'M other-tracked.txt' && !inCommit.includes('other-tracked.txt'), pending());
+  const undo = undoCommit({ repo: t.work, commit: c.commit, message: `Undo BAU ${STAGE} (proof)`, filesOnly: SHARED_STAGE });
   check(`Undo ${STAGE}: tree identical to before, and pushed`, must(git(t.work, ['rev-parse', 'HEAD^{tree}']), 'tree') === baseTree && must(git(t.remote, ['rev-parse', 'main']), 'remote') === undo.commit, baseTree);
+  if (SHARED_STAGE) check(`Undo ${STAGE}: the unrelated pending work is still pending`, pending() === 'M other-tracked.txt', pending());
 } catch (e) {
   check('proof ran to the end', false, e.stack || e.message);
 }

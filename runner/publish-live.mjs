@@ -14,7 +14,7 @@ const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOL
 const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 
 /** Stages whose live path is built and proven (the runner refuses Live for the rest). */
-export const LIVE_STAGES = new Set(['D', 'E', 'F', 'G']);
+export const LIVE_STAGES = new Set(['A', 'C', 'D', 'E', 'F', 'G']);
 
 const note = (level, text, todo) => (todo ? { level, text, todo } : { level, text });
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -91,7 +91,8 @@ function liveRefusal(def, ctx, set, current) {
 }
 
 /** After the push: GitHub Pages serves the new bytes (polled; a slow CDN is a check, not a failure). */
-async function cdnCheck(file, repo, ctx) {
+async function cdnCheck(file, repo, ctx, def) {
+  if (def.cdn === false) return 'not served by the CDN (CSV in alan-shared-resources)';
   if (ctx.cdnCheck === false) return 'skipped (proof run)';
   const want = fs.readFileSync(path.join(repo, file), 'utf8');
   for (let i = 0; i < 9; i += 1) {
@@ -111,15 +112,16 @@ export async function livePublish(def, sb, ctx, set) {
   // Publish exactly the list the refusal check approved (= the dry run's): a file that differs only in line endings is not a change.
   const { repo, remove } = set;
   const publish = current;
-  assertClean(repo);
+  // Schema repo: must be clean. alan-shared-resources (A/C): nothing staged and the stage's own files unmodified.
+  assertClean(repo, def.filesScope ? [...publish, ...remove] : null);
   for (const f of publish) fs.copyFileSync(src(f), path.join(repo, f));
   for (const f of remove) fs.rmSync(path.join(repo, f), { force: true });
   const message = `BAU ${def.stage} live from dry run ${String(ctx.promote.run_id).slice(0, 8)}: ${plural(publish.length, `${def.what} file`)}${remove.length ? `, ${remove.length} removed` : ''}`;
   const r = commitAndPush({ repo, files: [...publish, ...remove], message, expectExact: true, restoreOnAbort: true });
-  const cdn = publish.length ? await cdnCheck(publish[0], repo, ctx) : 'nothing published';
+  const cdn = publish.length ? await cdnCheck(publish[0], repo, ctx, def) : 'nothing published';
   const after = def.after && r.commit ? def.after(sb, ctx, r) : {};
   const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (dry run ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
-  if (!/serving|skipped|nothing/.test(cdn)) notes.push(note('check', `schema.alanranger.com is ${cdn}`, 'open the file on schema.alanranger.com in a few minutes'));
+  if (!/serving|skipped|nothing|not served/.test(cdn)) notes.push(note('check', `schema.alanranger.com is ${cdn}`, 'open the file on schema.alanranger.com in a few minutes'));
   return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
     cdn_sample: `${publish[0] || '-'}: ${cdn}`, ...removalCounts(set.removals), ...after },
     notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from dry run ${String(ctx.promote.run_id).slice(0, 8)}.`,
