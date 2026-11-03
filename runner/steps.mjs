@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
+import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails } from './publish-live.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -85,7 +86,8 @@ const lines = (file) => csvRows(fs.readFileSync(file, 'utf8'));
 
 /** Sandbox mirror: <root>/Schema Tools/scripts and <root>/alan-shared-resources/{csv,csv processed,outputs/...}. */
 export function sandboxFor(ctx) {
-  const root = path.join(ctx.sandboxBase || path.join(os.tmpdir(), 'update-all'), String(ctx.runId));
+  // Live promotes a dry run: its sandbox IS that dry run's sandbox (the files the dry run reported).
+  const root = ctx.promote?.sandbox || path.join(ctx.sandboxBase || path.join(os.tmpdir(), 'update-all'), String(ctx.runId));
   return { root, scripts: path.join(root, 'Schema Tools', 'scripts'), shared: path.join(root, 'alan-shared-resources') };
 }
 
@@ -625,6 +627,8 @@ async function blogPosts(ctx) {
   fs.writeFileSync(path.join(sb.root, 'blog-deleted-posts.json'), JSON.stringify(gone));
   const slugs = list.map((u) => u.split('/').pop());
   const notes = list.length ? [info(`${plural(list.length, 'blog post')} changed on the site since last month; ${verb(ctx, 'they would be updated', 'they were updated')} (all 6 schema file types each).`)] : [];
+  const dates = publishDateMismatches(regen.out, feed, slugs);
+  if (dates.length) notes.push(check(`datePublished differs from the Squarespace publish date on ${dates.join('; ')}`, 'tell Claude: the generator must use the post\'s Squarespace publish date'));
   notes.push(...gone.plan.remove.map((s) => info(`Deleted post ${s}: its schema files ${verb(ctx, 'would be removed', 'were removed')} (no longer in the sitemap or feed).`)));
   return { counts: { posts: feed.length, new: r.fresh.length, changed: r.changed.length, updated_on_only_held_by_gate: r.touchedOnly.length,
     would_regenerate: list.length, regenerate_scope: 'all 6 file types (_schema, _blogposting, _breadcrumb, _image, _faq / _howto when the page has them)',
@@ -635,6 +639,21 @@ async function blogPosts(ctx) {
       ...regen.posts.map((p) => `${p.slug}: ${p.files.join(', ')}`)],
     needsAlan: gone.plan.needsAlan.length ? [{ kind: 'deleted_blog_posts_over_limit', count: gone.plan.needsAlan.length, file: gone.plan.needsAlan.join('; ') }] : [],
     outputs: [`${manifestFile} (sandbox)`, listFile, regen.out].filter(Boolean) };
+}
+
+/** Claude 3 Nov (6.3): datePublished / dateCreated = the post's Squarespace publish day (feed publishOn), on every regenerated post. */
+export function publishDateMismatches(outDir, feed, slugs) {
+  const bad = [];
+  for (const slug of slugs) {
+    const item = feed.find((i) => i.urlId === slug);
+    const file = outDir && path.join(outDir, 'alanranger-schema', `${slug}_blogposting.json`);
+    if (!item?.publishOn || !file || !fs.existsSync(file)) continue;
+    const want = new Date(Number(item.publishOn)).toISOString().slice(0, 10);
+    const bp = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const got = [bp.datePublished, bp.dateCreated].map((d) => String(d || '').slice(0, 10));
+    if (got.some((d) => d !== want)) bad.push(`${slug} (${got.join(' / ')} vs Squarespace ${want})`);
+  }
+  return bad;
 }
 
 /** Changed posts through app-cli blog-posts (the Blog Posts tab's own single-URL generator) into the sandbox. */
@@ -658,46 +677,67 @@ function deletedPostsPlan(sb, feed) {
   return { slugs, plan: planDeletedPostCleanup(slugs) };
 }
 
-// ---------- publish (per stage: only that stage's files; dry = what would be published) ----------
-const REPO = `${SCHEMA_TOOLS}/alanranger-schema`;
+// ---------- publish (per stage: only that stage's files; dry = what would be published, live = promote the dry run) ----------
+export const REPO = `${SCHEMA_TOOLS}/alanranger-schema`;
+/** The schema repo for this run (the proof points it at a throwaway clone; real runs use REPO). */
+const repoOf = (ctx) => ctx.schemaRepo || REPO;
 const readJson = (file, fallback) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
 const compareOf = (sb, command) => changedFiles(readJson(path.join(sb.root, 'app-cli', command, 'compare.json'), { differing: [], new_files: [] }));
 
 /** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo. */
-export function productPublishSet(sb) {
+export function productPublishSet(sb, repo = REPO) {
   const src = path.join(sb.shared, 'outputs', 'schema', 'products');
   const final04 = fs.readFileSync(path.join(sb.shared, 'csv processed', '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
   const set = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
     .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]).filter((f) => fs.existsSync(path.join(src, f)));
-  return { publish: set.filter((f) => !fs.existsSync(path.join(REPO, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(REPO, f), 'utf8')), remove: [] };
+  return { publish: set.filter((f) => !fs.existsSync(path.join(repo, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8')), remove: [] };
 }
 const BLOG_SUFFIXES = ['_schema.json', '_blogposting.json', '_breadcrumb.json', '_image.json', '_faq.json', '_howto.json'];
 /** F: blog index + changed post files, and the files of deleted posts (removed). */
-export function blogPublishSet(sb) {
+export function blogPublishSet(sb, repo = REPO) {
   const gone = readJson(path.join(sb.root, 'blog-deleted-posts.json'), { plan: { remove: [] } });
-  const remove = gone.plan.remove.flatMap((slug) => BLOG_SUFFIXES.map((s) => `${slug}${s}`)).filter((f) => fs.existsSync(path.join(REPO, f)));
+  const remove = gone.plan.remove.flatMap((slug) => BLOG_SUFFIXES.map((s) => `${slug}${s}`)).filter((f) => fs.existsSync(path.join(repo, f)));
   return { publish: [...compareOf(sb, 'blog-index'), ...compareOf(sb, 'blog-posts')], remove };
 }
-/** Publish sets per stage: each lists only its own generators' files. */
+const appOut = (sb, command) => path.join(sb.root, 'app-cli', command, 'alanranger-schema');
+/** Publish sets per stage: each lists only its own generators' files; `sources` = where those files sit in the sandbox. */
 export const PUBLISH = {
-  publish_products: { stage: 'D', set: productPublishSet, sample: 'products-manifest.json', what: 'product' },
-  publish_events: { stage: 'E', set: (sb) => ({ publish: [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')], remove: [] }), sample: 'events-manifest.json', what: 'event' },
-  publish_blogs: { stage: 'F', set: blogPublishSet, sample: 'blog-schema.json', what: 'blog' },
-  publish_landings: { stage: 'G', set: (sb) => ({ publish: compareOf(sb, 'landings'), remove: [] }), sample: 'landings-manifest.json', what: 'landing page' }
+  publish_products: { stage: 'D', set: productPublishSet, sources: (sb) => [path.join(sb.shared, 'outputs', 'schema', 'products')], sample: 'products-manifest.json', what: 'product' },
+  publish_events: { stage: 'E', set: (sb) => ({ publish: [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')], remove: [] }),
+    sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event' },
+  publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
+    after: blogManifestAfterPublish },
+  publish_landings: { stage: 'G', set: (sb) => ({ publish: compareOf(sb, 'landings'), remove: [] }), sources: (sb) => [appOut(sb, 'landings')], sample: 'landings-manifest.json', what: 'landing page' }
 };
 
+/** F live: the dry run's blogs-manifest.json becomes the baseline for next month (previous copy kept for undo; auto-sync commits it). */
+function blogManifestAfterPublish(sb, ctx) {
+  const next = path.join(sb.shared, 'outputs', 'schema', 'blogs-manifest.json');
+  const live = path.join(ctx.sharedRoot || SHARED, 'outputs', 'schema', 'blogs-manifest.json');
+  if (!fs.existsSync(next)) return { manifest: 'none in the dry run' };
+  const prev = fs.existsSync(live) ? live.replace(/\.json$/, `.prev-${String(ctx.runId).slice(0, 8)}.json`) : null;
+  if (prev) fs.copyFileSync(live, prev);
+  fs.mkdirSync(path.dirname(live), { recursive: true });
+  fs.copyFileSync(next, live);
+  return { manifest: live, manifest_previous: prev || 'none (first live run)' };
+}
+
 const publishStep = (id) => async (ctx) => {
-  ensureDry(ctx);
   const def = PUBLISH[id];
   const sb = buildSandbox(ctx);
-  const { publish, remove } = def.set(sb);
+  const repo = repoOf(ctx);
+  const set = def.set(sb, repo);
+  const removals = await publishRemovals(def, sb, ctx, set.publish, repo);
+  if (ctx.mode === 'live') return livePublish(def, sb, ctx, { ...set, removals, repo });
+  const { publish, remove } = set;
   const cdn = await fetch(`https://schema.alanranger.com/${def.sample}?t=${Date.now()}`).then((r) => r.status).catch(() => 0);
   const notes = cdn === 200 ? [] : [check(`The schema CDN sample (${def.sample}) returned ${cdn}`, 'open schema.alanranger.com; resume the run when it answers')];
   const total = publish.length + remove.length;
   if (total) notes.push(info(`${verb(ctx, 'Would publish', 'Published')} ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and ${verb(ctx, 'would remove', 'removed')} ${remove.length}` : ''} in the schema repo (this stage's files only).`));
-  return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, cdn_sample: `${def.sample} ${cdn}`, commit: null },
+  notes.push(...removalNotes(def, removals));
+  return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, cdn_sample: `${def.sample} ${cdn}`, commit: null, ...removalCounts(removals) },
     notes, plain: total ? `${verb(ctx, 'Would publish', 'Published')} ${plural(total, 'file')} for stage ${def.stage}, then check the CDN and a sample page.` : `Nothing to publish for stage ${def.stage}.`,
-    details: [...publish.map((f) => `${verb(ctx, 'would publish', 'published')}: ${f}`), ...remove.map((f) => `${verb(ctx, 'would remove', 'removed')}: ${f}`), `CDN sample ${def.sample}: ${cdn}`] };
+    details: [...publish.map((f) => `${verb(ctx, 'would publish', 'published')}: ${f}`), ...remove.map((f) => `${verb(ctx, 'would remove', 'removed')}: ${f}`), `CDN sample ${def.sample}: ${cdn}`, ...removalDetails(removals)] };
 };
 
 // ---------- 12. export 09 (dry: DB count only) ----------
@@ -790,11 +830,16 @@ async function summary(ctx) {
     plain: `${verb(ctx, 'Dry run', 'Live run')} finished: ${needs}. ${cov.line}.`, details: Object.entries(tally).map(([k, v]) => `${k}: ${v} steps`) };
 }
 
+/** Generators never run in Live: the stage publishes the files its dry run already generated and reported. */
+const promoted = (handler) => async (ctx) => (ctx.mode !== 'live' ? handler(ctx) : {
+  status: 'skipped', notes: [info(`Not regenerated in Live: this stage publishes dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)}'s files.`)],
+  plain: `Promoted from dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)} (not regenerated).`, counts: { promoted_from: ctx.promote?.run_id || null } });
+
 export const HANDLERS = {
-  preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: productSchema, publish_products: publishStep('publish_products'),
-  event_posts: appCliStep('event-posts'), event_index: appCliStep('event-index'), publish_events: publishStep('publish_events'),
-  blog_index: appCliStep('blog-index'), blog_posts: blogPosts, publish_blogs: publishStep('publish_blogs'),
-  landing_pages: appCliStep('landings'), publish_landings: publishStep('publish_landings'),
+  preflight, build_csvs: buildCsvs, ingest_preliminary: ingestPreliminary, reviews, product_schema: promoted(productSchema), publish_products: publishStep('publish_products'),
+  event_posts: promoted(appCliStep('event-posts')), event_index: promoted(appCliStep('event-index')), publish_events: publishStep('publish_events'),
+  blog_index: promoted(appCliStep('blog-index')), blog_posts: promoted(blogPosts), publish_blogs: publishStep('publish_blogs'),
+  landing_pages: promoted(appCliStep('landings')), publish_landings: publishStep('publish_landings'),
   final_ingest: finalIngest, export_09: export09,
   audit,
   summary

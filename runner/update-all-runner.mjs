@@ -23,6 +23,7 @@ import { acquireLock, logger, releaseLock } from './lock-log.mjs';
 import { loadEnv, supabaseStore } from './store.mjs';
 import { HANDLERS, SHARED, readSiteState, retryAfterMs, sandboxFor, seedSandbox, siteProbe } from './steps.mjs';
 import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from './cooldown.mjs';
+import { LIVE_STAGES } from './publish-live.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -44,6 +45,32 @@ export async function prepareStageRun(store, run, ctx) {
   const seeded = seedSandbox(ctx, seedSources(run.stages, history));
   return seeded.missing ? `saved inputs are gone from this PC: ${seeded.missing} — run that stage again` : null;
 }
+/** Why a stage's latest dry run can't be promoted to Live, or null. */
+export function liveReadiness(stage, dry, now = Date.now()) {
+  if (!dry) return `stage ${stage} has never been dry-run`;
+  if (!['ok', 'warn'].includes(dry.status)) return `stage ${stage}'s last dry run ${dry.status}`;
+  if (now - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `stage ${stage}'s last dry run is older than 7 days`;
+  if (dry.removals_unexplained) return `stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals`;
+  if (!dry.sandbox || !fs.existsSync(dry.sandbox)) return `stage ${stage}'s dry run outputs are gone from this PC`;
+  return null;
+}
+
+/**
+ * LIVE: one stage per run, a stage whose live path is built, and a usable dry run to promote.
+ * Returns { promote } (the dry run whose files are published) or { blocked } (why not, with what to run first).
+ */
+export async function prepareLiveRun(store, run) {
+  if (run.mode !== 'live') return {};
+  if (run.stages?.length !== 1) return { blocked: "Live runs one stage at a time (use that stage's Run this stage button)" };
+  const stage = run.stages[0];
+  if (!LIVE_STAGES.has(stage)) return { blocked: `Live is not built for stage ${stage} yet` };
+  const runs = await store.query(`update_all_runs?select=id,stage_results,finished_at&id=neq.${run.id}&order=requested_at.desc&limit=60`);
+  const dry = stageHistory(runs, 'dry')[stage];
+  const why = liveReadiness(stage, dry);
+  if (why) return { blocked: `${why} — run stage ${stage} dry, then Live` };
+  return { promote: { stage, run_id: dry.run_id, sandbox: dry.sandbox, finished_at: dry.finished_at, published: dry.published || [], removed: dry.removed || [] } };
+}
+
 const arg = (flag) => { const i = process.argv.indexOf(flag); return i > 0 ? process.argv[i + 1] : null; };
 const has = (flag) => process.argv.includes(flag);
 
@@ -98,13 +125,19 @@ async function liveCooldown(store, run) {
 }
 
 /** Step context for one run: stage runs include ① only when stage I is chosen; Run all follows the tick-box. */
-function runContext(store, run) {
+/** Test aids carried by a run (dry only): injected failure, simulated new 08 pages / held reviews, fewer retries. */
+function testOptions(run) {
+  const dry = run.mode === 'dry';
+  return { failStep: arg('--fail-step') || (run.resume_from ? null : run.options?.fail_step) || null,
+    simulateNew08: dry ? (run.options?.simulate_new_08 || []) : [],
+    simulateHeld: dry ? Number(run.options?.simulate_held_reviews || 0) : 0,
+    siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
+}
+
+function runContext(store, run, promote) {
   const stages = run.stages?.length ? run.stages : null;
   const includeAudit = stages ? stages.includes('I') : (run.include_audit !== false && !has('--no-audit'));
-  const ctx = { mode: run.mode, store, host: os.hostname(), failStep: arg('--fail-step') || (run.resume_from ? null : run.options?.fail_step) || null,
-    sandboxBase: arg('--sandbox'), includeAudit, stages, simulateNew08: run.mode === 'dry' ? (run.options?.simulate_new_08 || []) : [],
-    simulateHeld: run.mode === 'dry' ? Number(run.options?.simulate_held_reviews || 0) : 0,
-    siteRetries: process.env.UPDATE_ALL_SITE_RETRIES ? Number(process.env.UPDATE_ALL_SITE_RETRIES) : undefined };
+  const ctx = { mode: run.mode, store, host: os.hostname(), sandboxBase: arg('--sandbox'), includeAudit, stages, ...testOptions(run), promote: promote || null };
   ctx.sandboxRoot = sandboxFor({ ...ctx, runId: run.id }).root;
   return ctx;
 }
@@ -114,8 +147,14 @@ async function process1(store, run) {
     await store.updateRun(run.id, { status: 'cancelled', error: 'LIVE mode is not enabled yet', finished_at: new Date().toISOString() });
     return 'cancelled';
   }
+  const live = await prepareLiveRun(store, run);
+  if (live.blocked) {
+    await store.updateRun(run.id, { status: 'failed', error: live.blocked, finished_at: new Date().toISOString() });
+    say(`[update-all] run ${run.id} (live) not started: ${live.blocked}`);
+    return 'failed';
+  }
   if (run.mode === 'live' && await liveCooldown(store, run)) return 'waiting';
-  const ctx = runContext(store, run);
+  const ctx = runContext(store, run, live.promote || null);
   say(`[update-all] run ${run.id} (${run.mode}, ${ctx.stages ? `stages ${ctx.stages.join('')}` : 'run all'}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
   const blocked = run.resume_from ? null : await prepareStageRun(store, run, { ...ctx, runId: run.id }).catch((e) => `could not prepare the stage inputs: ${String(e?.message || e).slice(0, 300)}`);
   if (blocked) {

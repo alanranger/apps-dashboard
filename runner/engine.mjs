@@ -46,7 +46,8 @@ function stageResult(stage, steps, ctx) {
   const pub = mine.find((s) => s.step_id.startsWith('publish_'))?.counts || {};
   const ingest = mine.find((s) => s.step_id === 'final_ingest')?.counts?.written || null;
   return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
-    published: pub.files || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null, ingest };
+    published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,
+    removals_unexplained: pub.removals_unexplained ?? null, promoted_from: pub.promoted_from || null, ingest };
 }
 
 async function recordStage(store, run, registry, def, ctx) {

@@ -58,18 +58,43 @@ function cleanStages(stages) {
 /** Test aid (dry only): pretend these pages are new in 06 so the 08 buttons can be exercised. */
 const simulated = (mode, urls) => (mode === 'dry' && Array.isArray(urls) ? urls.filter((u) => SITE.test(u)).slice(0, 5) : []);
 
+/** Live promotes the stage's latest dry run (the runner re-checks this, and that the files are unchanged). */
+function liveRefusal(stage, dry) {
+  if (!dry) return `Run stage ${stage} dry first`;
+  if (!['ok', 'warn'].includes(dry.status)) return `Stage ${stage}'s last dry run ${dry.status} — run it dry again`;
+  if (Date.now() - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `Stage ${stage}'s last dry run is older than 7 days — run it dry again`;
+  if (dry.removals_unexplained) return `Stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
+  return null;
+}
+
+/** Live: switched on, Alan only, one stage per run. */
+function liveGate(session, body, mode) {
+  if (mode !== 'live') return null;
+  if (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan') return [403, { error: 'LIVE mode is not enabled yet' }];
+  if (!Array.isArray(body.stages) || body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
+  return null;
+}
+
+/** Dry stage runs check their prerequisites; a live stage checks the dry run it would promote. */
+async function stageRefusal(stages, mode) {
+  const history = stageHistory(await recentRuns(), 'dry');
+  if (mode === 'live') {
+    const why = liveRefusal(stages[0], history[stages[0]]);
+    return why ? [409, { error: why }] : null;
+  }
+  const plan = planStage(stages, history);
+  return plan.ok ? null : [409, { error: plan.message, plan }];
+}
+
 async function start(session, body) {
   const mode = body.mode === 'live' ? 'live' : 'dry';
-  if (mode === 'live' && (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan')) {
-    return [403, { error: 'LIVE mode is not enabled yet' }];
-  }
+  const gate = liveGate(session, body, mode);
+  if (gate) return gate;
   const active = await sb(`update_all_runs?${ACTIVE}&limit=1`);
   if (active.length) return [409, { error: 'a run is already requested or running', run: active[0] }];
   const stages = cleanStages(body.stages);
-  if (stages) {
-    const plan = planStage(stages, stageHistory(await recentRuns(), mode));
-    if (!plan.ok) return [409, { error: plan.message, plan }];
-  }
+  const refused = stages ? await stageRefusal(stages, mode) : null;
+  if (refused) return refused;
   const sim = simulated(mode, body.simulate_new_08);
   const held = mode === 'dry' ? Math.min(4, Math.max(0, Number(body.simulate_held_reviews) || 0)) : 0;
   const options = { ...(sim.length ? { simulate_new_08: sim } : {}), ...(held ? { simulate_held_reviews: held } : {}) };
