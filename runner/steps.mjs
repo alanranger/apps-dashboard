@@ -516,7 +516,17 @@ function appCliArgs(command, sb, out) {
   const processed = path.join(sb.shared, 'csv processed');
   const mappings = path.join(processed, '05-event-product-mappings-latest.csv');
   if (command === 'event-index') return [...args, '--mappings', mappings, '--processed', processed];
+  // Selling landing pages: offers from this run's products (D), ratings from its review file (C) — Claude/Alan 3 Nov (10).
+  if (command === 'landings') return [...args, '--products', path.join(sb.shared, 'outputs', 'schema', 'products'), '--reviews', path.join(processed, '03 – combined_product_reviews.csv')];
   return command === 'event-posts' ? [...args, '--mappings', mappings] : args;
+}
+
+/** Landing selling report → notes: carried-forward fields are a check (may be stale), live sources are listed. */
+export function sellingNotes(report) {
+  const rows = Object.values(report || {}).flat();
+  const carried = rows.filter((r) => /carried forward|missing/.test(r.source));
+  const notes = carried.length ? [check(`check — carried forward (may be stale): ${carried.map((r) => `${r.page} ${r.field}`).join('; ')}`, 'find the live source for these fields; tell Claude')] : [];
+  return { notes, details: rows.map((r) => `selling: ${r.page} ${r.field} = ${r.source}`), carried: carried.length };
 }
 
 /** Files a generator step changed against alanranger-schema (the publish set for its stage). */
@@ -549,6 +559,9 @@ async function landingsReport(ctx, out, report, diff, reportOnly) {
   if (rated.length) return { notes: [problem(`A business rating is on landing files (P23): ${rated.join(', ')}`, 'tell Claude; nothing is published')], outputs: [file] };
   const notes = ex.unexplained.length ? [check(`${ex.unexplained.length} landing page differences have no live source`, 'look at the Details; tell Claude')] : [];
   if (lines.length) notes.push(info(`${lines.length} of ${ex.files} landing pages changed, each explained by what is live on the site now; ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`));
+  const selling = sellingNotes(readJson(path.join(out, 'alan-shared-resources', 'outputs', 'schema', 'landings', 'landing-selling-report.json'), {}));
+  notes.push(...selling.notes);
+  lines.push(...selling.details);
   return { notes,
     counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, landing_files: ex.landingFilesGenerated, would_change: changedFiles(diff).length,
       business_rating_nodes: 0, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },

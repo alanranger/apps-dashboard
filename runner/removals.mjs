@@ -73,8 +73,16 @@ export function findRemovals(before, after) {
 const isBusiness = (r) => (r.nodeTypes || []).some((t) => BUSINESS.test(t));
 const isItemList = (r) => r.type === 'ItemList' || (r.nodeTypes || []).includes('ItemList');
 
+/** Types that exist only inside an Offer (their loss follows the offers being rebuilt). */
+const OFFER_TYPES = new Set(['Offer', 'AggregateOffer', 'OfferShippingDetails', 'DefinedRegion', 'MerchantReturnPolicy', 'MonetaryAmount', 'UnitPriceSpecification', 'PriceSpecification']);
+const sellingSource = (c, field) => (String(c.sellingNote || '').match(new RegExp(`${field} = ([^|]+)`)) || [])[1]?.trim() || null;
+const live = (src) => src && !/missing|carried forward/.test(src);
+
 /** Known rules: [stage, test(removal, ctx), explanation]. Anything else is unexplained. */
 const RULES = [
+  // Claude/Alan 3 Nov (10): a selling landing page's offers and ratings are rebuilt from live sources each run.
+  ['G', (r, c) => (['offers', 'price', 'priceSpecification'].includes(r.prop) || OFFER_TYPES.has(r.type)) && live(sellingSource(c, 'offers')), 'offers rebuilt from the live source (Squarespace product / page plan)'],
+  ['G', (r, c) => ['aggregateRating', 'review'].includes(r.prop) && live(sellingSource(c, 'aggregateRating, review')), 'rating and reviews from the review DB (or none: no genuine reviews of its own)'],
   ['G', (r) => isBusiness(r) && ['aggregateRating', 'review'].includes(r.prop), 'P23: no business rating on landing pages'],
   ['G', (r, c) => isItemList(r) && /ItemList removed/.test(c.landingNote || ''), 'page shows no list of pages (landing explainer)'],
   ['DE', reviewsMatch04, 'review re-homing (31 Oct / 2 Nov): same review set as the published product schema (04)'],
