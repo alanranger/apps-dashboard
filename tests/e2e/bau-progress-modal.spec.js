@@ -23,7 +23,7 @@ const runB = (extra) => ({ id: 'simulated-b000-0000', mode: 'live', stages: ['B'
 const B = {
   queued: () => ({ run: runB({ status: 'requested', requested_at: at(10) }), steps: [], runner: { checked_at: at(26) } }),
   running: (chunk, beat = 3) => ({ run: runB({ status: 'running', started_at: at(60), current_step: 'ingest_preliminary', heartbeat_at: at(beat),
-    progress: { step: 'ingest_preliminary', label: 'Backing up page_html — chunk', done: chunk, total: 14, at: at(beat) },
+    progress: { step: 'ingest_preliminary', label: 'Backing up page_html — chunk {n} of {total}', done: Math.max(0, chunk - 1), total: 14, at: at(beat) },
     // A stalled runner writes nothing: its log stops at the last heartbeat too.
     log: log(...[[60, 'Step 1 of 3: Pre-flight checks — started'], [56, 'Pre-flight checks — ok (4 s)'], [55, 'Step 2 of 3: Preliminary ingest (steps 1–4) + mappings export — started'],
       ...Array.from({ length: chunk }, (_, i) => [50 - i * 3, `Backing up page_html — chunk ${i + 1} of 14`])].map(([s, t]) => [Math.max(s, beat), t])) }),
@@ -68,7 +68,7 @@ test('single stage (live B): queued → running (bar moves, ETA, log grows) → 
   await shot(page, '1-single-queued');
 
   await simulate(page, () => B.running(9));
-  await expect(modal(page).getByTestId('pg-sub')).toContainText('Backing up page_html — chunk — 9 of 14', { timeout: 10000 });
+  await expect(modal(page).getByTestId('pg-sub')).toContainText('Backing up page_html — chunk 9 of 14', { timeout: 10000 });
   const pct1 = Number(await modal(page).getByTestId('pg-bar').getAttribute('data-pct'));
   await expect(modal(page).getByTestId('pg-eta')).toContainText(/min left|under a minute/);
   await expect(modal(page).getByTestId('pg-alive')).toHaveAttribute('data-level', 'ok');
@@ -77,7 +77,7 @@ test('single stage (live B): queued → running (bar moves, ETA, log grows) → 
   await shot(page, '2-single-running');
 
   await simulate(page, () => B.running(14));
-  await expect(modal(page).getByTestId('pg-sub')).toContainText('14 of 14', { timeout: 10000 });
+  await expect(modal(page).getByTestId('pg-sub')).toContainText('chunk 14 of 14', { timeout: 10000 });
   const pct2 = Number(await modal(page).getByTestId('pg-bar').getAttribute('data-pct'));
   expect(pct2).toBeGreaterThan(pct1);
   expect(await modal(page).locator('#pgLog li').count()).toBeGreaterThan(lines1);
