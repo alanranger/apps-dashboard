@@ -857,7 +857,10 @@ async function summary(ctx) {
   const levels = levelCounts([...others.map((s) => s.notes || []), own]);
   const covered = { line: cov.line, files: cov.c.total, orphans: cov.c.orphans, by_step: cov.c.byStep, tabs: TABS };
   const infoLines = others.flatMap((s) => s.counts?.info || []);
-  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, levels, info: infoLines, coverage: covered, steps: ctx.steps.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })) } });
+  // This step is still "running" in ctx.steps: record it with the status it finishes with.
+  const self = { id: 'summary', status: own.some((n) => n.level === 'check') ? 'warn' : 'ok', counts: {} };
+  const steps = [...others.map((s) => ({ id: s.step_id, status: s.status, counts: s.counts })), self];
+  await ctx.store?.updateRun?.(ctx.runId, { summary: { tally, levels, info: infoLines, coverage: covered, steps } });
   const needs = levels.problem ? `${plural(levels.problem, 'problem')} to fix` : levels.check ? `${plural(levels.check, 'thing')} to look at` : 'nothing needs you';
   return { counts: { ...tally, levels, coverage: cov.line, coverage_by_step: cov.c.byStep, info: infoLines }, notes: own,
     plain: `${verb(ctx, 'Dry run', 'Live run')} finished: ${needs}. ${cov.line}.`, details: Object.entries(tally).map(([k, v]) => `${k}: ${v} steps`) };
@@ -893,7 +896,7 @@ const dbStage = (stage, handler) => async (ctx) => {
   const r = await liveDbIngest({ stage, csvDir: path.join(sb.shared, 'csv'), runId: ctx.runId, existingUrls: existing }, { rpc, importFn: csvImport });
   const extra = stage === 'B' ? await liveSteps2to4(ctx, sb) : {};
   const types = DB_TYPES[stage].length;
-  return { counts: { backup: r.backup, backup_run: r.run8, affected_urls: r.urls, imported: r.imported, ...extra, undo: `bau_restore('${r.run8}') + admin refresh + finalize` },
+  return { counts: { backup: r.backup, backup_run: r.run8, affected_urls: r.urls, imported: r.imported, promoted_from: ctx.promote?.run_id || null, ...extra, undo: `bau_restore('${r.run8}') + admin refresh + finalize` },
     notes: [info(`Backed up ${Object.keys(r.backup).length} tables (bau_bk_${r.run8}_*) before writing, then ingested ${types} CSV types.`)],
     plain: `Backed up, then ingested ${types} CSV types into the chat database (backup bau_bk_${r.run8}_*).`, details: Object.entries(r.backup).map(([t, n]) => `backup ${t}: ${n} rows`) };
 };
@@ -911,7 +914,8 @@ const sharedStage = (id, handler) => async (ctx) => {
   const repo = sharedRepoOf(ctx);
   if (ctx.mode === 'live') {
     const sb = buildSandbox(ctx);
-    return livePublish(sharedDef(id), sb, ctx, { ...sharedPublishSet(id, sb, repo), removals: NO_REMOVALS, repo });
+    const out = await livePublish(sharedDef(id), sb, ctx, { ...sharedPublishSet(id, sb, repo), removals: NO_REMOVALS, repo });
+    return { ...out, counts: { ...(out.counts || {}), is_publish: true } };
   }
   const out = await handler(ctx);
   const set = sharedPublishSet(id, buildSandbox(ctx), repo);

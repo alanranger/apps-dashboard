@@ -43,12 +43,18 @@ async function runStep(def, handler, ctx) {
 function stageResult(stage, steps, ctx) {
   const mine = steps.filter((s) => s.stage === stage);
   const status = mine.reduce((w, s) => (RANK[s.status] > RANK[w] ? s.status : w), 'skipped');
-  // A / C publish from their generator step (counts.is_publish); D–G have their own publish_* step.
-  const pub = mine.find((s) => s.step_id.startsWith('publish_') || s.counts?.is_publish)?.counts || {};
+  const pub = publishStep(mine)?.counts || {};
   const ingest = mine.find((s) => s.step_id === 'final_ingest')?.counts?.written || null;
   return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
     published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,
-    removals_unexplained: pub.removals_unexplained ?? null, promoted_from: pub.promoted_from || null, ingest, ...undoRecord(mine, pub) };
+    repo: pub.repo_name || null, removals_unexplained: pub.removals_unexplained ?? null,
+    promoted_from: pub.promoted_from || ctx.promote?.run_id || null, ingest, ...undoRecord(mine, pub) };
+}
+
+/** A / C / H's 09 publish from their own step (counts.is_publish); D–G have a publish_* step; else any step that committed files. */
+function publishStep(mine) {
+  return mine.find((s) => s.step_id.startsWith('publish_') || s.counts?.is_publish)
+    || mine.find((s) => s.counts?.commit && Array.isArray(s.counts?.files));
 }
 
 /** What Undo needs to reverse a live stage: its file commit (above), a B/H database backup, B's 05 export, F's previous manifest. */

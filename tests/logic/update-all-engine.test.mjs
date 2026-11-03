@@ -186,6 +186,22 @@ test('stage results: written after a stage\'s last step, with the files that wou
   assert.equal(r.E.publish_mode, 'would publish');
 });
 
+test('live stage results record the commit, files, repo and promoted dry run (A publishes from its generator step)', async () => {
+  const store = memoryStore();
+  const run = await store.createRun({ mode: 'live', stages: ['A'] });
+  const files = ['csv/01-blog-posts.csv', 'csv/03-photographic-workshops-near-me.csv'];
+  const h = { preflight: async () => ({}), summary: async () => ({}),
+    build_csvs: async () => ({ counts: { files, commit: 'abc123', promoted_from: 'dry-1', repo_name: 'alan-shared-resources' } }) };
+  const reg = STAGED.filter((d) => ['preflight', 'build_csvs', 'summary'].includes(d.id));
+  await executeRun(store, run, reg, h, { mode: 'live', stages: ['A'], promote: { stage: 'A', run_id: 'dry-1' } });
+  const a = (await store.getRun(run.id)).stage_results.A;
+  assert.equal(a.commit, 'abc123');
+  assert.deepEqual(a.published, files);
+  assert.equal(a.publish_mode, 'published');
+  assert.equal(a.repo, 'alan-shared-resources');
+  assert.equal(a.promoted_from, 'dry-1');
+});
+
 const DAY = 24 * 60 * 60 * 1000;
 const T0 = Date.parse('2026-11-01T12:00:00Z');
 const done = (id, hoursAgo, status = 'ok') => [id, { status, mode: 'dry', finished_at: new Date(T0 - hoursAgo * 3600000).toISOString(), sandbox: `X:/${id}`, run_id: `r${id}` }];

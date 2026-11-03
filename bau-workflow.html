@@ -38,6 +38,17 @@
     .b-fail, .b-failed { background: rgba(239,68,68,0.18); color: var(--red); }
     .b-running, .b-requested { background: rgba(59,130,246,0.18); color: var(--blue); }
     .b-pending, .b-cancelled, .b-skipped, .b-none { background: rgba(156,163,175,0.15); color: var(--text-muted); }
+    .b-live { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.6); }
+    .run-status { border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; background: rgba(0,0,0,0.25); }
+    .run-status[hidden] { display: none; }
+    .run-status.rs-active { border-color: var(--blue); } .run-status.rs-ok { border-color: var(--success); }
+    .run-status.rs-warn { border-color: var(--warn); } .run-status.rs-fail { border-color: var(--red); }
+    .run-status h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .run-status .rs-close { float: right; margin-left: 10px; }
+    .run-status .rs-stage { margin-top: 8px; font-size: 0.92rem; }
+    .run-status details { margin-top: 4px; font-size: 0.88rem; } .run-status summary { cursor: pointer; color: var(--blue); }
+    .run-status ul { margin: 4px 0 0 18px; max-height: 200px; overflow-y: auto; }
+    .run-all-mode { display: inline-flex; align-items: center; gap: 8px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; table-layout: fixed; }
     th { text-align: left; color: var(--brand); background: rgba(245,158,11,0.08); padding: 8px; border-bottom: 2px solid var(--border); }
     td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
@@ -121,16 +132,18 @@
 
     <div class="panel" id="controlPanel" style="display:none">
       <h2>Run</h2>
+      <div class="run-status" id="runStatus" data-testid="run-status" hidden></div>
       <div class="controls">
-        <div class="mode" role="radiogroup" aria-label="Mode">
-          <label><input type="radio" name="mode" value="dry" checked><span>Dry run</span></label>
-          <label class="disabled" id="liveRadioLabel" title="Live Run all unlocks after every stage has run live once"><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
-        </div>
-        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Live Run all unlocks after every stage has run live once — until then publish one stage at a time from Stages below.</span>
         <label class="tick" title="Stage I: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
           <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit (①)
         </label>
         <button id="startBtn" data-testid="update-all-start">Run all</button>
+        <span class="run-all-mode"><span class="muted">Run all mode:</span>
+          <span class="mode" role="radiogroup" aria-label="Run all mode">
+            <label><input type="radio" name="mode" value="dry" checked><span>Test run</span></label>
+            <label class="disabled" id="liveRadioLabel" title="Live Run all unlocks after every stage has run live once"><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
+          </span></span>
+        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Run all: test run only (live unlocks after every stage has run live once). Publish live one stage at a time from Stages below.</span>
         <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
         <button class="secondary" id="cancelBtn" disabled>Cancel</button>
         <span class="muted" id="actionMsg" data-testid="action-msg"></span>
@@ -140,7 +153,7 @@
         <button class="small" id="prereqChain" data-testid="prereq-chain"></button>
       </div>
       <div class="run-meta" id="runMeta"></div>
-      <p class="muted" style="margin-top:10px">Dry run works in a sandbox copy (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task <code>AlanUpdateAllRunner</code>) checks every 5 minutes and picks up a requested run.</p>
+      <p class="muted" style="margin-top:10px">Dry run works in a sandbox copy (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task <code>AlanUpdateAllRunner</code>) checks every minute and picks up a requested run.</p>
     </div>
 
     <div class="panel" id="stagesPanel" style="display:none">
@@ -209,7 +222,12 @@
     const when = (iso) => (iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }) : '');
     const countsText = (c) => Object.entries(c || {}).filter(([k]) => !['info', 'files', 'removed'].includes(k))
       .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
-    const commitLink = (hash) => (hash ? `<a href="${SCHEMA_REPO}${esc(hash)}" target="_blank" rel="noopener" data-testid="commit-link">${esc(String(hash).slice(0, 7))}</a>` : '');
+    const clock = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/London' }) : '');
+    /** A, B, C and H publish to alan-shared-resources; D–G to the schema repo. */
+    const SHARED_STAGES = new Set(['A', 'B', 'C', 'H']);
+    const REPO_URL = { 'alan-shared-resources': 'https://github.com/alanranger/alan-shared-resources/commit/', 'alanranger-schema': SCHEMA_REPO };
+    const repoUrl = (repo, stage) => REPO_URL[repo] || (SHARED_STAGES.has(stage) ? REPO_URL['alan-shared-resources'] : SCHEMA_REPO);
+    const commitLink = (hash, repo, stage) => (hash ? `<a href="${repoUrl(repo, stage)}${esc(hash)}" target="_blank" rel="noopener" data-testid="commit-link">${esc(String(hash).slice(0, 7))}</a>` : '');
 
     // ---------- notes: Info (grey, no icon) / Check (amber ⚠, what to do) / Problem (red ✗, reason + fix) ----------
     const ICON = { info: '', check: '⚠ ', problem: '✗ ' };
@@ -230,7 +248,7 @@
 
     function stepCell(def, s) {
       const plain = s.plain ? `<div class="plain" data-testid="step-plain">${esc(s.plain)}</div>` : (s.status === 'pending' ? '<div class="muted">Not run yet.</div>' : '');
-      const commit = s.counts?.commit ? `<div class="note note-info">Schema repo commit ${commitLink(s.counts.commit)}</div>` : '';
+      const commit = s.counts?.commit ? `<div class="note note-info">Commit ${commitLink(s.counts.commit, s.counts.repo_name, def.stage)} (${esc(s.counts.repo_name || (SHARED_STAGES.has(def.stage) ? 'alan-shared-resources' : 'schema repo'))})</div>` : '';
       const err = s.error && !stepNotes(s).some((n) => n.level === 'problem') ? noteHtml({ level: 'problem', text: s.error }) : '';
       return `${plain}${stepNotes(s).map(noteHtml).join('')}${err}${commit}${detailsHtml(s)}`;
     }
@@ -256,11 +274,17 @@
     }
 
     // ---------- stages + history ----------
-    function historyHtml(h, mode) {
+    /** "OK LIVE · 3 Nov, 16:42 · published 3 files · commit 3ccf6a6" (dry rows: "would publish 3 files"). */
+    function historyHtml(h, mode, stage) {
       if (!h) return '';
-      const pub = h.published?.length ? `, ${h.publish_mode || 'published'} ${h.published.length} files` : '';
-      const ingest = h.ingest ? `, ingest: ${esc(Object.entries(h.ingest).map(([k, v]) => `${k} ${v}`).join('; '))}` : '';
-      return `<div data-testid="stage-history-${mode}"><span class="badge b-${esc(h.status)}">${esc(h.status)}</span> ${esc(mode)} · ${esc(when(h.finished_at))} · Run id <code>${esc(String(h.run_id || '').slice(0, 8))}</code>${pub}${h.commit ? ` · commit ${commitLink(h.commit)}` : ''}${ingest}</div>`;
+      const live = mode === 'live';
+      const label = live ? `<span class="badge b-live">${h.undo_of ? 'LIVE UNDO' : 'LIVE'}</span>` : 'dry';
+      const pub = h.published?.length ? ` · ${esc(h.publish_mode || (live ? 'published' : 'would publish'))} ${h.published.length} files` : '';
+      const commit = h.commit ? ` · commit ${commitLink(h.commit, h.repo, stage)}` : '';
+      const backup = h.backup_run ? ` · backup <code>bau_bk_${esc(h.backup_run)}_*</code>` : '';
+      const undo = h.undo_of ? ` · undid run <code>${esc(String(h.undo_of).slice(0, 8))}</code>` : '';
+      const ingest = h.ingest ? ` · ingest: ${esc(Object.entries(h.ingest).map(([k, v]) => `${k} ${v}`).join('; '))}` : '';
+      return `<div data-testid="stage-history-${mode}"><span class="badge b-${esc(h.status)}">${esc(h.status)}</span> ${label} · ${esc(when(h.finished_at))}${pub}${commit}${backup}${undo}${ingest} <span class="muted">· run <code>${esc(String(h.run_id || '').slice(0, 8))}</code></span></div>`;
     }
 
     function renderStages(info, run) {
@@ -269,7 +293,7 @@
       const active = ['requested', 'running'].includes(run?.status);
       $('stageRows').innerHTML = info.defs.map((s) => {
         const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
-        const hist = historyHtml(info.history.dry[s.id], 'dry') + historyHtml(info.history.live[s.id], 'live');
+        const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(info.history.live[s.id], 'live', s.id);
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong></td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${hist || '<span class="muted">never run</span>'}</td>
@@ -317,7 +341,7 @@
       const now = run.current_step ? `<span>Now: ${esc(run.current_step)}</span>` : '';
       const scope = run.stages?.length ? `Stages ${run.stages.join(', ')}` : 'Run all';
       $('runMeta').innerHTML = `<span>Run id <code data-testid="run-id">${esc(run.id.slice(0, 8))}</code></span><span class="badge b-${run.status}" data-testid="run-status">${run.status}</span>
-        <span data-testid="run-scope">${esc(scope)}</span><span>Mode: ${esc(run.mode)}</span><span data-testid="run-audit">Full audit: ${run.include_audit === false ? 'not selected' : 'included'}</span><span>Requested: ${esc(when(run.requested_at))}</span>${now}`;
+        <span data-testid="run-scope">${esc(scope)}</span><span data-testid="run-mode">Mode: ${modeBadge(run)}</span><span data-testid="run-audit">Full audit: ${run.include_audit === false ? 'not selected' : 'included'}</span><span>Requested: ${esc(when(run.requested_at))}</span>${now}`;
     }
 
     function renderErrors(run, steps) {
@@ -433,16 +457,95 @@
       $('resumeBtn').disabled = run?.status !== 'failed';
     }
 
-    const STATUS_TEXT = { requested: 'Waiting for the PC runner (it checks every 5 minutes)…', running: 'Running' };
     const coolingUntil = (run) => run?.status === 'requested' && run.cooldown_until && Date.parse(run.cooldown_until) > Date.now() ? run.cooldown_until : null;
+    /** One short line next to the buttons; the status box above holds the detail. */
     function renderStatusText(run) {
       const until = coolingUntil(run);
-      if (until) {
-        $('actionMsg').textContent = `Waiting for Squarespace cool-down until ${new Date(until).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}`;
-        return;
-      }
-      const text = STATUS_TEXT[run?.status] || '';
-      if (text) $('actionMsg').textContent = run?.status === 'running' && run.current_step ? `${text}: ${run.current_step}` : text;
+      if (until) { $('actionMsg').textContent = `Waiting for Squarespace cool-down until ${clock(until)}`; return; }
+      if (run?.status === 'requested') $('actionMsg').textContent = 'Queued for the PC runner (checks every minute)';
+      else if (run?.status === 'running') $('actionMsg').textContent = 'Running — see the status box above';
+      else $('actionMsg').textContent = run?.finished_at ? `Last run finished ${clock(run.finished_at)}` : '';
+    }
+
+    // ---------- status box: queued → running (step x of y, elapsed) → result (stays until dismissed) ----------
+    const DISMISS_KEY = 'bau_dismissed_run';
+    const isUndo = (run) => !!run?.options?.undo_of;
+    const scopeText = (run) => (run.stages?.length ? `stage ${run.stages.join(', ')}` : 'Run all');
+    const modeBadge = (run) => (run.mode === 'live' ? `<span class="badge b-live" data-testid="mode-live">${isUndo(run) ? 'LIVE · UNDO' : 'LIVE'}</span>` : '<span class="badge b-none" data-testid="mode-dry">Test run</span>');
+    const RESULT = { succeeded: ['✅', 'rs-ok'], warned: ['⚠️', 'rs-warn'], failed: ['❌', 'rs-fail'], cancelled: ['❌', 'rs-fail'] };
+    const HEADLINE = {
+      live: { succeeded: 'Published live', warned: 'Published live, with warnings', failed: 'Live publish failed', cancelled: 'Cancelled' },
+      undo: { succeeded: 'Undo finished', warned: 'Undo finished, with warnings', failed: 'Undo failed', cancelled: 'Undo cancelled' },
+      dry: { succeeded: 'Test run finished', warned: 'Test run finished, with warnings', failed: 'Test run failed', cancelled: 'Cancelled' } };
+    const headline = (run) => HEADLINE[isUndo(run) ? 'undo' : run.mode === 'live' ? 'live' : 'dry'][run.status] || run.status;
+
+    function queuedHtml(run) {
+      const until = coolingUntil(run);
+      if (until) return `<h3 data-testid="run-status-queued">${modeBadge(run)} Waiting for the Squarespace cool-down — ${esc(scopeText(run))}</h3><div class="muted">Starts automatically after ${clock(until)}.</div>`;
+      const by = Date.parse(run.requested_at) + 65000;
+      const next = by > Date.now() ? `next check by ${clock(new Date(by).toISOString())}` : 'any moment now';
+      return `<h3 data-testid="run-status-queued">${modeBadge(run)} Queued — ${esc(scopeText(run))}</h3>
+        <div class="muted">The PC runner picks it up within ~1 minute (${next}). Requested ${clock(run.requested_at)} · run <code>${esc(run.id.slice(0, 8))}</code></div>`;
+    }
+
+    function runningHtml(run, steps) {
+      const order = [...steps].sort((a, b) => a.ord - b.ord);
+      const idx = order.findIndex((s) => s.step_id === run.current_step);
+      const step = idx < 0 ? 'starting' : `step ${idx + 1} of ${order.length}: ${order[idx].name}`;
+      const elapsed = duration(Date.now() - Date.parse(run.started_at || run.requested_at));
+      return `<h3 data-testid="run-status-running">${modeBadge(run)} Running ${esc(scopeText(run))} — ${esc(step)}</h3>
+        <div class="muted">Elapsed ${esc(elapsed)} · started ${clock(run.started_at)} · run <code>${esc(run.id.slice(0, 8))}</code> · refreshes every 5 s</div>`;
+    }
+
+    function filesBlock(r, run) {
+      const files = r.published || [];
+      const verb = r.publish_mode || (run.mode === 'live' ? 'published' : 'would publish');
+      if (!files.length) return r.backup_run || r.undone ? '' : `<div class="muted">No files ${run.mode === 'live' ? 'published' : 'to publish'}.</div>`;
+      return `<details data-testid="run-status-files"><summary>${esc(verb)} ${files.length} file${files.length === 1 ? '' : 's'}</summary><ul>${files.map((f) => `<li><code>${esc(f)}</code></li>`).join('')}</ul></details>`;
+    }
+
+    const latestLiveIs = (id, runId) => hasLivePublish(id) && stageInfo?.history?.live?.[id]?.run_id === runId;
+    function stageResultHtml(id, r, run) {
+      const commit = r.commit ? `<div>Commit ${commitLink(r.commit, r.repo, id)} in ${esc(r.repo || (SHARED_STAGES.has(id) ? 'alan-shared-resources' : 'alanranger-schema'))}</div>` : '';
+      const backup = r.backup_run ? `<div>Database backup taken first: <code>bau_bk_${esc(r.backup_run)}_*</code> (5 tables, kept)</div>` : '';
+      const exp = r.export_commit ? `<div>05 export commit ${commitLink(r.export_commit, 'alan-shared-resources', id)}</div>` : '';
+      const undone = r.undone ? `<div>Reversed: ${esc(['files', 'export', 'db', 'manifest'].filter((k) => r.undone[k]).join(', ') || 'nothing')} (undid run <code>${esc(String(r.undo_of || '').slice(0, 8))}</code>)</div>` : '';
+      const undo = run.mode === 'live' && !isUndo(run) && latestLiveIs(id, run.id) ? `<div data-testid="run-status-undo">Undo available: "Undo this stage" on stage ${esc(id)} below.</div>` : '';
+      return `<div class="rs-stage" data-testid="run-status-stage-${esc(id)}"><span class="stage-tag">${esc(id)}</span><span class="badge b-${esc(r.status)}">${esc(r.status)}</span>
+        ${filesBlock(r, run)}${commit}${backup}${exp}${undone}${undo}</div>`;
+    }
+
+    function failureHtml(run, steps) {
+      if (!['failed', 'cancelled'].includes(run.status)) return '';
+      const bad = steps.filter((s) => s.status === 'fail');
+      const todo = bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
+      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
+      return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
+        <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
+    }
+
+    function finishedHtml(run, steps) {
+      const [icon] = RESULT[run.status] || [''];
+      const stages = Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
+      return `<button class="small secondary rs-close" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>
+        <h3 data-testid="run-status-finished" data-status="${esc(run.status)}">${icon} ${modeBadge(run)} ${esc(headline(run))} — ${esc(scopeText(run))}</h3>
+        <div class="muted">Run <code>${esc(run.id.slice(0, 8))}</code> · requested ${clock(run.requested_at)} · started ${clock(run.started_at) || '-'} · finished ${clock(run.finished_at)}</div>
+        ${stages}${failureHtml(run, steps)}`;
+    }
+
+    function runStatusHtml(run, steps) {
+      if (run.status === 'requested') return queuedHtml(run);
+      if (run.status === 'running') return runningHtml(run, steps);
+      return localStorage.getItem(DISMISS_KEY) === run.id ? '' : finishedHtml(run, steps);
+    }
+
+    function renderRunStatus(run, steps) {
+      const box = $('runStatus');
+      const html = run ? runStatusHtml(run, steps) : '';
+      box.hidden = !html;
+      box.className = `run-status ${['requested', 'running'].includes(run?.status) ? 'rs-active' : (RESULT[run?.status]?.[1] || '')}`;
+      box.innerHTML = html;
+      if ($('runStatusClose')) $('runStatusClose').onclick = () => { localStorage.setItem(DISMISS_KEY, run.id); renderRunStatus(run, steps); };
     }
 
     function renderRun(data) {
@@ -455,6 +558,7 @@
       renderStatusText(run);
       renderStages(data.stages, run);
       renderLiveRadio(data.live);
+      renderRunStatus(run, steps);
     }
 
     async function refresh() {

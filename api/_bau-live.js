@@ -57,8 +57,15 @@ async function livePlan(stage, history, liveRefusal) {
   const map = await pageMap(stage);
   const pages = [...new Set((dry?.published || []).map((f) => pageOf(stage, f, map)).filter(Boolean))];
   return { stage, dry: dry ? { run_id: dry.run_id, finished_at: dry.finished_at, status: dry.status } : null, refusal: liveRefusal(stage, dry),
-    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null,
-    last_live: history.live[stage] ? { run_id: history.live[stage].run_id, finished_at: history.live[stage].finished_at, undo_of: history.live[stage].undo_of || null } : null };
+    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(history.live[stage]) };
+}
+
+/** The stage's latest live run and what "Undo this stage" would reverse (its commit + files, B/H backup, B's 05 export). */
+function lastLive(h) {
+  if (!h) return null;
+  const undo = done(h) && (h.commit || h.backup_run || h.export_commit)
+    ? { commit: h.commit || null, repo: h.repo || null, files: h.published || [], backup_run: h.backup_run || null, export_commit: h.export_commit || null } : null;
+  return { run_id: h.run_id, finished_at: h.finished_at, undo_of: h.undo_of || null, promoted_from: h.promoted_from || null, undo };
 }
 
 /** "Undo this stage": a live run with options.undo_of = the stage's latest live publish (the runner re-checks it). */

@@ -135,7 +135,7 @@ export async function livePublish(def, sb, ctx, set) {
   const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (dry run ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
   if (!/serving|skipped|nothing|not served/.test(cdn)) notes.push(note('check', `schema.alanranger.com is ${cdn}`, 'open the file on schema.alanranger.com in a few minutes'));
   return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
-    cdn_sample: `${publish[0] || '-'}: ${cdn}`, ...removalCounts(set.removals), ...after },
+    repo_name: path.basename(repo), cdn_sample: `${publish[0] || '-'}: ${cdn}`, ...removalCounts(set.removals), ...after },
     notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from dry run ${String(ctx.promote.run_id).slice(0, 8)}.`,
     details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, `CDN: ${cdn}`] };
 }
