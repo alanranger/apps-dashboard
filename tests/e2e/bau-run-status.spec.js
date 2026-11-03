@@ -49,31 +49,31 @@ test('status box: queued → running → finished → failed, with the LIVE badg
   await simulate(page, 'queued');
   await openPage(page);
   await expect(page.getByTestId('run-status-queued')).toContainText('Queued — stage C');
-  await expect(page.getByTestId('run-status')).toContainText('within ~1 minute');
+  await expect(page.locator('#runStatus')).toContainText('within ~1 minute');
   await expect(page.getByTestId('run-mode').getByTestId('mode-live')).toHaveText('LIVE');
   await shot(page, '1-queued');
 
   await simulate(page, 'running');
   await expect(page.getByTestId('run-status-running')).toContainText('Running stage C — step 2 of 3: Reviews (04)', { timeout: 15000 });
-  await expect(page.getByTestId('run-status')).toContainText('Elapsed');
+  await expect(page.locator('#runStatus')).toContainText('Elapsed');
   await shot(page, '2-running');
 
   await simulate(page, 'finished');
   const done = page.getByTestId('run-status-finished');
   await expect(done).toContainText('Published live — stage C', { timeout: 15000 });
   await expect(page.getByTestId('run-status-files')).toContainText('published 3 files');
-  await expect(page.getByTestId('run-status').getByTestId('commit-link')).toHaveAttribute('href', /alan-shared-resources\/commit\/deadbeefcafe/);
+  await expect(page.locator('#runStatus').getByTestId('commit-link')).toHaveAttribute('href', /alan-shared-resources\/commit\/deadbeefcafe/);
   await expect(page.getByTestId('action-msg')).toContainText('Last run finished');
   await expect(page.getByTestId('action-msg')).not.toContainText('Running');
   await shot(page, '3-finished');
   await page.getByTestId('run-status-dismiss').click();
-  await expect(page.getByTestId('run-status')).toBeHidden();
+  await expect(page.locator('#runStatus')).toBeHidden();
 
   await page.evaluate(() => localStorage.removeItem('bau_dismissed_run'));
   await simulate(page, 'failed');
   await expect(page.getByTestId('run-status-finished')).toContainText('Live publish failed', { timeout: 15000 });
   await expect(page.getByTestId('run-status-error')).toContainText('uncommitted changes');
-  await expect(page.getByTestId('run-status')).toContainText('commit or revert csv/04-reviews.csv, then Resume');
+  await expect(page.locator('#runStatus')).toContainText('commit or revert csv/04-reviews.csv, then Resume');
   await shot(page, '4-failed');
 });
 
