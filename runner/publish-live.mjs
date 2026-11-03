@@ -14,7 +14,7 @@ const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOL
 const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 
 /** Stages whose live path is built and proven (the runner refuses Live for the rest). */
-export const LIVE_STAGES = new Set(['F']);
+export const LIVE_STAGES = new Set(['D', 'E', 'F', 'G']);
 
 const note = (level, text, todo) => (todo ? { level, text, todo } : { level, text });
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -108,7 +108,9 @@ export async function livePublish(def, sb, ctx, set) {
   const current = LIVE_STAGES.has(def.stage) && ctx.promote ? stillDiffering(set.publish, set.repo, src) : set.publish;
   const refused = liveRefusal(def, ctx, set, current);
   if (refused) return { notes: [note('problem', refused[0], refused[1])], counts: { ...removalCounts(set.removals), commit: null } };
-  const { repo, publish, remove } = set;
+  // Publish exactly the list the refusal check approved (= the dry run's): a file that differs only in line endings is not a change.
+  const { repo, remove } = set;
+  const publish = current;
   assertClean(repo);
   for (const f of publish) fs.copyFileSync(src(f), path.join(repo, f));
   for (const f of remove) fs.rmSync(path.join(repo, f), { force: true });

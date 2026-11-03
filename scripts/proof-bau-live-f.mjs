@@ -102,8 +102,9 @@ async function refusalProof(t) {
   must(git(t.work, ['commit', '-q', '-am', 'someone published one file since the dry run']), 'commit');
   const r2 = await HANDLERS.publish_blogs(liveCtx(t));
   check('Live refused when the schema repo changed since the dry run', r2.notes?.some((n) => n.level === 'problem' && /changed since dry run/.test(n.text)) && !r2.counts?.commit, r2.notes?.[0]?.text);
+  // D is live-capable now; promoting F's dry run as D must still be refused (its publish list is not D's).
   const r3 = await HANDLERS.publish_products(liveCtx(t, { promote: { ...liveCtx(t).promote, stage: 'D' } }));
-  check('Live refused for a stage whose live path is not built (D)', r3.notes?.some((n) => /not built yet/.test(n.text)), r3.notes?.[0]?.text);
+  check('Live refused when the dry run being promoted does not match the stage (F run as D)', r3.notes?.some((n) => n.level === 'problem') && !r3.counts?.commit, r3.notes?.[0]?.text);
 }
 
 let removals = null;
