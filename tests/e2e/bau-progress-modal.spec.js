@@ -102,6 +102,16 @@ test('stalled: no heartbeat for 60 s turns amber, 3 min turns red with what to d
   await shot(page, '5-stalled-red');
 });
 
+test('no sub-progress and past the usual time: says "longer than usual", never "under a minute left"', async ({ page }) => {
+  const slow = () => { const d = B.running(0); delete d.run.progress; d.steps[1].started_at = at(1400); return d; };
+  await simulate(page, slow);
+  await openPage(page);
+  await page.getByTestId('open-progress').click();
+  await expect(modal(page).getByTestId('pg-eta')).toContainText('taking longer than usual');
+  await expect(modal(page).getByTestId('pg-eta')).not.toContainText('under a minute');
+  expect(Number(await modal(page).getByTestId('pg-bar').getAttribute('data-pct'))).toBeLessThanOrEqual(90);
+});
+
 test('Run all: overall stage x of 9 with %, current stage bar and the per-stage tick list', async ({ page }) => {
   await simulate(page, runAll);
   await openPage(page);

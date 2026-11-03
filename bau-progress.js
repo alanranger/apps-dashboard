@@ -51,10 +51,19 @@
       if (DONE.has(s.status)) done += w(s);
       else if (s === cur) { done += w(s) * frac; left += w(s) * (1 - frac); } else left += w(s);
     }
-    return { cur, frac, pct: total ? Math.round((done / total) * 100) : 0, leftMs: left, anyKnown };
+    return { cur, frac, pct: total ? Math.round((done / total) * 100) : 0, leftMs: left, anyKnown, overdue: overdue(run, cur, est) };
+  }
+
+  /** Without sub-progress, a step past its usual time has no honest % or ETA: say so instead of "under a minute". */
+  function overdue(run, cur, est) {
+    if (!cur || (run.progress?.step === cur.step_id && run.progress.total > 0)) return null;
+    const typical = est?.[cur.step_id];
+    const elapsed = now() - (ms(cur.started_at) || now());
+    return typical > 0 && elapsed > typical ? { typical, elapsed } : null;
   }
 
   function etaText(m) {
+    if (m.overdue) return `taking longer than usual (typically ${duration(m.overdue.typical)}, now ${duration(m.overdue.elapsed)}) — no estimate`;
     if (!m.anyKnown) return 'first run, no estimate yet';
     if (m.leftMs < 60000) return 'under a minute left';
     return `about ${Math.round(m.leftMs / 60000)} min left`;
@@ -139,6 +148,7 @@
   function subLine(run, cur) {
     const p = run.progress;
     if (p && p.step === cur?.step_id && p.label) return p.total > 0 ? `${p.label} — ${p.done} of ${p.total}` : p.label;
+    if (cur && !run.heartbeat_at) return 'working… (this run started before the runner reported sub-steps)';
     return cur ? 'working…' : 'starting…';
   }
 
@@ -153,7 +163,7 @@
     const rows = runAll ? stageRows(list, run, est) : [];
     const curStage = m.cur?.stage ? rows.find((r) => r.id === m.cur.stage) : null;
     const overall = runAll ? `<div class="pg-overall" data-testid="pg-overall">Overall: stage ${Math.max(1, rows.findIndex((r) => r.status === 'running') + 1)} of ${rows.length} · ${m.pct}% · ${esc(etaText(m))}</div>${barHtml(m.pct, 'pg-bar-overall')}` : '';
-    const stagePart = curStage ? `<div class="muted">Stage ${esc(curStage.id)}: ${curStage.pct}%</div>${barHtml(curStage.pct, 'pg-bar')}` : (runAll ? '' : barHtml(m.pct, 'pg-bar'));
+    const stagePart = curStage ? `<div class="muted">Stage ${esc(curStage.id)}: ${curStage.pct}%</div>${barHtml(curStage.pct, 'pg-bar')}` : (runAll ? '' : barHtml(m.overdue ? Math.min(m.pct, 90) : m.pct, 'pg-bar'));
     return `${overall}<p class="pg-big" data-testid="pg-step">Step ${idx + 1} of ${list.length}: ${esc(m.cur?.name || 'starting')}</p>
       <p data-testid="pg-sub">${esc(subLine(run, m.cur))}</p>${stagePart}
       <div class="pg-meta"><span data-testid="pg-eta">${esc(runAll ? '' : etaText(m))}</span><span>Elapsed ${esc(duration(now() - ms(run.started_at || run.requested_at)))}</span></div>
