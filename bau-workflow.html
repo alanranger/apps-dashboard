@@ -560,12 +560,18 @@
         ${filesBlock(r, run)}${commit}${backup}${exp}${undone}${undo}</div>`;
     }
 
+    /** After a failed live stage: B / H talk about the database backup; file stages about the dropped commit. */
+    function liveNextStep(run) {
+      const stage = run.stages?.[0];
+      if (['B', 'H'].includes(stage)) return 'Press Resume to retry from the failed step: nothing is imported until the backup has finished, and a finished backup is reused, never retaken. Or click Publish live… on the stage again for a fresh run.';
+      return `Nothing was published: a refused commit is dropped and stage ${stage || ''}'s files go back to their last published version. Once the cause is fixed, click Publish live… on the stage again (or Resume).`;
+    }
+
     function failureHtml(run, steps) {
       if (!['failed', 'cancelled'].includes(run.status)) return '';
       const bad = steps.filter((s) => s.status === 'fail');
       const todo = bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
-      const liveNext = 'Press Resume to retry from the failed step: nothing is imported until the backup has finished, and a finished backup is reused, never retaken. Or click Publish live… on the stage again for a fresh run.';
-      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNext : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
+      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNextStep(run) : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
       return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
     }
