@@ -53,5 +53,6 @@ test('live: only F is live-capable; readiness refuses a missing, failed, old, un
   assert.match(liveReadiness('F', { ...ok, status: 'fail' }, now), /fail/);
   assert.match(liveReadiness('F', { ...ok, finished_at: '2026-10-20T00:00:00Z' }, now), /older than 7 days/);
   assert.match(liveReadiness('F', { ...ok, removals_unexplained: 3 }, now), /3 unexplained removals/);
+  assert.match(liveReadiness('F', { ...ok, removals_unexplained: null }, now), /predates the removal check/);
   assert.match(liveReadiness('F', { ...ok, sandbox: 'C:/no/such/folder' }, now), /gone from this PC/);
 });

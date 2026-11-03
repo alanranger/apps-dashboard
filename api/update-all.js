@@ -63,6 +63,7 @@ function liveRefusal(stage, dry) {
   if (!dry) return `Run stage ${stage} dry first`;
   if (!['ok', 'warn'].includes(dry.status)) return `Stage ${stage}'s last dry run ${dry.status} — run it dry again`;
   if (Date.now() - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `Stage ${stage}'s last dry run is older than 7 days — run it dry again`;
+  if (dry.removals_unexplained == null) return `Stage ${stage}'s last dry run predates the removal check — run it dry again`;
   if (dry.removals_unexplained) return `Stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
   return null;
 }
