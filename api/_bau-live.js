@@ -14,6 +14,11 @@ const FIXED = { 'lessons-schema.json': '/beginners-photography-lessons', 'worksh
 const DB_TABLES = ['csv_metadata (full copy)', 'page_entities (full copy)', 'event_product_links_auto (full copy)', 'page_chunks (affected urls)', 'page_html (affected urls)'];
 
 const done = (h) => h && ['ok', 'warn'].includes(h.status) && !h.undo_of;
+/** B / H undo restores a database backup, kept 14 days after the live run (runner/bau-retention.mjs); file stages undo through git. */
+const DB_STAGES = new Set(['B', 'H']);
+const UNDO_DAYS = 14;
+const undoUntil = (stage, h) => (DB_STAGES.has(stage) && h?.finished_at ? new Date(Date.parse(h.finished_at) + UNDO_DAYS * 86400000).toISOString() : null);
+const undoExpired = (stage, h) => { const u = undoUntil(stage, h); return !!u && Date.parse(u) <= Date.now(); };
 
 /** What the page may do: Live per stage when switched on (Alan only); Run all live only after every stage A–I ran live once. */
 function liveState(session, history) {
@@ -57,15 +62,16 @@ async function livePlan(stage, history, liveRefusal) {
   const map = await pageMap(stage);
   const pages = [...new Set((dry?.published || []).map((f) => pageOf(stage, f, map)).filter(Boolean))];
   return { stage, dry: dry ? { run_id: dry.run_id, finished_at: dry.finished_at, status: dry.status } : null, refusal: liveRefusal(stage, dry),
-    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(history.live[stage]) };
+    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(stage, history.live[stage]) };
 }
 
 /** The stage's latest live run and what "Undo this stage" would reverse (its commit + files, B/H backup, B's 05 export). */
-function lastLive(h) {
+function lastLive(stage, h) {
   if (!h) return null;
-  const undo = done(h) && (h.commit || h.backup_run || h.export_commit)
+  const undo = done(h) && !undoExpired(stage, h) && (h.commit || h.backup_run || h.export_commit)
     ? { commit: h.commit || null, repo: h.repo || null, files: h.published || [], backup_run: h.backup_run || null, export_commit: h.export_commit || null } : null;
-  return { run_id: h.run_id, finished_at: h.finished_at, undo_of: h.undo_of || null, promoted_from: h.promoted_from || null, undo };
+  return { run_id: h.run_id, finished_at: h.finished_at, undo_of: h.undo_of || null, promoted_from: h.promoted_from || null, undo,
+    undo_until: undoUntil(stage, h), undo_expired: undoExpired(stage, h) };
 }
 
 /** "Undo this stage": a live run with options.undo_of = the stage's latest live publish (the runner re-checks it). */
@@ -74,10 +80,11 @@ async function undoRequest(session, body, history, activeRun) {
   const stage = String(body.stage || '');
   const live = history.live[stage];
   if (!done(live)) return [409, { error: `There is no live publish of stage ${stage} to undo` }];
+  if (undoExpired(stage, live)) return [409, { error: `Stage ${stage}'s backup expired (14-day window): it can no longer be undone` }];
   if (activeRun) return [409, { error: 'a run is already requested or running', run: activeRun }];
   const run = (await sb('update_all_runs', { method: 'POST',
     body: { mode: 'live', status: 'requested', requested_by: session.role, include_audit: false, stages: [stage], options: { undo_of: live.run_id } } }))[0];
   return [200, { run }];
 }
 
-module.exports = { RUN_ALL, liveState, livePlan, undoRequest, pageOf };
+module.exports = { RUN_ALL, liveState, livePlan, undoRequest, pageOf, undoUntil, undoExpired };

@@ -24,8 +24,9 @@ const B = {
   queued: () => ({ run: runB({ status: 'requested', requested_at: at(10) }), steps: [], runner: { checked_at: at(26) } }),
   running: (chunk, beat = 3) => ({ run: runB({ status: 'running', started_at: at(60), current_step: 'ingest_preliminary', heartbeat_at: at(beat),
     progress: { step: 'ingest_preliminary', label: 'Backing up page_html — chunk', done: chunk, total: 14, at: at(beat) },
-    log: log([60, 'Step 1 of 3: Pre-flight checks — started'], [56, 'Pre-flight checks — ok (4 s)'], [55, 'Step 2 of 3: Preliminary ingest (steps 1–4) + mappings export — started'],
-      ...Array.from({ length: chunk }, (_, i) => [50 - i * 3, `Backing up page_html — chunk ${i + 1} of 14`])) }),
+    // A stalled runner writes nothing: its log stops at the last heartbeat too.
+    log: log(...[[60, 'Step 1 of 3: Pre-flight checks — started'], [56, 'Pre-flight checks — ok (4 s)'], [55, 'Step 2 of 3: Preliminary ingest (steps 1–4) + mappings export — started'],
+      ...Array.from({ length: chunk }, (_, i) => [50 - i * 3, `Backing up page_html — chunk ${i + 1} of 14`])].map(([s, t]) => [Math.max(s, beat), t])) }),
   steps: [step(1, 'preflight', 'Pre-flight checks', 'ok', { duration_ms: 4000 }), step(3, 'ingest_preliminary', 'Preliminary ingest (steps 1–4) + mappings export', 'running', { started_at: at(55) }),
     step(18, 'summary', 'Summary', 'pending')] }),
   finished: () => ({ run: runB({ status: 'succeeded', started_at: at(400), finished_at: at(5), heartbeat_at: at(5),

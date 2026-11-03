@@ -332,9 +332,22 @@
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
       const live = id === 'I' ? '' : `<button class="small live" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>Publish live…</button>`;
-      const undo = id !== 'I' && (hasLivePublish(id) || simulatedLive().includes(id))
-        ? `<button class="small undo" data-testid="stage-undo-${id}" data-stage-undo="${id}" ${off}>Undo this stage</button>` : '';
-      return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${live}${undo}`;
+      return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${live}${undoButton(id, off)}`;
+    }
+
+    /** B / H undo restores a database backup kept 14 days after the live run; file stages undo through git (no limit). */
+    const DB_STAGES = new Set(['B', 'H']);
+    const UNDO_DAYS = 14;
+    function undoUntilOf(id) {
+      const h = stageInfo?.history?.live?.[id];
+      return DB_STAGES.has(id) && h?.finished_at ? Date.parse(h.finished_at) + UNDO_DAYS * 86400000 : null;
+    }
+    function undoButton(id, off) {
+      if (id === 'I' || !(hasLivePublish(id) || simulatedLive().includes(id))) return '';
+      const until = undoUntilOf(id);
+      if (until && until <= Date.now()) return `<span class="muted" data-testid="undo-expired-${id}">Undo: backup expired (14-day window)</span>`;
+      const note = until ? `<span class="muted" data-testid="undo-until-${id}">Undo available until ${esc(when(new Date(until).toISOString()))}</span>` : '';
+      return `<button class="small undo" data-testid="stage-undo-${id}" data-stage-undo="${id}" ${off}>Undo this stage</button>${note}`;
     }
 
     function showPrereq(plan, target) {
