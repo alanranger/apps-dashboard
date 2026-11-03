@@ -40,7 +40,7 @@ function nodeRemovals(nb, na, key) {
   for (const prop of KEY_PROPS) {
     const b = propCount(nb, prop);
     const a = propCount(na, prop);
-    if (a < b) out.push({ node: key, nodeTypes: types, prop, what: prop === 'review' ? `reviews ${b} → ${a}` : a ? `${prop} ${b} → ${a}` : `${prop} removed` });
+    if (a < b) out.push({ node: key, nodeTypes: types, prop, from: b, to: a, what: prop === 'review' ? `reviews ${b} → ${a}` : a ? `${prop} ${b} → ${a}` : `${prop} removed` });
   }
   for (const t of types.filter((x) => !typesOf(na).includes(x))) out.push({ node: key, nodeTypes: types, type: t, what: `@type ${t} dropped from the node` });
   return out;
@@ -77,13 +77,20 @@ const isItemList = (r) => r.type === 'ItemList' || (r.nodeTypes || []).includes(
 const RULES = [
   ['G', (r) => isBusiness(r) && ['aggregateRating', 'review'].includes(r.prop), 'P23: no business rating on landing pages'],
   ['G', (r, c) => isItemList(r) && /ItemList removed/.test(c.landingNote || ''), 'page shows no list of pages (landing explainer)'],
-  ['D', (r, c) => r.prop === 'review' && /review count .*same as the published product schema \(04/.test(c.productNote || ''), 'review re-homing (31 Oct): same as the published product schema (04)'],
+  ['DE', reviewsMatch04, 'review re-homing (31 Oct / 2 Nov): same review set as the published product schema (04)'],
   ['E', (r) => r.what === 'node removed' && r.pastEvent, 'past-dated event dropped']
 ];
 
-/** The rule that explains a removal, or null. ctx: { stage, landingNote, productNote } for this file. */
+/** Shared D/E rule (Claude 3 Nov, 9.1): fewer reviews, and the new count equals the product's published 04 review set. */
+function reviewsMatch04(r, c) {
+  if (r.prop !== 'review' || typeof c.reviews04 !== 'function') return false;
+  const want = c.reviews04(r.node);
+  return want != null && Number(want) === r.to;
+}
+
+/** The rule that explains a removal, or null. ctx: { stage, landingNote, reviews04(nodeId) } for this file. */
 export function explainRemoval(r, ctx = {}) {
-  return RULES.find(([stage, test]) => stage === ctx.stage && test(r, ctx))?.[2] || null;
+  return RULES.find(([stages, test]) => stages.includes(ctx.stage) && test(r, ctx))?.[2] || null;
 }
 
 /** Removals for a publish set: [{ file, what, node, explained_by }] + counts. */

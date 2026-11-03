@@ -33,7 +33,10 @@ test('removals: explanations — P23 business rating, landing "no list", D revie
   assert.match(explainRemoval({ prop: 'aggregateRating', nodeTypes: ['LocalBusiness', 'Organization'] }, { stage: 'G' }), /P23/);
   assert.equal(explainRemoval({ prop: 'aggregateRating', nodeTypes: ['Course'] }, { stage: 'G' }), null);
   assert.match(explainRemoval({ type: 'ItemList' }, { stage: 'G', landingNote: 'ItemList removed (2 items before): the page shows no list of pages' }), /no list/);
-  assert.match(explainRemoval({ prop: 'review' }, { stage: 'D', productNote: 'review count 14 → 3 (same as the published product schema (04: 3); …)' }), /re-homing/);
+  const reviews04 = (id) => ({ 'https://x/p': '3' })[id.split('#')[0]] ?? null;
+  assert.match(explainRemoval({ prop: 'review', node: 'https://x/p#product', to: 3 }, { stage: 'D', reviews04 }), /re-homing/);
+  assert.match(explainRemoval({ prop: 'review', node: 'https://x/p#event', to: 3 }, { stage: 'E', reviews04 }), /re-homing/, 'the same rule for E');
+  assert.equal(explainRemoval({ prop: 'review', node: 'https://x/p#event', to: 2 }, { stage: 'E', reviews04 }), null, 'a count that does not match 04 stays unexplained');
   assert.match(explainRemoval({ what: 'node removed', pastEvent: true }, { stage: 'E' }), /past-dated/);
   assert.equal(explainRemoval({ type: 'Organization', what: '@type Organization no longer anywhere in the file' }, { stage: 'E' }), null);
 });

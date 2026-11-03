@@ -50,6 +50,9 @@ async function removalProof() {
   check('removal check does not flag Lake District (offers re-ordered, no priceSpecification lost)', !out.D.files_unexplained.includes('lake-district-photography-workshops-3-days-in-cumbria_schema.json'), out.D.files_unexplained.join(', '));
   check('removal check: D\'s 11 review reductions are explained (31 Oct re-homing)', out.D.unexplained === 0, out.D.rows.join(' | '));
   check('removal check flags the E organizer (lessons + workshops lists)', ['lessons-schema.json', 'workshops-schema.json'].every((f) => out.E.files_unexplained.includes(f)), out.E.rows.join(' | '));
+  const eReviews = out.E.rows.filter((x) => /reviews/.test(x));
+  check('E reviews (9.1 shared 04 rule): lavender + heather explained, garden (3 listed vs 04: 2) still flagged',
+    eReviews.length === 2 && eReviews.every((x) => /garden-photography-workshop/.test(x)), eReviews.join(' | '));
   check('removal check: F has no unexplained removals', out.F.unexplained === 0, JSON.stringify(out.F));
   return out;
 }

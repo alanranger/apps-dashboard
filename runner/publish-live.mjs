@@ -11,6 +11,7 @@ import { checkPublishSet } from './removals.mjs';
 
 const SCHEMA_TOOLS = 'G:/Dropbox/alan ranger photography/Website Code/Schema Tools';
 const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/deploy-schemas.mjs`).href);
+const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 
 /** Stages whose live path is built and proven (the runner refuses Live for the rest). */
 export const LIVE_STAGES = new Set(['F']);
@@ -18,27 +19,37 @@ export const LIVE_STAGES = new Set(['F']);
 const note = (level, text, todo) => (todo ? { level, text, todo } : { level, text });
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const readJson = (file) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; } };
-const slugOf = (name) => String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const urlKey = (u) => String(u || '').split('#')[0].replace(/\/+$/, '');
 
-/** D: the product step's per-product explanation lines, keyed by the product's file slug. */
-async function productNotes(ctx) {
-  const lines = ctx.mode === 'live'
-    ? ((await ctx.store?.query?.(`update_all_steps?select=details&run_id=eq.${ctx.promote.run_id}&step_id=eq.product_schema`))?.[0]?.details || [])
-    : (ctx.steps || []).find((s) => s.step_id === 'product_schema')?.details || [];
-  return new Map(lines.map((l) => [slugOf(String(l).split(': ')[0]), String(l)]));
+/**
+ * D/E shared explanation source (Claude 3 Nov, 9.1): the published product schema (04) review_count per product.
+ * A node's product = its own URL (D product files) or, for an event, the 05 mapping event_url → product_url.
+ */
+export function reviews04Lookup(sb) {
+  const processed = path.join(sb.shared, 'csv processed');
+  const p04 = path.join(processed, '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv');
+  const p05 = path.join(processed, '05-event-product-mappings-latest.csv');
+  if (!fs.existsSync(p04)) return () => null;
+  // The review SET each product publishes (Review entries in its 04 schema), not the headline review_count.
+  const listed = (r) => (String(r.schema_html || '').match(/"@type"\s*:\s*"Review"/g) || []).length;
+  const counts = new Map(readCsvObjects(p04).rows.map((r) => [urlKey(r.url), listed(r)]));
+  const products = fs.existsSync(p05) ? new Map(readCsvObjects(p05).rows.map((r) => [urlKey(r.event_url), urlKey(r.product_url)])) : new Map();
+  return (nodeId) => {
+    const own = urlKey(nodeId);
+    return counts.get(products.get(own) || own) ?? null;
+  };
 }
 
 /** Removals in a stage's publish set: published file (repo) → new file (sandbox). */
 export async function publishRemovals(def, sb, ctx, files, repo) {
   const landing = def.stage === 'G' ? readJson(path.join(sb.root, 'app-cli', 'landings', 'landing-diff-explain.json'))?.rows || [] : [];
-  const products = def.stage === 'D' ? await productNotes(ctx) : new Map();
+  const reviews04 = ['D', 'E'].includes(def.stage) ? reviews04Lookup(sb) : null;
   const src = (f) => def.sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
   return checkPublishSet(files, {
     readBefore: (f) => readJson(path.join(repo, f)),
     readAfter: (f) => readJson(src(f)),
-    contextFor: (f) => ({ stage: def.stage,
-      landingNote: (landing.find((r) => `${r.file}_landing_schema.json` === f)?.notes || []).join(' | '),
-      productNote: products.get(f.replace(/_(schema|faq)\.json$/, '')) || '' })
+    contextFor: (f) => ({ stage: def.stage, reviews04,
+      landingNote: (landing.find((r) => `${r.file}_landing_schema.json` === f)?.notes || []).join(' | ') })
   });
 }
 
