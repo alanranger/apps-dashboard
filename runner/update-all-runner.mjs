@@ -76,6 +76,10 @@ export async function prepareLiveRun(store, run) {
 const arg = (flag) => { const i = process.argv.indexOf(flag); return i > 0 ? process.argv[i + 1] : null; };
 const has = (flag) => process.argv.includes(flag);
 
+/** Live switch: the process environment or apps-dashboard/.env.local (a scheduled task may not see new user env vars). */
+const liveSwitchOn = () => process.env.UPDATE_ALL_LIVE_ENABLED === '1'
+  || loadEnv(path.join(HERE, '..', '.env.local')).UPDATE_ALL_LIVE_ENABLED === '1';
+
 function openStore() {
   const env = loadEnv(path.join(HERE, '..', '.env.local'));
   if (!env.MC_SUPABASE_URL || !env.MC_SUPABASE_SERVICE_KEY) throw new Error('MC_SUPABASE_URL / MC_SUPABASE_SERVICE_KEY missing in apps-dashboard/.env.local');
@@ -171,7 +175,7 @@ async function processUndo(store, run) {
 }
 
 async function process1(store, run) {
-  if (run.mode !== 'dry' && process.env.UPDATE_ALL_LIVE_ENABLED !== '1') {
+  if (run.mode !== 'dry' && !liveSwitchOn()) {
     await store.updateRun(run.id, { status: 'cancelled', error: 'LIVE mode is not enabled yet', finished_at: new Date().toISOString() });
     return 'cancelled';
   }
@@ -234,7 +238,7 @@ async function dispatch(store) {
   do {
     const next = await store.nextRequested();
     if (next) await process1(store, next);
-    else if (has('--once')) fileLog('[update-all] no requested run');
+    else if (has('--once')) fileLog(`[update-all] no requested run (live switch ${liveSwitchOn() ? 'on' : 'off'})`);
     if (has('--watch')) await new Promise((r) => setTimeout(r, 15000));
   } while (has('--watch'));
   return null;
