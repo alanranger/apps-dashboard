@@ -132,6 +132,8 @@ export function diff07(liveRows, newRows, raw01Rows = [], rows04 = [], createdOn
   const fresh = byProduct(newRows);
   const sq = squarespaceIndex(raw01Rows);
   for (const [slug, e] of sq) if (createdOn.has(slug)) e.createdOn = createdOn.get(slug);
+  // Supplement products (e.g. the digital gift card) are not in the Squarespace export but have a created date.
+  for (const [slug, d] of createdOn) if (!sq.has(slug)) sq.set(slug, { titles: new Set(), skus: new Set(), prices: new Set(), options: new Set(), variants: 0, onSale: 0, text: '', images: '', createdOn: d });
   const ref = reviewRef(rows04);
   const products = [];
   let unchanged = 0;
