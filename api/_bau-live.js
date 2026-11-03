@@ -25,7 +25,7 @@ const undoExpired = (stage, h) => { const u = undoUntil(stage, h); return !!u &&
 /** What the page may do: Live per stage when switched on (Alan only); Run all live only after every stage A–I ran live once. */
 function liveState(session, history) {
   const enabled = process.env.UPDATE_ALL_LIVE_ENABLED === '1';
-  const liveDone = RUN_ALL.filter((s) => done(history.live[s]));
+  const liveDone = RUN_ALL.filter((s) => done(history.live_done[s]));
   return { enabled, can_publish: enabled && session.role === 'alan', run_all_unlocked: UNLOCK_STAGES.every((s) => liveDone.includes(s)), live_done: liveDone };
 }
 
@@ -64,7 +64,7 @@ async function livePlan(stage, history, liveRefusal) {
   const map = await pageMap(stage);
   const pages = [...new Set((dry?.published || []).map((f) => pageOf(stage, f, map)).filter(Boolean))];
   return { stage, audit: stage === 'I', dry: dry ? { run_id: dry.run_id, finished_at: dry.finished_at, status: dry.status } : null, refusal: liveRefusal(stage, dry),
-    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(stage, history.live[stage]) };
+    files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(stage, history.live_done[stage]) };
 }
 
 /** The stage's latest live run and what "Undo this stage" would reverse (its commit + files, B/H backup, B's 05 export). */
@@ -80,7 +80,7 @@ function lastLive(stage, h) {
 async function undoRequest(session, body, history, activeRun) {
   if (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan') return [403, { error: 'LIVE mode is not enabled yet' }];
   const stage = String(body.stage || '');
-  const live = history.live[stage];
+  const live = history.live_done[stage];
   if (!done(live)) return [409, { error: `There is no live publish of stage ${stage} to undo` }];
   if (undoExpired(stage, live)) return [409, { error: `Stage ${stage}'s backup expired (14-day window): it can no longer be undone` }];
   if (activeRun) return [409, { error: 'a run is already requested or running', run: activeRun }];

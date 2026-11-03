@@ -10,7 +10,16 @@ import { memoryStore } from '../../runner/store.mjs';
 import { applyRemovedFromGoogleRule, blogManifest, postsToRegenerate, csvRows, info, check, problem, levelCounts } from '../../runner/steps.mjs';
 import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from '../../runner/cooldown.mjs';
 
-const { planStage, seedSources, stageHistory, stepsFor } = createRequire(import.meta.url)('../../runner/stages.cjs');
+const { planStage, seedSources, stageHistory, liveDoneHistory, stepsFor } = createRequire(import.meta.url)('../../runner/stages.cjs');
+
+test('live history: a refused live run does not hide the publish before it; an undo does', () => {
+  const pub = { id: 'r1', stage_results: { D: { status: 'ok', mode: 'live', commit: 'b1ba40f8' } } };
+  const refused = { id: 'r2', stage_results: { D: { status: 'fail', mode: 'live', commit: null } } };
+  assert.equal(stageHistory([refused, pub], 'live').D.run_id, 'r2', 'the latest attempt is still shown');
+  assert.equal(liveDoneHistory([refused, pub]).D.run_id, 'r1', 'unlock rule and Undo use the publish');
+  const undo = { id: 'r3', stage_results: { D: { status: 'ok', mode: 'live', undo_of: 'r1' } } };
+  assert.equal(liveDoneHistory([undo, refused, pub]).D.undo_of, 'r1', 'after an undo the latest ok result is the undo');
+});
 
 test('P25: a 429 in LIVE pre-flight waits 30 min then starts automatically; dry runs are unchanged', async () => {
   const now = Date.parse('2026-11-01T10:00:00Z');

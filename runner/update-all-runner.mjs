@@ -30,7 +30,7 @@ import { retentionPlan, applyRetention } from './bau-retention.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
-const { planStage, seedSources, stageHistory, stepsFor } = createRequire(import.meta.url)('./stages.cjs');
+const { planStage, seedSources, stageHistory, liveDoneHistory, stepsFor } = createRequire(import.meta.url)('./stages.cjs');
 
 /** Run all = every step; a stage run = pre-flight + its stages' steps + summary. */
 export const registryFor = (stages) => { const ids = stepsFor(stages); return ids ? REGISTRY.filter((d) => ids.includes(d.id)) : REGISTRY; };
@@ -156,7 +156,7 @@ function runContext(store, run, promote) {
 async function processUndo(store, run) {
   const stage = run.stages?.[0];
   const runs = await store.query(`update_all_runs?select=id,stage_results,finished_at&id=neq.${run.id}&order=requested_at.desc&limit=60`);
-  const live = stageHistory(runs, 'live')[stage];
+  const live = liveDoneHistory(runs)[stage];
   const why = undoRefusal(stage, live, run.options?.undo_of);
   const now = () => new Date().toISOString();
   if (why) {

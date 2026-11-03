@@ -14,7 +14,7 @@
  */
 const { json, cors, readBody, requireAuth, sb } = require('./mc/_lib');
 const REGISTRY = require('../runner/steps.json');
-const { STAGES, planStage, stageHistory, sortStages } = require('../runner/stages.cjs');
+const { STAGES, planStage, stageHistory, liveDoneHistory, sortStages } = require('../runner/stages.cjs');
 const { liveState, livePlan, undoRequest } = require('./_bau-live');
 const { stepEstimates, stageTypical, runnerState } = require('./_bau-progress');
 
@@ -25,7 +25,7 @@ const recentRuns = () => sb('update_all_runs?select=id,mode,status,stages,stage_
 
 async function stagesInfo() {
   const runs = await recentRuns();
-  const history = { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live') };
+  const history = { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live'), live_done: liveDoneHistory(runs) };
   const plans = Object.fromEntries(STAGES.map((s) => [s.id, planStage([s.id], history.dry)]));
   return { defs: STAGES.map(({ id, name, steps, needs, needsAny }) => ({ id, name, steps, needs, needsAny: needsAny || null })), history, plans, typical: stageTypical(runs) };
 }
@@ -51,7 +51,7 @@ async function latestRun(id, session) {
     estimates, runner, server_now: new Date().toISOString() };
 }
 
-const historyNow = async () => { const runs = await recentRuns(); return { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live') }; };
+const historyNow = async () => { const runs = await recentRuns(); return { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live'), live_done: liveDoneHistory(runs) }; };
 
 /** Valid stage letters in order, or null for Run all. */
 function cleanStages(stages) {

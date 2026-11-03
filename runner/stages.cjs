@@ -47,6 +47,15 @@ function stageHistory(runs, mode) {
   return out;
 }
 
+/**
+ * Latest live result per stage that finished ok / warn (a publish, or an undo of one). A refused or failed live run
+ * changed nothing, so it must not hide the publish before it (live D 4fb75e9f was refused after D's 93acd8de publish).
+ */
+function liveDoneHistory(runs) {
+  const okOnly = (r) => Object.fromEntries(Object.entries(r.stage_results || {}).filter(([, s]) => ['ok', 'warn'].includes(s.status)));
+  return stageHistory(runs.map((r) => ({ ...r, stage_results: okOnly(r) })), 'live');
+}
+
 /** Why a saved stage result can't be used as an input, or null when it can. */
 function staleReason(id, history, now) {
   const h = history[id];
@@ -106,4 +115,4 @@ function seedSources(targets, history) {
   return sortStages(used).filter((id) => history[id]).map((id) => ({ stage: id, run_id: history[id].run_id, sandbox: history[id].sandbox, seeds: BY_ID[id].seeds }));
 }
 
-module.exports = { STAGES, BY_ID, MAX_AGE_MS, sortStages, stepsFor, stageHistory, staleReason, planStage, seedSources };
+module.exports = { STAGES, BY_ID, MAX_AGE_MS, sortStages, stepsFor, stageHistory, liveDoneHistory, staleReason, planStage, seedSources };

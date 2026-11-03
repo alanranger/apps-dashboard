@@ -327,7 +327,10 @@
       const active = ['requested', 'running'].includes(run?.status);
       $('stageRows').innerHTML = info.defs.map((s) => {
         const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
-        const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(info.history.live[s.id], 'live', s.id);
+        const latest = info.history.live[s.id];
+        const good = info.history.live_done?.[s.id];
+        const lastGood = good && good.run_id !== latest?.run_id ? `<div class="muted" style="font-size:0.8rem">Last successful live:</div>${historyHtml(good, 'live', s.id)}` : '';
+        const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(latest, 'live', s.id) + lastGood;
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
@@ -349,7 +352,7 @@
     const DB_STAGES = new Set(['B', 'H']);
     const UNDO_DAYS = 14;
     function undoUntilOf(id) {
-      const h = stageInfo?.history?.live?.[id];
+      const h = stageInfo?.history?.live_done?.[id];
       return DB_STAGES.has(id) && h?.finished_at ? Date.parse(h.finished_at) + UNDO_DAYS * 86400000 : null;
     }
     function undoButton(id, off) {
@@ -551,7 +554,7 @@
       return `<details data-testid="run-status-files"><summary>${esc(verb)} ${files.length} file${files.length === 1 ? '' : 's'}</summary><ul>${files.map((f) => `<li><code>${esc(f)}</code></li>`).join('')}</ul></details>`;
     }
 
-    const latestLiveIs = (id, runId) => hasLivePublish(id) && stageInfo?.history?.live?.[id]?.run_id === runId;
+    const latestLiveIs = (id, runId) => hasLivePublish(id) && stageInfo?.history?.live_done?.[id]?.run_id === runId;
     function stageResultHtml(id, r, run) {
       const commit = r.commit ? `<div>Commit ${commitLink(r.commit, r.repo, id)} in ${esc(r.repo || (SHARED_STAGES.has(id) ? 'alan-shared-resources' : 'alanranger-schema'))}</div>` : '';
       const backup = r.backup_run ? `<div>Database backup taken first: <code>bau_bk_${esc(r.backup_run)}_*</code> (5 tables, kept)</div>` : '';
@@ -660,7 +663,7 @@
     // ---------- Live: per-stage publish (confirmation) and Undo (Claude/Alan 3 Nov, step 6) ----------
     let liveInfo = null;
     const simulatedLive = () => (new URLSearchParams(location.search).get('simulateLive') || '').split(',').filter(Boolean);
-    const hasLivePublish = (id) => { const h = stageInfo?.history?.live?.[id]; return !!(h && ['ok', 'warn'].includes(h.status) && !h.undo_of); };
+    const hasLivePublish = (id) => { const h = stageInfo?.history?.live_done?.[id]; return !!(h && ['ok', 'warn'].includes(h.status) && !h.undo_of); };
     const listBlock = (label, items, testid) => `<details data-testid="${testid}"><summary>${esc(label)} (${items.length})</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
 
     function renderLiveRadio(live) {
@@ -713,7 +716,7 @@
     }
 
     function openUndoConfirm(stage) {
-      const h = stageInfo?.history?.live?.[stage] || {};
+      const h = stageInfo?.history?.live_done?.[stage] || {};
       const simulated = !hasLivePublish(stage);
       const what = [h.commit ? `files: commit ${String(h.commit).slice(0, 8)} restored to the previous versions` : null,
         h.backup_run ? `database: backup bau_bk_${h.backup_run}_* restored, then refresh + finalize` : null,
