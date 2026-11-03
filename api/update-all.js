@@ -109,7 +109,9 @@ async function start(session, body) {
   if (refused) return refused;
   const sim = simulated(mode, body.simulate_new_08);
   const held = mode === 'dry' ? Math.min(4, Math.max(0, Number(body.simulate_held_reviews) || 0)) : 0;
-  const options = { ...(sim.length ? { simulate_new_08: sim } : {}), ...(held ? { simulate_held_reviews: held } : {}) };
+  // "Force full re-read" (live B only): every imported page is re-ingested, not just the changed ones.
+  const force = mode === 'live' && stages?.length === 1 && stages[0] === 'B' && body.force_full_reread === true;
+  const options = { ...(sim.length ? { simulate_new_08: sim } : {}), ...(held ? { simulate_held_reviews: held } : {}), ...(force ? { force_full_reread: true } : {}) };
   const run = (await sb('update_all_runs', { method: 'POST',
     body: { mode, status: 'requested', requested_by: session.role, include_audit: stages ? stages.includes('I') : body.include_audit !== false, stages, options } }))[0];
   return [200, { run }];

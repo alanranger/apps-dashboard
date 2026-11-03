@@ -11,8 +11,9 @@ import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
 import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails, publishSharedFile } from './publish-live.mjs';
-import { liveDbIngest, csvImport, DB_TYPES } from './db-live.mjs';
+import { liveDbIngest, csvImport, DB_TYPES, TYPE_FILES, affectedUrls } from './db-live.mjs';
 import { liveIngestSteps } from './ingest-live.mjs';
+import { checkPages, knownPageUrls, loadFingerprints, planSummary } from './content-check.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -299,9 +300,27 @@ async function dryIngestSteps(ctx, sb) {
   return { rep, reportFile, liveRows: live.length - 1, exportRows: exp?.rows ?? 0, rowsChanged: fresh.filter((l) => !liveSet.has(l)).length };
 }
 
+/**
+ * Test run (read-only): which pages live B would fully re-ingest — every URL in the B CSVs is fetched and its main
+ * content fingerprinted against page_content_fingerprints; nothing is written. The Publish live confirmation shows it.
+ */
+async function dryRefetchPlan(ctx, sb) {
+  const texts = DB_TYPES.B.map((t) => fs.readFileSync(path.join(sb.shared, 'csv', TYPE_FILES[t]), 'utf8'));
+  const urls = affectedUrls(texts, []);
+  const [stored, known] = await Promise.all([loadFingerprints(ctx.store), knownPageUrls(ctx.store)]);
+  const t0 = Date.now();
+  const plan = planSummary(await checkPages(urls, { stored, known, onProgress: ctx.progress }));
+  return { ...plan, check_ms: Date.now() - t0 };
+}
+
+const refetchNote = (p) => info(`Live would re-read ${p.reingest} of ${p.checked} pages in full (${Object.entries(p.by_reason).filter(([k]) => k !== 'unchanged').map(([k, v]) => `${k.replace('_', ' ')} ${v}`).join(', ') || 'none changed'}); ${p.unchanged} unchanged are only checked.`);
+
 const ingestPreliminary = async (ctx) => {
   const r = await dryIngest(ctx, ['blog', 'course_events', 'workshop_events', 'course_products', 'workshop_products', 'landing_service_pages'], `update-all-${ctx.runId}-prelim.json`);
   if (r.error) return r;
+  const refetch = await dryRefetchPlan(ctx, buildSandbox(ctx));
+  r.counts = { ...r.counts, refetch_plan: refetch };
+  r.notes = [...r.notes, refetchNote(refetch)];
   const steps = await dryIngestSteps(ctx, buildSandbox(ctx));
   if (steps.error) return { ...r, notes: [problem(steps.error, 'resume the run')] };
   const scraped = steps.rep.steps.filter((s) => s.step.startsWith('content'));
@@ -884,9 +903,11 @@ const B_EXPORT = 'csv processed/05-event-product-mappings-latest.csv';
 /** B only: ingest steps 2–4 + the mappings export, then that export as its own commit in alan-shared-resources. */
 async function liveSteps2to4(ctx, sb) {
   const exportOut = path.join(sb.root, 'live-05-export.csv');
-  const steps = await liveIngestSteps({ exportOut, onProgress: ctx.progress });
+  const steps = await liveIngestSteps({ exportOut, onProgress: ctx.progress, content: { store: ctx.store, runId: ctx.runId, force: !!ctx.forceFullReread } });
   const pub = publishSharedFile(sharedRepoOf(ctx), B_EXPORT, exportOut, `BAU B live: 05 event-product links export (run ${String(ctx.runId).slice(0, 8)})`);
-  return { steps_2_4: { urls: steps.content.urls, failed: steps.content.failed.length, export_rows: steps.exportRows }, export_commit: pub.commit, export_unchanged: !!pub.unchanged };
+  const plan = steps.content.plan;
+  return { steps_2_4: { urls: steps.content.urls, checked: plan.checked, reingested: steps.content.reingested, unchanged: plan.unchanged, by_reason: plan.by_reason,
+    force_full_reread: plan.force, failed: steps.content.failed.length, export_rows: steps.exportRows }, refetch_plan: plan, export_commit: pub.commit, export_unchanged: !!pub.unchanged };
 }
 
 /** Dry: the dry-ingest handler. Live: automatic backup, then the dry run's CSVs into the chat database (db-live.mjs). */

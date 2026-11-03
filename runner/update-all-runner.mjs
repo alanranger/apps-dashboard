@@ -147,7 +147,8 @@ function testOptions(run) {
 function runContext(store, run, promote) {
   const stages = run.stages?.length ? run.stages : null;
   const includeAudit = stages ? stages.includes('I') : (run.include_audit !== false && !has('--no-audit'));
-  const ctx = { mode: run.mode, store, host: os.hostname(), sandboxBase: arg('--sandbox'), includeAudit, stages, ...testOptions(run), promote: promote || null };
+  const ctx = { mode: run.mode, store, host: os.hostname(), sandboxBase: arg('--sandbox'), includeAudit, stages, ...testOptions(run), promote: promote || null,
+    forceFullReread: run.mode === 'live' && !!run.options?.force_full_reread };
   ctx.sandboxRoot = sandboxFor({ ...ctx, runId: run.id }).root;
   return ctx;
 }

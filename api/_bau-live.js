@@ -53,7 +53,7 @@ async function dbPlan(stage, runId) {
   const [step] = await sb(`update_all_steps?select=counts&run_id=eq.${encodeURIComponent(runId)}&step_id=eq.${stepId}`);
   const counts = step?.counts || {};
   const expected = Object.entries(counts).filter(([, v]) => typeof v === 'string' && /rows, \d+ new/.test(v)).map(([k, v]) => ({ csv_type: k, change: v }));
-  return { backups: DB_TABLES.map((t) => `bau_bk_<run>_${t}`), expected,
+  return { backups: DB_TABLES.map((t) => `bau_bk_<run>_${t}`), expected, refetch: stage === 'B' ? (counts.refetch_plan || null) : null,
     file: stage === 'B' ? 'csv processed/05-event-product-mappings-latest.csv (re-exported after the ingest)' : 'csv/09-url-target-keywords.csv' };
 }
 

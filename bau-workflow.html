@@ -371,12 +371,12 @@
     }
 
     /** Stage buttons: "Run this stage" is always a dry run; Live only through the stage's confirmation (mode 'live'). */
-    async function startStages(stages, mode = 'dry') {
+    async function startStages(stages, mode = 'dry', extra = {}) {
       $('prereq').style.display = 'none';
       $('actionMsg').textContent = `Stage ${stages.join(', ')} requested${mode === 'live' ? ' (live)' : ''}`;
       const qs = new URLSearchParams(location.search);
       const simulate = qs.get('simulate08');
-      const body = { action: 'start', mode, stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
+      const body = { action: 'start', mode, stages, ...extra, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
         ...(qs.get('simulateHeld') ? { simulate_held_reviews: Number(qs.get('simulateHeld')) } : {}) };
       try { await api('/api/update-all', { method: 'POST', body }); window.BauProgress?.expect(); refresh(); }
       catch (e) {
@@ -678,11 +678,22 @@
     function openModal(html) { $('liveModalBody').innerHTML = html; $('liveModal').hidden = false; }
     function closeModal() { $('liveModal').hidden = true; $('liveModalBody').innerHTML = ''; }
 
+    /** B: the pages the test run found new / changed / without a fingerprint (the only ones re-read in full), and the force option. */
+    function refetchBlock(r) {
+      if (!r) return '<p class="muted" data-testid="live-confirm-refetch">Pages re-read in full: run stage B as a test run first to see the list.</p>';
+      const why = Object.entries(r.by_reason || {}).filter(([k]) => k !== 'unchanged').map(([k, v]) => `${k.replace('_', ' ')} ${v}`).join(', ') || 'none';
+      const items = (r.list || []).map((x) => `${x.url.replace('https://www.alanranger.com', '')} — ${x.reason.replace('_', ' ')}`);
+      return `<p data-testid="live-confirm-refetch"><strong>Pages re-read in full: ${r.reingest} of ${r.checked}</strong> (${esc(why)}); ${r.unchanged} unchanged are only checked.</p>`
+        + (items.length ? listBlock('Pages it re-reads (from the test run; re-checked live)', items, 'live-confirm-refetch-list') : '')
+        + '<label class="tick" style="margin-top:6px"><input type="checkbox" id="forceFullReread" data-testid="force-full-reread"> Force full re-read (every page, about 70 min)</label>';
+    }
+
     function dbBlock(db) {
       if (!db) return '';
       const expected = db.expected.map((e) => `${e.csv_type}: ${e.change}`);
       return listBlock('Backed up first, before any write', db.backups, 'live-confirm-backups')
         + listBlock('Expected row changes (from the dry run)', expected.length ? expected : ['(see the dry run)'], 'live-confirm-tables')
+        + (db.file.includes('05-event') ? refetchBlock(db.refetch) : '')
         + `<p class="muted">Also published: ${esc(db.file)}</p>`;
     }
 
@@ -712,7 +723,11 @@
         <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
         <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Publish live</button></div>`);
       $('liveCancel').onclick = closeModal;
-      $('livePublish').onclick = () => { closeModal(); startStages([stage], 'live'); };
+      $('livePublish').onclick = () => {
+        const force = !!$('forceFullReread')?.checked;
+        closeModal();
+        startStages([stage], 'live', force ? { force_full_reread: true } : {});
+      };
     }
 
     function openUndoConfirm(stage) {
