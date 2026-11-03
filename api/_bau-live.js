@@ -5,6 +5,8 @@
 const { sb } = require('./mc/_lib');
 
 const RUN_ALL = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+/** Run all live unlocks once A–H have each run live once; I (the full audit ①) is covered by its Monday schedule (Alan, 3 Nov). */
+const UNLOCK_STAGES = RUN_ALL.filter((s) => s !== 'I');
 const SITE = 'https://www.alanranger.com';
 const MANIFEST = { D: 'products-manifest.json', E: 'events-manifest.json', G: 'landings-manifest.json' };
 /** Files that belong to a hub page (or to none: manifests). */
@@ -24,7 +26,7 @@ const undoExpired = (stage, h) => { const u = undoUntil(stage, h); return !!u &&
 function liveState(session, history) {
   const enabled = process.env.UPDATE_ALL_LIVE_ENABLED === '1';
   const liveDone = RUN_ALL.filter((s) => done(history.live[s]));
-  return { enabled, can_publish: enabled && session.role === 'alan', run_all_unlocked: liveDone.length === RUN_ALL.length, live_done: liveDone };
+  return { enabled, can_publish: enabled && session.role === 'alan', run_all_unlocked: UNLOCK_STAGES.every((s) => liveDone.includes(s)), live_done: liveDone };
 }
 
 /** file → site page, from the published manifests (schema.alanranger.com). */
@@ -61,7 +63,7 @@ async function livePlan(stage, history, liveRefusal) {
   const files = [...(dry?.published || []), ...(dry?.removed || []).map((f) => `${f} (removed)`)];
   const map = await pageMap(stage);
   const pages = [...new Set((dry?.published || []).map((f) => pageOf(stage, f, map)).filter(Boolean))];
-  return { stage, dry: dry ? { run_id: dry.run_id, finished_at: dry.finished_at, status: dry.status } : null, refusal: liveRefusal(stage, dry),
+  return { stage, audit: stage === 'I', dry: dry ? { run_id: dry.run_id, finished_at: dry.finished_at, status: dry.status } : null, refusal: liveRefusal(stage, dry),
     files, pages, db: ['B', 'H'].includes(stage) && dry ? await dbPlan(stage, dry.run_id) : null, last_live: lastLive(stage, history.live[stage]) };
 }
 

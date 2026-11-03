@@ -66,6 +66,8 @@ const simulated = (mode, urls) => (mode === 'dry' && Array.isArray(urls) ? urls.
 
 /** Live promotes the stage's latest dry run (the runner re-checks this, and that the files are unchanged). */
 function liveRefusal(stage, dry) {
+  // Stage I promotes nothing: live I starts the full audit ① now (the runner also refuses while ① is running).
+  if (stage === 'I') return new Date().getUTCDay() === 1 ? 'Never on a Monday: the Monday cron runs ①' : null;
   if (!dry) return `Run stage ${stage} dry first`;
   if (!['ok', 'warn'].includes(dry.status)) return `Stage ${stage}'s last dry run ${dry.status} — run it dry again`;
   if (Date.now() - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `Stage ${stage}'s last dry run is older than 7 days — run it dry again`;
@@ -80,7 +82,7 @@ async function liveGate(session, body, mode) {
   if (mode !== 'live') return null;
   if (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan') return [403, { error: 'LIVE mode is not enabled yet' }];
   const runAll = !Array.isArray(body.stages) || !body.stages.length;
-  if (runAll && !liveState(session, await historyNow()).run_all_unlocked) return [400, { error: 'Live Run all unlocks after every stage has run live once' }];
+  if (runAll && !liveState(session, await historyNow()).run_all_unlocked) return [400, { error: 'Live Run all unlocks after stages A–H have each run live once' }];
   if (!runAll && body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
   return null;
 }

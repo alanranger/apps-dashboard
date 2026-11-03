@@ -168,9 +168,9 @@
         <span class="run-all-mode"><span class="muted">Run all mode:</span>
           <span class="mode" role="radiogroup" aria-label="Run all mode">
             <label><input type="radio" name="mode" value="dry" checked><span>Test run</span></label>
-            <label class="disabled" id="liveRadioLabel" title="Live Run all unlocks after every stage has run live once"><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
+            <label class="disabled" id="liveRadioLabel" title="Live Run all unlocks after stages A–H have each run live once"><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
           </span></span>
-        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Run all: test run only (live unlocks after every stage has run live once). Publish live one stage at a time from Stages below.</span>
+        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Run all: test run only (live unlocks after stages A–H have each run live once). Publish live one stage at a time from Stages below.</span>
         <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
         <button class="secondary" id="cancelBtn" disabled>Cancel</button>
         <span class="muted" id="actionMsg" data-testid="action-msg"></span>
@@ -341,7 +341,7 @@
     /** Dry run, Publish live… (confirmation first; stage I is the audit, never published), and Undo after a live publish. */
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
-      const live = id === 'I' ? '' : `<button class="small live" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>Publish live…</button>`;
+      const live = `<button class="small live" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>${id === 'I' ? 'Run ① live…' : 'Publish live…'}</button>`;
       return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${live}${undoButton(id, off)}`;
     }
 
@@ -683,10 +683,24 @@
         + `<p class="muted">Also published: ${esc(db.file)}</p>`;
     }
 
+    /** Stage I publishes nothing: its live run starts the full audit ① (the Monday job) now. */
+    function openAuditConfirm(plan, blocked) {
+      openModal(`<h3 data-testid="live-confirm-title">Run stage I live — Full audit ①</h3>
+        <p>Starts the full audit ① now, the same job the Monday schedule runs: render every page, check broken links, then the ② score.
+        It usually takes 1–3 hours; the progress window follows it. Nothing is published and there is nothing to undo.</p>
+        <p class="muted">Refused on a Monday (the Monday ① runs anyway) and while ① is already running.</p>
+        ${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
+        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
+        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start ① live</button></div>`);
+      $('liveCancel').onclick = closeModal;
+      $('livePublish').onclick = () => { closeModal(); startStages(['I'], 'live'); };
+    }
+
     async function openLiveConfirm(stage) {
       const plan = await api(`/api/update-all?live_plan=${encodeURIComponent(stage)}`);
       const name = stageInfo?.defs?.find((d) => d.id === stage)?.name || '';
       const blocked = plan.refusal || (!liveInfo?.can_publish ? 'Live is switched off (Alan only, when Claude and Alan ask for it)' : '');
+      if (plan.audit) { openAuditConfirm(plan, blocked); return; }
       const files = plan.db ? '' : listBlock('Files it publishes', plan.files, 'live-confirm-files') + listBlock('Site pages they affect', plan.pages, 'live-confirm-pages');
       openModal(`<h3 data-testid="live-confirm-title">Publish stage ${esc(stage)} live — ${esc(name)}</h3>
         <dl><dt>Stage</dt><dd>${esc(stage)} · ${esc(name)}</dd>

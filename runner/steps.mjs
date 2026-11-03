@@ -789,13 +789,15 @@ const AUDIT_POLL_MS = 60 * 1000;
 const AUDIT_MAX_MS = 180 * 60 * 1000;
 
 /** Live only: start (or join) the full ① run and wait until render and broken links are both finished. */
-async function liveAudit() {
+async function liveAudit(ctx) {
   const start = await fetch(RENDER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start', source: 'trad_seo' }) }).then((r) => r.json());
   if (!start.ok) return { status: 'fail', error: `① start: ${start.error || 'failed'}` };
+  ctx.progress?.(`① full audit started (run ${String(start.run_id).slice(0, 8)}): waiting for the render`, 0, 0);
   for (const t0 = Date.now(); Date.now() - t0 < AUDIT_MAX_MS;) {
     await new Promise((r) => setTimeout(r, AUDIT_POLL_MS));
     const g = await fetch(`${RENDER_API}?runId=${start.run_id}`).then((r) => r.json()).catch(() => null);
     const status = g?.run?.status;
+    ctx.progress?.(`① full audit ${status || 'status unknown'}: ${(g?.pages || []).length} pages rendered, ${(g?.broken || []).length} checked for broken links`, 0, 0);
     if (status && !['running', 'started'].includes(status)) {
       const pending = (g.pages || []).length - (g.broken || []).length;
       if (status !== 'done' && status !== 'finished') return { status: 'warn', counts: { run_id: start.run_id, run_status: status }, warnings: [`① ended ${status}`] };
@@ -821,7 +823,7 @@ async function audit(ctx) {
   }
   if (monday) return { counts, notes: [problem('Never on a Monday: the Monday cron runs ①', 'run ① on another day')] };
   if (counts.audit_already_running) return { counts, notes: [check('① is already running, so it was not started again', 'nothing to do; it finishes on its own')] };
-  return liveAudit();
+  return liveAudit(ctx);
 }
 
 /** Product *_schema.json names (+ _faq.json) from 04, and blog url ids from 01 (sandbox copies when the run made them). */

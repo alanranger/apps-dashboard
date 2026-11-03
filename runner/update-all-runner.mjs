@@ -67,6 +67,8 @@ export async function prepareLiveRun(store, run) {
   if (run.mode !== 'live') return {};
   if (run.stages?.length !== 1) return { blocked: "Live runs one stage at a time (use that stage's Run this stage button)" };
   const stage = run.stages[0];
+  // Stage I publishes nothing: live I starts the full audit ① (refused on Mondays / while ① runs, in the audit step).
+  if (stage === 'I') return {};
   if (!LIVE_STAGES.has(stage)) return { blocked: `Live is not built for stage ${stage} yet` };
   const runs = await store.query(`update_all_runs?select=id,stage_results,finished_at&id=neq.${run.id}&order=requested_at.desc&limit=60`);
   const dry = stageHistory(runs, 'dry')[stage];
