@@ -482,12 +482,21 @@ async function productSchema(ctx) {
     outputs: [`${sb.shared}/outputs/schema/products (sandbox)`, `${out07} (sandbox)`, path.join(sb.root, '07-diff.json')] };
 }
 
+/** Squarespace created date per product slug (the Commerce API cache the run fetched) — the source of offer validFrom. */
+export function productCreatedDates(feedsDir) {
+  const file = path.join(feedsDir, 'commerce-api-products-v2.json');
+  if (!fs.existsSync(file)) return new Map();
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const products = Array.isArray(data) ? data : (data.products || data.result || []);
+  return new Map(products.filter((p) => p.urlSlug && p.createdOn).map((p) => [p.urlSlug, String(p.createdOn).slice(0, 10)]));
+}
+
 /** P11: the new 07 against the live 07, per product, each change tied to its source (Squarespace now / the published 04). */
 function productDiff07(sb, out07) {
   const pick = (rel) => [path.join(sb.shared, rel), `${SHARED}/${rel}`].find((p) => fs.existsSync(p));
   const rows04 = readCsvObjects(pick('csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv')).rows;
   const d = diff07(readCsvObjects(`${SHARED}/csv/07-product-schema-with-review-ratings.csv`).rows, readCsvObjects(out07).rows,
-    readCsvObjects(pick('csv/raw-01-products-sqsp-export.csv')).rows, rows04);
+    readCsvObjects(pick('csv/raw-01-products-sqsp-export.csv')).rows, rows04, productCreatedDates(path.join(sb.root, 'feeds')));
   fs.writeFileSync(path.join(sb.root, '07-diff.json'), JSON.stringify(d, null, 2));
   return d;
 }

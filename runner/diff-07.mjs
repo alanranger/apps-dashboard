@@ -63,6 +63,27 @@ const reviews = (c, sq, ref) => {
   return Number(c.newRaw) > Number(c.liveRaw) ? 'new reviews merged since the live 07' : null;
 };
 
+// Offer dates are stable since batch 8 (Schema Tools scripts/offer_dates.py); the live 07 still carried run dates.
+const MONTH = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const isoDay = (v) => String(v || '').slice(0, 10);
+
+/** validFrom = the product's Squarespace created date (Commerce API), else 1 Jan of the run year. */
+function validFromWhy(c, sq) {
+  const d = isoDay(c.newRaw);
+  if (sq?.createdOn && d === sq.createdOn) return "the product's Squarespace created date (stable since batch 8; the live 07 had a run date)";
+  if (!sq?.createdOn && /^\d{4}-01-01$/.test(d)) return '1 Jan of the run year (no Squarespace created date on record)';
+  return null;
+}
+
+/** priceValidUntil = a variant's event date from its option text, else 31 Dec of next year. */
+function validUntilWhy(c, sq) {
+  const d = isoDay(c.newRaw);
+  if (/^\d{4}-12-31$/.test(d) && Number(d.slice(0, 4)) === new Date().getUTCFullYear() + 1) return '31 Dec next year (no dated variant; moves once a year)';
+  const [, m, day] = d.split('-').map(Number);
+  const dated = [...(sq?.options || [])].some((o) => new RegExp(`\\b${day}(st|nd|rd|th)?\\s+${MONTH[m - 1]}`).test(o));
+  return dated ? "a variant's event date (from its Squarespace option text)" : null;
+}
+
 /** Explanation for one changed field, or null when no source explains it. */
 const EXPLAIN = {
   title: (c, sq) => (sq?.titles.has(c.newRaw) ? 'Squarespace product title now (renamed since the live 07)' : null),
@@ -75,8 +96,8 @@ const EXPLAIN = {
   },
   'offer.@id': (c, sq) => (sq?.variants === 1 && String(c.newRaw).endsWith('#offer') ? 'product has one variant now (no #offerN suffix)' : null),
   'offer.priceSpecification': (c, sq) => (c.newRaw === undefined && sq && !sq.onSale ? 'Squarespace sale has ended (no variant on sale now)' : null),
-  'offer.validFrom': () => 'generation date (moves every run)',
-  'offer.priceValidUntil': () => 'generation date + 1 year (moves every run)',
+  'offer.validFrom': validFromWhy,
+  'offer.priceValidUntil': validUntilWhy,
   'offer.availability': () => 'Squarespace stock now (in stock / sold out)',
   'review count': reviews,
   rating: reviews,
@@ -106,10 +127,11 @@ const reviewRef = (rows04) => new Map(rows04.map((r) => [String(r.url || '').rep
  * Whole-file difference list. liveRows/newRows: CSV objects with Title + JSON-LD Structured Data;
  * raw01Rows: Squarespace now; rows04: the published product schema (review totals).
  */
-export function diff07(liveRows, newRows, raw01Rows = [], rows04 = []) {
+export function diff07(liveRows, newRows, raw01Rows = [], rows04 = [], createdOn = new Map()) {
   const live = byProduct(liveRows);
   const fresh = byProduct(newRows);
   const sq = squarespaceIndex(raw01Rows);
+  for (const [slug, e] of sq) if (createdOn.has(slug)) e.createdOn = createdOn.get(slug);
   const ref = reviewRef(rows04);
   const products = [];
   let unchanged = 0;
