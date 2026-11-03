@@ -14,7 +14,7 @@
   const ICON = { ok: '✅', warn: '⚠️', fail: '❌', running: '⏳', pending: '⬜', skipped: '✅' };
   const RESULT = { succeeded: ['✅', 'ok'], warned: ['⚠️', 'warn'], failed: ['❌', 'fail'], cancelled: ['❌', 'fail'] };
   const S = { data: null, offset: 0, open: false, timer: null, title: document.title, watched: null, lastStatus: null,
-    sound: localStorage.getItem('bau_sound') === '1', logPinned: true };
+    sound: localStorage.getItem('bau_sound') !== '0', logPinned: true };
 
   const now = () => Date.now() + S.offset;
   const ms = (iso) => (iso ? Date.parse(iso) : null);
