@@ -26,8 +26,25 @@ async function stepEstimates(run) {
   return out;
 }
 
+/** stage → { dry, live } typical run time in ms: median of the last 5 finished single-stage runs (undo runs excluded). */
+function stageTypical(runs) {
+  const by = {};
+  for (const r of runs) {
+    const ok = ['succeeded', 'warned'].includes(r.status) && r.stages?.length === 1 && !r.options?.undo_of && r.started_at && r.finished_at;
+    if (!ok) continue;
+    const key = `${r.stages[0]}|${r.mode}`;
+    (by[key] ||= []).push(Date.parse(r.finished_at) - Date.parse(r.started_at));
+  }
+  const out = {};
+  for (const [key, list] of Object.entries(by)) {
+    const [stage, mode] = key.split('|');
+    (out[stage] ||= {})[mode] = median(list.slice(0, 5));
+  }
+  return out;
+}
+
 async function runnerState() {
   return (await sb('update_all_runner_state?id=eq.pc').catch(() => []))[0] || null;
 }
 
-module.exports = { stepEstimates, runnerState, median };
+module.exports = { stepEstimates, stageTypical, runnerState, median };

@@ -313,6 +313,12 @@
       return `<div data-testid="stage-history-${mode}"><span class="badge b-${esc(h.status)}">${esc(h.status)}</span> ${label} · ${esc(when(h.finished_at))}${pub}${commit}${backup}${undo}${ingest} <span class="muted">· run <code>${esc(String(h.run_id || '').slice(0, 8))}</code></span></div>`;
     }
 
+    /** "Typical: test about 1 min · live about 71 min" from the stage's last finished single-stage runs. */
+    function typicalHtml(t) {
+      const part = (label, ms) => `${label} ${ms ? `about ${ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`}` : 'not run yet'}`;
+      return `<div class="muted" style="font-size:0.8rem" data-testid="stage-typical">Typical: ${part('test', t?.dry)} · ${part('live', t?.live)}</div>`;
+    }
+
     function renderStages(info, run) {
       if (!info) return;
       stageInfo = info;
@@ -320,7 +326,7 @@
       $('stageRows').innerHTML = info.defs.map((s) => {
         const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
         const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(info.history.live[s.id], 'live', s.id);
-        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong></td>
+        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id])}</td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="stage-actions">${stageButtons(s.id, active)}</div></td></tr>`;

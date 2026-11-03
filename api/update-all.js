@@ -16,18 +16,18 @@ const { json, cors, readBody, requireAuth, sb } = require('./mc/_lib');
 const REGISTRY = require('../runner/steps.json');
 const { STAGES, planStage, stageHistory, sortStages } = require('../runner/stages.cjs');
 const { liveState, livePlan, undoRequest } = require('./_bau-live');
-const { stepEstimates, runnerState } = require('./_bau-progress');
+const { stepEstimates, stageTypical, runnerState } = require('./_bau-progress');
 
 const ACTIVE = 'status=in.(requested,running)';
 const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
 
-const recentRuns = () => sb('update_all_runs?select=id,mode,status,stages,stage_results,requested_at,finished_at&order=requested_at.desc&limit=60');
+const recentRuns = () => sb('update_all_runs?select=id,mode,status,stages,stage_results,options,requested_at,started_at,finished_at&order=requested_at.desc&limit=60');
 
 async function stagesInfo() {
   const runs = await recentRuns();
   const history = { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live') };
   const plans = Object.fromEntries(STAGES.map((s) => [s.id, planStage([s.id], history.dry)]));
-  return { defs: STAGES.map(({ id, name, steps, needs, needsAny }) => ({ id, name, steps, needs, needsAny: needsAny || null })), history, plans };
+  return { defs: STAGES.map(({ id, name, steps, needs, needsAny }) => ({ id, name, steps, needs, needsAny: needsAny || null })), history, plans, typical: stageTypical(runs) };
 }
 
 async function pageChoices(run) {
