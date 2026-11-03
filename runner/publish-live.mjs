@@ -125,11 +125,14 @@ export async function livePublish(def, sb, ctx, set) {
   const { repo, remove } = set;
   const publish = current;
   // Schema repo: must be clean. alan-shared-resources (A/C): nothing staged and the stage's own files unmodified.
+  ctx.progress?.(`Copying ${publish.length + remove.length} files into ${path.basename(repo)}`, 0, 3);
   assertClean(repo, def.filesScope ? [...publish, ...remove] : null);
   for (const f of publish) fs.copyFileSync(src(f), path.join(repo, f));
   for (const f of remove) fs.rmSync(path.join(repo, f), { force: true });
   const message = `BAU ${def.stage} live from dry run ${String(ctx.promote.run_id).slice(0, 8)}: ${plural(publish.length, `${def.what} file`)}${remove.length ? `, ${remove.length} removed` : ''}`;
+  ctx.progress?.('Committing and pushing', 1, 3);
   const r = commitAndPush({ repo, files: [...publish, ...remove], message, expectExact: true, restoreOnAbort: true });
+  ctx.progress?.('Checking the published file is served', 2, 3);
   const cdn = publish.length ? await cdnCheck(publish[0], repo, ctx, def) : 'nothing published';
   const after = def.after && r.commit ? def.after(sb, ctx, r) : {};
   const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (dry run ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];

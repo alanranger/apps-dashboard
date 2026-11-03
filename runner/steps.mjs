@@ -882,7 +882,7 @@ const B_EXPORT = 'csv processed/05-event-product-mappings-latest.csv';
 /** B only: ingest steps 2–4 + the mappings export, then that export as its own commit in alan-shared-resources. */
 async function liveSteps2to4(ctx, sb) {
   const exportOut = path.join(sb.root, 'live-05-export.csv');
-  const steps = await liveIngestSteps({ exportOut });
+  const steps = await liveIngestSteps({ exportOut, onProgress: ctx.progress });
   const pub = publishSharedFile(sharedRepoOf(ctx), B_EXPORT, exportOut, `BAU B live: 05 event-product links export (run ${String(ctx.runId).slice(0, 8)})`);
   return { steps_2_4: { urls: steps.content.urls, failed: steps.content.failed.length, export_rows: steps.exportRows }, export_commit: pub.commit, export_unchanged: !!pub.unchanged };
 }
@@ -893,7 +893,7 @@ const dbStage = (stage, handler) => async (ctx) => {
   const sb = buildSandbox(ctx);
   const existing = (await ctx.store.queryAll(`csv_metadata?select=id,url&csv_type=in.(${DB_TYPES[stage].join(',')})`)).map((r) => r.url);
   const rpc = (fn, args) => ctx.store.query(`rpc/${fn}`, { method: 'POST', body: args });
-  const r = await liveDbIngest({ stage, csvDir: path.join(sb.shared, 'csv'), runId: ctx.runId, existingUrls: existing }, { rpc, importFn: csvImport });
+  const r = await liveDbIngest({ stage, csvDir: path.join(sb.shared, 'csv'), runId: ctx.runId, existingUrls: existing }, { rpc, importFn: csvImport, onProgress: ctx.progress });
   const extra = stage === 'B' ? await liveSteps2to4(ctx, sb) : {};
   const types = DB_TYPES[stage].length;
   const took = r.reused ? `Reused the finished backup bau_bk_${r.run8}_* (taken before the first write)` : `Backed up ${Object.keys(r.backup).length} tables (bau_bk_${r.run8}_*) before writing`;

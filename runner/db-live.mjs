@@ -49,17 +49,21 @@ const chunks = (list, size) => Array.from({ length: Math.ceil(list.length / size
  * A finished backup (bau_backup_done) is never retaken: on Resume it is still the state before the first write.
  * Returns { backup: { table: rows }, timing_ms: { table: ms }, reused }.
  */
-export async function backupParts(run8, urls, rpc, mode = 'live') {
+export async function backupParts(run8, urls, rpc, mode = 'live', onProgress = null) {
   if (await rpc('bau_backup_done', { p_run: run8, p_mode: mode })) return { backup: {}, timing_ms: {}, reused: true };
   const call = (table, list) => rpc('bau_backup_part', { p_run: run8, p_table: table, p_urls: list, p_mode: mode });
   const backup = {};
   const timing = {};
   const u = await call('urls', urls);
   backup[u.table] = u.rows;
-  for (const t of BACKUP_TABLES) {
+  for (const [i, t] of BACKUP_TABLES.entries()) {
     const t0 = Date.now();
+    const lists = t === 'page_html' ? chunks(urls, HTML_URL_CHUNK) : [urls];
     let r = null;
-    for (const list of t === 'page_html' ? chunks(urls, HTML_URL_CHUNK) : [urls]) r = await call(t, list);
+    for (const [c, list] of lists.entries()) {
+      onProgress?.(lists.length > 1 ? `Backing up ${t} — chunk {n} of {total}` : `Backing up ${t} (table {n} of {total})`, lists.length > 1 ? c : i, lists.length > 1 ? lists.length : BACKUP_TABLES.length);
+      r = await call(t, list);
+    }
     backup[r.table] = r.rows;
     timing[t] = Date.now() - t0;
   }
@@ -76,15 +80,22 @@ export async function liveDbIngest({ stage, csvDir, runId, existingUrls = [] }, 
   const texts = Object.fromEntries(types.map((t) => [t, fs.readFileSync(path.join(csvDir, TYPE_FILES[t]), 'utf8')]));
   const urls = affectedUrls(Object.values(texts), existingUrls);
   const run8 = runKey(runId);
-  const { backup, timing_ms: timingMs, reused } = await backupParts(run8, urls, deps.rpc);
+  const { backup, timing_ms: timingMs, reused } = await backupParts(run8, urls, deps.rpc, 'live', deps.onProgress);
   const imported = {};
-  for (const t of types) imported[t] = await deps.importFn(t, texts[t]);
+  for (const [i, t] of types.entries()) {
+    deps.onProgress?.(`Importing ${t.replace(/_/g, ' ')} ({n} of {total} file types)`, i, types.length);
+    imported[t] = await deps.importFn(t, texts[t]);
+  }
   return { run8, backup, timing_ms: timingMs, reused, imported, urls: urls.length };
 }
 
 /** Undo B / H: restore the run's backup exactly, one table per call, then the same refresh RPCs. deps: { rpc, refreshFn }. */
 export async function liveDbUndo(run8, deps, mode = 'live') {
   const restored = {};
-  for (const t of BACKUP_TABLES) restored[t] = await deps.rpc('bau_restore_part', { p_run: run8, p_table: t, p_mode: mode });
+  for (const [i, t] of BACKUP_TABLES.entries()) {
+    deps.onProgress?.(`Restoring ${t} ({n} of {total} tables)`, i, BACKUP_TABLES.length);
+    restored[t] = await deps.rpc('bau_restore_part', { p_run: run8, p_table: t, p_mode: mode });
+  }
+  deps.onProgress?.('Refresh RPCs (admin refresh + finalize)', 0, 0);
   return { restored, refreshed: deps.refreshFn ? await deps.refreshFn() : null };
 }

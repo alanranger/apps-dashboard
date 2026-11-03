@@ -25,21 +25,27 @@ export async function api(pathAndQuery, { method = 'GET', body } = {}) {
 }
 
 /** Step 2: ingest every URL from the step-1 import (csv_metadata imported in the last 5 minutes), paced. */
-async function ingestContent() {
+async function ingestContent(onProgress) {
   const items = JSON.parse(await api('/api/tools?action=get_urls&recent=true')).urls || [];
   const urls = [...new Set(items.map((i) => i.url).filter(Boolean))];
   const failed = [];
-  for (const url of urls) {
+  for (const [i, url] of urls.entries()) {
+    onProgress?.('Ingesting page content (step 2) — page {n} of {total}', i, urls.length);
     try { await api('/api/ingest', { method: 'POST', body: { url } }); } catch (e) { failed.push({ url, error: e.message }); }
     await new Promise((r) => setTimeout(r, GAP_MS));
   }
+  onProgress?.('Ingesting page content (step 2) — page {n} of {total}', urls.length, urls.length);
   return { urls: urls.length, failed };
 }
 
-export async function liveIngestSteps({ exportOut }) {
-  const content = await ingestContent();
+/** onProgress(label, done, total): the progress window's sub-steps (optional). */
+export async function liveIngestSteps({ exportOut, onProgress = null }) {
+  const content = await ingestContent(onProgress);
+  onProgress?.('Refresh RPCs (admin refresh + finalize, steps 3–4)', 0, 2);
   await api('/api/admin?action=refresh', { method: 'POST' });
+  onProgress?.('Refresh RPCs (admin refresh + finalize, steps 3–4)', 1, 2);
   await api('/api/tools?action=finalize', { method: 'POST' });
+  onProgress?.('Exporting the 05 event-product mappings', 0, 0);
   const csv = await api('/api/tools?action=export');
   fs.writeFileSync(exportOut, csv);
   return { content, exportRows: Math.max(0, csv.split(/\r?\n/).filter(Boolean).length - 1) };

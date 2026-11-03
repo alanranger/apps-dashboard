@@ -25,6 +25,8 @@ import { HANDLERS, SHARED, readSiteState, retryAfterMs, sandboxFor, seedSandbox,
 import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from './cooldown.mjs';
 import { LIVE_STAGES, DB_ONLY_STAGES } from './publish-live.mjs';
 import { undoStage, undoRefusal } from './undo-live.mjs';
+import { progressReporter, loggingStore, recordRunnerCheck } from './progress.mjs';
+import { retentionPlan, applyRetention } from './bau-retention.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -160,17 +162,24 @@ async function processUndo(store, run) {
     return 'failed';
   }
   await store.updateRun(run.id, { status: 'running', started_at: now(), runner_host: os.hostname() });
+  const reporter = progressReporter(store, run.id);
+  await reporter.start();
+  await reporter.step('undo', `Undoing stage ${stage}'s live run ${String(live.run_id).slice(0, 8)}`);
+  await reporter.line(`Undo of stage ${stage} (live run ${String(live.run_id).slice(0, 8)}) started on ${os.hostname()}`);
   holdAutoSyncLock(run.id);
   try {
-    const out = await undoStage(stage, live, run.id, { rpc: (fn, args) => store.query(`rpc/${fn}`, { method: 'POST', body: args }) });
+    const out = await undoStage(stage, live, run.id, { rpc: (fn, args) => store.query(`rpc/${fn}`, { method: 'POST', body: args }), onProgress: reporter.progress });
     await store.updateRun(run.id, { status: 'succeeded', finished_at: now(), stage_results: { [stage]: { status: 'ok', mode: 'live', finished_at: now(), undo_of: live.run_id, undone: out } } });
     say(`[update-all] undo of stage ${stage} (live run ${String(live.run_id).slice(0, 8)}) finished`);
+    await reporter.line('Undo finished');
     return 'succeeded';
   } catch (e) {
     await store.updateRun(run.id, { status: 'failed', error: `Undo failed: ${String(e?.message || e).slice(0, 500)}`, finished_at: now() });
+    await reporter.line(`Undo failed: ${String(e?.message || e).slice(0, 200)}`);
     return 'failed';
   } finally {
     releaseAutoSyncLock(run.id);
+    await reporter.stop();
   }
 }
 
@@ -188,23 +197,53 @@ async function process1(store, run) {
   }
   if (run.mode === 'live' && await liveCooldown(store, run)) return 'waiting';
   const ctx = runContext(store, run, live.promote || null);
-  say(`[update-all] run ${run.id} (${run.mode}, ${ctx.stages ? `stages ${ctx.stages.join('')}` : 'run all'}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
+  const reporter = progressReporter(store, run.id);
+  ctx.progress = reporter.progress;
+  await reporter.start();
+  try {
+    return await runReported(store, run, ctx, reporter);
+  } finally {
+    await reporter.stop();
+  }
+}
+
+/** The run itself, with the progress window's heartbeat, step log lines and sub-progress (ctx.progress). */
+async function runReported(store, run, ctx, reporter) {
+  const scope = ctx.stages ? `stages ${ctx.stages.join('')}` : 'run all';
+  say(`[update-all] run ${run.id} (${run.mode}, ${scope}) starting${run.resume_from ? ` — resume from ${run.resume_from}` : ''}`);
+  await reporter.line(`Run ${run.id.slice(0, 8)} (${run.mode}, ${scope}) picked up by ${os.hostname()}${run.resume_from ? ` — resuming from ${run.resume_from}` : ''}`);
   const blocked = run.resume_from ? null : await prepareStageRun(store, run, { ...ctx, runId: run.id }).catch((e) => `could not prepare the stage inputs: ${String(e?.message || e).slice(0, 300)}`);
   if (blocked) {
     await store.updateRun(run.id, { status: 'failed', error: blocked, finished_at: new Date().toISOString() });
     say(`[update-all] run ${run.id} not started: ${blocked}`);
+    await reporter.line(`Not started: ${blocked}`);
     return 'failed';
   }
   holdAutoSyncLock(run.id);
+  const registry = registryFor(ctx.stages);
   let status;
   try {
-    status = await executeRun(store, run, registryFor(ctx.stages), selectedHandlers(arg('--only')), ctx);
+    status = await executeRun(loggingStore(store, reporter, registry), run, registry, selectedHandlers(arg('--only')), ctx);
   } finally {
     releaseAutoSyncLock(run.id);
   }
   for (const s of await store.listSteps(run.id)) say(`  ${String(s.ord).padStart(2)} ${s.status.padEnd(8)} ${s.name}${s.error ? ` — ${s.error}` : ''}`);
   say(`[update-all] run ${run.id} finished: ${status}`);
+  await reporter.line(`Run finished: ${status}`);
   return status;
+}
+
+/** Backup retention (14-day undo window, latest per stage; runner/bau-retention.mjs). Logs every drop; never fails a check. */
+async function cleanupBackups(store) {
+  try {
+    const rpc = (fn, args) => store.query(`rpc/${fn}`, { method: 'POST', body: args });
+    const inventory = await rpc('bau_backup_inventory', {});
+    if (!inventory?.length) return;
+    const runs = await store.query('update_all_runs?select=id,mode,status,stages,options,requested_at,finished_at&order=requested_at.desc&limit=200');
+    for (const line of await applyRetention(retentionPlan(inventory, runs), rpc)) say(`[update-all] backups: ${line}`);
+  } catch (e) {
+    fileLog(`[update-all] backup clean-up skipped: ${String(e?.message || e).slice(0, 200)}`);
+  }
 }
 
 const fileLog = logger();
@@ -235,7 +274,9 @@ async function dispatch(store) {
     if (!run) throw new Error('run not found');
     return process1(store, run);
   }
+  if (has('--once')) await cleanupBackups(store);
   do {
+    await recordRunnerCheck(store, { host: os.hostname(), liveSwitch: liveSwitchOn() });
     const next = await store.nextRequested();
     if (next) await process1(store, next);
     else if (has('--once')) fileLog(`[update-all] no requested run (live switch ${liveSwitchOn() ? 'on' : 'off'})`);

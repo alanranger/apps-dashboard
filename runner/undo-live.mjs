@@ -34,7 +34,7 @@ export async function undoStage(stage, target, runId, deps) {
   const repos = deps.repos || { shared: SHARED, schema: SCHEMA_REPO };
   const out = { files: undoFiles(stage, target, runId, repos) };
   if (target.export_commit) out.export = undoCommit({ repo: repos.shared, commit: target.export_commit, filesOnly: true, message: `Undo BAU ${stage} 05 export (undo run ${String(runId).slice(0, 8)})` });
-  if (target.backup_run) out.db = await liveDbUndo(target.backup_run, { rpc: deps.rpc, refreshFn: deps.refreshFn || refreshAndFinalize });
+  if (target.backup_run) out.db = await liveDbUndo(target.backup_run, { rpc: deps.rpc, refreshFn: deps.refreshFn || refreshAndFinalize, onProgress: deps.onProgress });
   out.manifest = restoreManifest(target);
   return out;
 }
