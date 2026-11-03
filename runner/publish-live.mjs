@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { checkPublishSet } from './removals.mjs';
+import { committedBlobs, servedCheck, servedText } from './served-check.mjs';
 
 const SCHEMA_TOOLS = 'G:/Dropbox/alan ranger photography/Website Code/Schema Tools';
 const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/deploy-schemas.mjs`).href);
@@ -102,17 +103,13 @@ export function publishSharedFile(repo, rel, fromFile, message) {
   return { file: rel, commit: r.commit };
 }
 
-/** After the push: GitHub Pages serves the new bytes (polled; a slow CDN is a check, not a failure). */
-async function cdnCheck(file, repo, ctx, def) {
-  if (def.cdn === false) return 'not served by the CDN (CSV in alan-shared-resources)';
-  if (ctx.cdnCheck === false) return 'skipped (proof run)';
-  const want = fs.readFileSync(path.join(repo, file), 'utf8');
-  for (let i = 0; i < 9; i += 1) {
-    const body = await fetch(`https://schema.alanranger.com/${file}?t=${Date.now()}`).then((r) => (r.ok ? r.text() : '')).catch(() => '');
-    if (body === want) return 'serving the published bytes';
-    await new Promise((r) => setTimeout(r, 20000));
-  }
-  return 'not updated after 3 minutes';
+/** After the push: schema.alanranger.com serves every published file as committed (a slow CDN is a check, not a failure). */
+async function servedFiles(publish, repo, commit, ctx, def) {
+  if (def.cdn === false) return { text: 'not served by the CDN (CSV in alan-shared-resources)', differ: [] };
+  if (ctx.cdnCheck === false) return { text: 'skipped (proof run)', differ: [] };
+  if (!publish.length || !commit) return { text: 'nothing published', differ: [] };
+  const r = await servedCheck(committedBlobs(repo, commit, publish), { onProgress: ctx.progress });
+  return { ...r, text: servedText(r) };
 }
 
 /** LIVE: copy the dry run's files into the schema repo, commit exactly them, push, check the CDN. */
@@ -132,13 +129,13 @@ export async function livePublish(def, sb, ctx, set) {
   const message = `BAU ${def.stage} live from dry run ${String(ctx.promote.run_id).slice(0, 8)}: ${plural(publish.length, `${def.what} file`)}${remove.length ? `, ${remove.length} removed` : ''}`;
   ctx.progress?.('Committing and pushing', 1, 3);
   const r = commitAndPush({ repo, files: [...publish, ...remove], message, expectExact: true, restoreOnAbort: true });
-  ctx.progress?.('Checking the published file is served', 2, 3);
-  const cdn = publish.length ? await cdnCheck(publish[0], repo, ctx, def) : 'nothing published';
+  ctx.progress?.('Checking served files', 2, 3);
+  const served = await servedFiles(publish, repo, r.commit, ctx, def);
   const after = def.after && r.commit ? def.after(sb, ctx, r) : {};
   const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (dry run ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
-  if (!/serving|skipped|nothing|not served/.test(cdn)) notes.push(note('check', `schema.alanranger.com is ${cdn}`, 'open the file on schema.alanranger.com in a few minutes'));
+  if (served.differ.length) notes.push(note('check', `schema.alanranger.com ${served.text}`, 'open those files on schema.alanranger.com in a few minutes; if they still differ, tell Claude'));
   return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
-    repo_name: path.basename(repo), cdn_sample: `${publish[0] || '-'}: ${cdn}`, ...removalCounts(set.removals), ...after },
+    repo_name: path.basename(repo), served_check: served.text, served_differ: served.differ, ...removalCounts(set.removals), ...after },
     notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from dry run ${String(ctx.promote.run_id).slice(0, 8)}.`,
-    details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, `CDN: ${cdn}`] };
+    details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, served.text] };
 }

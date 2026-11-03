@@ -151,6 +151,7 @@
     if (p && p.step === cur?.step_id && p.label) {
       // Runner labels carry {n} (the item in hand, 1-based) and {total}: "Backing up page_html — chunk 9 of 14".
       if (p.label.includes('{n}')) return p.label.replace('{n}', String(Math.min(p.done + 1, p.total))).replace('{total}', String(p.total));
+      if (p.label.includes('{done}')) return p.label.replace('{done}', String(p.done)).replace('{total}', String(p.total));
       return p.total > 0 ? `${p.label} — ${p.done} of ${p.total}` : p.label;
     }
     if (cur && !run.heartbeat_at) return 'working… (this run started before the runner reported sub-steps)';
