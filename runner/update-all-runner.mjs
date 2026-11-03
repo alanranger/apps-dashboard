@@ -24,6 +24,7 @@ import { loadEnv, supabaseStore } from './store.mjs';
 import { HANDLERS, SHARED, readSiteState, retryAfterMs, sandboxFor, seedSandbox, siteProbe } from './steps.mjs';
 import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from './cooldown.mjs';
 import { LIVE_STAGES, DB_ONLY_STAGES } from './publish-live.mjs';
+import { undoStage, undoRefusal } from './undo-live.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -143,11 +144,38 @@ function runContext(store, run, promote) {
   return ctx;
 }
 
+/** "Undo this stage": reverse the stage's latest live publish (files, database backup, B's 05 export, F's manifest). */
+async function processUndo(store, run) {
+  const stage = run.stages?.[0];
+  const runs = await store.query(`update_all_runs?select=id,stage_results,finished_at&id=neq.${run.id}&order=requested_at.desc&limit=60`);
+  const live = stageHistory(runs, 'live')[stage];
+  const why = undoRefusal(stage, live, run.options?.undo_of);
+  const now = () => new Date().toISOString();
+  if (why) {
+    await store.updateRun(run.id, { status: 'failed', error: `Undo refused: ${why}`, finished_at: now() });
+    return 'failed';
+  }
+  await store.updateRun(run.id, { status: 'running', started_at: now(), runner_host: os.hostname() });
+  holdAutoSyncLock(run.id);
+  try {
+    const out = await undoStage(stage, live, run.id, { rpc: (fn, args) => store.query(`rpc/${fn}`, { method: 'POST', body: args }) });
+    await store.updateRun(run.id, { status: 'succeeded', finished_at: now(), stage_results: { [stage]: { status: 'ok', mode: 'live', finished_at: now(), undo_of: live.run_id, undone: out } } });
+    say(`[update-all] undo of stage ${stage} (live run ${String(live.run_id).slice(0, 8)}) finished`);
+    return 'succeeded';
+  } catch (e) {
+    await store.updateRun(run.id, { status: 'failed', error: `Undo failed: ${String(e?.message || e).slice(0, 500)}`, finished_at: now() });
+    return 'failed';
+  } finally {
+    releaseAutoSyncLock(run.id);
+  }
+}
+
 async function process1(store, run) {
   if (run.mode !== 'dry' && process.env.UPDATE_ALL_LIVE_ENABLED !== '1') {
     await store.updateRun(run.id, { status: 'cancelled', error: 'LIVE mode is not enabled yet', finished_at: new Date().toISOString() });
     return 'cancelled';
   }
+  if (run.options?.undo_of) return processUndo(store, run);
   const live = await prepareLiveRun(store, run);
   if (live.blocked) {
     await store.updateRun(run.id, { status: 'failed', error: live.blocked, finished_at: new Date().toISOString() });

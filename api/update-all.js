@@ -15,6 +15,7 @@
 const { json, cors, readBody, requireAuth, sb } = require('./mc/_lib');
 const REGISTRY = require('../runner/steps.json');
 const { STAGES, planStage, stageHistory, sortStages } = require('../runner/stages.cjs');
+const { liveState, livePlan, undoRequest } = require('./_bau-live');
 
 const ACTIVE = 'status=in.(requested,running)';
 const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
@@ -40,12 +41,15 @@ async function reviewChoices(run) {
   return keys.length ? sb(`bau_review_choices?review_key=in.(${keys.join(',')})`) : [];
 }
 
-async function latestRun(id) {
+async function latestRun(id, session) {
   const q = id && id !== 'latest' ? `update_all_runs?id=eq.${encodeURIComponent(id)}` : 'update_all_runs?order=requested_at.desc&limit=1';
   const run = (await sb(q))[0] || null;
   const steps = run ? await sb(`update_all_steps?run_id=eq.${run.id}&order=ord.asc`) : [];
-  return { run, steps, registry: REGISTRY, stages: await stagesInfo(), page_choices: await pageChoices(run), review_choices: await reviewChoices(run) };
+  const stages = await stagesInfo();
+  return { run, steps, registry: REGISTRY, stages, live: liveState(session, stages.history), page_choices: await pageChoices(run), review_choices: await reviewChoices(run) };
 }
+
+const historyNow = async () => { const runs = await recentRuns(); return { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live') }; };
 
 /** Valid stage letters in order, or null for Run all. */
 function cleanStages(stages) {
@@ -69,11 +73,13 @@ function liveRefusal(stage, dry) {
   return null;
 }
 
-/** Live: switched on, Alan only, one stage per run. */
-function liveGate(session, body, mode) {
+/** Live: switched on, Alan only, one stage per run — Run all live only once every stage A–I has run live once. */
+async function liveGate(session, body, mode) {
   if (mode !== 'live') return null;
   if (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan') return [403, { error: 'LIVE mode is not enabled yet' }];
-  if (!Array.isArray(body.stages) || body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
+  const runAll = !Array.isArray(body.stages) || !body.stages.length;
+  if (runAll && !liveState(session, await historyNow()).run_all_unlocked) return [400, { error: 'Live Run all unlocks after every stage has run live once' }];
+  if (!runAll && body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
   return null;
 }
 
@@ -90,7 +96,7 @@ async function stageRefusal(stages, mode) {
 
 async function start(session, body) {
   const mode = body.mode === 'live' ? 'live' : 'dry';
-  const gate = liveGate(session, body, mode);
+  const gate = await liveGate(session, body, mode);
   if (gate) return gate;
   const active = await sb(`update_all_runs?${ACTIVE}&limit=1`);
   if (active.length) return [409, { error: 'a run is already requested or running', run: active[0] }];
@@ -155,8 +161,14 @@ async function clearTestReviewChoices() {
   return [200, { removed: (gone || []).length }];
 }
 
+/** "Undo this stage" (live): reverse the stage's latest live publish; the runner re-checks it before acting. */
+async function undo(session, body) {
+  const active = (await sb(`update_all_runs?${ACTIVE}&limit=1`))[0] || null;
+  return undoRequest(session, body, await historyNow(), active);
+}
+
 const ACTIONS = { start, resume: (s, b) => resume(b), cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
-  review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices() };
+  review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices(), undo };
 
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
@@ -168,7 +180,9 @@ module.exports = async function handler(req, res) {
       if (url.searchParams.get('runs')) return json(res, 200, { runs: await sb(`update_all_runs?order=requested_at.desc&limit=${Math.min(50, Number(url.searchParams.get('runs')) || 10)}`) });
       if (url.searchParams.get('page_choices')) return json(res, 200, { choices: await sb('bau_page_choices?order=url.asc') });
       if (url.searchParams.get('review_choices')) return json(res, 200, { choices: await sb('bau_review_choices?order=review_key.asc') });
-      return json(res, 200, await latestRun(url.searchParams.get('run')));
+      const plan = url.searchParams.get('live_plan');
+      if (plan) return json(res, 200, await livePlan(plan, await historyNow(), liveRefusal));
+      return json(res, 200, await latestRun(url.searchParams.get('run'), session));
     }
     if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
     const body = await readBody(req);

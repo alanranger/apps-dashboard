@@ -48,7 +48,13 @@ function stageResult(stage, steps, ctx) {
   const ingest = mine.find((s) => s.step_id === 'final_ingest')?.counts?.written || null;
   return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
     published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,
-    removals_unexplained: pub.removals_unexplained ?? null, promoted_from: pub.promoted_from || null, ingest };
+    removals_unexplained: pub.removals_unexplained ?? null, promoted_from: pub.promoted_from || null, ingest, ...undoRecord(mine, pub) };
+}
+
+/** What Undo needs to reverse a live stage: its file commit (above), a B/H database backup, B's 05 export, F's previous manifest. */
+function undoRecord(mine, pub) {
+  const find = (k) => mine.find((s) => s.counts?.[k])?.counts?.[k] || null;
+  return { backup_run: find('backup_run'), export_commit: find('export_commit'), manifest_previous: pub.manifest_previous || null };
 }
 
 async function recordStage(store, run, registry, def, ctx) {

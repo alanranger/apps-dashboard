@@ -75,6 +75,19 @@
     .tick input { accent-color: var(--brand); width: 16px; height: 16px; }
     .info-list { margin: 12px 0 0 18px; color: var(--text-muted); font-size: 0.88rem; }
     .prereq { margin-top: 10px; color: var(--warn); display: none; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .stage-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    button.live { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+    button.undo { background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.6); }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 12px; z-index: 50; overflow-y: auto; }
+    .modal-bg[hidden] { display: none; }
+    .modal { background: var(--panel); border: 1px solid var(--brand); border-radius: 8px; padding: 20px; width: 100%; max-width: 760px; }
+    .modal h3 { color: var(--brand); font-size: 1.15rem; margin-bottom: 10px; }
+    .modal dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; font-size: 0.92rem; margin-bottom: 12px; }
+    .modal dt { color: var(--text-muted); }
+    .modal details { margin: 6px 0; font-size: 0.88rem; } .modal summary { cursor: pointer; color: var(--blue); }
+    .modal ul { margin: 6px 0 0 18px; max-height: 240px; overflow-y: auto; }
+    .modal .refusal { color: var(--red); margin: 8px 0; }
+    .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
     code { overflow-wrap: anywhere; }
     a { color: var(--blue); }
     @media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
@@ -111,8 +124,9 @@
       <div class="controls">
         <div class="mode" role="radiogroup" aria-label="Mode">
           <label><input type="radio" name="mode" value="dry" checked><span>Dry run</span></label>
-          <label class="disabled" title="Live is disabled until Alan enables it"><input type="radio" name="mode" value="live" disabled><span>Live</span></label>
+          <label class="disabled" id="liveRadioLabel" title="Live Run all unlocks after every stage has run live once"><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
         </div>
+        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Live Run all unlocks after every stage has run live once — until then publish one stage at a time from Stages below.</span>
         <label class="tick" title="Stage I: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
           <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit (①)
         </label>
@@ -259,9 +273,20 @@
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong></td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${hist || '<span class="muted">never run</span>'}</td>
-          <td><button class="small secondary" data-testid="stage-run-${s.id}" data-stage-run="${s.id}" ${active ? 'disabled' : ''}>Run this stage</button></td></tr>`;
+          <td><div class="stage-actions">${stageButtons(s.id, active)}</div></td></tr>`;
       }).join('');
-      document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun])));
+      document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun], 'dry')));
+      document.querySelectorAll('[data-stage-live]').forEach((b) => b.addEventListener('click', () => openLiveConfirm(b.dataset.stageLive)));
+      document.querySelectorAll('[data-stage-undo]').forEach((b) => b.addEventListener('click', () => openUndoConfirm(b.dataset.stageUndo)));
+    }
+
+    /** Dry run, Publish live… (confirmation first; stage I is the audit, never published), and Undo after a live publish. */
+    function stageButtons(id, active) {
+      const off = active ? 'disabled' : '';
+      const live = id === 'I' ? '' : `<button class="small live" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>Publish live…</button>`;
+      const undo = id !== 'I' && (hasLivePublish(id) || simulatedLive().includes(id))
+        ? `<button class="small undo" data-testid="stage-undo-${id}" data-stage-undo="${id}" ${off}>Undo this stage</button>` : '';
+      return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${live}${undo}`;
     }
 
     function showPrereq(plan, target) {
@@ -271,12 +296,13 @@
       $('prereqChain').onclick = () => startStages(plan.chain);
     }
 
-    async function startStages(stages) {
+    /** Stage buttons: "Run this stage" is always a dry run; Live only through the stage's confirmation (mode 'live'). */
+    async function startStages(stages, mode = 'dry') {
       $('prereq').style.display = 'none';
-      $('actionMsg').textContent = `Stage ${stages.join(', ')} requested`;
+      $('actionMsg').textContent = `Stage ${stages.join(', ')} requested${mode === 'live' ? ' (live)' : ''}`;
       const qs = new URLSearchParams(location.search);
       const simulate = qs.get('simulate08');
-      const body = { action: 'start', mode: modeValue(), stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
+      const body = { action: 'start', mode, stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
         ...(qs.get('simulateHeld') ? { simulate_held_reviews: Number(qs.get('simulateHeld')) } : {}) };
       try { await api('/api/update-all', { method: 'POST', body }); refresh(); }
       catch (e) {
@@ -428,6 +454,7 @@
       renderButtons(run);
       renderStatusText(run);
       renderStages(data.stages, run);
+      renderLiveRadio(data.live);
     }
 
     async function refresh() {
@@ -460,8 +487,66 @@
       refresh();
     });
 
+    // ---------- Live: per-stage publish (confirmation) and Undo (Claude/Alan 3 Nov, step 6) ----------
+    let liveInfo = null;
+    const simulatedLive = () => (new URLSearchParams(location.search).get('simulateLive') || '').split(',').filter(Boolean);
+    const hasLivePublish = (id) => { const h = stageInfo?.history?.live?.[id]; return !!(h && ['ok', 'warn'].includes(h.status) && !h.undo_of); };
+    const listBlock = (label, items, testid) => `<details data-testid="${testid}"><summary>${esc(label)} (${items.length})</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
+
+    function renderLiveRadio(live) {
+      liveInfo = live || null;
+      const ok = !!(live?.run_all_unlocked && live?.can_publish);
+      $('liveRadio').disabled = !ok;
+      $('liveRadioLabel').classList.toggle('disabled', !ok);
+      $('runAllLiveNote').style.display = ok ? 'none' : '';
+      if (!ok && $('liveRadio').checked) document.querySelector('input[name=mode][value=dry]').checked = true;
+    }
+
+    function openModal(html) { $('liveModalBody').innerHTML = html; $('liveModal').hidden = false; }
+    function closeModal() { $('liveModal').hidden = true; $('liveModalBody').innerHTML = ''; }
+
+    function dbBlock(db) {
+      if (!db) return '';
+      const expected = db.expected.map((e) => `${e.csv_type}: ${e.change}`);
+      return listBlock('Backed up first, before any write', db.backups, 'live-confirm-backups')
+        + listBlock('Expected row changes (from the dry run)', expected.length ? expected : ['(see the dry run)'], 'live-confirm-tables')
+        + `<p class="muted">Also published: ${esc(db.file)}</p>`;
+    }
+
+    async function openLiveConfirm(stage) {
+      const plan = await api(`/api/update-all?live_plan=${encodeURIComponent(stage)}`);
+      const name = stageInfo?.defs?.find((d) => d.id === stage)?.name || '';
+      const blocked = plan.refusal || (!liveInfo?.can_publish ? 'Live is switched off (Alan only, when Claude and Alan ask for it)' : '');
+      const files = plan.db ? '' : listBlock('Files it publishes', plan.files, 'live-confirm-files') + listBlock('Site pages they affect', plan.pages, 'live-confirm-pages');
+      openModal(`<h3 data-testid="live-confirm-title">Publish stage ${esc(stage)} live — ${esc(name)}</h3>
+        <dl><dt>Stage</dt><dd>${esc(stage)} · ${esc(name)}</dd>
+        <dt>Promotes dry run</dt><dd data-testid="live-confirm-dry">${plan.dry ? `<code>${esc(plan.dry.run_id.slice(0, 8))}</code> · ${esc(when(plan.dry.finished_at))} · ${esc(plan.dry.status)}` : 'none'}</dd></dl>
+        ${files}${dbBlock(plan.db)}${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
+        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
+        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Publish live</button></div>`);
+      $('liveCancel').onclick = closeModal;
+      $('livePublish').onclick = () => { closeModal(); startStages([stage], 'live'); };
+    }
+
+    function openUndoConfirm(stage) {
+      const h = stageInfo?.history?.live?.[stage] || {};
+      const simulated = !hasLivePublish(stage);
+      const what = [h.commit ? `files: commit ${String(h.commit).slice(0, 8)} restored to the previous versions` : null,
+        h.backup_run ? `database: backup bau_bk_${h.backup_run}_* restored, then refresh + finalize` : null,
+        h.export_commit ? `05 export: commit ${String(h.export_commit).slice(0, 8)} restored` : null].filter(Boolean);
+      const blocked = simulated ? 'Test view (simulateLive): no real live run to undo' : (!liveInfo?.can_publish ? 'Live is switched off (Alan only)' : '');
+      openModal(`<h3 data-testid="undo-confirm-title">Undo stage ${esc(stage)}'s live publish</h3>
+        <dl><dt>Live run</dt><dd>${h.run_id ? `<code>${esc(String(h.run_id).slice(0, 8))}</code> · ${esc(when(h.finished_at))}` : 'simulated'}</dd></dl>
+        ${listBlock('What is reversed', what.length ? what : ['(simulated)'], 'undo-confirm-what')}${blocked ? `<p class="refusal">${esc(blocked)}</p>` : ''}
+        <div class="actions"><button class="secondary" data-testid="undo-confirm-cancel" id="undoCancel">Cancel</button>
+        <button class="undo" data-testid="undo-confirm-go" id="undoGo" ${blocked ? 'disabled' : ''}>Undo live publish</button></div>`);
+      $('undoCancel').onclick = closeModal;
+      $('undoGo').onclick = () => { closeModal(); act({ action: 'undo', stage }, `Undo of stage ${stage} requested`); };
+    }
+
     if (sessionStorage.getItem(TOKEN_KEY)) refresh(); else showLogin();
     setInterval(() => { if (sessionStorage.getItem(TOKEN_KEY)) refresh(); }, 5000);
   </script>
+  <div class="modal-bg" id="liveModal" data-testid="live-modal" hidden><div class="modal" id="liveModalBody" role="dialog" aria-modal="true"></div></div>
 </body>
 </html>

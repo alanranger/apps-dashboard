@@ -44,3 +44,17 @@ test('affected urls: from the CSVs and the existing rows, de-duplicated without 
     ['https://www.alanranger.com/x', 'https://www.alanranger.com/y']);
   assert.equal(runKey('0F49CBC9-6beb-4921'), '0f49cbc9');
 });
+
+test('undo: only the stage latest live publish, once; B/H undo restores the backup then refreshes', async () => {
+  const { undoRefusal, undoStage } = await import('../../runner/undo-live.mjs');
+  const live = { run_id: 'run-9', status: 'ok', commit: 'abc1234', backup_run: null };
+  assert.equal(undoRefusal('F', live, 'run-9'), null);
+  assert.match(undoRefusal('F', live, 'run-8'), /latest live run/);
+  assert.match(undoRefusal('F', { ...live, undo_of: 'run-7' }, 'run-9'), /already an undo/);
+  assert.match(undoRefusal('B', { run_id: 'run-9', status: 'ok' }, 'run-9'), /nothing to undo/);
+  const calls = [];
+  const out = await undoStage('B', { run_id: 'run-9', backup_run: 'ab12cd34' }, 'undo-1',
+    { rpc: async (fn, a) => { calls.push(`${fn}:${a.p_run}`); return {}; }, refreshFn: async () => { calls.push('refresh'); return 'ok'; } });
+  assert.deepEqual(calls, ['bau_restore:ab12cd34', 'refresh']);
+  assert.equal(out.files, null, 'B has no file commit to reverse here');
+});
