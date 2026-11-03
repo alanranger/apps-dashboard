@@ -519,7 +519,8 @@
       if (!['failed', 'cancelled'].includes(run.status)) return '';
       const bad = steps.filter((s) => s.status === 'fail');
       const todo = bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
-      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
+      const liveNext = 'Press Resume to retry from the failed step: nothing is imported until the backup has finished, and a finished backup is reused, never retaken. Or click Publish live… on the stage again for a fresh run.';
+      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNext : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
       return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
     }

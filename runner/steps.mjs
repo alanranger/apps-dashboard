@@ -896,8 +896,10 @@ const dbStage = (stage, handler) => async (ctx) => {
   const r = await liveDbIngest({ stage, csvDir: path.join(sb.shared, 'csv'), runId: ctx.runId, existingUrls: existing }, { rpc, importFn: csvImport });
   const extra = stage === 'B' ? await liveSteps2to4(ctx, sb) : {};
   const types = DB_TYPES[stage].length;
-  return { counts: { backup: r.backup, backup_run: r.run8, affected_urls: r.urls, imported: r.imported, promoted_from: ctx.promote?.run_id || null, ...extra, undo: `bau_restore('${r.run8}') + admin refresh + finalize` },
-    notes: [info(`Backed up ${Object.keys(r.backup).length} tables (bau_bk_${r.run8}_*) before writing, then ingested ${types} CSV types.`)],
+  const took = r.reused ? `Reused the finished backup bau_bk_${r.run8}_* (taken before the first write)` : `Backed up ${Object.keys(r.backup).length} tables (bau_bk_${r.run8}_*) before writing`;
+  return { counts: { backup: r.backup, backup_ms: r.timing_ms, backup_reused: r.reused, backup_run: r.run8, affected_urls: r.urls, imported: r.imported,
+    promoted_from: ctx.promote?.run_id || null, ...extra, undo: `bau_restore_part('${r.run8}', each table) + admin refresh + finalize` },
+    notes: [info(`${took}, then ingested ${types} CSV types.`)],
     plain: `Backed up, then ingested ${types} CSV types into the chat database (backup bau_bk_${r.run8}_*).`, details: Object.entries(r.backup).map(([t, n]) => `backup ${t}: ${n} rows`) };
 };
 /** The stage's own files whose new (sandbox) version differs from the shared repo, line endings ignored. */

@@ -11,17 +11,44 @@ function csvDir() {
   return dir;
 }
 
-test('B live: the backup is taken BEFORE the first database write, with every affected url', async () => {
+/** Fake database: bau_backup_done is false until set; each bau_backup_part returns its table and a row count. */
+function fakeRpc(calls, { done = false } = {}) {
+  let finished = done;
+  return async (fn, args) => {
+    calls.push(['rpc', fn, args]);
+    if (fn === 'bau_backup_done') { finished = finished || !!args.p_set; return finished; }
+    return { table: `bau_bk_${args.p_run}_${args.p_table}`, rows: 7 };
+  };
+}
+
+test('B live: the backup is taken BEFORE the first database write, one call per table, with every affected url', async () => {
   const calls = [];
-  const deps = { rpc: async (fn, args) => { calls.push(['rpc', fn, args]); return { bau_bk_ab12cd34_csv_metadata: 1003 }; },
-    importFn: async (t) => { calls.push(['import', t]); return { ok: true }; } };
+  const deps = { rpc: fakeRpc(calls), importFn: async (t) => { calls.push(['import', t]); return { ok: true }; } };
   const r = await liveDbIngest({ stage: 'B', csvDir: csvDir(), runId: 'AB12CD34-ffff', existingUrls: ['https://www.alanranger.com/old-page/'] }, deps);
-  assert.equal(calls[0][0], 'rpc');
-  assert.equal(calls[0][1], 'bau_backup');
-  assert.equal(calls[0][2].p_run, 'ab12cd34');
-  assert.ok(calls[0][2].p_urls.includes('https://www.alanranger.com/old-page'), 'urls already on record are backed up too');
-  assert.deepEqual(calls.slice(1).map((c) => c[1]), DB_TYPES.B, 'then each B type is imported, in order');
+  const firstImport = calls.findIndex((c) => c[0] === 'import');
+  const backup = calls.slice(0, firstImport).filter((c) => c[1] === 'bau_backup_part');
+  assert.deepEqual(backup.map((c) => c[2].p_table), ['urls', 'csv_metadata', 'page_entities', 'event_product_links_auto', 'page_chunks', 'page_html']);
+  assert.ok(backup.every((c) => c[2].p_run === 'ab12cd34' && c[2].p_mode === 'live'));
+  assert.ok(backup[0][2].p_urls.includes('https://www.alanranger.com/old-page'), 'urls already on record are backed up too');
+  assert.deepEqual(calls[firstImport - 1].slice(1, 2), ['bau_backup_done'], 'the backup is marked finished before any import');
+  assert.equal(calls[firstImport - 1][2].p_set, true);
+  assert.deepEqual(calls.slice(firstImport).map((c) => c[1]), DB_TYPES.B, 'then each B type is imported, in order');
   assert.equal(r.run8, 'ab12cd34');
+  assert.equal(r.reused, false);
+});
+
+test('backup at scale: page_html goes in url chunks; a finished backup is reused on retry, never retaken', async () => {
+  const { backupParts, HTML_URL_CHUNK } = await import('../../runner/db-live.mjs');
+  const urls = Array.from({ length: HTML_URL_CHUNK * 2 + 5 }, (_, i) => `https://www.alanranger.com/p${i}`);
+  const calls = [];
+  await backupParts('ab12cd34', urls, fakeRpc(calls));
+  const html = calls.filter((c) => c[2]?.p_table === 'page_html');
+  assert.equal(html.length, 3);
+  assert.deepEqual(html.flatMap((c) => c[2].p_urls), urls, 'every url once, in order');
+  const again = [];
+  const r = await backupParts('ab12cd34', urls, fakeRpc(again, { done: true }));
+  assert.equal(r.reused, true);
+  assert.deepEqual(again.map((c) => c[1]), ['bau_backup_done'], 'nothing copied again');
 });
 
 test('B / H live: if the backup fails, nothing is written', async () => {
@@ -34,8 +61,9 @@ test('B / H live: if the backup fails, nothing is written', async () => {
 test('H imports the product schema (07) as well; undo restores the backup, then re-runs the refresh', async () => {
   assert.deepEqual(DB_TYPES.H.slice(-1), ['product_schema']);
   const order = [];
-  const r = await liveDbUndo('ab12cd34', { rpc: async (fn, a) => { order.push(`${fn}:${a.p_run}`); return { csv_metadata: { restored: 1003 } }; }, refreshFn: async () => { order.push('refresh'); return 'ok'; } });
-  assert.deepEqual(order, ['bau_restore:ab12cd34', 'refresh']);
+  const r = await liveDbUndo('ab12cd34', { rpc: async (fn, a) => { order.push(`${fn}:${a.p_table}`); return { restored: 1003 }; }, refreshFn: async () => { order.push('refresh'); return 'ok'; } });
+  assert.deepEqual(order, ['bau_restore_part:csv_metadata', 'bau_restore_part:page_entities', 'bau_restore_part:event_product_links_auto',
+    'bau_restore_part:page_chunks', 'bau_restore_part:page_html', 'refresh']);
   assert.equal(r.restored.csv_metadata.restored, 1003);
 });
 
@@ -55,6 +83,6 @@ test('undo: only the stage latest live publish, once; B/H undo restores the back
   const calls = [];
   const out = await undoStage('B', { run_id: 'run-9', backup_run: 'ab12cd34' }, 'undo-1',
     { rpc: async (fn, a) => { calls.push(`${fn}:${a.p_run}`); return {}; }, refreshFn: async () => { calls.push('refresh'); return 'ok'; } });
-  assert.deepEqual(calls, ['bau_restore:ab12cd34', 'refresh']);
+  assert.deepEqual(calls, [...Array(5).fill('bau_restore_part:ab12cd34'), 'refresh']);
   assert.equal(out.files, null, 'B has no file commit to reverse here');
 });

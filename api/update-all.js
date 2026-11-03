@@ -111,7 +111,12 @@ async function start(session, body) {
   return [200, { run }];
 }
 
-async function resume(body) {
+/** Resume re-runs from the failed step; a live run passes the same live gate as starting one. */
+async function resume(session, body) {
+  const [target] = await sb(`update_all_runs?id=eq.${encodeURIComponent(body.run_id)}&select=mode,stages`);
+  if (!target) return [404, { error: 'run not found' }];
+  const gate = await liveGate(session, { stages: target.stages }, target.mode);
+  if (gate) return gate;
   const steps = await sb(`update_all_steps?run_id=eq.${encodeURIComponent(body.run_id)}&order=ord.asc`);
   const failed = steps.find((s) => s.status === 'fail' || s.status === 'running');
   if (!failed) return [400, { error: 'nothing to resume' }];
@@ -167,7 +172,7 @@ async function undo(session, body) {
   return undoRequest(session, body, await historyNow(), active);
 }
 
-const ACTIONS = { start, resume: (s, b) => resume(b), cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
+const ACTIONS = { start, resume, cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
   review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices(), undo };
 
 module.exports = async function handler(req, res) {

@@ -38,23 +38,53 @@ export async function refreshAndFinalize() {
   return 'admin refresh + finalize';
 }
 
+/** Backup / restore order: csv_metadata first (page_chunks / page_entities reference it). */
+export const BACKUP_TABLES = ['csv_metadata', 'page_entities', 'event_product_links_auto', 'page_chunks', 'page_html'];
+/** page_html is ~110 KB a row (several versions per url): copied in url chunks so no call carries the whole 300+ MB. */
+export const HTML_URL_CHUNK = 40;
+const chunks = (list, size) => Array.from({ length: Math.ceil(list.length / size) || 1 }, (_, i) => list.slice(i * size, (i + 1) * size));
+
+/**
+ * One call per table (page_html per url chunk); every call is idempotent, so a retry completes a partial backup.
+ * A finished backup (bau_backup_done) is never retaken: on Resume it is still the state before the first write.
+ * Returns { backup: { table: rows }, timing_ms: { table: ms }, reused }.
+ */
+export async function backupParts(run8, urls, rpc, mode = 'live') {
+  if (await rpc('bau_backup_done', { p_run: run8, p_mode: mode })) return { backup: {}, timing_ms: {}, reused: true };
+  const call = (table, list) => rpc('bau_backup_part', { p_run: run8, p_table: table, p_urls: list, p_mode: mode });
+  const backup = {};
+  const timing = {};
+  const u = await call('urls', urls);
+  backup[u.table] = u.rows;
+  for (const t of BACKUP_TABLES) {
+    const t0 = Date.now();
+    let r = null;
+    for (const list of t === 'page_html' ? chunks(urls, HTML_URL_CHUNK) : [urls]) r = await call(t, list);
+    backup[r.table] = r.rows;
+    timing[t] = Date.now() - t0;
+  }
+  await rpc('bau_backup_done', { p_run: run8, p_mode: mode, p_set: true });
+  return { backup, timing_ms: timing, reused: false };
+}
+
 /**
  * Backup, then import every type of the stage. deps (tests inject fakes): { rpc(fn, args), importFn(type, csv) }.
- * Returns { run8, backup, imported, urls }.
+ * If any backup call fails nothing is imported. Returns { run8, backup, timing_ms, reused, imported, urls }.
  */
 export async function liveDbIngest({ stage, csvDir, runId, existingUrls = [] }, deps) {
   const types = DB_TYPES[stage];
   const texts = Object.fromEntries(types.map((t) => [t, fs.readFileSync(path.join(csvDir, TYPE_FILES[t]), 'utf8')]));
   const urls = affectedUrls(Object.values(texts), existingUrls);
   const run8 = runKey(runId);
-  const backup = await deps.rpc('bau_backup', { p_run: run8, p_urls: urls });
+  const { backup, timing_ms: timingMs, reused } = await backupParts(run8, urls, deps.rpc);
   const imported = {};
   for (const t of types) imported[t] = await deps.importFn(t, texts[t]);
-  return { run8, backup, imported, urls: urls.length };
+  return { run8, backup, timing_ms: timingMs, reused, imported, urls: urls.length };
 }
 
-/** Undo B / H: restore the run's backup exactly, then the same refresh RPCs. deps: { rpc, refreshFn }. */
-export async function liveDbUndo(run8, deps) {
-  const restored = await deps.rpc('bau_restore', { p_run: run8 });
-  return { restored, refreshed: await deps.refreshFn() };
+/** Undo B / H: restore the run's backup exactly, one table per call, then the same refresh RPCs. deps: { rpc, refreshFn }. */
+export async function liveDbUndo(run8, deps, mode = 'live') {
+  const restored = {};
+  for (const t of BACKUP_TABLES) restored[t] = await deps.rpc('bau_restore_part', { p_run: run8, p_table: t, p_mode: mode });
+  return { restored, refreshed: deps.refreshFn ? await deps.refreshFn() : null };
 }
