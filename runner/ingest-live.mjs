@@ -16,7 +16,7 @@ function token() {
   return t;
 }
 
-async function api(pathAndQuery, { method = 'GET', body } = {}) {
+export async function api(pathAndQuery, { method = 'GET', body } = {}) {
   const res = await fetch(`${BASE}${pathAndQuery}`, { method, body: body ? JSON.stringify(body) : undefined,
     headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' } });
   const text = await res.text();

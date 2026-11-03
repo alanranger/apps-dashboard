@@ -14,7 +14,9 @@ const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOL
 const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 
 /** Stages whose live path is built and proven (the runner refuses Live for the rest). */
-export const LIVE_STAGES = new Set(['A', 'C', 'D', 'E', 'F', 'G']);
+export const LIVE_STAGES = new Set(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+/** Database-only stages: no file list, so no removal check (their safety is the automatic backup + restore). */
+export const DB_ONLY_STAGES = new Set(['B']);
 
 const note = (level, text, todo) => (todo ? { level, text, todo } : { level, text });
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
@@ -88,6 +90,16 @@ function liveRefusal(def, ctx, set, current) {
   }
   if (set.removals.unexplained.length) return [`${plural(set.removals.unexplained.length, 'unexplained removal')} in the publish set`, 'fix or explain them, then dry-run again'];
   return null;
+}
+
+/** One generated file into alan-shared-resources as its own commit (B's 05 export); unchanged (line endings ignored) → no commit. */
+export function publishSharedFile(repo, rel, fromFile, message) {
+  const live = path.join(repo, rel);
+  if (fs.existsSync(live) && norm(fs.readFileSync(live, 'utf8')) === norm(fs.readFileSync(fromFile, 'utf8'))) return { file: rel, commit: null, unchanged: true };
+  assertClean(repo, [rel]);
+  fs.copyFileSync(fromFile, live);
+  const r = commitAndPush({ repo, files: [rel], message, expectExact: true, restoreOnAbort: true });
+  return { file: rel, commit: r.commit };
 }
 
 /** After the push: GitHub Pages serves the new bytes (polled; a slow CDN is a check, not a failure). */

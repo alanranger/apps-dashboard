@@ -17,9 +17,10 @@ const { git, undoCommit } = await import(pathToFileURL('G:/Dropbox/alan ranger p
 const arg = (k) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1] : null);
 const STAGE = arg('--stage');
 const RUN = arg('--run');
-const STEP = { A: 'build_csvs', C: 'reviews', D: 'publish_products', E: 'publish_events', F: 'publish_blogs', G: 'publish_landings' }[STAGE];
-if (!STEP || !RUN) throw new Error('usage: --stage A|C|D|E|F|G --run <dry run id>');
-const SHARED_STAGE = ['A', 'C'].includes(STAGE);
+// H: the file half only (its 09 keyword export); H's / B's database half is proven by proof-bau-restore.mjs (test copies).
+const STEP = { A: 'build_csvs', C: 'reviews', D: 'publish_products', E: 'publish_events', F: 'publish_blogs', G: 'publish_landings', H: 'export_09' }[STAGE];
+if (!STEP || !RUN) throw new Error('usage: --stage A|C|D|E|F|G|H --run <dry run id>');
+const SHARED_STAGE = ['A', 'C', 'H'].includes(STAGE);
 const SHARED = 'G:/Dropbox/alan ranger photography/Website Code/alan-shared-resources';
 
 const env = loadEnv(path.resolve('.env.local'));

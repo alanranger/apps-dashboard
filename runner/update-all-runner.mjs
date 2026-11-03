@@ -23,7 +23,7 @@ import { acquireLock, logger, releaseLock } from './lock-log.mjs';
 import { loadEnv, supabaseStore } from './store.mjs';
 import { HANDLERS, SHARED, readSiteState, retryAfterMs, sandboxFor, seedSandbox, siteProbe } from './steps.mjs';
 import { cooldownUntil, parkDecision, probeFor, rateLimitedNeed, waitingText } from './cooldown.mjs';
-import { LIVE_STAGES } from './publish-live.mjs';
+import { LIVE_STAGES, DB_ONLY_STAGES } from './publish-live.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -50,7 +50,7 @@ export function liveReadiness(stage, dry, now = Date.now()) {
   if (!dry) return `stage ${stage} has never been dry-run`;
   if (!['ok', 'warn'].includes(dry.status)) return `stage ${stage}'s last dry run ${dry.status}`;
   if (now - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `stage ${stage}'s last dry run is older than 7 days`;
-  if (dry.removals_unexplained == null) return `stage ${stage}'s last dry run predates the removal check`;
+  if (dry.removals_unexplained == null && !DB_ONLY_STAGES.has(stage)) return `stage ${stage}'s last dry run predates the removal check`;
   if (dry.removals_unexplained) return `stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals`;
   if (!dry.sandbox || !fs.existsSync(dry.sandbox)) return `stage ${stage}'s dry run outputs are gone from this PC`;
   return null;

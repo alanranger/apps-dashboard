@@ -10,7 +10,9 @@ import crypto from 'node:crypto';
 import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
-import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails } from './publish-live.mjs';
+import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails, publishSharedFile } from './publish-live.mjs';
+import { liveDbIngest, csvImport, DB_TYPES } from './db-live.mjs';
+import { liveIngestSteps } from './ingest-live.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -763,13 +765,22 @@ const publishStep = (id) => async (ctx) => {
 };
 
 // ---------- 12. export 09 (dry: DB count only) ----------
+// The existing 09 export (AI GEO Audit): GET returns the CSV built from the database (read-only; POST would commit).
+const EXPORT_09_API = 'https://ai-geo-audit.vercel.app/api/aigeo/export-09-url-target-keywords';
+
+/** Dry: the 09 CSV the database gives now, saved into the sandbox (Live publishes exactly that file). */
 async function export09(ctx) {
-  ensureDry(ctx);
-  const rows = await query(ctx, 'traditional_seo_target_keyword_overrides?select=id');
-  const fileRows = lines(`${SHARED}/csv/09-url-target-keywords.csv`);
-  return { counts: { db_override_rows: rows?.length ?? 'n/a', csv_09_rows: fileRows },
-    plain: `${verb(ctx, 'Would export', 'Exported')} the target keywords (09): ${rows?.length ?? '?'} keyword rows in the database, ${fileRows} in the saved file.`,
-    details: [verb(ctx, 'dry run: database row count only; nothing written', 'csv/09-url-target-keywords.csv written from the database')] };
+  const sb = buildSandbox(ctx);
+  const res = await fetch(EXPORT_09_API);
+  const csv = res.ok ? await res.text() : '';
+  if (!csv || /^\s*[{<]/.test(csv)) return { notes: [problem(`The 09 export returned ${res.status} without a CSV`, 'resume the run')] };
+  const out = path.join(sb.shared, 'csv', '09-url-target-keywords.csv');
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, csv);
+  const rows = csvRows(csv);
+  return { counts: { csv_09_rows: rows, csv_09_saved_rows: lines(`${SHARED}/csv/09-url-target-keywords.csv`) },
+    plain: `Would export the target keywords (09): ${rows} rows from the database (saved file has ${lines(`${SHARED}/csv/09-url-target-keywords.csv`)}).`,
+    details: [`09 from ${EXPORT_09_API} (GET, read-only) into the sandbox`], outputs: [`${out} (sandbox)`] };
 }
 
 // ---------- 13. ① full audit (Traditional SEO render → broken links), advanced by the */5 trad-seo-render-tick cron ----------
@@ -858,7 +869,33 @@ const normText = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 export const SHARED_PUBLISH = {
   build_csvs: { stage: 'A', what: 'CSV', files: () => [...BUILT, 'raw-01-products-sqsp-export.csv'].map((f) => `csv/${f}`) },
   reviews: { stage: 'C', what: 'review file', files: () => ['csv processed/03 – combined_product_reviews.csv', 'csv processed/03b-google-pending-alan-review.csv',
-    'csv processed/03b_google_matched.csv', 'csv/raw-03b-google-reviews.csv'] }
+    'csv processed/03b_google_matched.csv', 'csv/raw-03b-google-reviews.csv'] },
+  export_09: { stage: 'H', what: 'keyword file', files: () => ['csv/09-url-target-keywords.csv'] }
+};
+
+// ---------- B / H: the chat database (backup first; Chat AI Bot endpoints) ----------
+const B_EXPORT = 'csv processed/05-event-product-mappings-latest.csv';
+
+/** B only: ingest steps 2–4 + the mappings export, then that export as its own commit in alan-shared-resources. */
+async function liveSteps2to4(ctx, sb) {
+  const exportOut = path.join(sb.root, 'live-05-export.csv');
+  const steps = await liveIngestSteps({ exportOut });
+  const pub = publishSharedFile(sharedRepoOf(ctx), B_EXPORT, exportOut, `BAU B live: 05 event-product links export (run ${String(ctx.runId).slice(0, 8)})`);
+  return { steps_2_4: { urls: steps.content.urls, failed: steps.content.failed.length, export_rows: steps.exportRows }, export_commit: pub.commit, export_unchanged: !!pub.unchanged };
+}
+
+/** Dry: the dry-ingest handler. Live: automatic backup, then the dry run's CSVs into the chat database (db-live.mjs). */
+const dbStage = (stage, handler) => async (ctx) => {
+  if (ctx.mode !== 'live') return handler(ctx);
+  const sb = buildSandbox(ctx);
+  const existing = (await ctx.store.queryAll(`csv_metadata?select=id,url&csv_type=in.(${DB_TYPES[stage].join(',')})`)).map((r) => r.url);
+  const rpc = (fn, args) => ctx.store.query(`rpc/${fn}`, { method: 'POST', body: args });
+  const r = await liveDbIngest({ stage, csvDir: path.join(sb.shared, 'csv'), runId: ctx.runId, existingUrls: existing }, { rpc, importFn: csvImport });
+  const extra = stage === 'B' ? await liveSteps2to4(ctx, sb) : {};
+  const types = DB_TYPES[stage].length;
+  return { counts: { backup: r.backup, backup_run: r.run8, affected_urls: r.urls, imported: r.imported, ...extra, undo: `bau_restore('${r.run8}') + admin refresh + finalize` },
+    notes: [info(`Backed up ${Object.keys(r.backup).length} tables (bau_bk_${r.run8}_*) before writing, then ingested ${types} CSV types.`)],
+    plain: `Backed up, then ingested ${types} CSV types into the chat database (backup bau_bk_${r.run8}_*).`, details: Object.entries(r.backup).map(([t, n]) => `backup ${t}: ${n} rows`) };
 };
 /** The stage's own files whose new (sandbox) version differs from the shared repo, line endings ignored. */
 export function sharedPublishSet(id, sb, repo) {
@@ -887,12 +924,12 @@ const promoted = (handler) => async (ctx) => (ctx.mode !== 'live' ? handler(ctx)
   plain: `Promoted from dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)} (not regenerated).`, counts: { promoted_from: ctx.promote?.run_id || null } });
 
 export const HANDLERS = {
-  preflight, build_csvs: sharedStage('build_csvs', buildCsvs), ingest_preliminary: ingestPreliminary, reviews: sharedStage('reviews', reviews),
+  preflight, build_csvs: sharedStage('build_csvs', buildCsvs), ingest_preliminary: dbStage('B', ingestPreliminary), reviews: sharedStage('reviews', reviews),
   product_schema: promoted(productSchema), publish_products: publishStep('publish_products'),
   event_posts: promoted(appCliStep('event-posts')), event_index: promoted(appCliStep('event-index')), publish_events: publishStep('publish_events'),
   blog_index: promoted(appCliStep('blog-index')), blog_posts: promoted(blogPosts), publish_blogs: publishStep('publish_blogs'),
   landing_pages: promoted(appCliStep('landings')), publish_landings: publishStep('publish_landings'),
-  final_ingest: finalIngest, export_09: export09,
+  final_ingest: dbStage('H', finalIngest), export_09: sharedStage('export_09', export09),
   audit,
   summary
 };

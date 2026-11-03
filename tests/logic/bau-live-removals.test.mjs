@@ -47,8 +47,8 @@ test('removals: checkPublishSet lists the files with unexplained removals', () =
   assert.deepEqual(r.files_with_unexplained, ['a.json']);
 });
 
-test('live: the file stages A, C and D–G are live-capable; readiness refuses a missing, failed, old, unexplained or vanished dry run', () => {
-  assert.deepEqual([...LIVE_STAGES], ['A', 'C', 'D', 'E', 'F', 'G']);
+test('live: stages A–H are live-capable; readiness refuses a missing, failed, old, unexplained or vanished dry run', () => {
+  assert.deepEqual([...LIVE_STAGES], ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
   const now = Date.parse('2026-11-03T12:00:00Z');
   const ok = { status: 'warn', finished_at: '2026-11-02T21:03:07Z', removals_unexplained: 0, sandbox: process.cwd() };
   assert.equal(liveReadiness('F', ok, now), null);
