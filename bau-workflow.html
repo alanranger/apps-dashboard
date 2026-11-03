@@ -67,6 +67,7 @@
     .pg-stages li { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.9rem; }
     .pg-stages li[data-status="running"] { border-color: var(--blue); }
     .pg-result { font-size: 1.5rem; font-weight: 800; margin: 6px 0; }
+    .pg-result.pg-sim { color: var(--text-muted); }
     .pg-result.pg-ok { color: var(--success); } .pg-result.pg-warn { color: var(--warn); } .pg-result.pg-fail { color: var(--red); }
     .pg-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
     .pg-modal h4 { margin: 14px 0 6px; font-size: 0.95rem; color: var(--text-muted); }
@@ -314,9 +315,10 @@
     }
 
     /** "Typical: test about 1 min · live about 71 min" from the stage's last finished single-stage runs. */
-    function typicalHtml(t) {
+    function typicalHtml(t, id) {
       const part = (label, ms) => `${label} ${ms ? `about ${ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`}` : 'not run yet'}`;
-      return `<div class="muted" style="font-size:0.8rem" data-testid="stage-typical">Typical: ${part('test', t?.dry)} · ${part('live', t?.live)}</div>`;
+      const test = id === 'I' ? 'test: simulated only (① runs in a live Run all or on Monday)' : part('test', t?.dry);
+      return `<div class="muted" style="font-size:0.8rem" data-testid="stage-typical">Typical: ${test} · ${part('live', t?.live)}</div>`;
     }
 
     function renderStages(info, run) {
@@ -326,7 +328,7 @@
       $('stageRows').innerHTML = info.defs.map((s) => {
         const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
         const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(info.history.live[s.id], 'live', s.id);
-        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id])}</td>
+        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="stage-actions">${stageButtons(s.id, active)}</div></td></tr>`;
@@ -577,6 +579,11 @@
     }
 
     function finishedHtml(run, steps) {
+      if (window.BauProgress?.simulatedOnly(run, steps)) {
+        return `<button class="small secondary rs-close" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>
+          <h3 data-testid="run-status-finished" data-status="simulated">⚪ ${modeBadge(run)} Nothing was run — ${esc(scopeText(run))} was only simulated</h3>
+          <div class="muted">A test run of this stage sends no requests; only a live run does its real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}. Run <code>${esc(run.id.slice(0, 8))}</code> · finished ${clock(run.finished_at)}</div>`;
+      }
       const [icon] = RESULT[run.status] || [''];
       const stages = Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
       return `<button class="small secondary rs-close" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>

@@ -185,7 +185,21 @@
     return b.length ? `<div class="pg-actions">${b.join('')}</div>` : '';
   }
 
+  /** Every step of the run's own stage(s) was skipped (e.g. stage I in a test run: ① is only simulated). */
+  function simulatedOnly(run, list) {
+    const own = list.filter((s) => !['preflight', 'summary'].includes(s.step_id));
+    return ['succeeded', 'warned'].includes(run.status) && own.length > 0 && own.every((s) => s.status === 'skipped');
+  }
+
+  function simulatedHtml(run, list) {
+    const why = list.filter((s) => s.status === 'skipped').flatMap((s) => (s.notes || []).map((n) => n.text)).filter(Boolean);
+    return `<p class="pg-result pg-sim" data-testid="pg-result" data-status="simulated">⚪ Nothing was run — simulated only</p>
+      <div class="note">${esc(why.join(' ') || 'Every step of this stage was skipped in a test run.')} Only a <strong>live</strong> run does this stage's real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}.</div>
+      <div class="muted">Finished ${esc(clock(run.finished_at))}</div>`;
+  }
+
   function finishedHtml(run, list) {
+    if (simulatedOnly(run, list)) return simulatedHtml(run, list);
     const [icon, cls] = RESULT[run.status] || ['', ''];
     const took = ms(run.finished_at) && ms(run.started_at) ? duration(ms(run.finished_at) - ms(run.started_at)) : '-';
     const stages = Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
@@ -259,7 +273,8 @@
     const scope = run.stages?.length === 1 ? run.stages[0] : 'Run all';
     if (ACTIVE.has(run.status)) document.title = `⏳ ${scope} ${run.status === 'requested' ? 'queued' : 'running'} — BAU`;
     else if (S.watched === run.id && ACTIVE.has(S.lastStatus)) {
-      document.title = `${RESULT[run.status]?.[0] || ''} ${scope} ${run.status === 'failed' ? 'failed' : 'done'} — BAU`;
+      const sim = simulatedOnly(run, orderedSteps(S.data || { steps: [] }));
+      document.title = sim ? `⚪ ${scope} simulated only — BAU` : `${RESULT[run.status]?.[0] || ''} ${scope} ${run.status === 'failed' ? 'failed' : 'done'} — BAU`;
       if (S.sound) beep();
     }
     S.watched = run.id;
@@ -307,5 +322,6 @@
   /** Clicks that start a run open the window as soon as the new run shows up. */
   function expect() { S.autoOpen = true; open(); }
 
-  window.BauProgress = { update, open, close, rowHtml, expect, _model: { measure, etaText, stageRows, lastActivity } };
+  window.BauProgress = { update, open, close, rowHtml, expect, simulatedOnly: (run, steps) => simulatedOnly(run, orderedSteps({ steps, registry: S.data?.registry || [] })),
+    _model: { measure, etaText, stageRows, lastActivity } };
 })();
