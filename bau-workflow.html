@@ -49,6 +49,30 @@
     .run-status details { margin-top: 4px; font-size: 0.88rem; } .run-status summary { cursor: pointer; color: var(--blue); }
     .run-status ul { margin: 4px 0 0 18px; max-height: 200px; overflow-y: auto; }
     .run-all-mode { display: inline-flex; align-items: center; gap: 8px; }
+    .pg-modal { max-width: 820px; }
+    .pg-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .pg-big { font-size: 1.15rem; font-weight: 700; margin: 6px 0; }
+    .pg-bar { position: relative; height: 22px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 8px 0; }
+    .pg-bar > div { height: 100%; background: linear-gradient(90deg, var(--brand), #fbbf24); transition: width 0.6s ease; }
+    .pg-bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: var(--text); }
+    .pg-overall { margin-top: 4px; font-weight: 600; }
+    .pg-meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--text-muted); font-size: 0.92rem; }
+    .pg-alive { margin: 10px 0; padding: 8px 10px; border-radius: 6px; font-size: 0.92rem; }
+    .pg-green { background: rgba(16,185,129,0.12); color: var(--success); } .pg-amber { background: rgba(245,158,11,0.15); color: var(--warn); }
+    .pg-red { background: rgba(239,68,68,0.15); color: var(--red); } .pg-grey { background: rgba(156,163,175,0.12); color: var(--text-muted); }
+    .pg-todo { color: var(--text); margin-top: 4px; }
+    .pg-stages { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .pg-stages li { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 0.9rem; }
+    .pg-stages li[data-status="running"] { border-color: var(--blue); }
+    .pg-result { font-size: 1.5rem; font-weight: 800; margin: 6px 0; }
+    .pg-result.pg-ok { color: var(--success); } .pg-result.pg-warn { color: var(--warn); } .pg-result.pg-fail { color: var(--red); }
+    .pg-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .pg-modal h4 { margin: 14px 0 6px; font-size: 0.95rem; color: var(--text-muted); }
+    .pg-log { list-style: none; max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; font-family: ui-monospace, Consolas, monospace; }
+    .pg-log li { padding: 1px 0; } .pg-t { color: var(--text-muted); margin-right: 6px; }
+    .pg-sound { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); }
+    .pg-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--blue); border-right-color: transparent; border-radius: 50%; animation: pgspin 0.8s linear infinite; vertical-align: -1px; }
+    @keyframes pgspin { to { transform: rotate(360deg); } }
     table { width: 100%; border-collapse: collapse; font-size: 0.92rem; table-layout: fixed; }
     th { text-align: left; color: var(--brand); background: rgba(245,158,11,0.08); padding: 8px; border-bottom: 2px solid var(--border); }
     td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
@@ -296,7 +320,7 @@
         const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(info.history.live[s.id], 'live', s.id);
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong></td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
-          <td data-label="Last run">${hist || '<span class="muted">never run</span>'}</td>
+          <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="stage-actions">${stageButtons(s.id, active)}</div></td></tr>`;
       }).join('');
       document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun], 'dry')));
@@ -328,7 +352,7 @@
       const simulate = qs.get('simulate08');
       const body = { action: 'start', mode, stages, ...(simulate ? { simulate_new_08: simulate.split(',') } : {}),
         ...(qs.get('simulateHeld') ? { simulate_held_reviews: Number(qs.get('simulateHeld')) } : {}) };
-      try { await api('/api/update-all', { method: 'POST', body }); refresh(); }
+      try { await api('/api/update-all', { method: 'POST', body }); window.BauProgress?.expect(); refresh(); }
       catch (e) {
         if (e.data?.plan) showPrereq(e.data.plan, stages[stages.length - 1]);
         $('actionMsg').textContent = e.message;
@@ -545,12 +569,14 @@
       const html = run ? runStatusHtml(run, steps) : '';
       box.hidden = !html;
       box.className = `run-status ${['requested', 'running'].includes(run?.status) ? 'rs-active' : (RESULT[run?.status]?.[1] || '')}`;
-      box.innerHTML = html;
+      box.innerHTML = html ? `${html}<div style="margin-top:8px"><button class="small secondary" id="openProgress" data-testid="open-progress">Open progress window</button></div>` : '';
       if ($('runStatusClose')) $('runStatusClose').onclick = () => { localStorage.setItem(DISMISS_KEY, run.id); renderRunStatus(run, steps); };
+      if ($('openProgress')) $('openProgress').onclick = () => window.BauProgress?.open();
     }
 
     function renderRun(data) {
       const run = data.run; const steps = data.steps || [];
+      window.BauProgress?.update(data);
       renderMeta(run);
       renderErrors(run, steps);
       renderNeeds(run, data.page_choices || [], data.review_choices || [], steps);
@@ -574,10 +600,15 @@
     }
 
     const modeValue = () => document.querySelector('input[name=mode]:checked').value;
+    /** Actions that start or restart a run (Run all, Resume, Undo) open the progress window. */
+    const OPENS_PROGRESS = new Set(['start', 'resume', 'undo']);
     async function act(body, msg) {
       $('actionMsg').textContent = msg;
-      try { await api('/api/update-all', { method: 'POST', body }); refresh(); }
-      catch (e) { $('actionMsg').textContent = e.message; }
+      try {
+        await api('/api/update-all', { method: 'POST', body });
+        if (OPENS_PROGRESS.has(body.action)) window.BauProgress?.expect();
+        refresh();
+      } catch (e) { $('actionMsg').textContent = e.message; }
     }
 
     $('startBtn').addEventListener('click', () => act({ action: 'start', mode: modeValue(), include_audit: $('includeAudit').checked }, 'Run requested'));
@@ -650,8 +681,13 @@
     }
 
     if (sessionStorage.getItem(TOKEN_KEY)) refresh(); else showLogin();
-    setInterval(() => { if (sessionStorage.getItem(TOKEN_KEY)) refresh(); }, 5000);
+    /** Every 3 s while a run is queued or running (the progress window), else every 5 s. */
+    (function poll() {
+      const active = ['requested', 'running'].includes(current?.status);
+      setTimeout(async () => { if (sessionStorage.getItem(TOKEN_KEY)) await refresh(); poll(); }, active ? 3000 : 5000);
+    })();
   </script>
+  <script src="bau-progress.js"></script>
   <div class="modal-bg" id="liveModal" data-testid="live-modal" hidden><div class="modal" id="liveModalBody" role="dialog" aria-modal="true"></div></div>
 </body>
 </html>
