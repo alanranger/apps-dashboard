@@ -142,6 +142,7 @@
   }
 
   function barHtml(pct, testid) {
+    if (pct == null) return `<div class="pg-bar pg-unknown" data-testid="${testid}" data-pct=""><div></div><span>no % yet — the runner reports no sub-steps for this step</span></div>`;
     return `<div class="pg-bar" data-testid="${testid}" data-pct="${pct}"><div style="width:${pct}%"></div><span>${pct}%</span></div>`;
   }
 
@@ -163,7 +164,7 @@
     const rows = runAll ? stageRows(list, run, est) : [];
     const curStage = m.cur?.stage ? rows.find((r) => r.id === m.cur.stage) : null;
     const overall = runAll ? `<div class="pg-overall" data-testid="pg-overall">Overall: stage ${Math.max(1, rows.findIndex((r) => r.status === 'running') + 1)} of ${rows.length} · ${m.pct}% · ${esc(etaText(m))}</div>${barHtml(m.pct, 'pg-bar-overall')}` : '';
-    const stagePart = curStage ? `<div class="muted">Stage ${esc(curStage.id)}: ${curStage.pct}%</div>${barHtml(curStage.pct, 'pg-bar')}` : (runAll ? '' : barHtml(m.overdue ? Math.min(m.pct, 90) : m.pct, 'pg-bar'));
+    const stagePart = curStage ? `<div class="muted">Stage ${esc(curStage.id)}: ${curStage.pct}%</div>${barHtml(curStage.pct, 'pg-bar')}` : (runAll ? '' : barHtml(m.overdue ? null : m.pct, 'pg-bar'));
     return `${overall}<p class="pg-big" data-testid="pg-step">Step ${idx + 1} of ${list.length}: ${esc(m.cur?.name || 'starting')}</p>
       <p data-testid="pg-sub">${esc(subLine(run, m.cur))}</p>${stagePart}
       <div class="pg-meta"><span data-testid="pg-eta">${esc(runAll ? '' : etaText(m))}</span><span>Elapsed ${esc(duration(now() - ms(run.started_at || run.requested_at)))}</span></div>
@@ -294,7 +295,8 @@
     const list = orderedSteps(S.data);
     const mine = run.stages?.length ? (run.stages.includes(stageId) ? list : []) : list.filter((s) => s.stage === stageId);
     if (!mine.length || mine.every((s) => DONE.has(s.status)) || !mine.some((s) => s.status === 'running')) return '';
-    return `<span class="pg-spin" data-testid="pg-row-${esc(stageId)}"></span> ${measure(mine, run, S.data.estimates || {}).pct}%`;
+    const m = measure(mine, run, S.data.estimates || {});
+    return `<span class="pg-spin" data-testid="pg-row-${esc(stageId)}"></span> ${m.overdue ? 'running' : `${m.pct}%`}`;
   }
 
   /** Clicks that start a run open the window as soon as the new run shows up. */

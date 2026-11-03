@@ -109,7 +109,8 @@ test('no sub-progress and past the usual time: says "longer than usual", never "
   await page.getByTestId('open-progress').click();
   await expect(modal(page).getByTestId('pg-eta')).toContainText('taking longer than usual');
   await expect(modal(page).getByTestId('pg-eta')).not.toContainText('under a minute');
-  expect(Number(await modal(page).getByTestId('pg-bar').getAttribute('data-pct'))).toBeLessThanOrEqual(90);
+  await expect(modal(page).getByTestId('pg-bar')).toHaveAttribute('data-pct', '');
+  await expect(modal(page).getByTestId('pg-bar')).toContainText('no % yet');
 });
 
 test('Run all: overall stage x of 9 with %, current stage bar and the per-stage tick list', async ({ page }) => {

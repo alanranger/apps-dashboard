@@ -55,6 +55,8 @@
     .pg-bar { position: relative; height: 22px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin: 8px 0; }
     .pg-bar > div { height: 100%; background: linear-gradient(90deg, var(--brand), #fbbf24); transition: width 0.6s ease; }
     .pg-bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: var(--text); }
+    .pg-bar.pg-unknown > div { width: 30%; animation: pgslide 1.6s ease-in-out infinite alternate; }
+    @keyframes pgslide { from { margin-left: 0; } to { margin-left: 70%; } }
     .pg-overall { margin-top: 4px; font-weight: 600; }
     .pg-meta { display: flex; gap: 18px; flex-wrap: wrap; color: var(--text-muted); font-size: 0.92rem; }
     .pg-alive { margin: 10px 0; padding: 8px 10px; border-radius: 6px; font-size: 0.92rem; }
