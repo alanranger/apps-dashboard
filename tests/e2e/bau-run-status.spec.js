@@ -80,7 +80,7 @@ test('status box: queued → running → finished → failed, with the LIVE badg
 test('top panel: "Run all mode" beside Run all; stage A live row shows files + commit (real history, unchanged)', async ({ page }) => {
   await openPage(page);
   await expect(page.locator('.run-all-mode')).toContainText('Run all mode:');
-  await expect(page.getByTestId('run-all-live-note')).toContainText('Run all: test run only');
+  await expect(page.getByTestId('run-all-live-note')).toContainText("Live Run all isn't available");
   await expect(page.getByText('checks every minute')).toBeVisible();
   const plan = await mcApi('/api/update-all?live_plan=A', { token: session.token });
   expect(plan.last_live?.undo?.commit?.startsWith('3ccf6a6')).toBe(true);

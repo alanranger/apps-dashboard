@@ -82,7 +82,8 @@ async function liveGate(session, body, mode) {
   if (mode !== 'live') return null;
   if (process.env.UPDATE_ALL_LIVE_ENABLED !== '1' || session.role !== 'alan') return [403, { error: 'LIVE mode is not enabled yet' }];
   const runAll = !Array.isArray(body.stages) || !body.stages.length;
-  if (runAll && !liveState(session, await historyNow()).run_all_unlocked) return [400, { error: 'Live Run all unlocks after stages A–H have each run live once' }];
+  // Alan 4 Nov: stage by stage for now (the runner promotes one stage per live run).
+  if (runAll) return [400, { error: "Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button." }];
   if (!runAll && body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
   return null;
 }

@@ -1,5 +1,5 @@
 /**
- * BAU progress window (Alan 3 Nov): one pop-up for every run — each stage's Run this stage / Publish live / Undo, and
+ * BAU progress window (Alan 3 Nov): one pop-up for every run — each stage's Build & check / Publish live / Undo, and
  * Run all (test or live). It reads the run the page already polls (run.progress, run.heartbeat_at, run.log written by
  * the PC runner; estimates and runner state from the API) and re-renders every second for the timers.
  * Uses the page's helpers: esc, clock, duration, modeBadge, headline, isUndo, scopeText, stageResultHtml, failureHtml,
@@ -181,11 +181,11 @@
     const b = [];
     if (run.status === 'failed') b.push('<button class="small" data-pg-act="resume" data-testid="pg-resume">Resume</button>');
     if (id && run.mode === 'live' && !isUndo(run) && run.status === 'failed') b.push('<button class="small live" data-pg-act="again" data-testid="pg-again">Publish live again…</button>');
-    if (id && run.mode === 'live' && !isUndo(run) && ['succeeded', 'warned'].includes(run.status) && latestLiveIs(id, run.id)) b.push('<button class="small undo" data-pg-act="undo" data-testid="pg-undo">Undo this stage…</button>');
+    if (id && run.mode === 'live' && !isUndo(run) && ['succeeded', 'warned'].includes(run.status) && latestLiveIs(id, run.id)) b.push('<button class="small undo" data-pg-act="undo" data-testid="pg-undo">Undo last live…</button>');
     return b.length ? `<div class="pg-actions">${b.join('')}</div>` : '';
   }
 
-  /** Every step of the run's own stage(s) was skipped (e.g. stage I in a test run: ① is only simulated). */
+  /** Every step of the run's own stage(s) was skipped (e.g. stage I in a check: ① is only simulated). */
   function simulatedOnly(run, list) {
     const own = list.filter((s) => !['preflight', 'summary'].includes(s.step_id));
     return ['succeeded', 'warned'].includes(run.status) && own.length > 0 && own.every((s) => s.status === 'skipped');
@@ -194,7 +194,7 @@
   function simulatedHtml(run, list) {
     const why = list.filter((s) => s.status === 'skipped').flatMap((s) => (s.notes || []).map((n) => n.text)).filter(Boolean);
     return `<p class="pg-result pg-sim" data-testid="pg-result" data-status="simulated">⚪ Nothing was run — simulated only</p>
-      <div class="note">${esc(why.join(' ') || 'Every step of this stage was skipped in a test run.')} Only a <strong>live</strong> run does this stage's real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}.</div>
+      <div class="note">${esc(why.join(' ') || 'Every step of this stage was skipped in a check.')} Only a <strong>live</strong> run does this stage's real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}.</div>
       <div class="muted">Finished ${esc(clock(run.finished_at))}</div>`;
   }
 

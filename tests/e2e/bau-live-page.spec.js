@@ -32,7 +32,7 @@ test('1. Live is only on the per-stage buttons; Run all stays dry', async ({ pag
   for (const s of [...FILE_STAGES, 'B']) await expect(page.getByTestId(`stage-live-${s}`)).toBeVisible();
   await expect(page.getByTestId('stage-live-I')).toHaveCount(0);
   const runAllLive = await mcApi('/api/update-all', { token: session.token, method: 'POST', body: { action: 'start', mode: 'live' } }).catch((e) => e);
-  expect(runAllLive.status).toBe(403);
+  expect([400, 403]).toContain(runAllLive.status);
   await shot(page, '1-live-only-on-stage-buttons');
 });
 

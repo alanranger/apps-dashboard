@@ -31,8 +31,8 @@ test('real page: stages whose newest test run is live show "Already live"; those
     expect(await isAlreadyLive(page, id), `stage ${id}`).toBe(expected);
     if (expected) {
       await expect(btn).toBeDisabled();
-      await expect(btn).toHaveText('Already live — run a new test first');
-      await expect(btn).toHaveAttribute('title', new RegExp(`Test run ${h.dry[id].run_id.slice(0, 8)} was published live on`));
+      await expect(btn).toHaveText('Already live');
+      await expect(btn).toHaveAttribute('title', new RegExp(`Checked build ${h.dry[id].run_id.slice(0, 8)} was published live on`));
     } else {
       await expect(btn).toHaveText('Publish live…');
     }
@@ -67,8 +67,8 @@ test('a refused re-promote of an already-live test run says so (not "run dry aga
     await route.fulfill({ json: real });
   });
   await openPage(page);
-  await expect(page.locator('#runStatus')).toContainText('This test run is already live (published');
-  await expect(page.locator('#runStatus')).toContainText('Run a new test run to publish this stage again.');
+  await expect(page.locator('#runStatus')).toContainText('This checked build is already live (published');
+  await expect(page.locator('#runStatus')).toContainText('Build & check again to publish this stage again.');
   await expect(page.locator('#runStatus')).not.toContainText('run stage D dry again, then Live');
   await page.locator('#runStatus').screenshot({ path: path.join(EVIDENCE, 'refused-already-live.png') });
 });
