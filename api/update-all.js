@@ -23,9 +23,18 @@ const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
 
 const recentRuns = () => sb('update_all_runs?select=id,mode,status,stages,stage_results,options,requested_at,started_at,finished_at&order=requested_at.desc&limit=60');
 
+/** B's checked line: how many pages a live B would re-read in full (the check's refetch plan, kept in its step counts). */
+async function addRefetchCount(dry) {
+  const b = dry.B;
+  if (!b?.run_id || !/^[0-9a-f-]{36}$/.test(b.run_id)) return;
+  const [step] = await sb(`update_all_steps?select=plan:counts->refetch_plan&run_id=eq.${b.run_id}&step_id=eq.ingest_preliminary`).catch(() => []);
+  if (step?.plan?.checked) b.refetch = { reingest: step.plan.reingest, checked: step.plan.checked };
+}
+
 async function stagesInfo() {
   const runs = await recentRuns();
   const history = { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live'), live_done: liveDoneHistory(runs) };
+  await addRefetchCount(history.dry);
   const plans = Object.fromEntries(STAGES.map((s) => [s.id, planStage([s.id], history.dry)]));
   return { defs: STAGES.map(({ id, name, steps, needs, needsAny }) => ({ id, name, steps, needs, needsAny: needsAny || null })), history, plans, typical: stageTypical(runs) };
 }
@@ -68,12 +77,12 @@ const simulated = (mode, urls) => (mode === 'dry' && Array.isArray(urls) ? urls.
 function liveRefusal(stage, dry) {
   // Stage I promotes nothing: live I starts the full audit ① now (the runner also refuses while ① is running).
   if (stage === 'I') return new Date().getUTCDay() === 1 ? 'Never on a Monday: the Monday cron runs ①' : null;
-  if (!dry) return `Run stage ${stage} dry first`;
-  if (!['ok', 'warn'].includes(dry.status)) return `Stage ${stage}'s last dry run ${dry.status} — run it dry again`;
-  if (Date.now() - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `Stage ${stage}'s last dry run is older than 7 days — run it dry again`;
+  if (!dry) return `Stage ${stage} has no checked build — click 1. Build & check first`;
+  if (!['ok', 'warn'].includes(dry.status)) return `Stage ${stage}'s last check ${dry.status} — click 1. Build & check again`;
+  if (Date.now() - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `Stage ${stage}'s checked build is older than 7 days — click 1. Build & check again`;
   // B writes only the database (its safety is the automatic backup), so it has no file list to check.
-  if (dry.removals_unexplained == null && stage !== 'B') return `Stage ${stage}'s last dry run predates the removal check — run it dry again`;
-  if (dry.removals_unexplained) return `Stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
+  if (dry.removals_unexplained == null && stage !== 'B') return `Stage ${stage}'s checked build predates the removal check — click 1. Build & check again`;
+  if (dry.removals_unexplained) return `Stage ${stage}'s checked build has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
   return null;
 }
 
@@ -84,7 +93,7 @@ async function liveGate(session, body, mode) {
   const runAll = !Array.isArray(body.stages) || !body.stages.length;
   // Alan 4 Nov: stage by stage for now (the runner promotes one stage per live run).
   if (runAll) return [400, { error: "Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button." }];
-  if (!runAll && body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's Run this stage button" }];
+  if (!runAll && body.stages.length !== 1) return [400, { error: "Live runs one stage at a time — use that stage's 2. Publish live… button" }];
   return null;
 }
 

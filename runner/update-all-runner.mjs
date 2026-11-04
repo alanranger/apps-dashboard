@@ -50,12 +50,12 @@ export async function prepareStageRun(store, run, ctx) {
 }
 /** Why a stage's latest dry run can't be promoted to Live, or null. */
 export function liveReadiness(stage, dry, now = Date.now()) {
-  if (!dry) return `stage ${stage} has never been dry-run`;
-  if (!['ok', 'warn'].includes(dry.status)) return `stage ${stage}'s last dry run ${dry.status}`;
-  if (now - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `stage ${stage}'s last dry run is older than 7 days`;
-  if (dry.removals_unexplained == null && !DB_ONLY_STAGES.has(stage)) return `stage ${stage}'s last dry run predates the removal check`;
-  if (dry.removals_unexplained) return `stage ${stage}'s dry run has ${dry.removals_unexplained} unexplained removals`;
-  if (!dry.sandbox || !fs.existsSync(dry.sandbox)) return `stage ${stage}'s dry run outputs are gone from this PC`;
+  if (!dry) return `stage ${stage} has no checked build`;
+  if (!['ok', 'warn'].includes(dry.status)) return `stage ${stage}'s last check ${dry.status}`;
+  if (now - Date.parse(dry.finished_at) > 7 * 24 * 3600 * 1000) return `stage ${stage}'s checked build is older than 7 days`;
+  if (dry.removals_unexplained == null && !DB_ONLY_STAGES.has(stage)) return `stage ${stage}'s checked build predates the removal check`;
+  if (dry.removals_unexplained) return `stage ${stage}'s checked build has ${dry.removals_unexplained} unexplained removals`;
+  if (!dry.sandbox || !fs.existsSync(dry.sandbox)) return `stage ${stage}'s checked build files are gone from this PC`;
   return null;
 }
 

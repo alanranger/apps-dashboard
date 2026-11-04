@@ -31,13 +31,13 @@ test('real page: stages whose newest test run is live show "Already live"; those
     expect(await isAlreadyLive(page, id), `stage ${id}`).toBe(expected);
     if (expected) {
       await expect(btn).toBeDisabled();
-      await expect(btn).toHaveText('Already live');
+      await expect(btn).toHaveText('2. Already live');
       await expect(btn).toHaveAttribute('title', new RegExp(`Checked build ${h.dry[id].run_id.slice(0, 8)} was published live on`));
     } else {
-      await expect(btn).toHaveText('Publish live…');
+      await expect(btn).toHaveText('2. Publish live…');
     }
   }
-  await expect(page.getByTestId('stage-live-I')).toHaveText('Run ① live…');
+  await expect(page.getByTestId('stage-live-I')).toHaveText('Start full audit ①…');
   await page.locator('[data-testid="stages-table"]').screenshot({ path: path.join(EVIDENCE, 'stages-table.png') });
 });
 
@@ -49,7 +49,7 @@ test('a newer ok test run for D brings back its orange Publish live; the others 
   });
   await openPage(page);
   expect(await isAlreadyLive(page, 'D')).toBe(false);
-  await expect(page.getByTestId('stage-live-D')).toHaveText('Publish live…');
+  await expect(page.getByTestId('stage-live-D')).toHaveText('2. Publish live…');
   for (const id of 'EFGH') expect(await isAlreadyLive(page, id), id).toBe(true);
 });
 

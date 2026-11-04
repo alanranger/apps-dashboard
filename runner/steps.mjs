@@ -843,7 +843,7 @@ async function audit(ctx) {
   const running = await query(ctx, 'fault_monitor_runs?select=id,status&status=in.(running,started)&limit=1');
   const counts = { monday_utc: monday, audit_already_running: running?.length || 0 };
   if (ctx.mode === 'dry') {
-    return { status: 'skipped', counts, notes: [info('① is simulated in a dry run (no requests sent).')], plain: 'Would start the full audit ① (simulated in a dry run).',
+    return { status: 'skipped', counts, notes: [info("① is simulated in a check (no requests sent); it runs from Start full audit ①… or on Monday.")], plain: "Would start the full audit ① (simulated only: a check doesn't run the audit).",
       details: [`Live: POST ${RENDER_API} {action:'start', source:'trad_seo'}, then wait on fault_monitor_runs (render, then broken links; the */5 cron advances it)`] };
   }
   if (monday) return { counts, notes: [problem('Never on a Monday: the Monday cron runs ①', 'run ① on another day')] };
@@ -955,8 +955,8 @@ const sharedStage = (id, handler) => async (ctx) => {
 
 /** Generators never run in Live: the stage publishes the files its dry run already generated and reported. */
 const promoted = (handler) => async (ctx) => (ctx.mode !== 'live' ? handler(ctx) : {
-  status: 'skipped', notes: [info(`Not regenerated in Live: this stage publishes dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)}'s files.`)],
-  plain: `Promoted from dry run ${String(ctx.promote?.run_id || '?').slice(0, 8)} (not regenerated).`, counts: { promoted_from: ctx.promote?.run_id || null } });
+  status: 'skipped', notes: [info(`Not regenerated in Live: this stage publishes checked build ${String(ctx.promote?.run_id || '?').slice(0, 8)}'s files.`)],
+  plain: `Published from checked build ${String(ctx.promote?.run_id || '?').slice(0, 8)} (not regenerated).`, counts: { promoted_from: ctx.promote?.run_id || null } });
 
 export const HANDLERS = {
   preflight, build_csvs: sharedStage('build_csvs', buildCsvs), ingest_preliminary: dbStage('B', ingestPreliminary), reviews: sharedStage('reviews', reviews),

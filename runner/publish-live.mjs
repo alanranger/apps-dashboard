@@ -84,12 +84,12 @@ function stillDiffering(files, repo, src) {
 
 /** Why this live publish must not go ahead, or null. */
 function liveRefusal(def, ctx, set, current) {
-  if (!LIVE_STAGES.has(def.stage)) return [`Live publishing for stage ${def.stage} is not built yet`, 'run it dry'];
-  if (!ctx.promote) return ['No dry run to promote', `run stage ${def.stage} dry first`];
+  if (!LIVE_STAGES.has(def.stage)) return [`Live publishing for stage ${def.stage} is not built yet`, 'use 1. Build & check'];
+  if (!ctx.promote) return ['No checked build to publish', `click 1. Build & check on stage ${def.stage} first`];
   if (!sameSet(current, ctx.promote.published || []) || !sameSet(set.remove, ctx.promote.removed || [])) {
-    return [`The schema repo changed since dry run ${String(ctx.promote.run_id).slice(0, 8)}: the publish list is different now`, `run stage ${def.stage} dry again, then Live`];
+    return [`The schema repo changed since checked build ${String(ctx.promote.run_id).slice(0, 8)}: the publish list is different now`, `click 1. Build & check on stage ${def.stage} again, then 2. Publish live…`];
   }
-  if (set.removals.unexplained.length) return [`${plural(set.removals.unexplained.length, 'unexplained removal')} in the publish set`, 'fix or explain them, then dry-run again'];
+  if (set.removals.unexplained.length) return [`${plural(set.removals.unexplained.length, 'unexplained removal')} in the publish set`, 'fix or explain them, then click 1. Build & check again'];
   return null;
 }
 
@@ -132,10 +132,10 @@ export async function livePublish(def, sb, ctx, set) {
   ctx.progress?.('Checking served files', 2, 3);
   const served = await servedFiles(publish, repo, r.commit, ctx, def);
   const after = def.after && r.commit ? def.after(sb, ctx, r) : {};
-  const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (dry run ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
+  const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (checked build ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
   if (served.differ.length) notes.push(note('check', `schema.alanranger.com ${served.text}`, 'open those files on schema.alanranger.com in a few minutes; if they still differ, tell Claude'));
   return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
     repo_name: path.basename(repo), served_check: served.text, served_differ: served.differ, ...removalCounts(set.removals), ...after },
-    notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from dry run ${String(ctx.promote.run_id).slice(0, 8)}.`,
+    notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from checked build ${String(ctx.promote.run_id).slice(0, 8)}.`,
     details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, served.text] };
 }

@@ -6,32 +6,38 @@
   <title>BAU Monthly - Alan Ranger Tools</title>
   <style>
     :root {
-      --bg: #0f1419; --panel: #1a1f2e; --text: #e2e8f0; --text-muted: #9ca3af; --brand: #f59e0b;
-      --success: #10b981; --border: #374151; --blue: #3b82f6; --red: #ef4444; --warn: #f59e0b;
+      --bg: #0b0e14; --panel: #151a23; --text: #d6dbe4; --text-muted: #8b93a3; --brand: #f0a500;
+      --success: #5fd38d; --border: #262d3a; --blue: #6ea8fe; --red: #ff6b6b; --warn: #f0b429;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { overflow-x: hidden; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; padding: 20px clamp(10px, 2vw, 28px); }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; line-height: 1.5; padding: 24px clamp(10px, 2.8vw, 40px); }
     .container { width: 100%; max-width: 1800px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
-    .header h1 { font-size: 2.2rem; color: var(--brand); margin-bottom: 6px; }
-    .header p { color: var(--text-muted); max-width: 1100px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 18px; }
+    .header h1 { font-size: 30px; color: var(--brand); margin-bottom: 6px; }
+    .header p { color: var(--text-muted); max-width: 980px; margin: 0 auto 4px; }
+    .header .links { margin: 0 auto 0; }
     .header a { color: var(--blue); }
-    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 16px; min-width: 0; }
-    .panel h2 { font-size: 1.15rem; margin-bottom: 12px; color: var(--text); }
-    .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; min-width: 0; }
+    .panel h2 { font-size: 17px; margin-bottom: 12px; color: #fff; }
+    .grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+    .grid2 .panel { margin: 0; }
     .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     button { background: var(--brand); color: #000; border: 0; border-radius: 6px; padding: 10px 18px; font-weight: 700; cursor: pointer; font-size: 1rem; }
     button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 600; }
     button.small { padding: 5px 12px; font-size: 0.85rem; }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
-    .mode { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-    .mode label { padding: 8px 14px; cursor: pointer; color: var(--text-muted); }
+    .mode { display: inline-flex; border: 1px solid #4a5263; border-radius: 6px; overflow: hidden; }
+    .mode label { cursor: pointer; color: var(--text-muted); font-weight: 600; }
+    .mode label span { display: inline-block; padding: 7px 16px; }
     .mode input { display: none; }
-    .mode input:checked + span { color: #fff; background: #2a3245; padding: 8px 14px; margin: -8px -14px; display: inline-block; }
-    .mode label.disabled { opacity: 0.45; cursor: not-allowed; }
+    .mode input:checked + span { color: #fff; background: #2a3347; box-shadow: inset 0 -2px 0 var(--blue); }
+    .mode label.disabled, .mode label.disabled span { color: #5d6576; cursor: not-allowed; }
+    .lastline { margin-top: 10px; color: var(--text-muted); font-size: 12px; }
+    .lastline b { color: var(--text); }
     .muted { color: var(--text-muted); font-size: 0.9rem; }
     .run-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 0.92rem; }
+    .run-meta[hidden] { display: none; }
     .badge { display: inline-block; white-space: nowrap; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
     .b-ok, .b-succeeded { background: rgba(16,185,129,0.18); color: var(--success); }
     .b-warn, .b-warned { background: rgba(245,158,11,0.18); color: var(--warn); }
@@ -44,7 +50,7 @@
     .st-ok { background: #12301f; color: #5fd38d; border: 1px solid #1f5a37; }
     .st-warn { background: #3a2c08; color: #f0b429; border: 1px solid #6b5212; }
     .st-fail { background: #3a1416; color: #ff6b6b; border: 1px solid #6e2226; }
-    .st-refused, .st-skipped { background: #1f2430; color: #8b93a3; border: 1px solid #333a48; }
+    .st-refused, .st-skipped, .st-cancelled, .st-running, .st-pending { background: #1f2430; color: #8b93a3; border: 1px solid #333a48; }
     .md { display: inline-block; min-width: 64px; text-align: center; font-size: 11px; font-weight: 700; border-radius: 4px; padding: 2px 6px; margin-right: 6px; }
     .md-test { background: #1f2430; color: #aab3c2; border: 1px solid #333a48; }
     .md-live { background: #10243f; color: #6ea8fe; border: 1px solid #1f4677; }
@@ -58,12 +64,14 @@
     button.bb-disabled, button.bb:disabled { background: #1b2030; color: #6b7385; border: 1px solid #2a3040; cursor: not-allowed; opacity: 1; }
     .until { color: #8b93a3; font-size: 11.5px; text-align: center; width: 190px; }
     .stage-tag-mock { display: inline-block; background: #3a2c08; color: #f0a500; border-radius: 4px; padding: 0 6px; font-weight: 700; margin-right: 6px; }
-    .run-status { border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; background: rgba(0,0,0,0.25); }
+    .run-status { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; background: rgba(0,0,0,0.25); }
     .run-status[hidden] { display: none; }
-    .run-status.rs-active { border-color: var(--blue); } .run-status.rs-ok { border-color: var(--success); }
-    .run-status.rs-warn { border-color: var(--warn); } .run-status.rs-fail { border-color: var(--red); }
-    .run-status h3 { font-size: 1.05rem; margin-bottom: 4px; }
-    .run-status .rs-close { float: right; margin-left: 10px; }
+    .run-status.rs-active { border-color: #1f4677; background: #0e1828; } .run-status.rs-ok { border-color: #1f5a37; background: #0f1d16; }
+    .run-status.rs-warn { border-color: #6b5212; background: #1d1708; } .run-status.rs-fail { border-color: #6e2226; background: #1f0e10; }
+    .run-status h3 { font-size: 13.5px; font-weight: 400; }
+    .run-status h3 b { color: #fff; }
+    .rs-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .rs-btns { display: flex; gap: 8px; }
     .run-status .rs-stage { margin-top: 8px; font-size: 0.92rem; }
     .run-status details { margin-top: 4px; font-size: 0.88rem; } .run-status summary { cursor: pointer; color: var(--blue); }
     .run-status ul { margin: 4px 0 0 18px; max-height: 200px; overflow-y: auto; }
@@ -95,9 +103,17 @@
     .pg-sound { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); }
     .pg-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--blue); border-right-color: transparent; border-radius: 50%; animation: pgspin 0.8s linear infinite; vertical-align: -1px; }
     @keyframes pgspin { to { transform: rotate(360deg); } }
-    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; table-layout: fixed; }
-    th { text-align: left; color: var(--brand); background: rgba(245,158,11,0.08); padding: 8px; border-bottom: 2px solid var(--border); }
-    td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; table-layout: fixed; }
+    th { text-align: left; color: var(--brand); background: #1b2130; padding: 8px; font-weight: 600; }
+    td { padding: 12px 8px; border-top: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+    .steps-panel > details > summary { cursor: pointer; color: #fff; font-weight: 600; font-size: 17px; list-style: none; }
+    .steps-panel > details > summary::-webkit-details-marker { display: none; }
+    .steps-panel > details[open] > summary { margin-bottom: 12px; }
+    .needs-note { margin-top: 10px; font-size: 12px; }
+    .needs-note[hidden] { display: none; }
+    #needsList { list-style: none; margin-left: 0 !important; }
+    #needsList li { margin: 4px 0; }
+    .needs-tick { color: #5fd38d; font-weight: 700; margin-right: 6px; }
     col.c-n { width: 44px; } col.c-step { width: 230px; } col.c-status { width: 112px; } col.c-time { width: 70px; }
     .stage-tag { display: inline-block; min-width: 22px; text-align: center; border-radius: 4px; background: rgba(245,158,11,0.15); color: var(--brand); font-weight: 700; font-size: 0.8rem; margin-right: 6px; }
     .plain { font-size: 0.95rem; }
@@ -125,10 +141,11 @@
     .login { display: none; gap: 10px; align-items: center; }
     input[type=password] { background: #0b0f14; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; }
     .summary-grid { display: flex; gap: 14px; flex-wrap: wrap; }
-    .summary-grid div { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; min-width: 110px; }
-    .summary-grid strong { display: block; font-size: 1.4rem; }
+    .summary-grid { gap: 10px; }
+    .summary-grid div { background: #121722; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; min-width: 100px; }
+    .summary-grid strong { display: block; font-size: 22px; font-weight: 800; }
     .lvl-check strong { color: var(--warn); } .lvl-problem strong { color: var(--red); }
-    .tick { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; cursor: pointer; color: var(--text); }
+    .tick { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #333a48; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--text); }
     .tick input { accent-color: var(--brand); width: 16px; height: 16px; }
     .info-list { margin: 12px 0 0 18px; color: var(--text-muted); font-size: 0.88rem; }
     .prereq { margin-top: 10px; color: var(--warn); display: none; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -163,9 +180,9 @@
   <div class="container">
     <div class="header">
       <h1>BAU Monthly</h1>
-      <p data-testid="bau-summary-line">Does the full round trip in order: rebuild the CSVs from Squarespace → ingest (links events and products) → reviews → generate all schema → publish → ingest again (so the database holds the new schema) → keywords export → optional full audit ①. Run it all with one button, or one stage at a time.</p>
-      <p>The runner on Alan's PC does the work; this page shows progress from any device.
-        <br><a href="bau-workflow-checklist.html">Old manual checklist</a> · <a href="/">Mission Control</a></p>
+      <p data-testid="bau-summary-line">Does the full round trip in order: rebuild the CSVs from Squarespace → ingest (links events and products) → reviews → generate all schema → publish → ingest again (so the database holds the new schema) → keywords export → optional full audit ①. Check every stage with one button, then publish each stage live.</p>
+      <p style="font-size:12px">The runner on Alan's PC does the work; this page shows progress from any device.</p>
+      <p class="links"><a href="bau-workflow-checklist.html">Old manual checklist</a> · <a href="/">Mission Control</a></p>
     </div>
 
     <div class="panel" id="loginPanel">
@@ -181,36 +198,43 @@
       <h2>Run</h2>
       <div class="run-status" id="runStatus" data-testid="run-status-box" hidden></div>
       <div class="controls">
-        <label class="tick" title="Stage I: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
-          <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit (①)
-        </label>
-        <button id="startBtn" data-testid="update-all-start">Run all</button>
-        <span class="run-all-mode"><span class="muted">Run all mode:</span>
+        <span class="run-all-mode">
           <span class="mode" role="radiogroup" aria-label="Run all mode">
             <label><input type="radio" name="mode" value="dry" checked><span>Check</span></label>
-            <label class="disabled" id="liveRadioLabel" title="Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button."><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
+            <label class="disabled" id="liveRadioLabel" data-testid="run-all-live-label" title="Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button."><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
           </span></span>
-        <span class="muted" id="runAllLiveNote" data-testid="run-all-live-note">Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button.</span>
-        <button class="secondary" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
-        <button class="secondary" id="cancelBtn" disabled>Cancel</button>
+        <label class="tick" title="Stage I: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
+          <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit ①
+        </label>
+        <button class="bb bb-primary" style="width:150px" id="startBtn" data-testid="update-all-start">Run all</button>
+        <button class="bb bb-secondary" style="width:110px" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
+        <button class="bb bb-secondary" style="width:110px" id="cancelBtn" disabled>Cancel</button>
         <span class="muted" id="actionMsg" data-testid="action-msg"></span>
       </div>
       <div class="prereq" id="prereq" data-testid="prereq">
         <span id="prereqMsg" data-testid="prereq-msg"></span>
         <button class="small" id="prereqChain" data-testid="prereq-chain"></button>
       </div>
-      <div class="run-meta" id="runMeta"></div>
-      <p class="muted" style="margin-top:10px">A check builds everything in a sandbox copy and changes nothing live (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task <code>AlanUpdateAllRunner</code>) checks every minute and picks up a requested run.</p>
+      <div class="run-meta" id="runMeta" hidden></div>
+      <div class="lastline" id="runAllLiveNote" data-testid="run-all-live-note" title="A check builds everything in a sandbox copy and changes nothing live (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task AlanUpdateAllRunner) checks every minute and picks up a requested run.">Run all builds and checks every stage (nothing changes live). Then publish each stage with its own <b>2. Publish live…</b> button below.</div>
     </div>
 
-    <div class="panel" id="stagesPanel" style="display:none">
-      <h2>Stages</h2>
-      <p class="muted" style="margin-bottom:10px">Each stage runs pre-flight first, then its own steps, and publishes only its own files. A stage uses the latest saved inputs; if they are missing, older than 7 days or out of date, the page says what to run first.</p>
-      <table class="stack" data-testid="stages-table">
-        <colgroup><col style="width:220px"><col><col style="width:140px"><col><col style="width:210px"></colgroup>
-        <thead><tr><th>Stage</th><th>Steps</th><th>Needs first</th><th>Last run (stage history)</th><th></th></tr></thead>
-        <tbody id="stageRows"></tbody>
-      </table>
+    <div class="grid2" id="needsSummaryRow" data-testid="needs-summary-row">
+      <div class="panel" id="needsPanel" style="display:none" data-testid="needs-alan">
+        <h2>Needs Alan</h2>
+        <ul id="needsList"></ul>
+        <ul class="needs-08 needs-held" id="needsHeld"></ul>
+        <datalist id="heldProducts"></datalist>
+        <ul class="needs-08" id="needs08"></ul>
+        <p class="muted needs-note" id="needsNote" data-testid="needs-note">When something does (held reviews, new pages, a paused stage), it shows here with the button to act on it.</p>
+      </div>
+
+      <div class="panel" id="summaryPanel" style="display:none">
+        <h2>Summary — last run</h2>
+        <div class="summary-grid" id="summaryGrid" data-testid="summary-grid"></div>
+        <p class="muted" id="coverageLine" data-testid="coverage-line" style="margin-top:10px;font-size:12px"></p>
+        <ul class="info-list" id="summaryInfo" data-testid="summary-info"></ul>
+      </div>
     </div>
 
     <div class="panel" id="errorPanel" data-testid="update-all-errors">
@@ -218,30 +242,24 @@
       <ul id="errorList"></ul>
     </div>
 
-    <div class="grid2">
-      <div class="panel" id="needsPanel" style="display:none" data-testid="needs-alan">
-        <h2>Needs Alan</h2>
-        <ul id="needsList"></ul>
-        <ul class="needs-08 needs-held" id="needsHeld"></ul>
-        <datalist id="heldProducts"></datalist>
-        <ul class="needs-08" id="needs08"></ul>
-      </div>
-
-      <div class="panel" id="summaryPanel" style="display:none">
-        <h2>Summary</h2>
-        <div class="summary-grid" id="summaryGrid" data-testid="summary-grid"></div>
-        <p class="muted" id="coverageLine" data-testid="coverage-line" style="margin-top:12px"></p>
-        <ul class="info-list" id="summaryInfo" data-testid="summary-info"></ul>
-      </div>
+    <div class="panel" id="stagesPanel" style="display:none">
+      <h2>Stages</h2>
+      <p class="muted" style="margin-bottom:10px">Each stage runs pre-flight first, then its own steps, and publishes only its own files. A stage uses the latest saved inputs; if they are missing, older than 7 days or out of date, the page says what to run first.</p>
+      <table class="stack" data-testid="stages-table">
+        <colgroup><col style="width:210px"><col style="width:230px"><col style="width:110px"><col><col style="width:210px"></colgroup>
+        <thead><tr><th>Stage</th><th>Steps</th><th>Needs first</th><th>Last runs</th><th></th></tr></thead>
+        <tbody id="stageRows"></tbody>
+      </table>
     </div>
 
-    <div class="panel" id="stepsPanel" style="display:none">
-      <h2>Steps</h2>
+    <div class="panel steps-panel" id="stepsPanel" style="display:none">
+      <details id="stepsDetails" data-testid="steps-details"><summary id="stepsSummary" data-testid="steps-summary">Steps of the last run ▸</summary>
       <table class="stack">
         <colgroup><col class="c-n"><col class="c-step"><col class="c-status"><col class="c-time"><col></colgroup>
         <thead><tr><th>#</th><th>Step</th><th>Status</th><th>Time</th><th>What happened</th></tr></thead>
         <tbody id="stepRows" data-testid="update-all-steps"></tbody>
       </table>
+      </details>
     </div>
   </div>
 
@@ -300,6 +318,13 @@
       return `${plain}${stepNotes(s).map(noteHtml).join('')}${err}${commit}${detailsHtml(s)}`;
     }
 
+    /** Steps of the last run: collapsed by default (the <details> is never re-rendered, so Alan's open / closed choice stays). */
+    let stepCount = 0;
+    function stepsLabel(n = stepCount) {
+      stepCount = n;
+      $('stepsSummary').textContent = `Steps of the last run (${n}) ${$('stepsDetails').open ? '▾' : '▸'}`;
+    }
+
     /** The page refreshes every 5 s: Details boxes Alan opened stay open. */
     const openDetails = () => new Set([...document.querySelectorAll('details.step-details[open]')].map((d) => d.closest('tr')?.dataset.step));
     function renderSteps(steps, registry) {
@@ -307,6 +332,7 @@
       const byId = new Map(steps.map((s) => [s.step_id, s]));
       const shown = steps.length ? registry.filter((d) => byId.has(d.id)) : registry;
       $('stepRows').innerHTML = rowsHtml(shown, byId);
+      stepsLabel(shown.length);
       open.forEach((id) => { const d = document.querySelector(`tr[data-step="${id}"] details.step-details`); if (d) d.open = true; });
     }
     function rowsHtml(shown, byId) {
@@ -322,24 +348,32 @@
 
     // ---------- stages + history ----------
     // Approved mock-up (4 Nov): result pill (colour = result only) + square mode tag (CHECKED grey / LIVE blue) + details.
-    const RESULT_LABEL = { ok: 'OK', warn: 'WARN', fail: 'FAIL', refused: 'REFUSED', skipped: 'SKIPPED' };
+    const RESULT_LABEL = { ok: 'OK', warn: 'WARN', fail: 'FAIL', refused: 'REFUSED', skipped: 'SKIPPED', running: 'RUNNING', cancelled: 'CANCELLED' };
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
     const pill = (status) => `<span class="st st-${esc(status)}" data-testid="result-pill" data-result="${esc(status)}">${esc(RESULT_LABEL[status] || status)}</span>`;
     const modeTag = (live, undo) => (live ? `<span class="md md-live" data-testid="mode-tag">${undo ? 'LIVE UNDO' : 'LIVE'}</span>` : '<span class="md md-test" data-testid="mode-tag">CHECKED</span>');
 
     /** A live attempt that changed nothing because its checked build was already published (D 19:27 on 3 Nov). */
     const isRefusedRepeat = (h, good) => !!(h && good && h.status === 'fail' && !h.commit && !h.backup_run && h.run_id !== good.run_id && h.promoted_from && h.promoted_from === good.promoted_from);
 
-    /** "OK LIVE 3 Nov, 16:42 · published 3 files · commit 3ccf6a6 · run c2bc1bc9" (checked rows: "would publish 3 files"). */
+    /** After the time: B's check gives its re-read count; other lines the files, commit, backup and 05 export. */
+    function historyDetail(h, live, stage) {
+      if (!live && h.refetch) return [`${h.refetch.reingest} of ${h.refetch.checked} pages to re-read`];
+      return [h.published?.length ? `${esc(h.publish_mode || (live ? 'published' : 'would publish'))} ${plural(h.published.length, 'file')}` : '',
+        h.commit ? `commit ${commitLink(h.commit, h.repo, stage)}` : '',
+        h.backup_run ? `backup bau_bk_${esc(h.backup_run)}_*` : '',
+        h.export_commit ? `05 export commit ${commitLink(h.export_commit, 'alan-shared-resources', stage)}` : '',
+        h.undo_of ? `undid run ${esc(String(h.undo_of).slice(0, 8))}` : ''].filter(Boolean);
+    }
+
+    /** "OK LIVE 3 Nov, 16:42 · published 3 files · commit 3ccf6a6"; checked rows end with their run id. */
     function historyHtml(h, mode, stage, refused = false) {
       if (!h) return '';
       const live = mode === 'live';
-      const run = `<span class="muted">run ${esc(String(h.run_id || '').slice(0, 8))}</span>`;
-      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused">${pill('refused')}${modeTag(true)}${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed · run ${esc(String(h.run_id || '').slice(0, 8))}</div>`;
-      const pub = h.published?.length ? ` · ${esc(h.publish_mode || (live ? 'published' : 'would publish'))} ${h.published.length} files` : '';
-      const commit = h.commit ? ` · commit ${commitLink(h.commit, h.repo, stage)}` : '';
-      const backup = h.backup_run ? ` · backup bau_bk_${esc(h.backup_run)}_*` : '';
-      const undo = h.undo_of ? ` · undid run ${esc(String(h.undo_of).slice(0, 8))}` : '';
-      return `<div class="hline" data-testid="stage-history-${mode}">${pill(h.status)}${modeTag(live, h.undo_of)}${esc(when(h.finished_at))}${pub}${commit}${backup}${undo} · ${run}</div>`;
+      const runId = esc(String(h.run_id || '').slice(0, 8));
+      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused" title="run ${runId}">${pill('refused')}${modeTag(true)}${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed</div>`;
+      const parts = [esc(when(h.finished_at)), ...historyDetail(h, live, stage), ...(live ? [] : [`<span class="muted">run ${runId}</span>`])];
+      return `<div class="hline" data-testid="stage-history-${mode}" title="run ${runId}">${pill(h.status)}${modeTag(live, h.undo_of)}${parts.join(' · ')}</div>`;
     }
 
     /** Checked build, then the last successful live, then a later live attempt (REFUSED when it changed nothing). */
@@ -354,23 +388,32 @@
     /** "Typical: check about 2 min · live about 7 s" from the stage's last finished single-stage runs. */
     function typicalHtml(t, id) {
       const part = (label, ms) => `${label} ${ms ? `about ${ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`}` : 'not run yet'}`;
-      const check = id === 'I' ? 'check: simulated only (① runs live from Run ① live… or on Monday)' : part('check', t?.dry);
-      return `<div class="typ muted" style="font-size:12px;margin-top:4px" data-testid="stage-typical">Typical: ${check} · ${part('live', t?.live)}</div>`;
+      const text = id === 'I' ? 'Runs in the background (about 3 h) · also every Monday' : `Typical: ${part('check', t?.dry)} · ${part('live', t?.live)}`;
+      return `<div class="typ muted" style="font-size:12px;margin-top:4px" data-testid="stage-typical">${text}</div>`;
     }
 
-    /** Stage I: live I only starts ①; its own latest run (fault_monitor_runs) shows here: running / stalled / done / failed. */
+    /** Stage I: live I only starts ①; its own latest run (fault_monitor_runs): running / stalled / done / failed. */
     const AUDIT_STALL_MS = 30 * 60 * 1000;
-    function auditStatusHtml(a) {
-      if (!a) return '<div class="muted" style="font-size:0.8rem" data-testid="audit-status">① latest: none on record</div>';
-      const pages = `${a.pages_checked ?? a.cursor ?? 0} of ${a.pages_planned ?? '?'} pages`;
+    const AUDIT_URL = 'https://ai-geo-audit.vercel.app/audit-dashboard.html';
+    function auditLine(a) {
+      const pages = `${a.pages_checked ?? a.cursor ?? 0} of ${a.pages_planned ?? '?'} pages checked`;
       const tick = Date.parse(a.last_tick_at || a.started_at);
-      let text = `① latest: ${a.status} ${when(a.started_at)}`;
-      let cls = 'muted';
-      if (a.status === 'running' && Date.now() - tick > AUDIT_STALL_MS) { text = `① latest: running but no progress since ${when(a.last_tick_at || a.started_at)} — ${pages}`; cls = 'note-check'; }
-      else if (a.status === 'running') text = `① running since ${when(a.started_at)} — ${pages}, last tick ${when(a.last_tick_at)}`;
-      else if (a.status === 'done') text = `① latest: done ${when(a.finished_at)} — ${pages} checked · ${a.findings_open} finding${a.findings_open === 1 ? '' : 's'} open`;
-      else if (/fail|error/i.test(a.status)) { text = `① latest: ${a.status} ${when(a.finished_at || a.started_at)}${a.error ? ` — ${a.error}` : ''}`; cls = 'note-problem'; }
-      return `<div class="${cls}" style="font-size:0.8rem" data-testid="audit-status" data-status="${esc(a.status)}">${esc(text)}</div>`;
+      if (a.status === 'running' && Date.now() - tick > AUDIT_STALL_MS) return ['warn', `① latest: running but no progress since ${when(a.last_tick_at || a.started_at)} · ${pages}`];
+      if (a.status === 'running') return ['running', `① running since ${when(a.started_at)} · ${pages} · last tick ${when(a.last_tick_at)}`];
+      if (a.status === 'done') return ['ok', `① latest: done ${when(a.finished_at)} · ${pages} · ${plural(a.findings_open, 'finding')} open`];
+      if (/fail|error/i.test(a.status)) return ['fail', `① latest: ${a.status} ${when(a.finished_at || a.started_at)}${a.error ? ` · ${a.error}` : ''}`];
+      return ['skipped', `① latest: ${a.status} ${when(a.started_at)}`];
+    }
+    function auditStatusHtml(a) {
+      if (!a) return '<div class="hline muted-line" data-testid="audit-status">① latest: none on record</div>';
+      const [result, text] = auditLine(a);
+      return `<div class="hline" data-testid="audit-status" data-status="${esc(a.status)}">${pill(result)}${modeTag(true)}${esc(text)} · <a href="${AUDIT_URL}" target="_blank" rel="noopener" data-testid="audit-open">open audit</a></div>`;
+    }
+    /** I's Last runs: the ① line, then its latest check (always simulated: a check doesn't run the audit). */
+    function auditHistoryHtml(info) {
+      const dry = info.history.dry.I;
+      const check = dry ? `<div class="hline muted-line" data-testid="stage-history-dry">${pill('skipped')}${modeTag(false)}${esc(when(dry.finished_at))} · simulated only (a check doesn't run the audit)</div>` : '';
+      return auditStatusHtml(info.audit) + check;
     }
 
     function renderStages(info, run) {
@@ -379,10 +422,10 @@
       const active = ['requested', 'running'].includes(run?.status);
       $('stageRows').innerHTML = info.defs.map((s) => {
         const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
-        const hist = stageHistoryHtml(info, s.id);
-        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}${s.id === 'I' ? auditStatusHtml(info.audit) : ''}</td>
+        const hist = s.id === 'I' ? auditHistoryHtml(info) : stageHistoryHtml(info, s.id);
+        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
-          <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
+          <td data-label="Last runs">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div></td></tr>`;
       }).join('');
       document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun], 'dry')));
@@ -390,11 +433,13 @@
       document.querySelectorAll('[data-stage-undo]').forEach((b) => b.addEventListener('click', () => openUndoConfirm(b.dataset.stageUndo)));
     }
 
-    /** Build & check, Publish live… (confirmation first; stage I starts ①), Already live, Undo last live… — one size. */
+    /** 1. Build & check, 2. Publish live… (confirmation first) or 2. Already live, Undo last live… — one size.
+     *  Stage I has only "Start full audit ①…": a check of I only simulates, so it has no check button. */
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
-      const live = `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>${id === 'I' ? 'Run ① live…' : 'Publish live…'}</button>`;
-      return `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Build &amp; check</button>${alreadyLiveButton(id) || live}${undoButton(id, off)}`;
+      if (id === 'I') return `<button class="bb bb-primary" data-testid="stage-live-I" data-stage-live="I" ${off}>Start full audit ①…</button>`;
+      const live = `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>2. Publish live…</button>`;
+      return `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>1. Build &amp; check</button>${alreadyLiveButton(id) || live}${undoButton(id, off)}`;
     }
 
     /** The stage's newest ok checked build was already published by its latest successful live run: nothing new to promote. */
@@ -408,8 +453,8 @@
     function alreadyLiveButton(id) {
       const done = alreadyLive(id);
       if (!done) return '';
-      const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Build & check again to publish this stage again.`;
-      return `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1" title="${esc(tip)}">Already live</button>`;
+      const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Click 1. Build & check again to publish this stage again.`;
+      return `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1" title="${esc(tip)}">2. Already live</button>`;
     }
 
     /** B / H undo restores a database backup kept 14 days after the live run; file stages undo through git (no limit). */
@@ -539,7 +584,8 @@
       $('needsPanel').style.display = run ? 'block' : 'none';
       $('needsList').innerHTML = other.length || pages.length || held.length
         ? other.map((n) => `<li data-testid="needs-item" data-kind="${esc(n.kind)}">${esc(n.kind.replace(/_/g, ' '))}: ${esc(n.count)} — ${esc(n.file || '')}</li>`).join('')
-        : '<li class="muted" data-testid="needs-empty">Nothing needs you.</li>';
+        : '<li data-testid="needs-empty"><span class="needs-tick">✓</span>Nothing needs you.</li>';
+      $('needsNote').hidden = !!(other.length || pages.length || held.length);
       $('needsHeld').innerHTML = held.length ? `<li class="muted">Held Google reviews: choose where each belongs (saved, applied on the next run, never asked twice).</li>${held.map((n) => heldHtml(n, reviewChoices.find((c) => c.review_key === n.key))).join('')}` : '';
       $('needs08').innerHTML = pages.length ? `<li class="muted">New pages in 06: choose how each is treated (saved, never asked twice; an undecided page gets no schema and blocks nothing).</li>${pages.map((n) => page08Html(n, choices)).join('')}` : '';
       document.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => saveChoice(b.dataset.url, b.dataset.choice, b.dataset.suggested)));
@@ -595,22 +641,22 @@
     const headline = (run) => (auditOnly(run) && ['succeeded', 'warned'].includes(run.status) ? 'Full audit ① started'
       : HEADLINE[isUndo(run) ? 'undo' : run.mode === 'live' ? 'live' : 'dry'][run.status] || run.status);
 
-    function queuedHtml(run) {
+    function queuedParts(run) {
       const until = coolingUntil(run);
-      if (until) return `<h3 data-testid="run-status-queued">${modeBadge(run)} Waiting for the Squarespace cool-down — ${esc(scopeText(run))}</h3><div class="muted">Starts automatically after ${clock(until)}.</div>`;
+      if (until) return { head: `<h3 data-testid="run-status-queued">${modeBadge(run)}<b>Waiting for the Squarespace cool-down — ${esc(scopeText(run))}</b></h3>`, body: `<div class="muted">Starts automatically after ${clock(until)}.</div>` };
       const by = Date.parse(run.requested_at) + 65000;
       const next = by > Date.now() ? `next check by ${clock(new Date(by).toISOString())}` : 'any moment now';
-      return `<h3 data-testid="run-status-queued">${modeBadge(run)} Queued — ${esc(scopeText(run))}</h3>
-        <div class="muted">The PC runner picks it up within ~1 minute (${next}). Requested ${clock(run.requested_at)} · run <code>${esc(run.id.slice(0, 8))}</code></div>`;
+      return { head: `<h3 data-testid="run-status-queued">${modeBadge(run)}<b>Queued — ${esc(scopeText(run))}</b></h3>`,
+        body: `<div class="muted">The PC runner picks it up within ~1 minute (${next}). Requested ${clock(run.requested_at)} · run <code>${esc(run.id.slice(0, 8))}</code></div>` };
     }
 
-    function runningHtml(run, steps) {
+    function runningParts(run, steps) {
       const order = [...steps].sort((a, b) => a.ord - b.ord);
       const idx = order.findIndex((s) => s.step_id === run.current_step);
       const step = idx < 0 ? 'starting' : `step ${idx + 1} of ${order.length}: ${order[idx].name}`;
       const elapsed = duration(Date.now() - Date.parse(run.started_at || run.requested_at));
-      return `<h3 data-testid="run-status-running">${modeBadge(run)} Running ${esc(scopeText(run))} — ${esc(step)}</h3>
-        <div class="muted">Elapsed ${esc(elapsed)} · started ${clock(run.started_at)} · run <code>${esc(run.id.slice(0, 8))}</code> · refreshes every 5 s</div>`;
+      return { head: `<h3 data-testid="run-status-running">${pill('running')}${modeBadge(run)}<b>Running ${esc(scopeText(run))} — ${esc(step)}</b></h3>`,
+        body: `<div class="muted">Elapsed ${esc(elapsed)} · started ${clock(run.started_at)} · run <code>${esc(run.id.slice(0, 8))}</code> · refreshes every 5 s</div>` };
     }
 
     function filesBlock(r, run, id) {
@@ -628,15 +674,24 @@
       const exp = r.export_commit ? `<div>05 export commit ${commitLink(r.export_commit, 'alan-shared-resources', id)}</div>` : '';
       const undone = r.undone ? `<div>Reversed: ${esc(['files', 'export', 'db', 'manifest'].filter((k) => r.undone[k]).join(', ') || 'nothing')} (undid run <code>${esc(String(r.undo_of || '').slice(0, 8))}</code>)</div>` : '';
       const undo = run.mode === 'live' && !isUndo(run) && latestLiveIs(id, run.id) ? `<div data-testid="run-status-undo">Undo available: "Undo last live…" on stage ${esc(id)} below.</div>` : '';
-      return `<div class="rs-stage" data-testid="run-status-stage-${esc(id)}"><span class="stage-tag">${esc(id)}</span><span class="badge b-${esc(r.status)}">${esc(r.status)}</span>
+      return `<div class="rs-stage" data-testid="run-status-stage-${esc(id)}"><span class="stage-tag">${esc(id)}</span>${pill(r.status)}
         ${filesBlock(r, run, id)}${commit}${backup}${exp}${undone}${undo}</div>`;
+    }
+
+    /** A one-stage run with nothing to show beyond "no files" folds into the banner line (as in the mock-up). */
+    function plainStage(run) {
+      const entries = Object.entries(run.stage_results || {});
+      if (entries.length !== 1) return null;
+      const [id, r] = entries[0];
+      const bare = id !== 'I' && !(r.published || []).length && !r.commit && !r.backup_run && !r.export_commit && !r.undone && !latestLiveIs(id, run.id);
+      return bare ? (run.mode === 'live' ? 'no files published' : 'no files to publish') : null;
     }
 
     /** After a failed live stage: B / H talk about the database backup; file stages about the dropped commit. */
     function liveNextStep(run) {
       const stage = run.stages?.[0];
-      if (['B', 'H'].includes(stage)) return 'Press Resume to retry from the failed step: nothing is imported until the backup has finished, and a finished backup is reused, never retaken. Or click Publish live… on the stage again for a fresh run.';
-      return `Nothing was published: a refused commit is dropped and stage ${stage || ''}'s files go back to their last published version. Once the cause is fixed, click Publish live… on the stage again (or Resume).`;
+      if (['B', 'H'].includes(stage)) return 'Press Resume to retry from the failed step: nothing is imported until the backup has finished, and a finished backup is reused, never retaken. Or click 2. Publish live… on the stage again for a fresh run.';
+      return `Nothing was published: a refused commit is dropped and stage ${stage || ''}'s files go back to their last published version. Once the cause is fixed, click 2. Publish live… on the stage again (or Resume).`;
     }
 
     /** A live promote refused because its checked build is already live (or the publish list changed): say so, not "run dry again". */
@@ -646,44 +701,49 @@
       const tried = stage ? run.stage_results?.[stage]?.promoted_from : null;
       if (run.mode !== 'live' || isUndo(run) || !done || done.undo_of || !/publish list is different|already/i.test(run.error || '')) return null;
       if (tried && done.promoted_from !== tried) return null;
-      return `This checked build is already live (published ${when(done.finished_at)}, ${liveRef(done)}). Build & check again to publish this stage again.`;
+      return `This checked build is already live (published ${when(done.finished_at)}, ${liveRef(done)}). Click 1. Build & check again to publish this stage again.`;
     }
 
     function failureHtml(run, steps) {
       if (!['failed', 'cancelled'].includes(run.status)) return '';
       const bad = steps.filter((s) => s.status === 'fail');
       const todo = alreadyLiveAdvice(run) || bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
-      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNextStep(run) : 'Fix the problem, then press Resume (or Build & check the stage again first).');
+      const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNextStep(run) : 'Fix the problem, then press Resume (or click 1. Build & check on the stage again first).');
       return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
     }
 
-    function finishedHtml(run, steps) {
+    const RUN_PILL = { succeeded: 'ok', warned: 'warn', failed: 'fail', cancelled: 'cancelled' };
+    const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }) : '-');
+    /** "· run 36aecfaa · 4 Nov, 09:22 → 09:24 · no files to publish" */
+    const runSpan = (run, extra) => `<span class="muted">· run ${esc(run.id.slice(0, 8))} · ${esc(when(run.started_at || run.requested_at))} → ${esc(hm(run.finished_at))}${extra ? ` · ${esc(extra)}` : ''}</span>`;
+
+    function finishedParts(run, steps) {
       if (window.BauProgress?.simulatedOnly(run, steps)) {
-        return `<button class="small secondary rs-close" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>
-          <h3 data-testid="run-status-finished" data-status="simulated">⚪ ${modeBadge(run)} Nothing was run — ${esc(scopeText(run))} was only simulated</h3>
-          <div class="muted">A check of this stage sends no requests; only a live run does its real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}. Run <code>${esc(run.id.slice(0, 8))}</code> · finished ${clock(run.finished_at)}</div>`;
+        return { done: true, head: `<h3 data-testid="run-status-finished" data-status="simulated">${pill('skipped')}${modeBadge(run)}<b>Nothing was run — ${esc(scopeText(run))} was only simulated</b> ${runSpan(run)}</h3>`,
+          body: `<div class="muted" style="margin-top:4px">A check of this stage sends no requests; only a live run does its real work${run.stages?.includes('I') ? ' (① runs from Start full audit ①… or on its Monday schedule)' : ''}.</div>` };
       }
-      const [icon] = RESULT[run.status] || [''];
-      const stages = Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
-      return `<button class="small secondary rs-close" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>
-        <h3 data-testid="run-status-finished" data-status="${esc(run.status)}">${icon} ${modeBadge(run)} ${esc(headline(run))} — ${esc(scopeText(run))}</h3>
-        <div class="muted">Run <code>${esc(run.id.slice(0, 8))}</code> · requested ${clock(run.requested_at)} · started ${clock(run.started_at) || '-'} · finished ${clock(run.finished_at)}</div>
-        ${stages}${failureHtml(run, steps)}`;
+      const plain = plainStage(run);
+      const stages = plain ? '' : Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
+      return { done: true, head: `<h3 data-testid="run-status-finished" data-status="${esc(run.status)}">${pill(RUN_PILL[run.status] || run.status)}${modeBadge(run)}<b>${esc(headline(run))} — ${esc(scopeText(run))}</b> ${runSpan(run, plain)}</h3>`,
+        body: `${stages}${failureHtml(run, steps)}` };
     }
 
-    function runStatusHtml(run, steps) {
-      if (run.status === 'requested') return queuedHtml(run);
-      if (run.status === 'running') return runningHtml(run, steps);
-      return localStorage.getItem(DISMISS_KEY) === run.id ? '' : finishedHtml(run, steps);
+    function runStatusParts(run, steps) {
+      if (run.status === 'requested') return queuedParts(run);
+      if (run.status === 'running') return runningParts(run, steps);
+      return localStorage.getItem(DISMISS_KEY) === run.id ? null : finishedParts(run, steps);
     }
 
+    /** The last-run banner: one line (result, mode, headline, run), Open progress on the right; detail underneath. */
     function renderRunStatus(run, steps) {
       const box = $('runStatus');
-      const html = run ? runStatusHtml(run, steps) : '';
-      box.hidden = !html;
+      const p = run ? runStatusParts(run, steps) : null;
+      box.hidden = !p;
+      $('runMeta').hidden = !!p;
       box.className = `run-status ${['requested', 'running'].includes(run?.status) ? 'rs-active' : (RESULT[run?.status]?.[1] || '')}`;
-      box.innerHTML = html ? `${html}<div style="margin-top:8px"><button class="small secondary" id="openProgress" data-testid="open-progress">Open progress window</button></div>` : '';
+      const dismiss = p?.done ? '<button class="bb bb-secondary" style="width:100px" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>' : '';
+      box.innerHTML = p ? `<div class="rs-top"><div>${p.head}</div><div class="rs-btns"><button class="bb bb-secondary" style="width:150px" id="openProgress" data-testid="open-progress">Open progress</button>${dismiss}</div></div>${p.body}` : '';
       if ($('runStatusClose')) $('runStatusClose').onclick = () => { localStorage.setItem(DISMISS_KEY, run.id); renderRunStatus(run, steps); };
       if ($('openProgress')) $('openProgress').onclick = () => window.BauProgress?.open();
     }
@@ -756,7 +816,7 @@
 
     /** B: the pages the check found new / changed / without a fingerprint (the only ones re-read in full), and the force option. */
     function refetchBlock(r) {
-      if (!r) return '<p class="muted" data-testid="live-confirm-refetch">Pages re-read in full: Build & check stage B first to see the list.</p>';
+      if (!r) return '<p class="muted" data-testid="live-confirm-refetch">Pages re-read in full: click 1. Build & check on stage B first to see the list.</p>';
       const why = Object.entries(r.by_reason || {}).filter(([k]) => k !== 'unchanged').map(([k, v]) => `${k.replace('_', ' ')} ${v}`).join(', ') || 'none';
       const items = (r.list || []).map((x) => `${x.url.replace('https://www.alanranger.com', '')} — ${x.reason.replace('_', ' ')}`);
       return `<p data-testid="live-confirm-refetch"><strong>Pages re-read in full: ${r.reingest} of ${r.checked}</strong> (${esc(why)}); ${r.unchanged} unchanged are only checked.</p>`
@@ -775,13 +835,13 @@
 
     /** Stage I publishes nothing: its live run starts the full audit ① (the Monday job) now. */
     function openAuditConfirm(plan, blocked) {
-      openModal(`<h3 data-testid="live-confirm-title">Run stage I live — Full audit ①</h3>
+      openModal(`<h3 data-testid="live-confirm-title">Start full audit ① — stage I</h3>
         <p>Starts the full audit ① now, the same job the Monday schedule runs: render every page, check broken links, then the ② score.
         It usually takes 1–3 hours; the progress window follows it. Nothing is published and there is nothing to undo.</p>
         <p class="muted">Refused on a Monday (the Monday ① runs anyway) and while ① is already running.</p>
         ${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
         <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
-        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start ① live</button></div>`);
+        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start full audit ①</button></div>`);
       $('liveCancel').onclick = closeModal;
       $('livePublish').onclick = () => { closeModal(); startStages(['I'], 'live'); };
     }
@@ -822,6 +882,7 @@
       $('undoGo').onclick = () => { closeModal(); act({ action: 'undo', stage }, `Undo of stage ${stage} requested`); };
     }
 
+    $('stepsDetails').addEventListener('toggle', () => stepsLabel());
     if (sessionStorage.getItem(TOKEN_KEY)) refresh(); else showLogin();
     /** Every 3 s while a run is queued or running (the progress window), else every 5 s. */
     (function poll() {
