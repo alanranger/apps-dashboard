@@ -804,26 +804,32 @@ async function export09(ctx) {
 
 // ---------- 13. ① full audit (Traditional SEO render → broken links), advanced by the */5 trad-seo-render-tick cron ----------
 const RENDER_API = 'https://ai-geo-audit.vercel.app/api/aigeo/traditional-seo-render';
-const AUDIT_POLL_MS = 60 * 1000;
-const AUDIT_MAX_MS = 180 * 60 * 1000;
+const AUDIT_CONFIRM_TRIES = 6;
+const AUDIT_CONFIRM_MS = 10 * 1000;
 
-/** Live only: start (or join) the full ① run and wait until render and broken links are both finished. */
+/** The started ① run's row (fault_monitor_runs), retried briefly: proof that it really started. */
+async function confirmAuditRun(ctx, runId) {
+  for (let i = 0; i < AUDIT_CONFIRM_TRIES; i += 1) {
+    const rows = await query(ctx, `fault_monitor_runs?id=eq.${encodeURIComponent(runId)}&select=id,status,started_at,pages_planned`).catch(() => null);
+    if (rows?.[0]) return rows[0];
+    await new Promise((r) => setTimeout(r, AUDIT_CONFIRM_MS));
+  }
+  return null;
+}
+
+/**
+ * Live only: start the full ① run, confirm it has started, and finish (Alan 4 Nov, option 1). ① renders ~14 pages
+ * per 5-minute cron slot (~3 h for the site) in the background; the BAU page reads its status from fault_monitor_runs.
+ */
 async function liveAudit(ctx) {
   const start = await fetch(RENDER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start', source: 'trad_seo' }) }).then((r) => r.json());
-  if (!start.ok) return { status: 'fail', error: `① start: ${start.error || 'failed'}` };
-  ctx.progress?.(`① full audit started (run ${String(start.run_id).slice(0, 8)}): waiting for the render`, 0, 0);
-  for (const t0 = Date.now(); Date.now() - t0 < AUDIT_MAX_MS;) {
-    await new Promise((r) => setTimeout(r, AUDIT_POLL_MS));
-    const g = await fetch(`${RENDER_API}?runId=${start.run_id}`).then((r) => r.json()).catch(() => null);
-    const status = g?.run?.status;
-    ctx.progress?.(`① full audit ${status || 'status unknown'}: ${(g?.pages || []).length} pages rendered, ${(g?.broken || []).length} checked for broken links`, 0, 0);
-    if (status && !['running', 'started'].includes(status)) {
-      const pending = (g.pages || []).length - (g.broken || []).length;
-      if (status !== 'done' && status !== 'finished') return { status: 'warn', counts: { run_id: start.run_id, run_status: status }, warnings: [`① ended ${status}`] };
-      if (pending <= 0) return { status: 'ok', counts: { run_id: start.run_id, pages: g.pages.length, broken_checked: g.broken.length } };
-    }
-  }
-  return { status: 'warn', counts: { run_id: start.run_id }, warnings: ['① still running after 3 h: left to the render cron'] };
+  if (!start.ok || !start.run_id) return { status: 'fail', error: `① start: ${start.error || 'no run id returned'}` };
+  ctx.progress?.(`① full audit started (run ${String(start.run_id).slice(0, 8)}): confirming`, 0, 0);
+  const row = await confirmAuditRun(ctx, start.run_id);
+  if (!row) return { status: 'warn', counts: { run_id: start.run_id }, warnings: [`① start returned run ${String(start.run_id).slice(0, 8)} but no fault_monitor_runs row appeared within a minute`] };
+  const text = `Full audit ① started (run ${String(start.run_id).slice(0, 8)}). It runs in the background (about 3 h). Results appear in the AI GEO audit app and the Monday brief.`;
+  return { status: 'ok', counts: { run_id: start.run_id, run_status: row.status, pages_planned: row.pages_planned ?? null, started_at: row.started_at }, notes: [info(text)], plain: text,
+    details: ['AI GEO audit app: https://ai-geo-audit.vercel.app/audit-dashboard.html (Traditional SEO)'] };
 }
 
 export const AUDIT_NOT_SELECTED = 'skipped — not selected';

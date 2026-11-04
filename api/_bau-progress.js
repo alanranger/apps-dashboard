@@ -43,8 +43,16 @@ function stageTypical(runs) {
   return out;
 }
 
+/** Stage I's row: the latest full ① run (it runs in the background after live I starts it) and open findings. */
+async function latestAudit() {
+  const [runs, open] = await Promise.all([
+    sb('fault_monitor_runs?source=eq.trad_seo&order=started_at.desc&limit=1&select=id,status,started_at,finished_at,last_tick_at,pages_planned,pages_checked,cursor,error,site_checks_done').catch(() => []),
+    sb('fault_monitor_findings?status=eq.open&select=fault_key').catch(() => [])]);
+  return runs[0] ? { ...runs[0], findings_open: open.length } : null;
+}
+
 async function runnerState() {
   return (await sb('update_all_runner_state?id=eq.pc').catch(() => []))[0] || null;
 }
 
-module.exports = { stepEstimates, stageTypical, runnerState, median };
+module.exports = { stepEstimates, stageTypical, runnerState, latestAudit, median };

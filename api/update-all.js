@@ -16,7 +16,7 @@ const { json, cors, readBody, requireAuth, sb } = require('./mc/_lib');
 const REGISTRY = require('../runner/steps.json');
 const { STAGES, planStage, stageHistory, liveDoneHistory, sortStages } = require('../runner/stages.cjs');
 const { liveState, livePlan, undoRequest } = require('./_bau-live');
-const { stepEstimates, stageTypical, runnerState } = require('./_bau-progress');
+const { stepEstimates, stageTypical, runnerState, latestAudit } = require('./_bau-progress');
 
 const ACTIVE = 'status=in.(requested,running)';
 const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
@@ -46,8 +46,8 @@ async function latestRun(id, session) {
   const q = id && id !== 'latest' ? `update_all_runs?id=eq.${encodeURIComponent(id)}` : 'update_all_runs?order=requested_at.desc&limit=1';
   const run = (await sb(q))[0] || null;
   const steps = run ? await sb(`update_all_steps?run_id=eq.${run.id}&order=ord.asc`) : [];
-  const [stages, estimates, runner] = await Promise.all([stagesInfo(), stepEstimates(run), runnerState()]);
-  return { run, steps, registry: REGISTRY, stages, live: liveState(session, stages.history), page_choices: await pageChoices(run), review_choices: await reviewChoices(run),
+  const [stages, estimates, runner, audit] = await Promise.all([stagesInfo(), stepEstimates(run), runnerState(), latestAudit()]);
+  return { run, steps, registry: REGISTRY, stages: { ...stages, audit }, live: liveState(session, stages.history), page_choices: await pageChoices(run), review_choices: await reviewChoices(run),
     estimates, runner, server_now: new Date().toISOString() };
 }
 

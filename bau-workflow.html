@@ -322,6 +322,21 @@
       return `<div class="muted" style="font-size:0.8rem" data-testid="stage-typical">Typical: ${test} · ${part('live', t?.live)}</div>`;
     }
 
+    /** Stage I: live I only starts ①; its own latest run (fault_monitor_runs) shows here: running / stalled / done / failed. */
+    const AUDIT_STALL_MS = 30 * 60 * 1000;
+    function auditStatusHtml(a) {
+      if (!a) return '<div class="muted" style="font-size:0.8rem" data-testid="audit-status">① latest: none on record</div>';
+      const pages = `${a.pages_checked ?? a.cursor ?? 0} of ${a.pages_planned ?? '?'} pages`;
+      const tick = Date.parse(a.last_tick_at || a.started_at);
+      let text = `① latest: ${a.status} ${when(a.started_at)}`;
+      let cls = 'muted';
+      if (a.status === 'running' && Date.now() - tick > AUDIT_STALL_MS) { text = `① latest: running but no progress since ${when(a.last_tick_at || a.started_at)} — ${pages}`; cls = 'note-check'; }
+      else if (a.status === 'running') text = `① running since ${when(a.started_at)} — ${pages}, last tick ${when(a.last_tick_at)}`;
+      else if (a.status === 'done') text = `① latest: done ${when(a.finished_at)} — ${pages} checked · ${a.findings_open} finding${a.findings_open === 1 ? '' : 's'} open`;
+      else if (/fail|error/i.test(a.status)) { text = `① latest: ${a.status} ${when(a.finished_at || a.started_at)}${a.error ? ` — ${a.error}` : ''}`; cls = 'note-problem'; }
+      return `<div class="${cls}" style="font-size:0.8rem" data-testid="audit-status" data-status="${esc(a.status)}">${esc(text)}</div>`;
+    }
+
     function renderStages(info, run) {
       if (!info) return;
       stageInfo = info;
@@ -332,7 +347,7 @@
         const good = info.history.live_done?.[s.id];
         const lastGood = good && good.run_id !== latest?.run_id ? `<div class="muted" style="font-size:0.8rem">Last successful live:</div>${historyHtml(good, 'live', s.id)}` : '';
         const hist = historyHtml(info.history.dry[s.id], 'dry', s.id) + historyHtml(latest, 'live', s.id) + lastGood;
-        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
+        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag">${s.id}</span><strong>${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}${s.id === 'I' ? auditStatusHtml(info.audit) : ''}</td>
           <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
           <td data-label="Last run">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="stage-actions">${stageButtons(s.id, active)}</div></td></tr>`;
