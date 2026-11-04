@@ -75,7 +75,10 @@
     ol.does li { line-height: 1.45; color: var(--text); }
     ol.does li::marker { color: var(--text-muted); }
     ol.does li + li { margin-top: 8px; }
-    #stageRows .hline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #stageRows .hline { display: flex; align-items: baseline; }
+    #stageRows .hl-tags { flex: none; white-space: nowrap; }
+    #stageRows .hl-text { min-width: 0; }
+    #stageRows .hline a, #stageRows .nw { white-space: nowrap; }
     #stageRows td.btn-cell { padding-right: 0; }
     #stageRows .btn-cell .btns { margin-left: auto; }
     #stageRows tr.optional-row > td.optional-cell { padding: 10px 4px 4px; border-top: 0; }
@@ -188,7 +191,6 @@
     a { color: var(--blue); }
     @media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 899px) {
-      #stageRows .hline { white-space: normal; }
       #stageRows .btn-cell .btns { margin-left: 0; }
       .optional-box { display: block; }
       .optional-box > .oc { padding: 4px 8px; }
@@ -208,14 +210,14 @@
       <h1>BAU Monthly</h1>
       <p data-testid="bau-summary-line">Does the full round trip in order: rebuild the CSVs from Squarespace → ingest (links events and products) → reviews → generate all schema → publish → ingest again (so the database holds the new schema) → keywords export → optional full audit ①. Check every stage with one button, then publish each stage live.</p>
       <p style="font-size:12px">The runner on Alan's PC does the work; this page shows progress from any device.</p>
-      <p class="links"><a href="bau-workflow-checklist.html">Old manual checklist</a> · <a href="/">Mission Control</a></p>
+      <p class="links"><a href="bau-workflow-checklist.html" data-tip="Opens the old step-by-step manual checklist this page replaced.">Old manual checklist</a> · <a href="/" data-tip="Opens Mission Control, the task tracker.">Mission Control</a></p>
     </div>
 
     <div class="panel" id="loginPanel">
       <h2>Sign in</h2>
       <div class="login" id="login">
         <input type="password" id="pw" placeholder="Mission Control password" autocomplete="current-password">
-        <button id="loginBtn">Sign in</button>
+        <button id="loginBtn" data-tip="Signs in with the Mission Control password.">Sign in</button>
         <span class="muted" id="loginMsg"></span>
       </div>
     </div>
@@ -334,7 +336,7 @@
       const items = [...(s.details || []), ...countsText(s.counts), ...(s.outputs || []).map((o) => `output: ${o}`)];
       const pub = (s.counts?.files || []).length ? `<li>files: ${esc(s.counts.files.join(', '))}</li>` : '';
       if (!items.length && !pub) return '';
-      return `<details class="step-details" data-testid="step-details"><summary>Details</summary><ul>${items.map((d) => `<li>${esc(d)}</li>`).join('')}${pub}</ul></details>`;
+      return `<details class="step-details" data-testid="step-details"><summary data-tip="Shows this step's details: its counts, outputs and files.">Details</summary><ul>${items.map((d) => `<li>${esc(d)}</li>`).join('')}${pub}</ul></details>`;
     }
 
     function stepCell(def, s) {
@@ -387,7 +389,7 @@
       if (!live && h.refetch) return [`${h.refetch.reingest} of ${h.refetch.checked} pages to re-read`];
       return [h.published?.length ? `${esc(h.publish_mode || (live ? 'published' : 'would publish'))} ${plural(h.published.length, 'file')}` : '',
         h.commit ? `commit ${commitLink(h.commit, h.repo, stage)}` : '',
-        h.backup_run ? `backup bau_bk_${esc(h.backup_run)}_*` : '',
+        h.backup_run ? `backup <span class="nw">bau_bk_${esc(h.backup_run)}_*</span>` : '',
         h.export_commit ? `05 export commit ${commitLink(h.export_commit, 'alan-shared-resources', stage)}` : '',
         h.undo_of ? `undid run ${esc(String(h.undo_of).slice(0, 8))}` : ''].filter(Boolean);
     }
@@ -397,10 +399,12 @@
       if (!h) return '';
       const live = mode === 'live';
       const runId = esc(String(h.run_id || '').slice(0, 8));
-      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused" data-run="${runId}">${pill('refused')}${modeTag(true)}${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed</div>`;
+      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused" data-run="${runId}">${hl(pill('refused') + modeTag(true), `${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed`)}</div>`;
       const parts = [esc(when(h.finished_at)), ...historyDetail(h, live, stage), ...(live ? [] : [`<span class="muted">run ${runId}</span>`])];
-      return `<div class="hline" data-testid="stage-history-${mode}" data-run="${runId}">${pill(h.status)}${modeTag(live, h.undo_of)}${parts.join(' · ')}</div>`;
+      return `<div class="hline" data-testid="stage-history-${mode}" data-run="${runId}">${hl(pill(h.status) + modeTag(live, h.undo_of), parts.join(' · '))}</div>`;
     }
+    /** A Last runs line: tags first, then the text, which wraps under itself (not under the tags). */
+    const hl = (tags, text) => `<span class="hl-tags">${tags}</span><span class="hl-text">${text}</span>`;
 
     /** Last runs lines stay on one line (ellipsis at desktop width); the tooltip holds the full text and the run id. */
     function lineTips() {
@@ -482,12 +486,12 @@
     function auditStatusHtml(a) {
       if (!a) return '<div class="hline muted-line" data-testid="audit-status">① latest: none on record</div>';
       const [result, text] = auditLine(a);
-      return `<div class="hline" data-testid="audit-status" data-status="${esc(a.status)}">${pill(result)}${modeTag(true)}${esc(text)} · <a href="${AUDIT_URL}" target="_blank" rel="noopener" data-testid="audit-open" data-tip="Opens the AI GEO audit app, where this audit's results are.">open audit</a></div>`;
+      return `<div class="hline" data-testid="audit-status" data-status="${esc(a.status)}">${hl(pill(result) + modeTag(true), `${esc(text)} · <a href="${AUDIT_URL}" target="_blank" rel="noopener" data-testid="audit-open" data-tip="Opens the AI GEO audit app, where this audit's results are.">open audit</a>`)}</div>`;
     }
     /** I's Last runs: the ① line, then its latest check (always simulated: a check doesn't run the audit). */
     function auditHistoryHtml(info) {
       const dry = info.history.dry.I;
-      const check = dry ? `<div class="hline muted-line" data-testid="stage-history-dry">${pill('skipped')}${modeTag(false)}${esc(when(dry.finished_at))} · simulated only (a check doesn't run the audit)</div>` : '';
+      const check = dry ? `<div class="hline muted-line" data-testid="stage-history-dry">${hl(pill('skipped') + modeTag(false), `${esc(when(dry.finished_at))} · simulated only (a check doesn't run the audit)`)}</div>` : '';
       return auditStatusHtml(info.audit) + check;
     }
 
@@ -677,7 +681,7 @@
     function reviewText(t) {
       const s = String(t || '');
       if (s.length <= 300) return `<div class="review-text" data-testid="review-text">${esc(s)}</div>`;
-      return `<div class="review-text" data-testid="review-text">${esc(s.slice(0, 300))}… <details class="more"><summary>more</summary>${esc(s.slice(300))}</details></div>`;
+      return `<div class="review-text" data-testid="review-text">${esc(s.slice(0, 300))}… <details class="more"><summary data-tip="Shows the rest of this review.">more</summary>${esc(s.slice(300))}</details></div>`;
     }
     function savedText(c) {
       if (c.choice === 'product') return `Saved: ${productName(c.product_slug)}`;
@@ -818,7 +822,8 @@
       const files = r.published || [];
       const verb = r.publish_mode || (run.mode === 'live' ? 'published' : 'would publish');
       if (!files.length) return r.backup_run || r.undone ? '' : `<div class="muted">No files ${run.mode === 'live' ? 'published' : 'to publish'}.</div>`;
-      return `<details data-testid="run-status-files"><summary>${esc(verb)} ${files.length} file${files.length === 1 ? '' : 's'}</summary><ul>${files.map((f) => `<li><code>${esc(f)}</code></li>`).join('')}</ul></details>`;
+      const tip = run.mode === 'live' ? 'Shows the list of files this run published.' : 'Shows the list of files this check would publish.';
+      return `<details data-testid="run-status-files"><summary data-tip="${tip}">${esc(verb)} ${files.length} file${files.length === 1 ? '' : 's'}</summary><ul>${files.map((f) => `<li><code>${esc(f)}</code></li>`).join('')}</ul></details>`;
     }
 
     const latestLiveIs = (id, runId) => hasLivePublish(id) && stageInfo?.history?.live_done?.[id]?.run_id === runId;
@@ -956,7 +961,7 @@
     let liveInfo = null;
     const simulatedLive = () => (new URLSearchParams(location.search).get('simulateLive') || '').split(',').filter(Boolean);
     const hasLivePublish = (id) => { const h = stageInfo?.history?.live_done?.[id]; return !!(h && ['ok', 'warn'].includes(h.status) && !h.undo_of); };
-    const listBlock = (label, items, testid) => `<details data-testid="${testid}"><summary>${esc(label)} (${items.length})</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
+    const listBlock = (label, items, testid) => `<details data-testid="${testid}"><summary data-tip="Shows or hides the full list.">${esc(label)} (${items.length})</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
 
     /** Live Run all isn't available (Alan 4 Nov: stage by stage): Run all always checks; each stage publishes on its own. */
     function renderLiveRadio(live) {

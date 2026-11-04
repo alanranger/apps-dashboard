@@ -151,8 +151,8 @@ test('column widths at 1920: every "What it does" item on one line (A2/A3 may ta
     return Math.round(tr.querySelector('.btns').getBoundingClientRect().left - right);
   }));
   for (const g of gaps) expect(g).toBeLessThanOrEqual(40);
-  const lines = await page.locator('#stageRows .hline').evaluateAll((els) => els.map((e) => [getComputedStyle(e).whiteSpace, e.title]));
-  for (const [ws, title] of lines) { expect(ws).toBe('nowrap'); expect(title.length).toBeGreaterThan(10); }
+  const cut = await page.locator('#stageRows .hline').evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth).map((e) => e.textContent));
+  expect(cut).toEqual([]);
   await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, 'stages-table-1920.png') });
 });
 
