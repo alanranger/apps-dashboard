@@ -11,7 +11,7 @@ import { coverage, coverageLine, TABS } from './coverage.mjs';
 import { checkImports, missingMessage } from './import-check.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
-import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails, publishSharedFile } from './publish-live.mjs';
+import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails, publishSharedFile, blockedByChanges } from './publish-live.mjs';
 import { liveDbIngest, csvImport, DB_TYPES, TYPE_FILES, affectedUrls } from './db-live.mjs';
 import { liveIngestSteps } from './ingest-live.mjs';
 import { checkPages, knownPageUrls, loadFingerprints, planSummary } from './content-check.mjs';
@@ -784,7 +784,7 @@ export const PUBLISH = {
   publish_events: { stage: 'E', set: (sb) => ({ publish: [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')], remove: [] }),
     sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event' },
   publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
-    after: blogManifestAfterPublish },
+    before: (ctx) => blogBaselineBlocked(ctx), after: (sb, ctx) => blogManifestAfterPublish(sb, ctx) },
   publish_landings: { stage: 'G', set: (sb) => ({ publish: [...compareOf(sb, 'landings'), ...compareOf(sb, 'blocks-css')], remove: [] }),
     sources: (sb) => [appOut(sb, 'landings'), appOut(sb, 'blocks-css')], sample: 'landings-manifest.json', what: 'landing page' }
 };
@@ -813,16 +813,19 @@ async function blocksCss(ctx) {
     details: changed.map((f) => `changed: ${f}`), outputs: [`${out} (sandbox)`] };
 }
 
-/** F live: the dry run's blogs-manifest.json becomes the baseline for next month (previous copy kept for undo; auto-sync commits it). */
+const BLOG_BASELINE = 'outputs/schema/blogs-manifest.json';
+const baselineRepo = (ctx) => ctx.sharedRepo || ctx.sharedRoot || SHARED;
+
+/** F live, before anything is published: the blog baseline must have no uncommitted changes (it is committed after the publish). */
+const blogBaselineBlocked = (ctx) => blockedByChanges(baselineRepo(ctx), [BLOG_BASELINE], 'F');
+
+/** F live: the dry run's blogs-manifest.json becomes next month's baseline, as its own commit in alan-shared-resources (Undo reverses it). */
 function blogManifestAfterPublish(sb, ctx) {
-  const next = path.join(sb.shared, 'outputs', 'schema', 'blogs-manifest.json');
-  const live = path.join(ctx.sharedRoot || SHARED, 'outputs', 'schema', 'blogs-manifest.json');
+  const next = path.join(sb.shared, ...BLOG_BASELINE.split('/'));
   if (!fs.existsSync(next)) return { manifest: 'none in the dry run' };
-  const prev = fs.existsSync(live) ? live.replace(/\.json$/, `.prev-${String(ctx.runId).slice(0, 8)}.json`) : null;
-  if (prev) fs.copyFileSync(live, prev);
-  fs.mkdirSync(path.dirname(live), { recursive: true });
-  fs.copyFileSync(next, live);
-  return { manifest: live, manifest_previous: prev || 'none (first live run)' };
+  const r = publishSharedFile(baselineRepo(ctx), BLOG_BASELINE, next,
+    `BAU F live: blog baseline for next month (run ${String(ctx.runId).slice(0, 8)}, checked build ${String(ctx.promote?.run_id).slice(0, 8)})`);
+  return { manifest: BLOG_BASELINE, manifest_commit: r.commit, manifest_unchanged: !!r.unchanged };
 }
 
 const publishStep = (id) => async (ctx) => {

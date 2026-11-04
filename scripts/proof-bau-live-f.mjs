@@ -20,6 +20,9 @@ import { publishRemovals } from '../runner/publish-live.mjs';
 const SCHEMA_TOOLS = 'G:/Dropbox/alan ranger photography/Website Code/Schema Tools';
 const { git, undoCommit } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/deploy-schemas.mjs`).href);
 const RUN = process.argv.includes('--run') ? process.argv[process.argv.indexOf('--run') + 1] : 'a351ec0a-76c2-46b7-ba25-f4c7c4af3fc5';
+const SHARED_LIVE = 'G:/Dropbox/alan ranger photography/Website Code/alan-shared-resources';
+const BASELINE = 'outputs/schema/blogs-manifest.json';
+const filesIn = (repo, c) => must(git(repo, ['diff', '--name-only', `${c}^`, c]), 'diff').split(/\r?\n/).filter(Boolean);
 
 const env = loadEnv(path.resolve('.env.local'));
 const store = supabaseStore({ url: env.MC_SUPABASE_URL, key: env.MC_SUPABASE_SERVICE_KEY });
@@ -64,11 +67,28 @@ function throwaway() {
   must(git(root, ['clone', '-q', '--bare', REPO, remote]), 'bare clone');
   must(git(root, ['clone', '-q', '-c', 'core.autocrlf=false', remote, work]), 'clone');
   for (const [k, v] of [['user.email', 'proof@example.invalid'], ['user.name', 'BAU live F proof']]) must(git(work, ['config', k, v]), 'config');
-  fs.mkdirSync(path.join(root, 'shared', 'outputs', 'schema'), { recursive: true });
-  return { root, remote, work, shared: path.join(root, 'shared') };
+  return { root, remote, work, shared: throwawayShared(root) };
 }
 
-const liveCtx = (t, extra = {}) => ({ mode: 'live', store, runId: 'proof-live-f', steps: [], schemaRepo: t.work, sharedRoot: t.shared, cdnCheck: false,
+/** A throwaway alan-shared-resources with today's blog baseline committed (F commits the new one there). */
+function throwawayShared(root) {
+  const remote = path.join(root, 'shared-remote.git');
+  const shared = path.join(root, 'shared');
+  must(git(root, ['init', '-q', '--bare', remote]), 'shared bare');
+  must(git(root, ['init', '-q', '-b', 'main', shared]), 'shared init');
+  for (const [k, v] of [['user.email', 'proof@example.invalid'], ['user.name', 'BAU live F proof'], ['core.autocrlf', 'false']]) must(git(shared, ['config', k, v]), 'config');
+  fs.mkdirSync(path.join(shared, 'outputs', 'schema'), { recursive: true });
+  fs.copyFileSync(path.join(SHARED_LIVE, BASELINE), path.join(shared, BASELINE));
+  must(git(shared, ['add', '-A']), 'shared add');
+  must(git(shared, ['commit', '-q', '-m', 'baseline']), 'shared commit');
+  must(git(shared, ['remote', 'add', 'origin', remote]), 'shared remote');
+  must(git(shared, ['push', '-q', '-u', 'origin', 'main']), 'shared push');
+  fs.mkdirSync(path.join(shared, 'bookings'), { recursive: true });
+  fs.writeFileSync(path.join(shared, 'bookings', 'untracked.csv'), 'x\n');
+  return shared;
+}
+
+const liveCtx = (t, extra = {}) => ({ mode: 'live', store, runId: 'proof-live-f', steps: [], schemaRepo: t.work, sharedRepo: t.shared, cdnCheck: false,
   promote: { stage: 'F', run_id: RUN, sandbox, published: run.stage_results.F.published, removed: run.stage_results.F.removed || [] }, ...extra });
 
 async function liveProof() {
@@ -84,7 +104,9 @@ async function liveProof() {
   check('Live F: pushed to the (throwaway) remote', must(git(t.remote, ['rev-parse', 'main']), 'remote') === c.commit);
   const srcOf = (f) => PUBLISH.publish_blogs.sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
   check('Live F: published bytes = the dry run\'s files', expected.every((f) => sha(path.join(t.work, f)) === sha(srcOf(f))));
-  check('Live F: blogs-manifest.json written for next month', fs.existsSync(path.join(t.shared, 'outputs', 'schema', 'blogs-manifest.json')), c.manifest);
+  check('Live F: blog baseline committed in alan-shared-resources as its own commit, pushed, nothing else staged',
+    c.manifest_commit && filesIn(t.shared, c.manifest_commit).join() === BASELINE && must(git(t.shared, ['diff', '--cached', '--name-only']), 'staged') === ''
+      && must(git(path.join(t.root, 'shared-remote.git'), ['rev-parse', 'main']), 'remote') === c.manifest_commit, `${c.manifest_commit} ${c.manifest_unchanged ? '(unchanged)' : ''}`);
   const undo = undoCommit({ repo: t.work, commit: c.commit, message: 'Undo BAU F (proof)' });
   check('Undo F: tree identical to before the publish, and pushed', must(git(t.work, ['rev-parse', 'HEAD^{tree}']), 'tree') === baseTree && must(git(t.remote, ['rev-parse', 'main']), 'remote') === undo.commit, baseTree);
   return t;
@@ -93,9 +115,15 @@ async function liveProof() {
 async function refusalProof(t) {
   const dirty = path.join(t.work, 'blog-schema.json');
   fs.appendFileSync(dirty, '\n');
-  const r1 = await HANDLERS.publish_blogs(liveCtx(t)).catch((e) => ({ error: e.message }));
-  check('Live refused when the repo has uncommitted changes', /uncommitted changes/.test(r1.error || ''), r1.error);
+  const r1 = await HANDLERS.publish_blogs(liveCtx(t));
+  check('Live refused (plain) when the schema repo has uncommitted changes', r1.notes?.some((n) => n.level === 'problem' && /blog-schema\.json has changes that are not committed/.test(n.text)) && !r1.counts?.commit, r1.notes?.[0]?.text);
   must(git(t.work, ['checkout', '--', 'blog-schema.json']), 'tidy');
+  fs.appendFileSync(path.join(t.shared, BASELINE), '\n');
+  const head = must(git(t.work, ['rev-parse', 'HEAD']), 'head');
+  const rb = await HANDLERS.publish_blogs(liveCtx(t));
+  check('Live refused before publishing anything when the blog baseline has uncommitted changes', rb.notes?.some((n) => n.level === 'problem' && /left by stage F's live publish/.test(n.text))
+    && must(git(t.work, ['rev-parse', 'HEAD']), 'head') === head, rb.notes?.[0]?.text);
+  must(git(t.shared, ['checkout', '--', BASELINE]), 'tidy baseline');
   const f = run.stage_results.F.published[1];
   const srcOf = (x) => PUBLISH.publish_blogs.sources(sb).map((d) => path.join(d, x)).find((p) => fs.existsSync(p));
   fs.copyFileSync(srcOf(f), path.join(t.work, f));

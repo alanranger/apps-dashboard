@@ -2,7 +2,7 @@
  * Undo one live stage (the page's "Undo this stage"): an undo run is a live run with options.undo_of = the live run.
  *   files (A, C, D–H): restore exactly that commit's files to their previous versions (same deploy path, own commit, push);
  *   B / H database:    bau_restore(<backup run>) + the refresh RPCs; B's 05 export commit is reversed too;
- *   F:                 blogs-manifest.json goes back to the copy kept before the publish.
+ *   F:                 the blog baseline commit is reversed (older runs: blogs-manifest.json goes back to the .prev copy).
  */
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -22,7 +22,11 @@ function undoFiles(stage, target, runId, repos) {
     message: `Undo BAU ${stage} live run ${String(target.run_id).slice(0, 8)} (undo run ${String(runId).slice(0, 8)})` });
 }
 
-function restoreManifest(target) {
+/** F: reverse the baseline commit (from 4 Nov); older runs kept a .prev copy beside the file instead. */
+function restoreManifest(target, runId, repos) {
+  if (target.manifest_commit) {
+    return undoCommit({ repo: repos.shared, commit: target.manifest_commit, filesOnly: true, message: `Undo BAU F blog baseline (undo run ${String(runId).slice(0, 8)})` });
+  }
   const prev = target.manifest_previous;
   if (!prev || !fs.existsSync(prev)) return null;
   fs.copyFileSync(prev, prev.replace(/\.prev-[a-z0-9-]+\.json$/i, '.json'));
@@ -35,7 +39,7 @@ export async function undoStage(stage, target, runId, deps) {
   const out = { files: undoFiles(stage, target, runId, repos) };
   if (target.export_commit) out.export = undoCommit({ repo: repos.shared, commit: target.export_commit, filesOnly: true, message: `Undo BAU ${stage} 05 export (undo run ${String(runId).slice(0, 8)})` });
   if (target.backup_run) out.db = await liveDbUndo(target.backup_run, { rpc: deps.rpc, refreshFn: deps.refreshFn || refreshAndFinalize, onProgress: deps.onProgress });
-  out.manifest = restoreManifest(target);
+  out.manifest = restoreManifest(target, runId, repos);
   return out;
 }
 

@@ -67,7 +67,7 @@ function publishStep(mine) {
 /** What Undo needs to reverse a live stage: its file commit (above), a B/H database backup, B's 05 export, F's previous manifest. */
 function undoRecord(mine, pub) {
   const find = (k) => mine.find((s) => s.counts?.[k])?.counts?.[k] || null;
-  return { backup_run: find('backup_run'), export_commit: find('export_commit'), manifest_previous: pub.manifest_previous || null };
+  return { backup_run: find('backup_run'), export_commit: find('export_commit'), manifest_commit: pub.manifest_commit || null, manifest_previous: pub.manifest_previous || null };
 }
 
 async function recordStage(store, run, registry, def, ctx) {

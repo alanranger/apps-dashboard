@@ -11,7 +11,7 @@ import { checkPublishSet } from './removals.mjs';
 import { committedBlobs, servedCheck, servedText } from './served-check.mjs';
 
 const SCHEMA_TOOLS = 'G:/Dropbox/alan ranger photography/Website Code/Schema Tools';
-const { commitAndPush, assertClean } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/deploy-schemas.mjs`).href);
+const { commitAndPush, pendingChanges } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/deploy-schemas.mjs`).href);
 const { readCsvObjects } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
 
 /** Stages whose live path is built and proven (the runner refuses Live for the rest). */
@@ -76,6 +76,27 @@ export const removalDetails = (r) => r.rows.map((x) => `removed${x.explained_by 
 
 const sameSet = (a, b) => a.length === b.length && [...a].sort().join('\n') === [...b].sort().join('\n');
 
+/** Who leaves each kind of file uncommitted, for the plain refusal text. */
+const LEFT_BY = [
+  [/^outputs\/schema\/blogs-manifest(\.prev-[\w-]+)?\.json$/, "stage F's live publish (the blog baseline for next month)"],
+  [/^csv( processed)?\/(06-site-urls\.csv|06-(prune|add)-report-latest\.json|catalog-prune-report-latest\.json)$/, 'the auto-sync (AlanSharedResourcesAutoSync) site check'],
+  [/^csv\/09-url-target-keywords\.csv$/, "stage H's 09 export (or a manual edit)"]
+];
+export const leftBy = (file) => LEFT_BY.find(([re]) => re.test(file))?.[1] || 'something outside the BAU runner (a manual edit or another tool)';
+const STATE_TEXT = { staged: 'is staged but not committed', untracked: 'is new and not committed', deleted: 'was deleted but not committed', modified: 'has changes that are not committed' };
+
+/** Refusal when uncommitted changes block a write, or null: which file, which step left it, what to do. Nothing is written. */
+export function blockedByChanges(repo, files, stage) {
+  const pending = pendingChanges(repo, files);
+  if (!pending.length) return null;
+  const [first] = pending;
+  const name = path.basename(repo);
+  const more = pending.length > 1 ? ` (and ${plural(pending.length - 1, 'other file')}, see Details)` : '';
+  return { notes: [note('problem', `Stage ${stage} wrote nothing: ${name}/${first.file} ${STATE_TEXT[first.state]}${more}. It was left by ${leftBy(first.file)}.`,
+    `commit that file in ${name} (or undo the change if nobody meant it), then click 2. Publish live… on stage ${stage} again`)],
+  counts: { commit: null, blocked_by: pending }, details: pending.map((p) => `${p.state}: ${name}/${p.file} (left by ${leftBy(p.file)})`) };
+}
+
 const norm = (s) => s.replace(/\r\n/g, '\n');
 /** Files that still differ from the repo now (line endings ignored): a file published since the dry run drops out. */
 function stillDiffering(files, repo, src) {
@@ -97,7 +118,8 @@ function liveRefusal(def, ctx, set, current) {
 export function publishSharedFile(repo, rel, fromFile, message) {
   const live = path.join(repo, rel);
   if (fs.existsSync(live) && norm(fs.readFileSync(live, 'utf8')) === norm(fs.readFileSync(fromFile, 'utf8'))) return { file: rel, commit: null, unchanged: true };
-  assertClean(repo, [rel]);
+  const blocked = blockedByChanges(repo, [rel], '?');
+  if (blocked) throw new Error(`${blocked.details.join('; ')}; nothing was written`);
   fs.copyFileSync(fromFile, live);
   const r = commitAndPush({ repo, files: [rel], message, expectExact: true, restoreOnAbort: true });
   return { file: rel, commit: r.commit };
@@ -112,18 +134,44 @@ async function servedFiles(publish, repo, commit, ctx, def) {
   return { ...r, text: servedText(r) };
 }
 
+/** The checked build's files already match the repo: no commit, nothing to undo (the repo's other pending work is not looked at). */
+function nothingToPublish(def, ctx, set) {
+  const run8 = String(ctx.promote.run_id).slice(0, 8);
+  return { counts: { files: [], removed: [], publish_count: 0, remove_count: 0, commit: null, promoted_from: ctx.promote.run_id, repo_name: path.basename(set.repo), ...removalCounts(set.removals) },
+    notes: [note('info', `Nothing new to publish: stage ${def.stage}'s ${def.what} files already match checked build ${run8}.`)],
+    plain: `Nothing new to publish for stage ${def.stage} (checked build ${run8}'s files are already live).`, details: ['no files differ from the repo'] };
+}
+
+/** The step result when Live stops before writing: refused, nothing new, or blocked by uncommitted changes. Else null. */
+function liveGate(def, ctx, set, publish) {
+  const refused = liveRefusal(def, ctx, set, publish);
+  if (refused) return { notes: [note('problem', refused[0], refused[1])], counts: { ...removalCounts(set.removals), commit: null } };
+  if (!publish.length && !set.remove.length) return nothingToPublish(def, ctx, set);
+  // Schema repo: must be clean. alan-shared-resources (A/C/H): nothing staged and the stage's own files unmodified.
+  const blocked = blockedByChanges(set.repo, def.filesScope ? [...publish, ...set.remove] : null, def.stage) || def.before?.(ctx);
+  return blocked ? { ...blocked, counts: { ...removalCounts(set.removals), ...blocked.counts } } : null;
+}
+
+function publishedResult(def, ctx, set, { publish, r, served, after }) {
+  const { repo, remove } = set;
+  const run8 = String(ctx.promote.run_id).slice(0, 8);
+  const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (checked build ${run8}'s files).`)];
+  if (served.differ.length) notes.push(note('check', `schema.alanranger.com ${served.text}`, 'open those files on schema.alanranger.com in a few minutes; if they still differ, tell Claude'));
+  return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
+    repo_name: path.basename(repo), served_check: served.text, served_differ: served.differ, ...removalCounts(set.removals), ...after },
+    notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from checked build ${run8}.`,
+    details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, served.text] };
+}
+
 /** LIVE: copy the dry run's files into the schema repo, commit exactly them, push, check the CDN. */
 export async function livePublish(def, sb, ctx, set) {
   const src = (f) => def.sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
-  const current = LIVE_STAGES.has(def.stage) && ctx.promote ? stillDiffering(set.publish, set.repo, src) : set.publish;
-  const refused = liveRefusal(def, ctx, set, current);
-  if (refused) return { notes: [note('problem', refused[0], refused[1])], counts: { ...removalCounts(set.removals), commit: null } };
   // Publish exactly the list the refusal check approved (= the dry run's): a file that differs only in line endings is not a change.
+  const publish = LIVE_STAGES.has(def.stage) && ctx.promote ? stillDiffering(set.publish, set.repo, src) : set.publish;
+  const stop = liveGate(def, ctx, set, publish);
+  if (stop) return stop;
   const { repo, remove } = set;
-  const publish = current;
-  // Schema repo: must be clean. alan-shared-resources (A/C): nothing staged and the stage's own files unmodified.
   ctx.progress?.(`Copying ${publish.length + remove.length} files into ${path.basename(repo)}`, 0, 3);
-  assertClean(repo, def.filesScope ? [...publish, ...remove] : null);
   for (const f of publish) fs.copyFileSync(src(f), path.join(repo, f));
   for (const f of remove) fs.rmSync(path.join(repo, f), { force: true });
   const message = `BAU ${def.stage} live from dry run ${String(ctx.promote.run_id).slice(0, 8)}: ${plural(publish.length, `${def.what} file`)}${remove.length ? `, ${remove.length} removed` : ''}`;
@@ -132,10 +180,5 @@ export async function livePublish(def, sb, ctx, set) {
   ctx.progress?.('Checking served files', 2, 3);
   const served = await servedFiles(publish, repo, r.commit, ctx, def);
   const after = def.after && r.commit ? def.after(sb, ctx, r) : {};
-  const notes = [note('info', `Published ${plural(publish.length, `${def.what} file`)}${remove.length ? ` and removed ${remove.length}` : ''} in commit ${String(r.commit).slice(0, 8)} (checked build ${String(ctx.promote.run_id).slice(0, 8)}'s files).`)];
-  if (served.differ.length) notes.push(note('check', `schema.alanranger.com ${served.text}`, 'open those files on schema.alanranger.com in a few minutes; if they still differ, tell Claude'));
-  return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, commit: r.commit, promoted_from: ctx.promote.run_id,
-    repo_name: path.basename(repo), served_check: served.text, served_differ: served.differ, ...removalCounts(set.removals), ...after },
-    notes, plain: `Published ${plural(publish.length + remove.length, 'file')} for stage ${def.stage} (commit ${String(r.commit).slice(0, 8)}), from checked build ${String(ctx.promote.run_id).slice(0, 8)}.`,
-    details: [...publish.map((f) => `published: ${f}`), ...remove.map((f) => `removed: ${f}`), `commit: ${r.commit}`, served.text] };
+  return publishedResult(def, ctx, set, { publish, r, served, after });
 }

@@ -6,7 +6,8 @@
  *  - a test that tried one fails (unless it sets test.use({ expectBlockedWrites: true }) to prove the block);
  *  - spec routes can't let a write through: their handlers only ever see reads (writes fall back to the guard);
  *  - page.request is read-only;
- *  - node-side writes: refusedLiveRunAll (refused by the API before anything is created) is the only one allowed.
+ *  - node-side writes: refusedLiveRunAll (refused by the API before anything is created) is the only one allowed;
+ *  - opt-in allowDryCheck: a dry 1. Build & check start (isDryCheckStart) goes through; nothing else does.
  */
 import { test as base, expect } from '@playwright/test';
 import { mcBaseUrl } from './mc.mjs';
@@ -15,10 +16,23 @@ const WRITE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const apiUrl = (u) => u.pathname.startsWith('/api/');
 const isWrite = (req) => WRITE.has(req.method()) && apiUrl(new URL(req.url()));
 
-function blocker(blocked) {
+/**
+ * The one browser write a spec may opt into (test.use({ allowDryCheck: true })): 1. Build & check — exactly
+ * { action: 'start', mode: 'dry', stages: [...] } to /api/update-all. Live, undo, cancel, saves stay blocked.
+ */
+export function isDryCheckStart(method, pathname, postData) {
+  if (method !== 'POST' || pathname !== '/api/update-all') return false;
+  let b;
+  try { b = JSON.parse(postData || ''); } catch { return false; }
+  const keys = Object.keys(b || {}).sort().join(',');
+  return keys === 'action,mode,stages' && b.action === 'start' && b.mode === 'dry' && Array.isArray(b.stages) && b.stages.length > 0;
+}
+
+function blocker(blocked, allowDryCheck) {
   return (route) => {
     const req = route.request();
     if (!isWrite(req)) return route.fallback();
+    if (allowDryCheck && isDryCheckStart(req.method(), new URL(req.url()).pathname, req.postData())) return route.fallback();
     blocked.push({ method: req.method(), path: new URL(req.url()).pathname, body: req.postData() || '' });
     return route.abort('blockedbyclient');
   };
@@ -35,9 +49,9 @@ function readOnlyRequest(real, blocked) {
   };
 }
 
-async function guardPage(page, blocked) {
-  await page.context().route(apiUrl, blocker(blocked));
-  await page.route(apiUrl, blocker(blocked));
+async function guardPage(page, blocked, allowDryCheck) {
+  await page.context().route(apiUrl, blocker(blocked, allowDryCheck));
+  await page.route(apiUrl, blocker(blocked, allowDryCheck));
   const route = page.route.bind(page);
   page.route = (url, handler, opts) => route(url, (r, req) => (isWrite(r.request()) ? r.fallback() : handler(r, req)), opts);
   const request = readOnlyRequest(page.request, blocked);
@@ -46,9 +60,10 @@ async function guardPage(page, blocked) {
 
 export const test = base.extend({
   expectBlockedWrites: [false, { option: true }],
+  allowDryCheck: [false, { option: true }],
   blockedWrites: async ({}, use) => { await use([]); },
-  page: async ({ page, blockedWrites, expectBlockedWrites }, use) => {
-    await guardPage(page, blockedWrites);
+  page: async ({ page, blockedWrites, expectBlockedWrites, allowDryCheck }, use) => {
+    await guardPage(page, blockedWrites, allowDryCheck);
     await use(page);
     if (!expectBlockedWrites) expect(blockedWrites, 'BAU guard: this test tried to write (start / publish / undo / save) and was blocked').toEqual([]);
   },
