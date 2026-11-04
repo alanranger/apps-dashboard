@@ -699,7 +699,7 @@ async function blogPosts(ctx) {
   fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), hashVersion: BLOG_HASH_VERSION, posts: current }, null, 2));
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
-  const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [], changed: [] };
+  const regen = list.length ? await regenerateBlogPosts(sb, listFile) : noBlogPostsOutput(sb);
   if (regen.failure) return { notes: [problem(regen.failure.plain, regen.failure.todo)], details: regen.failure.details };
   const gone = deletedPostsPlan(sb, feed);
   fs.writeFileSync(path.join(sb.root, 'blog-deleted-posts.json'), JSON.stringify(gone));
@@ -732,6 +732,14 @@ export function publishDateMismatches(outDir, feed, slugs) {
     if (got.some((d) => d !== want)) bad.push(`${slug} (${got.join(' / ')} vs Squarespace ${want})`);
   }
   return bad;
+}
+
+/** No changed posts: an empty app-cli/blog-posts output, because later stages seed that folder from F's checked build. */
+function noBlogPostsOutput(sb) {
+  const out = path.join(sb.root, 'app-cli', 'blog-posts');
+  fs.mkdirSync(out, { recursive: true });
+  fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify({ differing: [], new_files: [] }, null, 2));
+  return { error: null, out, posts: [], changed: [] };
 }
 
 /** Changed posts through app-cli blog-posts (the Blog Posts tab's own single-URL generator) into the sandbox. */
