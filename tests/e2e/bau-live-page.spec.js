@@ -1,8 +1,9 @@
 // BAU Monthly Live on the page (Claude/Alan 3 Nov, step 6), as the TEST account (agent). Nothing is ever published:
-// the API refuses Live to anyone but Alan, and only when UPDATE_ALL_LIVE_ENABLED=1.
+// the agent account signs in as role alan, so the page's POSTs are blocked here and only Cancel is ever clicked.
 //  1) Live is only on the per-stage buttons; Run all stays dry (its Live option is disabled; the API refuses Run all live).
 //  2) The confirmation lists the right things: the dry run it promotes, files + pages (G), backups + tables (B); Cancel does nothing.
-//  3) Undo appears only after a live run: hidden without one; shown on the test target (?simulateLive=F), and can't act.
+//  3) Undo appears only after a live run: shown exactly on the stages with a live publish in the history; can't act as agent.
+// Since 3 Nov every stage A–H has run live, so 2) simulates a newer check for G (route) to reopen its Publish live….
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-live-page.spec.js
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
@@ -19,7 +20,9 @@ test.beforeAll(async () => { session = await mcLogin('agent'); fs.mkdirSync(EVID
 const latestRunId = async () => (await mcApi('/api/update-all?run=latest', { token: session.token })).run?.id || null;
 const shot = (page, name) => page.screenshot({ path: path.join(EVIDENCE, `${name}.png`), fullPage: true });
 
+/** The agent account signs in as role alan (it could really publish): the page may never POST in this spec. */
 async function openPage(page, query = '') {
+  await page.route((u) => u.pathname === '/api/update-all', (route) => (route.request().method() === 'POST' ? route.abort() : route.fallback()));
   await page.addInitScript((s) => { sessionStorage.setItem('mc_session_token', s.token); sessionStorage.setItem('mc_session_role', s.role); }, session);
   await page.goto(`${mcBaseUrl()}/bau-workflow.html${query}`);
   await expect(page.getByTestId('stage-run-A')).toBeVisible({ timeout: 30000 });
@@ -30,13 +33,18 @@ test('1. Live is only on the per-stage buttons; Run all stays dry', async ({ pag
   await expect(page.getByTestId('run-all-live')).toBeDisabled();
   await expect(page.getByTestId('run-all-live-note')).toBeVisible();
   for (const s of [...FILE_STAGES, 'B']) await expect(page.getByTestId(`stage-live-${s}`)).toBeVisible();
-  await expect(page.getByTestId('stage-live-I')).toHaveCount(0);
+  await expect(page.getByTestId('stage-live-I')).toHaveText('Start full audit ①…');
   const runAllLive = await mcApi('/api/update-all', { token: session.token, method: 'POST', body: { action: 'start', mode: 'live' } }).catch((e) => e);
   expect([400, 403]).toContain(runAllLive.status);
   await shot(page, '1-live-only-on-stage-buttons');
 });
 
-test('2. the confirmation lists the dry run and what it would publish; Cancel does nothing', async ({ page }) => {
+test('2. the confirmation lists the checked build and what it would publish; Cancel does nothing', async ({ page }) => {
+  await page.route((u) => u.pathname === '/api/update-all' && u.searchParams.has('run'), async (route) => {
+    const real = await (await route.fetch()).json();
+    real.stages.history.dry.G = { ...real.stages.history.dry.G, run_id: 'simulated-newer-dry-g', finished_at: new Date().toISOString(), status: 'ok' };
+    await route.fulfill({ json: real });
+  });
   await openPage(page);
   const before = await latestRunId();
   const plan = await mcApi('/api/update-all?live_plan=G', { token: session.token });
@@ -47,7 +55,7 @@ test('2. the confirmation lists the dry run and what it would publish; Cancel do
   await expect(page.getByTestId('live-confirm-pages')).toContainText(`(${plan.pages.length})`);
   expect(plan.files.length).toBeGreaterThan(0);
   expect(plan.pages.length).toBeGreaterThan(0);
-  await expect(page.getByTestId('live-confirm-publish')).toBeDisabled();
+  await expect(page.getByTestId('live-confirm-publish')).toBeVisible();
   await shot(page, '2a-confirm-G-files-and-pages');
   await page.getByTestId('live-confirm-cancel').click();
   await expect(page.getByTestId('live-modal')).toBeHidden();
@@ -62,20 +70,21 @@ test('2. the confirmation lists the dry run and what it would publish; Cancel do
   expect(await latestRunId()).toBe(before);
 });
 
-test('3. Undo appears only after a live run (test target: ?simulateLive=F)', async ({ page }) => {
+test('3. Undo appears only after a live run; its confirmation opens and Cancel does nothing', async ({ page }) => {
   await openPage(page);
-  for (const s of FILE_STAGES) await expect(page.getByTestId(`stage-undo-${s}`)).toHaveCount(0);
+  const h = (await mcApi('/api/update-all?run=latest', { token: session.token })).stages.history.live_done || {};
+  for (const s of [...FILE_STAGES, 'B']) {
+    const live = !!(h[s] && ['ok', 'warn'].includes(h[s].status) && !h[s].undo_of);
+    await expect(page.getByTestId(`stage-undo-${s}`), `stage ${s}`).toHaveCount(live ? 1 : 0);
+  }
+  await expect(page.getByTestId('stage-undo-I')).toHaveCount(0);
   const before = await latestRunId();
-  await openPage(page, '?simulateLive=F');
-  await expect(page.getByTestId('stage-undo-F')).toBeVisible();
-  await expect(page.getByTestId('stage-undo-G')).toHaveCount(0);
   await page.getByTestId('stage-undo-F').click();
   await expect(page.getByTestId('undo-confirm-title')).toContainText('stage F');
-  await expect(page.getByTestId('undo-confirm-go')).toBeDisabled();
-  await shot(page, '3-undo-on-test-target');
+  await expect(page.getByTestId('undo-confirm-what')).toContainText('commit');
+  await shot(page, '3-undo-confirm-F');
   await page.getByTestId('undo-confirm-cancel').click();
   await expect(page.getByTestId('live-modal')).toBeHidden();
-  const undo = await mcApi('/api/update-all', { token: session.token, method: 'POST', body: { action: 'undo', stage: 'F' } }).catch((e) => e);
-  expect(undo.status).toBe(403);
+  await page.waitForTimeout(3000);
   expect(await latestRunId()).toBe(before);
 });
