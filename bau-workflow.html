@@ -558,7 +558,9 @@
       live: { succeeded: 'Published live', warned: 'Published live, with warnings', failed: 'Live publish failed', cancelled: 'Cancelled' },
       undo: { succeeded: 'Undo finished', warned: 'Undo finished, with warnings', failed: 'Undo failed', cancelled: 'Undo cancelled' },
       dry: { succeeded: 'Test run finished', warned: 'Test run finished, with warnings', failed: 'Test run failed', cancelled: 'Cancelled' } };
-    const headline = (run) => HEADLINE[isUndo(run) ? 'undo' : run.mode === 'live' ? 'live' : 'dry'][run.status] || run.status;
+    const auditOnly = (run) => run.mode === 'live' && run.stages?.length === 1 && run.stages[0] === 'I';
+    const headline = (run) => (auditOnly(run) && ['succeeded', 'warned'].includes(run.status) ? 'Full audit ① started'
+      : HEADLINE[isUndo(run) ? 'undo' : run.mode === 'live' ? 'live' : 'dry'][run.status] || run.status);
 
     function queuedHtml(run) {
       const until = coolingUntil(run);
@@ -578,7 +580,8 @@
         <div class="muted">Elapsed ${esc(elapsed)} · started ${clock(run.started_at)} · run <code>${esc(run.id.slice(0, 8))}</code> · refreshes every 5 s</div>`;
     }
 
-    function filesBlock(r, run) {
+    function filesBlock(r, run, id) {
+      if (id === 'I') return run.mode === 'live' ? '<div data-testid="run-status-audit">① runs in the background (about 3 h). Its progress shows on the Stages row for I; results appear in the AI GEO audit app and the Monday brief.</div>' : '';
       const files = r.published || [];
       const verb = r.publish_mode || (run.mode === 'live' ? 'published' : 'would publish');
       if (!files.length) return r.backup_run || r.undone ? '' : `<div class="muted">No files ${run.mode === 'live' ? 'published' : 'to publish'}.</div>`;
@@ -593,7 +596,7 @@
       const undone = r.undone ? `<div>Reversed: ${esc(['files', 'export', 'db', 'manifest'].filter((k) => r.undone[k]).join(', ') || 'nothing')} (undid run <code>${esc(String(r.undo_of || '').slice(0, 8))}</code>)</div>` : '';
       const undo = run.mode === 'live' && !isUndo(run) && latestLiveIs(id, run.id) ? `<div data-testid="run-status-undo">Undo available: "Undo this stage" on stage ${esc(id)} below.</div>` : '';
       return `<div class="rs-stage" data-testid="run-status-stage-${esc(id)}"><span class="stage-tag">${esc(id)}</span><span class="badge b-${esc(r.status)}">${esc(r.status)}</span>
-        ${filesBlock(r, run)}${commit}${backup}${exp}${undone}${undo}</div>`;
+        ${filesBlock(r, run, id)}${commit}${backup}${exp}${undone}${undo}</div>`;
     }
 
     /** After a failed live stage: B / H talk about the database backup; file stages about the dropped commit. */

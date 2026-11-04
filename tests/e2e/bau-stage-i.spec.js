@@ -41,7 +41,9 @@ test('a live I finishes as soon as ① has started; the row shows ① running in
       { ord: 17, step_id: 'audit', name: '① Full audit → broken links → ② score', status: 'ok', duration_ms: 12000, plain: STARTED, notes: [{ level: 'info', text: STARTED }] },
       { ord: 18, step_id: 'summary', name: 'Summary', status: 'ok', duration_ms: 300 }] }));
   await openPage(page);
-  await expect(page.locator('#runStatus')).toContainText('Published live — stage I');
+  await expect(page.locator('#runStatus')).toContainText('Full audit ① started — stage I');
+  await expect(page.locator('#runStatus')).toContainText('① runs in the background (about 3 h)');
+  await expect(page.locator('#runStatus')).not.toContainText('No files published');
   await expect(page.locator('tr[data-step="audit"]')).toContainText('runs in the background (about 3 h)');
   await expect(page.locator('tr[data-stage="I"] [data-testid="audit-status"]')).toContainText('① running since');
   await expect(page.locator('tr[data-stage="I"] [data-testid="audit-status"]')).toContainText('14 of 443 pages');
