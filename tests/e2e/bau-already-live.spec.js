@@ -32,7 +32,7 @@ test('real page: stages whose newest test run is live show "Already live"; those
     if (expected) {
       await expect(btn).toBeDisabled();
       await expect(btn).toHaveText('2. Already live');
-      await expect(btn).toHaveAttribute('title', new RegExp(`Checked build ${h.dry[id].run_id.slice(0, 8)} was published live on`));
+      await expect(btn.locator('xpath=..')).toHaveAttribute('data-tip', new RegExp(`Checked build ${h.dry[id].run_id.slice(0, 8)} was published live on`));
     } else {
       await expect(btn).toHaveText('2. Publish live…');
     }

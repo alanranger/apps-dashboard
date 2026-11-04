@@ -63,6 +63,11 @@
     button.bb-quiet { background: transparent; color: #c98a8a; border: 1px solid #3a2f33; }
     button.bb-disabled, button.bb:disabled { background: #1b2030; color: #6b7385; border: 1px solid #2a3040; cursor: not-allowed; opacity: 1; }
     .until { color: #8b93a3; font-size: 11.5px; text-align: center; width: 190px; }
+    .tip { position: fixed; z-index: 100; max-width: 320px; background: #1b2130; color: var(--text); border: 1px solid #4a5263; border-radius: 6px; padding: 7px 10px; font-size: 12.5px; font-weight: 400; line-height: 1.4; box-shadow: 0 6px 18px rgba(0,0,0,0.55); pointer-events: none; }
+    .tip[hidden] { display: none; }
+    .tipwrap { display: inline-flex; border-radius: 6px; }
+    .tipwrap:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    .tipwrap > button:disabled { pointer-events: none; }
     .chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 6px; white-space: nowrap; align-items: center; }
     .chips .md { margin-right: 0; min-width: 0; }
     .chip-note { font-size: 11.5px; color: var(--text-muted); }
@@ -213,20 +218,20 @@
       <div class="controls">
         <span class="run-all-mode">
           <span class="mode" role="radiogroup" aria-label="Run all mode">
-            <label><input type="radio" name="mode" value="dry" checked><span>Check</span></label>
-            <label class="disabled" id="liveRadioLabel" data-testid="run-all-live-label" title="Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button."><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
+            <label data-testid="run-all-check-label" data-tip="Run all will build and check every stage. Nothing changes on the live site or database."><input type="radio" name="mode" value="dry" checked><span>Check</span></label>
+            <label class="disabled" id="liveRadioLabel" data-testid="run-all-live-label" data-tip="Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button."><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
           </span></span>
-        <label class="tick" title="Stage I: ① full audit → broken links → ② score. Never on a Monday or while ① is already running; the Monday ① runs either way.">
+        <label class="tick" data-testid="include-audit-label" data-tip="Adds stage I to Run all. In a check the full audit is only simulated; start the real one with Start full audit ①…, or it runs every Monday.">
           <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit ①
         </label>
-        <button class="bb bb-primary" style="width:150px" id="startBtn" data-testid="update-all-start">Run all</button>
-        <button class="bb bb-secondary" style="width:110px" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button>
-        <button class="bb bb-secondary" style="width:110px" id="cancelBtn" disabled>Cancel</button>
+        <span class="tipwrap" data-tip="Builds and checks stages A–H in order (and I, simulated, if Include full audit ① is ticked). Nothing goes live. Afterwards, publish each stage with its own 2. Publish live… button."><button class="bb bb-primary" style="width:150px" id="startBtn" data-testid="update-all-start">Run all</button></span>
+        <span class="tipwrap" data-tip="Carries on the last failed run from the step that failed."><button class="bb bb-secondary" style="width:110px" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button></span>
+        <span class="tipwrap" data-tip="Cancels a run that is still queued, before the PC runner picks it up. It can't stop a run that has already started: that run carries on to the end."><button class="bb bb-secondary" style="width:110px" id="cancelBtn" data-testid="update-all-cancel" disabled>Cancel</button></span>
         <span class="muted" id="actionMsg" data-testid="action-msg"></span>
       </div>
       <div class="prereq" id="prereq" data-testid="prereq">
         <span id="prereqMsg" data-testid="prereq-msg"></span>
-        <button class="small" id="prereqChain" data-testid="prereq-chain"></button>
+        <button class="small" id="prereqChain" data-testid="prereq-chain" data-tip="Runs the listed stages as checks, one after another. Nothing goes live."></button>
       </div>
       <div class="run-meta" id="runMeta" hidden></div>
       <div class="lastline" id="runAllLiveNote" data-testid="run-all-live-note" title="A check builds everything in a sandbox copy and changes nothing live (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task AlanUpdateAllRunner) checks every minute and picks up a requested run.">Run all builds and checks every stage (nothing changes live). Then publish each stage with its own <b>2. Publish live…</b> button below.</div>
@@ -266,7 +271,7 @@
     </div>
 
     <div class="panel steps-panel" id="stepsPanel" style="display:none">
-      <details id="stepsDetails" data-testid="steps-details"><summary id="stepsSummary" data-testid="steps-summary">Steps of the last run ▸</summary>
+      <details id="stepsDetails" data-testid="steps-details"><summary id="stepsSummary" data-testid="steps-summary" data-tip="Shows or hides the step-by-step log of the last run.">Steps of the last run ▸</summary>
       <table class="stack">
         <colgroup><col class="c-n"><col class="c-step"><col class="c-status"><col class="c-time"><col></colgroup>
         <thead><tr><th>#</th><th>Step</th><th>Status</th><th>Time</th><th>What happened</th></tr></thead>
@@ -305,7 +310,7 @@
     const SHARED_STAGES = new Set(['A', 'B', 'C', 'H']);
     const REPO_URL = { 'alan-shared-resources': 'https://github.com/alanranger/alan-shared-resources/commit/', 'alanranger-schema': SCHEMA_REPO };
     const repoUrl = (repo, stage) => REPO_URL[repo] || (SHARED_STAGES.has(stage) ? REPO_URL['alan-shared-resources'] : SCHEMA_REPO);
-    const commitLink = (hash, repo, stage) => (hash ? `<a href="${repoUrl(repo, stage)}${esc(hash)}" target="_blank" rel="noopener" data-testid="commit-link">${esc(String(hash).slice(0, 7))}</a>` : '');
+    const commitLink = (hash, repo, stage) => (hash ? `<a href="${repoUrl(repo, stage)}${esc(hash)}" target="_blank" rel="noopener" data-testid="commit-link" data-tip="Opens this commit on GitHub, showing exactly which files changed.">${esc(String(hash).slice(0, 7))}</a>` : '');
 
     // ---------- notes: Info (grey, no icon) / Check (amber ⚠, what to do) / Problem (red ✗, reason + fix) ----------
     const ICON = { info: '', check: '⚠ ', problem: '✗ ' };
@@ -421,10 +426,11 @@
     }
 
     /** "Typical: check about 2 min · live about 7 s" from the stage's last finished single-stage runs. */
-    /** Timing chips under the stage name: "Check 2 min" (grey) + "Live 7 s" (blue); I has "Background ~3 h". */
+    /** Timing chips under the stage name: "Check 2 min" (grey) + "Live 7 s" (blue); I has "Background ~3 h". The tips use the same times. */
+    const AUDIT_TIME = { chip: '~3 h', words: 'about 3 hours' };
     const shortTime = (ms) => (ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`);
     function typicalHtml(t, id) {
-      if (id === 'I') return '<div class="chips" data-testid="stage-typical"><span class="md md-live" data-testid="chip-background">Background ~3 h</span><span class="chip-note">also every Monday</span></div>';
+      if (id === 'I') return `<div class="chips" data-testid="stage-typical"><span class="md md-live" data-testid="chip-background">Background ${AUDIT_TIME.chip}</span><span class="chip-note">also every Monday</span></div>`;
       const live = t?.live ? shortTime(t.live) : (id === 'B' ? '~10–17 min est.' : 'not run yet');
       return `<div class="chips" data-testid="stage-typical"><span class="md md-test" data-testid="chip-check">Check ${t?.dry ? shortTime(t.dry) : 'not run yet'}</span><span class="md md-live" data-testid="chip-live">Live ${live}</span></div>`;
     }
@@ -466,7 +472,7 @@
     function auditStatusHtml(a) {
       if (!a) return '<div class="hline muted-line" data-testid="audit-status">① latest: none on record</div>';
       const [result, text] = auditLine(a);
-      return `<div class="hline" data-testid="audit-status" data-status="${esc(a.status)}">${pill(result)}${modeTag(true)}${esc(text)} · <a href="${AUDIT_URL}" target="_blank" rel="noopener" data-testid="audit-open">open audit</a></div>`;
+      return `<div class="hline" data-testid="audit-status" data-status="${esc(a.status)}">${pill(result)}${modeTag(true)}${esc(text)} · <a href="${AUDIT_URL}" target="_blank" rel="noopener" data-testid="audit-open" data-tip="Opens the AI GEO audit app, where this audit's results are.">open audit</a></div>`;
     }
     /** I's Last runs: the ① line, then its latest check (always simulated: a check doesn't run the audit). */
     function auditHistoryHtml(info) {
@@ -497,10 +503,71 @@
      *  Stage I has only "Start full audit ①…": a check of I only simulates, so it has no check button. */
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
-      if (id === 'I') return `<button class="bb bb-primary" data-testid="stage-live-I" data-stage-live="I" ${off}>Start full audit ①…</button>`;
-      const live = `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>2. Publish live…</button>`;
-      return `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>1. Build &amp; check</button>${alreadyLiveButton(id) || live}${undoButton(id, off)}`;
+      if (id === 'I') return tipWrap(TIP.audit(), `<button class="bb bb-primary" data-testid="stage-live-I" data-stage-live="I" ${off}>Start full audit ①…</button>`);
+      const live = tipWrap(TIP.publish(id), `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>2. Publish live…</button>`);
+      return tipWrap(TIP.check(id), `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>1. Build &amp; check</button>`)
+        + (alreadyLiveButton(id) || live) + undoButton(id, off);
     }
+
+    // ---------- hover / focus tips (Alan 4 Nov): every control says what a click really does ----------
+    /** A button that can be disabled sits in a .tipwrap carrying its tip, so the tip still shows when it's disabled. */
+    const tipWrap = (tip, button) => `<span class="tipwrap" data-tip="${esc(tip)}">${button}</span>`;
+    const typicalOf = (id) => stageInfo?.typical?.[id] || {};
+    const liveTimeText = (id) => { const t = typicalOf(id).live; return t ? shortTime(t) : (id === 'B' ? '10–17 min, estimated' : null); };
+    const TIP = {
+      check: (id) => { const t = typicalOf(id).dry; return `Builds this stage in a safe copy and checks it${t ? ` (about ${shortTime(t)})` : ''}. Nothing changes on the live site or database. Then use 2. Publish live…`; },
+      publish: (id) => { const t = liveTimeText(id); return `Publishes this stage's last checked build. It shows you exactly what will change and asks you to confirm first${t ? ` (about ${t})` : ''}.`; },
+      audit: () => `Starts the full site audit now. It runs in the background for ${AUDIT_TIME.words}, and the results appear in the AI GEO audit app and the Monday brief. Not available on Mondays (it runs automatically then) or while an audit is already running.`,
+      closeBox: 'Closes this box. Nothing changes.',
+    };
+    /** File stages put files back; B / H restore their database backup (B also its 05 file, H its 09 file). */
+    function undoTip(id) {
+      if (!DB_STAGES.has(id)) return 'Puts back the files this stage last published live. It asks you to confirm first.';
+      const until = undoUntilOf(id);
+      const h = stageInfo?.history?.live_done?.[id] || {};
+      const also = [h.export_commit ? 'puts back the 05 file' : null, h.commit ? 'puts back the 09 keywords file' : null].filter(Boolean);
+      return `Restores the database tables from the backup taken before this stage's last live run${until ? `, until ${when(new Date(until).toISOString())}` : ''}${also.length ? `, and ${also.join(' and ')}` : ''}. It asks you to confirm first.`;
+    }
+    /** What the confirmation's Publish live button does, for this stage. */
+    function confirmTip(stage, plan) {
+      if (stage === 'B') return 'Backs up the chat database tables first, then imports this checked build, re-reads the changed pages and publishes the 05 file.';
+      if (stage === 'H') return 'Backs up the chat database tables first, then re-imports the records and publishes the 09 keywords file.';
+      const all = plan.files || [];
+      const removed = all.filter((f) => f.endsWith('(removed)')).length;
+      const where = SHARED_STAGES.has(stage) ? 'the alan-shared-resources repo' : 'schema.alanranger.com';
+      return `Publishes ${plural(all.length - removed, 'file')}${removed ? ` and removes ${removed}` : ''} to ${where} in one commit. You can undo it afterwards.`;
+    }
+    /** Disabled buttons can't take focus: their wrapper does, so the tip also shows from the keyboard. */
+    const syncTipWraps = () => document.querySelectorAll('.tipwrap').forEach((w) => { w.tabIndex = w.querySelector('button:disabled') ? 0 : -1; });
+
+    const Tip = (() => {
+      const el = document.createElement('div');
+      Object.assign(el, { className: 'tip', id: 'tip', hidden: true });
+      el.setAttribute('role', 'tooltip');
+      el.setAttribute('data-testid', 'tip');
+      document.body.appendChild(el);
+      let timer = null; let target = null; const last = { x: -1, y: -1 };
+      function place(t) {
+        el.textContent = t.dataset.tip;
+        el.hidden = false;
+        const r = t.getBoundingClientRect();
+        const left = Math.min(Math.max(8, r.left + r.width / 2 - el.offsetWidth / 2), innerWidth - el.offsetWidth - 8);
+        const below = r.bottom + 8 + el.offsetHeight <= innerHeight;
+        el.style.left = `${left}px`;
+        el.style.top = `${below ? r.bottom + 8 : r.top - el.offsetHeight - 8}px`;
+      }
+      /** The page (and the progress window, every second) re-renders: a replaced element is found again under the pointer. */
+      const current = (t) => (t.isConnected ? t : document.elementFromPoint(last.x, last.y)?.closest('[data-tip]') || null);
+      function show(t) { clearTimeout(timer); target = t; timer = setTimeout(() => { const c = target === t && current(t); if (c) place(c); }, 300); }
+      function hide() { clearTimeout(timer); target = null; el.hidden = true; }
+      const find = (e) => e.target.closest?.('[data-tip]') || null;
+      document.addEventListener('pointerover', (e) => { Object.assign(last, { x: e.clientX, y: e.clientY }); const t = find(e); if (!t) hide(); else if (t !== target) show(t); });
+      document.addEventListener('focusin', (e) => { const t = find(e); if (t) show(t); });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('scroll', () => { if (!el.hidden) hide(); }, true);
+      document.addEventListener('pointerdown', hide, true);
+      return { hide };
+    })();
 
     /** The stage's newest ok checked build was already published by its latest successful live run: nothing new to promote. */
     function alreadyLive(id) {
@@ -513,8 +580,8 @@
     function alreadyLiveButton(id) {
       const done = alreadyLive(id);
       if (!done) return '';
-      const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Click 1. Build & check again to publish this stage again.`;
-      return `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1" title="${esc(tip)}">2. Already live</button>`;
+      const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Run 1. Build & check to make a new one.`;
+      return tipWrap(tip, `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1">2. Already live</button>`);
     }
 
     /** B / H undo restores a database backup kept 14 days after the live run; file stages undo through git (no limit). */
@@ -529,7 +596,7 @@
       const until = undoUntilOf(id);
       if (until && until <= Date.now()) return `<div class="until" data-testid="undo-expired-${id}">Undo: backup expired (14-day window)</div>`;
       const note = until ? `<div class="until" data-testid="undo-until-${id}">Undo available until ${esc(when(new Date(until).toISOString()))}</div>` : '';
-      return `<button class="bb bb-quiet" data-testid="stage-undo-${id}" data-stage-undo="${id}" ${off}>Undo last live…</button>${note}`;
+      return `${tipWrap(undoTip(id), `<button class="bb bb-quiet" data-testid="stage-undo-${id}" data-stage-undo="${id}" ${off}>Undo last live…</button>`)}${note}`;
     }
 
     function showPrereq(plan, target) {
@@ -570,9 +637,15 @@
       $('errorList').innerHTML = items.join('');
     }
 
+    /** Alan's 08 choices feed the landing / service page list (08) that stage A builds; saved, never asked twice. */
+    const CHOICE_TIP = {
+      service: 'Lists this new page as a service page, so it gets service-page schema. Saved; never asked again.',
+      landing: 'Lists this new page as a landing page, so it gets landing-page schema. Saved; never asked again.',
+      exclude: 'Leaves this page out: it gets no schema. Saved; never asked again.',
+    };
     function page08Html(n, choices) {
       const saved = choices.find((c) => c.url === n.url);
-      const buttons = ['service', 'landing', 'exclude'].map((c) => `<button class="small ${saved?.choice === c ? '' : 'secondary'}" data-testid="choice-${c}" data-choice="${c}" data-url="${esc(n.url)}" data-suggested="${esc(n.suggested)}" ${saved ? 'disabled' : ''}>${c[0].toUpperCase()}${c.slice(1)}</button>`).join('');
+      const buttons = ['service', 'landing', 'exclude'].map((c) => tipWrap(CHOICE_TIP[c], `<button class="small ${saved?.choice === c ? '' : 'secondary'}" data-testid="choice-${c}" data-choice="${c}" data-url="${esc(n.url)}" data-suggested="${esc(n.suggested)}" ${saved ? 'disabled' : ''}>${c[0].toUpperCase()}${c.slice(1)}</button>`)).join('');
       const state = saved ? `<span data-testid="choice-saved">Saved: ${esc(saved.choice)}</span>` : '';
       return `<li data-testid="needs-item" data-kind="new_08_page" data-url="${esc(n.url)}"><code>${esc(n.url)}</code><span class="suggested" data-testid="suggested">suggested: ${esc(n.suggested)}</span>${buttons}${state}</li>`;
     }
@@ -591,17 +664,17 @@
     }
     function heldHtml(n, saved) {
       const dis = saved ? 'disabled' : '';
-      const alts = (n.alternatives || []).map((s) => `<button class="small secondary" data-held-alt="${esc(s)}" ${dis}>${esc(productName(s))}</button>`).join(' ');
+      const alts = (n.alternatives || []).map((s) => tipWrap(`Attaches this review to ${productName(s)}. Saved, and applied on the next run.`, `<button class="small secondary" data-held-alt="${esc(s)}" ${dis}>${esc(productName(s))}</button>`)).join(' ');
       return `<li class="held" data-testid="needs-item" data-kind="held_review" data-key="${esc(n.key)}">
         <div><strong data-testid="held-name">${esc(n.first_name)}</strong> · ${esc(n.date)} · <span class="stars" data-testid="held-stars">${'★'.repeat(n.rating || 0)}${'☆'.repeat(5 - (n.rating || 0))}</span></div>
         ${reviewText(n.text)}
         <div class="muted" data-testid="held-why">Why held: ${esc(n.why)}</div>
         <div>Suggested: <strong data-testid="held-suggested">${esc(productName(n.suggested))}</strong>${alts ? ` · or ${alts}` : ''}</div>
         <div class="held-actions">
-          <button class="small" data-testid="held-accept" data-held-act="accept" ${dis || (n.suggested ? '' : 'disabled')}>Accept suggestion</button>
-          <span class="pick"><input list="heldProducts" placeholder="Choose another product…" data-testid="held-search" ${dis}><button class="small secondary" data-testid="held-choose" data-held-act="choose" ${dis}>Use this product</button></span>
-          <button class="small secondary" data-testid="held-business" data-held-act="business" ${dis}>Business-level</button>
-          <span class="pick"><input placeholder="Reason to exclude" data-testid="held-reason" ${dis}><button class="small secondary" data-testid="held-exclude" data-held-act="exclude" ${dis}>Exclude</button></span>
+          ${tipWrap('Attaches this review to the suggested product. Saved, and applied on the next run.', `<button class="small" data-testid="held-accept" data-held-act="accept" ${dis || (n.suggested ? '' : 'disabled')}>Accept suggestion</button>`)}
+          <span class="pick"><input list="heldProducts" placeholder="Choose another product…" data-testid="held-search" ${dis}>${tipWrap('Attaches this review to the product picked in the box. Saved, and applied on the next run.', `<button class="small secondary" data-testid="held-choose" data-held-act="choose" ${dis}>Use this product</button>`)}</span>
+          ${tipWrap('Counts this review for the business as a whole, not a product. Saved, and applied on the next run.', `<button class="small secondary" data-testid="held-business" data-held-act="business" ${dis}>Business-level</button>`)}
+          <span class="pick"><input placeholder="Reason to exclude" data-testid="held-reason" ${dis}>${tipWrap('Leaves this review out, with the reason typed in the box. Saved, and applied on the next run.', `<button class="small secondary" data-testid="held-exclude" data-held-act="exclude" ${dis}>Exclude</button>`)}</span>
         </div>
         ${saved ? `<div data-testid="held-saved">${esc(savedText(saved))}</div>` : ''}</li>`;
     }
@@ -802,8 +875,8 @@
       box.hidden = !p;
       $('runMeta').hidden = !!p;
       box.className = `run-status ${['requested', 'running'].includes(run?.status) ? 'rs-active' : (RESULT[run?.status]?.[1] || '')}`;
-      const dismiss = p?.done ? '<button class="bb bb-secondary" style="width:100px" id="runStatusClose" data-testid="run-status-dismiss">Dismiss</button>' : '';
-      box.innerHTML = p ? `<div class="rs-top"><div>${p.head}</div><div class="rs-btns"><button class="bb bb-secondary" style="width:150px" id="openProgress" data-testid="open-progress">Open progress</button>${dismiss}</div></div>${p.body}` : '';
+      const dismiss = p?.done ? '<button class="bb bb-secondary" style="width:100px" id="runStatusClose" data-testid="run-status-dismiss" data-tip="Hides this result box on this device. The run stays in the stage history.">Dismiss</button>' : '';
+      box.innerHTML = p ? `<div class="rs-top"><div>${p.head}</div><div class="rs-btns"><button class="bb bb-secondary" style="width:150px" id="openProgress" data-testid="open-progress" data-tip="Opens the progress window for this run.">Open progress</button>${dismiss}</div></div>${p.body}` : '';
       if ($('runStatusClose')) $('runStatusClose').onclick = () => { localStorage.setItem(DISMISS_KEY, run.id); renderRunStatus(run, steps); };
       if ($('openProgress')) $('openProgress').onclick = () => window.BauProgress?.open();
     }
@@ -820,6 +893,7 @@
       renderStages(data.stages, run);
       renderLiveRadio(data.live);
       renderRunStatus(run, steps);
+      syncTipWraps();
     }
 
     async function refresh() {
@@ -871,7 +945,7 @@
       if ($('liveRadio').checked) document.querySelector('input[name=mode][value=dry]').checked = true;
     }
 
-    function openModal(html) { $('liveModalBody').innerHTML = html; $('liveModal').hidden = false; }
+    function openModal(html) { $('liveModalBody').innerHTML = html; $('liveModal').hidden = false; syncTipWraps(); }
     function closeModal() { $('liveModal').hidden = true; $('liveModalBody').innerHTML = ''; }
 
     /** B: the pages the check found new / changed / without a fingerprint (the only ones re-read in full), and the force option. */
@@ -881,7 +955,7 @@
       const items = (r.list || []).map((x) => `${x.url.replace('https://www.alanranger.com', '')} — ${x.reason.replace('_', ' ')}`);
       return `<p data-testid="live-confirm-refetch"><strong>Pages re-read in full: ${r.reingest} of ${r.checked}</strong> (${esc(why)}); ${r.unchanged} unchanged are only checked.</p>`
         + (items.length ? listBlock('Pages it re-reads (from the checked build; re-checked live)', items, 'live-confirm-refetch-list') : '')
-        + '<label class="tick" style="margin-top:6px"><input type="checkbox" id="forceFullReread" data-testid="force-full-reread"> Force full re-read (every page, about 70 min)</label>';
+        + '<label class="tick" style="margin-top:6px" data-tip="Re-reads every page in full instead of only the changed ones (about 70 min)."><input type="checkbox" id="forceFullReread" data-testid="force-full-reread"> Force full re-read (every page, about 70 min)</label>';
     }
 
     function dbBlock(db) {
@@ -900,8 +974,8 @@
         It usually takes 1–3 hours; the progress window follows it. Nothing is published and there is nothing to undo.</p>
         <p class="muted">Refused on a Monday (the Monday ① runs anyway) and while ① is already running.</p>
         ${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
-        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
-        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start full audit ①</button></div>`);
+        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel" data-tip="${TIP.closeBox}">Cancel</button>
+        ${tipWrap(`Starts the full site audit now. It runs in the background for ${AUDIT_TIME.words}.`, `<button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start full audit ①</button>`)}</div>`);
       $('liveCancel').onclick = closeModal;
       $('livePublish').onclick = () => { closeModal(); startStages(['I'], 'live'); };
     }
@@ -916,8 +990,8 @@
         <dl><dt>Stage</dt><dd>${esc(stage)} · ${esc(name)}</dd>
         <dt>Publishes checked build</dt><dd data-testid="live-confirm-dry">${plan.dry ? `<code>${esc(plan.dry.run_id.slice(0, 8))}</code> · ${esc(when(plan.dry.finished_at))} · ${esc(plan.dry.status)}` : 'none'}</dd></dl>
         ${files}${dbBlock(plan.db)}${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
-        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel">Cancel</button>
-        <button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Publish live</button></div>`);
+        <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel" data-tip="${TIP.closeBox}">Cancel</button>
+        ${tipWrap(confirmTip(stage, plan), `<button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Publish live</button>`)}</div>`);
       $('liveCancel').onclick = closeModal;
       $('livePublish').onclick = () => {
         const force = !!$('forceFullReread')?.checked;
@@ -936,8 +1010,8 @@
       openModal(`<h3 data-testid="undo-confirm-title">Undo stage ${esc(stage)}'s live publish</h3>
         <dl><dt>Live run</dt><dd>${h.run_id ? `<code>${esc(String(h.run_id).slice(0, 8))}</code> · ${esc(when(h.finished_at))}` : 'simulated'}</dd></dl>
         ${listBlock('What is reversed', what.length ? what : ['(simulated)'], 'undo-confirm-what')}${blocked ? `<p class="refusal">${esc(blocked)}</p>` : ''}
-        <div class="actions"><button class="secondary" data-testid="undo-confirm-cancel" id="undoCancel">Cancel</button>
-        <button class="undo" data-testid="undo-confirm-go" id="undoGo" ${blocked ? 'disabled' : ''}>Undo live publish</button></div>`);
+        <div class="actions"><button class="secondary" data-testid="undo-confirm-cancel" id="undoCancel" data-tip="${TIP.closeBox}">Cancel</button>
+        ${tipWrap('Reverses this stage\'s last live publish, as listed above. The PC runner does it within about a minute.', `<button class="undo" data-testid="undo-confirm-go" id="undoGo" ${blocked ? 'disabled' : ''}>Undo live publish</button>`)}</div>`);
       $('undoCancel').onclick = closeModal;
       $('undoGo').onclick = () => { closeModal(); act({ action: 'undo', stage }, `Undo of stage ${stage} requested`); };
     }

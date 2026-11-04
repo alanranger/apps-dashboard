@@ -86,7 +86,7 @@ test('stage I: only "Start full audit ①…"; its ① line is in the Last runs 
 test('Run panel: Check / Live switch (blue underline, Live disabled); a forced Live Run all is refused by the API', async ({ page }) => {
   await openPage(page);
   await expect(page.getByTestId('run-all-live')).toBeDisabled();
-  await expect(page.getByTestId('run-all-live-label')).toHaveAttribute('title', "Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button.");
+  await expect(page.getByTestId('run-all-live-label')).toHaveAttribute('data-tip', "Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button.");
   const on = await page.locator('.mode input:checked + span').evaluate((e) => [e.textContent, getComputedStyle(e).boxShadow, getComputedStyle(e).backgroundColor]);
   expect(on[0]).toBe('Check');
   expect(on[1]).toContain('rgb(110, 168, 254)');

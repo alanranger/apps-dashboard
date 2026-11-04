@@ -3,7 +3,7 @@
  * Run all (test or live). It reads the run the page already polls (run.progress, run.heartbeat_at, run.log written by
  * the PC runner; estimates and runner state from the API) and re-renders every second for the timers.
  * Uses the page's helpers: esc, clock, duration, modeBadge, headline, isUndo, scopeText, stageResultHtml, failureHtml,
- * latestLiveIs, act, openLiveConfirm, openUndoConfirm.
+ * latestLiveIs, act, openLiveConfirm, openUndoConfirm, undoTip.
  */
 (function () {
   const AMBER_MS = 60000;
@@ -126,7 +126,7 @@
     const name = id ? (window.stageInfo?.defs || stageInfoSafe()).find((d) => d.id === id)?.name || '' : 'Run all';
     return `<div class="pg-head"><div>${modeBadge(run)} <strong data-testid="pg-title">${esc(id ? `Stage ${id} — ${name}` : 'Run all')}${isUndo(run) ? ' (undo)' : ''}</strong>
       <span class="muted">· run <code>${esc(run.id.slice(0, 8))}</code></span></div>
-      <button class="small secondary" id="pgClose" data-testid="pg-close">Close</button></div>`;
+      <button class="small secondary" id="pgClose" data-testid="pg-close" data-tip="Closes this window. The run carries on; nothing changes.">Close</button></div>`;
   }
   function stageInfoSafe() { try { return stageInfo?.defs || []; } catch { return []; } }
 
@@ -179,9 +179,9 @@
   function actionButtons(run) {
     const id = run.stages?.length === 1 ? run.stages[0] : null;
     const b = [];
-    if (run.status === 'failed') b.push('<button class="small" data-pg-act="resume" data-testid="pg-resume">Resume</button>');
-    if (id && run.mode === 'live' && !isUndo(run) && run.status === 'failed') b.push('<button class="small live" data-pg-act="again" data-testid="pg-again">Publish live again…</button>');
-    if (id && run.mode === 'live' && !isUndo(run) && ['succeeded', 'warned'].includes(run.status) && latestLiveIs(id, run.id)) b.push('<button class="small undo" data-pg-act="undo" data-testid="pg-undo">Undo last live…</button>');
+    if (run.status === 'failed') b.push('<button class="small" data-pg-act="resume" data-testid="pg-resume" data-tip="Carries on this failed run from the step that failed.">Resume</button>');
+    if (id && run.mode === 'live' && !isUndo(run) && run.status === 'failed') b.push('<button class="small live" data-pg-act="again" data-testid="pg-again" data-tip="Opens the publish confirmation for this stage again. Nothing happens until you confirm.">Publish live again…</button>');
+    if (id && run.mode === 'live' && !isUndo(run) && ['succeeded', 'warned'].includes(run.status) && latestLiveIs(id, run.id)) b.push(`<button class="small undo" data-pg-act="undo" data-testid="pg-undo" data-tip="${esc(undoTip(id))}">Undo last live…</button>`);
     return b.length ? `<div class="pg-actions">${b.join('')}</div>` : '';
   }
 
@@ -194,7 +194,7 @@
   function simulatedHtml(run, list) {
     const why = list.filter((s) => s.status === 'skipped').flatMap((s) => (s.notes || []).map((n) => n.text)).filter(Boolean);
     return `<p class="pg-result pg-sim" data-testid="pg-result" data-status="simulated">⚪ Nothing was run — simulated only</p>
-      <div class="note">${esc(why.join(' ') || 'Every step of this stage was skipped in a check.')} Only a <strong>live</strong> run does this stage's real work${run.stages?.includes('I') ? ' (① runs in a live Run all, or on its Monday schedule)' : ''}.</div>
+      <div class="note">${esc(why.join(' ') || 'Every step of this stage was skipped in a check.')} Only a <strong>live</strong> run does this stage's real work${run.stages?.includes('I') ? ' (start ① with Start full audit ①…, or it runs on its Monday schedule)' : ''}.</div>
       <div class="muted">Finished ${esc(clock(run.finished_at))}</div>`;
   }
 
@@ -215,7 +215,7 @@
     if (run.status === 'requested') main = queuedHtml(run, data.runner);
     else if (run.status === 'running') main = runningHtml(run, list, data.estimates || {});
     else main = finishedHtml(run, list);
-    const sound = `<label class="pg-sound"><input type="checkbox" id="pgSound" ${S.sound ? 'checked' : ''}> Sound when done</label>`;
+    const sound = `<label class="pg-sound" data-tip="Plays a sound when the run finishes."><input type="checkbox" id="pgSound" ${S.sound ? 'checked' : ''}> Sound when done</label>`;
     return `${header(run)}${main}<h4>Log</h4>${logHtml(logLines(run, list))}${sound}`;
   }
 
