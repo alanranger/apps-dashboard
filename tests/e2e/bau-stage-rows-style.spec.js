@@ -75,10 +75,10 @@ test('stage I: only "Start full audit ①…"; its ① line is in the Last runs 
   await expect(page.getByTestId('stage-run-I')).toHaveCount(0);
   await expect(i.getByTestId('chip-background')).toHaveText('Background ~3 h');
   await expect(i.getByTestId('stage-typical')).toContainText('also every Monday');
-  const audit = i.locator('td[data-label="Last runs"] [data-testid="audit-status"]');
+  const audit = i.locator('[data-label="Last runs"] [data-testid="audit-status"]');
   await expect(audit).toContainText(/① (latest|running)/);
   await expect(audit.getByTestId('audit-open')).toHaveText('open audit');
-  await expect(i.locator('td[data-label="Stage"] [data-testid="audit-status"]')).toHaveCount(0);
+  await expect(i.locator('[data-label="Stage"] [data-testid="audit-status"]')).toHaveCount(0);
   await expect(i.getByTestId('stage-history-dry')).toContainText("simulated only (a check doesn't run the audit)");
   await expect(page.locator('tr[data-stage="B"] [data-testid="stage-history-dry"]')).toContainText(/\d+ of \d+ pages to re-read/);
 });
@@ -146,7 +146,7 @@ test('column widths at 1920: every "What it does" item on one line (A2/A3 may ta
   await openPage(page);
   for (const [id, lines] of await itemLines(page)) expect(lines, id).toBeLessThanOrEqual(['A2', 'A3'].includes(id) ? 2.6 : 1.6);
   const gaps = await page.locator('#stageRows tr').evaluateAll((rows) => rows.map((tr) => {
-    const runs = tr.querySelector('td[data-label="Last runs"]');
+    const runs = tr.querySelector('[data-label="Last runs"]');
     const right = runs.getBoundingClientRect().right - parseFloat(getComputedStyle(runs).paddingRight);
     return Math.round(tr.querySelector('.btns').getBoundingClientRect().left - right);
   }));

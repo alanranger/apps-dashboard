@@ -77,7 +77,12 @@
     ol.does li + li { margin-top: 8px; }
     #stageRows .hline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #stageRows td.btn-cell { padding-right: 0; }
-    #stageRows td.btn-cell .btns { margin-left: auto; }
+    #stageRows .btn-cell .btns { margin-left: auto; }
+    #stageRows tr.optional-row > td.optional-cell { padding: 10px 4px 4px; border-top: 0; }
+    .optional-box { display: grid; grid-template-columns: 215px var(--c-does, 1fr) 120px var(--c-runs, 1fr) 195px; border: 1px dashed #4a5263; border-radius: 8px; background: #1b2130; }
+    .optional-box > .oc { padding: 12px 8px; min-width: 0; overflow-wrap: anywhere; }
+    .optional-box > .oc.btn-cell { padding: 12px 0 12px 4px; }
+    .optional-box > .oc:first-child { padding-left: 3px; }
     .needs-chip { margin-right: 3px; font-size: 12px; }
     .stage-tag-mock { display: inline-block; background: #3a2c08; color: #f0a500; border-radius: 4px; padding: 0 6px; font-weight: 700; margin-right: 6px; }
     .run-status { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; background: rgba(0,0,0,0.25); }
@@ -184,7 +189,10 @@
     @media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 899px) {
       #stageRows .hline { white-space: normal; }
-      #stageRows td.btn-cell .btns { margin-left: 0; }
+      #stageRows .btn-cell .btns { margin-left: 0; }
+      .optional-box { display: block; }
+      .optional-box > .oc { padding: 4px 8px; }
+      .optional-box > .oc[data-label]::before { content: attr(data-label) ': '; color: var(--text-muted); font-size: 0.8rem; }
       table.stack, table.stack tbody, table.stack tr, table.stack td { display: block; width: 100%; }
       table.stack thead, table.stack colgroup { display: none; }
       table.stack tr { border-bottom: 2px solid var(--border); padding: 6px 0; }
@@ -413,6 +421,8 @@
       const does = Math.max(Math.min(rest - 400, Math.round(rest * 0.57)), Math.round(rest * 0.5));
       $('colDoes').style.width = `${does}px`;
       $('colRuns').style.width = `${rest - does}px`;
+      table.style.setProperty('--c-does', `${does}px`);
+      table.style.setProperty('--c-runs', `${rest - does}px`);
     }
     window.addEventListener('resize', sizeStageColumns);
 
@@ -485,18 +495,29 @@
       if (!info) return;
       stageInfo = info;
       const active = ['requested', 'running'].includes(run?.status);
-      $('stageRows').innerHTML = info.defs.map((s) => {
-        const hist = s.id === 'I' ? auditHistoryHtml(info) : stageHistoryHtml(info, s.id);
-        return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
-          <td data-label="What it does">${doesHtml(s.id)}</td><td data-label="Needs first">${needsHtml(s)}</td>
-          <td data-label="Last runs">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
-          <td class="btn-cell"><div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div></td></tr>`;
-      }).join('');
+      $('stageRows').innerHTML = info.defs.map((s) => stageRowHtml(s, stageCells(s, info, active))).join('');
       lineTips();
       sizeStageColumns();
       document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun], 'dry')));
       document.querySelectorAll('[data-stage-live]').forEach((b) => b.addEventListener('click', () => openLiveConfirm(b.dataset.stageLive)));
       document.querySelectorAll('[data-stage-undo]').forEach((b) => b.addEventListener('click', () => openUndoConfirm(b.dataset.stageUndo)));
+    }
+
+    /** A stage row's five cells as [label, html]; the buttons cell has no label. */
+    function stageCells(s, info, active) {
+      const hist = s.id === 'I' ? auditHistoryHtml(info) : stageHistoryHtml(info, s.id);
+      const prog = window.BauProgress?.rowHtml(s.id);
+      return [['Stage', `<span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}`],
+        ['What it does', doesHtml(s.id)], ['Needs first', needsHtml(s)],
+        ['Last runs', `${prog ? `<div>${prog}</div>` : ''}${hist || '<span class="muted">never run</span>'}`],
+        ['', `<div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div>`]];
+    }
+    /** A–H are plain rows. Stage I (optional, Alan 4 Nov) is one full-width cell holding a dashed, lighter box that
+     *  repeats the table's columns: borders and radius on a <tr> don't render reliably with table-layout: fixed. */
+    function stageRowHtml(s, cells) {
+      if (s.id !== 'I') return `<tr data-stage="${s.id}">${cells.map(([l, h]) => `<td ${l ? `data-label="${l}"` : 'class="btn-cell"'}>${h}</td>`).join('')}</tr>`;
+      const inner = cells.map(([l, h]) => `<div class="oc${l ? '' : ' btn-cell'}" ${l ? `data-label="${l}"` : ''}>${h}</div>`).join('');
+      return `<tr data-stage="I" class="optional-row"><td colspan="5" class="optional-cell"><div class="optional-box" data-testid="optional-box">${inner}</div></td></tr>`;
     }
 
     /** 1. Build & check, 2. Publish live… (confirmation first) or 2. Already live, Undo last live… — one size.
