@@ -4,7 +4,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { checkImports, missingMessage } from '../../runner/import-check.mjs';
-import { scriptFailure } from '../../runner/steps.mjs';
+import { scriptFailure, blogBodyKey } from '../../runner/steps.mjs';
+
+test('blog body key ignores Squarespace platform markup (component asset versions, lightbox styles) but not content', () => {
+  const v1 = '<div data-block-css="[&quot;https://definitions.sqspcdn.com/website-component-definition/static-assets/website.components.code/59a0_1074/x.css&quot;]"><style>.cdk-image-lightbox .sqs-lightbox-meta{margin:0}</style><p>Updated 29 Oct</p><style>.ar-x{color:red}</style></div>';
+  const v2 = '<div data-block-css="[&quot;https://definitions.sqspcdn.com/website-component-definition/static-assets/website.components.code/4e54_1080/x.css&quot;]"><style>.cdk-image-lightbox .sqs-lightbox-meta{margin:0;padding:20px}</style><p>Updated 29 Oct</p><style>.ar-x{color:red}</style></div>';
+  assert.equal(blogBodyKey(v1), blogBodyKey(v2));
+  assert.notEqual(blogBodyKey(v1), blogBodyKey(v2.replace('29 Oct', '4 Nov')));
+  assert.notEqual(blogBodyKey(v1), blogBodyKey(v1.replace('.ar-x{color:red}', '.ar-x{color:blue}')));
+});
 
 function project() {
   const web = fs.mkdtempSync(path.join(os.tmpdir(), 'imports-'));

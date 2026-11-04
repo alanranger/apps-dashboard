@@ -646,11 +646,22 @@ const appCliStep = (command) => async (ctx) => {
 const sha = (s) => crypto.createHash('sha256').update(String(s ?? '')).digest('hex').slice(0, 16);
 
 /** Per post: feed updatedOn, a hash of the feed body and a hash of its 01-blog-posts row (title, tags, image…). */
+/**
+ * A post body without Squarespace's own platform markup, which changes on every post when Squarespace releases a
+ * component (4 Nov: code-block component _1074 → _1080 and new image-lightbox styles flagged all 322 posts as changed):
+ * versioned component asset URLs, data-block-css / data-block-scripts, and its generated image-lightbox <style>.
+ */
+export const blogBodyKey = (body) => String(body || '')
+  .replace(/<style[^>]*>(?:(?!<\/style>)[\s\S])*?cdk-image-lightbox[\s\S]*?<\/style>/g, '')
+  .replace(/\sdata-block-(css|scripts)="[^"]*"/g, '')
+  .replace(/https:\/\/definitions\.sqspcdn\.com\/website-component-definition\/[^"'\s&]+/g, '');
+export const BLOG_HASH_VERSION = 2;
+
 export function blogManifest(feedItems, rows01) {
   const meta = new Map(rows01.map((r) => [r['Full Url'], sha(JSON.stringify(r))]));
   return Object.fromEntries(feedItems.map((i) => {
     const url = `https://www.alanranger.com${i.fullUrl}`;
-    return [url, { updatedOn: i.updatedOn, bodyHash: sha(i.body), metaHash: meta.get(url) || null }];
+    return [url, { updatedOn: i.updatedOn, bodyHash: sha(blogBodyKey(i.body)), metaHash: meta.get(url) || null }];
   }));
 }
 
@@ -685,7 +696,7 @@ async function blogPosts(ctx) {
   const r = postsToRegenerate(current, baseline);
   const list = [...r.fresh, ...r.changed];
   fs.mkdirSync(path.dirname(manifestFile), { recursive: true });
-  fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), posts: current }, null, 2));
+  fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), hashVersion: BLOG_HASH_VERSION, posts: current }, null, 2));
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
   const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [], changed: [] };
