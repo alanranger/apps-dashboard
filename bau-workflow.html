@@ -66,8 +66,12 @@
     .chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 6px; white-space: nowrap; align-items: center; }
     .chips .md { margin-right: 0; min-width: 0; }
     .chip-note { font-size: 11.5px; color: var(--text-muted); }
-    ol.does { margin: 0; padding-left: 18px; color: var(--text-muted); }
-    ol.does li { margin: 0 0 3px; }
+    ol.does { margin: 0; padding-left: 20px; list-style-position: outside; color: var(--text-muted); }
+    ol.does li { line-height: 1.45; }
+    ol.does li + li { margin-top: 8px; }
+    #stageRows .hline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #stageRows td.btn-cell { padding-right: 0; }
+    #stageRows td.btn-cell .btns { margin-left: auto; }
     .needs-chip { margin-right: 3px; font-size: 12px; }
     .stage-tag-mock { display: inline-block; background: #3a2c08; color: #f0a500; border-radius: 4px; padding: 0 6px; font-weight: 700; margin-right: 6px; }
     .run-status { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; background: rgba(0,0,0,0.25); }
@@ -172,7 +176,9 @@
     code { overflow-wrap: anywhere; }
     a { color: var(--blue); }
     @media (max-width: 1100px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
-    @media (max-width: 720px) {
+    @media (max-width: 899px) {
+      #stageRows .hline { white-space: normal; }
+      #stageRows td.btn-cell .btns { margin-left: 0; }
       table.stack, table.stack tbody, table.stack tr, table.stack td { display: block; width: 100%; }
       table.stack thead, table.stack colgroup { display: none; }
       table.stack tr { border-bottom: 2px solid var(--border); padding: 6px 0; }
@@ -252,7 +258,7 @@
       <h2>Stages</h2>
       <p class="muted" style="margin:-4px 0 10px;font-size:12px">Each stage runs pre-flight first, then its own steps, and publishes only its own files. If its inputs are missing, older than 7 days or out of date, the page says what to run first. Every publishing stage refuses to publish anything removed without an explanation.</p>
       <table class="stack" data-testid="stages-table">
-        <colgroup><col style="width:250px"><col style="width:280px"><col style="width:120px"><col><col style="width:210px"></colgroup>
+        <colgroup><col style="width:220px"><col id="colDoes"><col style="width:120px"><col id="colRuns"><col style="width:200px"></colgroup>
         <thead><tr><th>Stage</th><th>What it does</th><th>Needs first</th><th>Last runs</th><th></th></tr></thead>
         <tbody id="stageRows"></tbody>
       </table>
@@ -377,10 +383,32 @@
       if (!h) return '';
       const live = mode === 'live';
       const runId = esc(String(h.run_id || '').slice(0, 8));
-      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused" title="run ${runId}">${pill('refused')}${modeTag(true)}${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed</div>`;
+      if (refused) return `<div class="hline muted-line" data-testid="stage-history-refused" data-run="${runId}">${pill('refused')}${modeTag(true)}${esc(when(h.finished_at))} · second publish of the same checked build, nothing changed</div>`;
       const parts = [esc(when(h.finished_at)), ...historyDetail(h, live, stage), ...(live ? [] : [`<span class="muted">run ${runId}</span>`])];
-      return `<div class="hline" data-testid="stage-history-${mode}" title="run ${runId}">${pill(h.status)}${modeTag(live, h.undo_of)}${parts.join(' · ')}</div>`;
+      return `<div class="hline" data-testid="stage-history-${mode}" data-run="${runId}">${pill(h.status)}${modeTag(live, h.undo_of)}${parts.join(' · ')}</div>`;
     }
+
+    /** Last runs lines stay on one line (ellipsis at desktop width); the tooltip holds the full text and the run id. */
+    function lineTips() {
+      document.querySelectorAll('#stageRows .hline').forEach((el) => {
+        const text = el.textContent.replace(/\s+/g, ' ').trim();
+        const run = el.dataset.run ? `run ${el.dataset.run}` : '';
+        el.title = run && !text.includes(run) ? `${text} · ${run}` : text;
+      });
+    }
+
+    /** Stage 220, Needs first 120 and buttons 200 px are fixed; the rest goes to "What it does" first (room for its
+     *  longest item on one line on a wide screen), then Last runs, never less than half each. Below 900 px rows stack. */
+    const FIXED_COLS = 220 + 120 + 200;
+    function sizeStageColumns() {
+      const table = document.querySelector('[data-testid="stages-table"]');
+      if (!table || window.innerWidth < 900) return;
+      const rest = table.clientWidth - FIXED_COLS;
+      const does = Math.max(Math.min(rest - 400, Math.round(rest * 0.57)), Math.round(rest * 0.5));
+      $('colDoes').style.width = `${does}px`;
+      $('colRuns').style.width = `${rest - does}px`;
+    }
+    window.addEventListener('resize', sizeStageColumns);
 
     /** Checked build, then the last successful live, then a later live attempt (REFUSED when it changed nothing). */
     function stageHistoryHtml(info, id) {
@@ -455,8 +483,10 @@
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
           <td data-label="What it does">${doesHtml(s.id)}</td><td data-label="Needs first">${needsHtml(s)}</td>
           <td data-label="Last runs">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
-          <td><div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div></td></tr>`;
+          <td class="btn-cell"><div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div></td></tr>`;
       }).join('');
+      lineTips();
+      sizeStageColumns();
       document.querySelectorAll('[data-stage-run]').forEach((b) => b.addEventListener('click', () => startStages([b.dataset.stageRun], 'dry')));
       document.querySelectorAll('[data-stage-live]').forEach((b) => b.addEventListener('click', () => openLiveConfirm(b.dataset.stageLive)));
       document.querySelectorAll('[data-stage-undo]').forEach((b) => b.addEventListener('click', () => openUndoConfirm(b.dataset.stageUndo)));

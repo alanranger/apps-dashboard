@@ -134,13 +134,43 @@ test('Needs first: stage-letter chips; A "nothing"; H = A + one of D E F G', asy
   await expect(page.locator('tr[data-stage="D"] [data-testid="needs-chip"]')).toHaveText(['A', 'C']);
 });
 
-for (const [name, width] of [['desktop', 1400], ['phone', 390]]) {
-  test(`screenshot: Stages table (${name})`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 1200 });
-    await openPage(page);
-    await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, `stages-table-${name}.png`) });
-  });
-}
+/** Lines each "What it does" item takes (height / line-height), keyed "A2" etc. */
+const itemLines = (page) => page.locator('ol.does li').evaluateAll((lis) => lis.map((li) => {
+  const lh = parseFloat(getComputedStyle(li).lineHeight);
+  const n = [...li.parentElement.children].indexOf(li) + 1;
+  return [`${li.parentElement.dataset.testid.slice(-1)}${n}`, li.getBoundingClientRect().height / lh];
+}));
+
+test('column widths at 1920: every "What it does" item on one line (A2/A3 may take two); Last runs → buttons gap ≤ 40 px', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await openPage(page);
+  for (const [id, lines] of await itemLines(page)) expect(lines, id).toBeLessThanOrEqual(['A2', 'A3'].includes(id) ? 2.6 : 1.6);
+  const gaps = await page.locator('#stageRows tr').evaluateAll((rows) => rows.map((tr) => {
+    const runs = tr.querySelector('td[data-label="Last runs"]');
+    const right = runs.getBoundingClientRect().right - parseFloat(getComputedStyle(runs).paddingRight);
+    return Math.round(tr.querySelector('.btns').getBoundingClientRect().left - right);
+  }));
+  for (const g of gaps) expect(g).toBeLessThanOrEqual(40);
+  const lines = await page.locator('#stageRows .hline').evaluateAll((els) => els.map((e) => [getComputedStyle(e).whiteSpace, e.title]));
+  for (const [ws, title] of lines) { expect(ws).toBe('nowrap'); expect(title.length).toBeGreaterThan(10); }
+  await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, 'stages-table-1920.png') });
+});
+
+test('column widths at 1440: no "What it does" item takes more than two lines', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openPage(page);
+  for (const [id, lines] of await itemLines(page)) expect(lines, id).toBeLessThanOrEqual(2.6);
+  await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, 'stages-table-1440.png') });
+});
+
+test('phone 390: no horizontal scroll; each stage renders as a card', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPage(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const displays = await page.locator('#stageRows tr').evaluateAll((rows) => rows.map((tr) => getComputedStyle(tr).display));
+  expect(new Set(displays)).toEqual(new Set(['block']));
+  await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, 'stages-table-390.png') });
+});
 
 for (const [name, viewport] of [['desktop', { width: 1400, height: 1500 }], ['phone', { width: 390, height: 844 }]]) {
   test(`screenshots: whole page next to the mock-up (${name})`, async ({ page }) => {
