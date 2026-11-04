@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { coverage, coverageLine, TABS } from './coverage.mjs';
+import { checkImports, missingMessage } from './import-check.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
 import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetails, publishSharedFile } from './publish-live.mjs';
@@ -66,6 +67,19 @@ export function sh(cmd, args, { cwd, env = {}, timeoutMs = 15 * 60 * 1000 } = {}
 }
 
 const tail = (s, n = 400) => String(s || '').slice(-n);
+
+/**
+ * A failed script in one plain line — "Blog posts generator couldn't start: missing code library playwright" — and
+ * its full output for the step's Details (never cut off mid-name).
+ */
+export function scriptFailure(name, run) {
+  const out = `${run.stderr || ''}\n${run.stdout || ''}`;
+  const lib = out.match(/Cannot find (?:package|module) '([^']+)'/);
+  const first = out.split(/\r?\n/).map((l) => l.trim()).find((l) => /^(\w*Error\b|Error:|Traceback|error:)/.test(l));
+  const plain = lib ? `${name} couldn't start: missing code library ${lib[1]}` : `${name} failed: ${(first || tail(out, 240).trim()).slice(0, 300)}`;
+  const todo = lib ? 'reinstall it (npm install in the project that needs it), then press Resume' : 'resume the run; tell Claude if it fails again';
+  return { plain, todo, details: out.split(/\r?\n/).filter((l) => l.trim()).slice(-80) };
+}
 const ensureDry = (ctx) => { if (ctx.mode !== 'dry') throw new Error('LIVE mode is not enabled for this step yet'); };
 
 // ---------- readable results: info (expected, nothing to do) / check (look at it, with what to do) / problem ----------
@@ -134,11 +148,20 @@ async function preflight(ctx) {
   if (gate.code !== 0) failures.push(problem(`FAQ fixture gate failed: ${tail(gate.stdout + gate.stderr, 200)}`, 'fix the FAQ extractor before running'));
   const missing = missingSecrets();
   if (missing.length) failures.push(problem(`Missing keys on the PC: ${missing.join(', ')}`, 'add them to the .env.local files'));
+  counts.code_libraries = codeLibraries(failures, checks);
   counts.site_status = await siteChecks(ctx, softOrHard, failures);
   const bad = failures.length || checks.length;
   return { counts, notes: [...failures, ...checks],
-    plain: bad ? 'Pre-flight found something to look at (below).' : 'Pre-flight passed: not Monday, no ① running, auto-sync paused, FAQ gate passed, keys present, site up.',
-    details: [`site status ${counts.site_status}`, `FAQ fixture gate ${counts.faq_fixture_gate}`, `auto-sync ${counts.auto_sync}`] };
+    plain: bad ? 'Pre-flight found something to look at (below).' : 'Pre-flight passed: not Monday, no ① running, auto-sync paused, FAQ gate passed, keys present, code libraries present, site up.',
+    details: [`site status ${counts.site_status}`, `FAQ fixture gate ${counts.faq_fixture_gate}`, `auto-sync ${counts.auto_sync}`, `code libraries ${counts.code_libraries}`] };
+}
+
+/** Every code library the generators and scripts import is installed (else the run stops here) and listed in its package.json. */
+function codeLibraries(failures, checks) {
+  const r = checkImports();
+  r.missing.forEach((m) => failures.push(problem(missingMessage(m), `reinstall it: npm install in ${m.file.split(/[\\/]/)[0]}, then start the run again`)));
+  r.unlisted.forEach((u) => checks.push(check(`Code library ${u.pkg} is installed in ${u.project} but not listed in its package.json, so a future install would remove it`, `add it to that package.json (npm install --save ${u.pkg} in ${u.project})`)));
+  return r.missing.length ? `missing: ${r.missing.map((m) => m.pkg).join(', ')}` : r.unlisted.length ? `unlisted: ${r.unlisted.map((u) => u.pkg).join(', ')}` : 'all present and listed';
 }
 
 /** Cool-down since the last 429 seen by this PC, then the home page status (with 429 retries). */
@@ -532,6 +555,7 @@ function productNotes(ctx, counts, d07, failedGuards) {
 }
 
 // ---------- 6 / 7 / 9. Schema Tools app generators via scripts/app-cli.mjs (same functions, output into the sandbox) ----------
+const APP_GENERATOR_NAME = { 'event-posts': 'Event posts generator', 'event-index': 'Event index generator', 'blog-index': 'Blog index generator', landings: 'Landing pages generator' };
 function appCliArgs(command, sb, out) {
   const args = ['scripts/app-cli.mjs', command, '--out', out, '--csv', path.join(sb.shared, 'csv')];
   const processed = path.join(sb.shared, 'csv processed');
@@ -595,7 +619,7 @@ const APP_LABEL = { 'event-posts': ['event pages and hub FAQs', 'event'], 'blog-
 async function runAppCli(command, sb) {
   const out = path.join(sb.root, 'app-cli', command);
   const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
-  if (run.code !== 0) return { out, error: `${command} generator failed: ${tail(run.stderr || run.stdout)}` };
+  if (run.code !== 0) return { out, failure: scriptFailure(APP_GENERATOR_NAME[command] || `${command} generator`, run) };
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
   const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
   fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
@@ -605,8 +629,8 @@ async function runAppCli(command, sb) {
 const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
-  const { out, diff, report, error } = await runAppCli(command, sb);
-  if (error) return { notes: [problem(error, 'resume the run')] };
+  const { out, diff, report, failure } = await runAppCli(command, sb);
+  if (failure) return { notes: [problem(failure.plain, failure.todo)], details: failure.details };
   const reportOnly = command === 'landings' && LANDINGS_REPORT_ONLY;
   if (command === 'landings') return landingsReport(ctx, out, report, diff, reportOnly);
   if (command === 'event-index') return eventIndexReport(ctx, out, report, diff);
@@ -665,7 +689,7 @@ async function blogPosts(ctx) {
   const listFile = path.join(sb.root, 'blog-posts-to-regenerate.csv');
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
   const regen = list.length ? await regenerateBlogPosts(sb, listFile) : { error: null, posts: [], changed: [] };
-  if (regen.error) return { notes: [problem(regen.error, 'resume the run')] };
+  if (regen.failure) return { notes: [problem(regen.failure.plain, regen.failure.todo)], details: regen.failure.details };
   const gone = deletedPostsPlan(sb, feed);
   fs.writeFileSync(path.join(sb.root, 'blog-deleted-posts.json'), JSON.stringify(gone));
   const slugs = list.map((u) => u.split('/').pop());
@@ -703,7 +727,7 @@ export function publishDateMismatches(outDir, feed, slugs) {
 async function regenerateBlogPosts(sb, listFile) {
   const out = path.join(sb.root, 'app-cli', 'blog-posts');
   const run = await sh('node', ['scripts/app-cli.mjs', 'blog-posts', '--out', out, '--list', listFile], { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
-  if (run.code !== 0) return { error: `Blog posts generator failed: ${tail(run.stderr || run.stdout)}` };
+  if (run.code !== 0) return { failure: scriptFailure('Blog posts generator', run) };
   const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
   const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));

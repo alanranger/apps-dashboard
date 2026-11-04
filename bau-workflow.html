@@ -655,9 +655,16 @@
         <span data-testid="run-scope">${esc(scope)}</span><span data-testid="run-mode">Mode: ${modeBadge(run)}</span><span data-testid="run-audit">Full audit: ${run.include_audit === false ? 'not selected' : 'included'}</span><span>Requested: ${esc(when(run.requested_at))}</span>${now}`;
     }
 
+    /** A problem in one plain line (its first line, never cut off), the full output behind Details. */
+    const firstLine = (s) => String(s || '').split(/\r?\n/)[0].trim();
+    function problemItem(title, error, details = []) {
+      const full = [String(error || ''), ...details].join('\n').trim();
+      const more = full.includes('\n') ? `<details class="step-details" data-testid="problem-details"><summary data-tip="Shows the full error output.">Details</summary><pre style="white-space:pre-wrap;font-size:12px;margin-top:6px">${esc(full)}</pre></details>` : '';
+      return `<li data-testid="problem-item">${title ? `<strong>${esc(title)}</strong>: ` : ''}<span data-testid="problem-line">${esc(firstLine(error))}</span>${more}</li>`;
+    }
     function renderErrors(run, steps) {
-      const items = steps.filter((s) => s.status === 'fail').map((s) => `<li><strong>${esc(s.name)}</strong>: ${esc(s.error)}</li>`);
-      if (!items.length && run?.error) items.push(`<li>${esc(run.error)}</li>`);
+      const items = steps.filter((s) => s.status === 'fail').map((s) => problemItem(s.name, s.error, s.details || []));
+      if (!items.length && run?.error) items.push(problemItem('', run.error));
       $('errorPanel').style.display = items.length ? 'block' : 'none';
       $('errorList').innerHTML = items.join('');
     }
@@ -868,7 +875,7 @@
       const bad = steps.filter((s) => s.status === 'fail');
       const todo = alreadyLiveAdvice(run) || bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
       const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNextStep(run) : 'Fix the problem, then press Resume (or click 1. Build & check on the stage again first).');
-      return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
+      return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(firstLine(run.error || bad[0]?.error) || 'see Problems below')}</div>
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
     }
 
