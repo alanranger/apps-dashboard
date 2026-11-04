@@ -750,8 +750,33 @@ export const PUBLISH = {
     sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event' },
   publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
     after: blogManifestAfterPublish },
-  publish_landings: { stage: 'G', set: (sb) => ({ publish: compareOf(sb, 'landings'), remove: [] }), sources: (sb) => [appOut(sb, 'landings')], sample: 'landings-manifest.json', what: 'landing page' }
+  publish_landings: { stage: 'G', set: (sb) => ({ publish: [...compareOf(sb, 'landings'), ...compareOf(sb, 'blocks-css')], remove: [] }),
+    sources: (sb) => [appOut(sb, 'landings'), appOut(sb, 'blocks-css')], sample: 'landings-manifest.json', what: 'landing page' }
 };
+
+// ---------- G: the hosted code-block stylesheet (Alan 4 Nov) ----------
+const BLOCKS_FILES = ['styles/blocks.css', 'styles/blocks-sources.json', 'styles/blocks-manifest.json'];
+const sameText = (a, b) => fs.existsSync(a) && fs.existsSync(b) && fs.readFileSync(a, 'utf8') === fs.readFileSync(b, 'utf8');
+
+/** Rebuilds styles/blocks.css from every page's code blocks into the sandbox; the files that differ are published with G. */
+async function blocksCss(ctx) {
+  ensureDry(ctx);
+  const sb = buildSandbox(ctx);
+  const out = appOut(sb, 'blocks-css');
+  const { buildBlocksCss } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/blocks-css/build-blocks-css.mjs`).href);
+  const r = await buildBlocksCss({ out, previous: REPO, envFile: `${WEB}/apps-dashboard/.env.local`, onProgress: ctx.progress });
+  const differing = BLOCKS_FILES.filter((f) => fs.existsSync(path.join(REPO, f)) && !sameText(path.join(out, f), path.join(REPO, f)));
+  const newFiles = BLOCKS_FILES.filter((f) => !fs.existsSync(path.join(REPO, f)));
+  fs.writeFileSync(path.join(sb.root, 'app-cli', 'blocks-css', 'compare.json'), JSON.stringify({ differing, new_files: newFiles }, null, 1));
+  const changed = [...differing, ...newFiles];
+  const notes = [info(`${plural(r.blocks_in_file, 'code block')} on ${plural(r.pages_in_file, 'page')} in the stylesheet (${Math.round(r.gzip_bytes / 1024)} KB gzipped); ${changed.length ? `${verb(ctx, 'it would be published', 'published')} with this stage` : 'unchanged since the last publish'}.`)];
+  const pagesOf = (list) => [...new Set(list.map((d) => d.key.split('|')[0].replace('https://www.alanranger.com', '')))].join(', ');
+  if (r.damaged_fixed.length) notes.push(info(`${plural(r.damaged_fixed.length, 'code block')} with rules blanked by Squarespace restored in the stylesheet: ${pagesOf(r.damaged_fixed)}.`));
+  if (r.unconfirmed.length) notes.push(check(`${plural(r.unconfirmed.length, 'damaged code block')} with no confirmed source (left as it is live): ${pagesOf(r.unconfirmed)}.`, 'ask Claude to confirm the block\'s CSS from its paste file, then re-run stage G'));
+  return { counts: { blocks_in_file: r.blocks_in_file, pages_in_file: r.pages_in_file, bytes: r.bytes, gzip_bytes: r.gzip_bytes, damaged_fixed: r.damaged_fixed.length, unconfirmed: r.unconfirmed.length, would_change: changed.length },
+    notes, plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} the code-block stylesheet: ${plural(r.blocks_in_file, 'block')}, ${changed.length ? `${changed.length} file(s) changed` : 'no change'}.`,
+    details: changed.map((f) => `changed: ${f}`), outputs: [`${out} (sandbox)`] };
+}
 
 /** F live: the dry run's blogs-manifest.json becomes the baseline for next month (previous copy kept for undo; auto-sync commits it). */
 function blogManifestAfterPublish(sb, ctx) {
@@ -963,7 +988,7 @@ export const HANDLERS = {
   product_schema: promoted(productSchema), publish_products: publishStep('publish_products'),
   event_posts: promoted(appCliStep('event-posts')), event_index: promoted(appCliStep('event-index')), publish_events: publishStep('publish_events'),
   blog_index: promoted(appCliStep('blog-index')), blog_posts: promoted(blogPosts), publish_blogs: publishStep('publish_blogs'),
-  landing_pages: promoted(appCliStep('landings')), publish_landings: publishStep('publish_landings'),
+  landing_pages: promoted(appCliStep('landings')), blocks_css: promoted(blocksCss), publish_landings: publishStep('publish_landings'),
   final_ingest: dbStage('H', finalIngest), export_09: sharedStage('export_09', export09),
   audit,
   summary

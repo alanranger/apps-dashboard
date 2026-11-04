@@ -11,7 +11,7 @@ const HUB_FAQS = new Set(['beginners-photography-lessons_faq.json', 'photographi
 const BLOG_SUFFIXES = ['_schema.json', '_blogposting.json', '_breadcrumb.json', '_image.json', '_howto.json', '_faq.json'];
 
 export const TABS = { product_schema: 'Product', event_index: 'Event Index', event_posts: 'Event Posts (+hub FAQs)',
-  blog_index: 'Blog Index', blog_posts: 'Blog Posts', landing_pages: 'Landing/Service' };
+  blog_index: 'Blog Index', blog_posts: 'Blog Posts', landing_pages: 'Landing/Service', blocks_css: 'Code-block stylesheet' };
 
 /** Ordered rules: first match names the producing step. */
 function rules(productFiles, blogSlugs) {
@@ -21,6 +21,7 @@ function rules(productFiles, blogSlugs) {
     ['event_index', (f) => f === 'lessons-schema.json' || f === 'workshops-schema.json'],
     ['blog_index', (f) => f === 'blog-schema.json'],
     ['landing_pages', (f) => f.endsWith('_landing_schema.json') || f === 'landings-manifest.json'],
+    ['blocks_css', (f) => /^styles\/blocks(-sources|-manifest)?\.(css|json)$/.test(f)],
     ['product_schema', (f) => f === 'products-manifest.json' || productFiles.has(f)],
     ['blog_posts', (f) => f === 'blogs-manifest.json' || blogSlugs.has(blogSlug(f))]
   ];

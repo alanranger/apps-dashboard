@@ -149,11 +149,12 @@ test('a hard fail stops the run; resume continues from the failed step only', as
   assert.equal(c.status, 'ok');
 });
 
-test('registry has the 18 steps in stage order (A–I, each schema stage with its own publish step) with complete metadata', () => {
+test('registry has the 19 steps in stage order (A–I, each schema stage with its own publish step) with complete metadata', () => {
   const steps = JSON.parse(fs.readFileSync(new URL('../../runner/steps.json', import.meta.url), 'utf8'));
   assert.deepEqual(steps.map((s) => s.id), ['preflight', 'build_csvs', 'ingest_preliminary', 'reviews', 'product_schema', 'publish_products', 'event_posts', 'event_index',
-    'publish_events', 'blog_index', 'blog_posts', 'publish_blogs', 'landing_pages', 'publish_landings', 'final_ingest', 'export_09', 'audit', 'summary']);
-  assert.deepEqual(steps.map((s) => s.stage || '-').join(''), 'AABCDDEEEFFFGGHHI-');
+    'publish_events', 'blog_index', 'blog_posts', 'publish_blogs', 'landing_pages', 'blocks_css', 'publish_landings', 'final_ingest', 'export_09', 'audit', 'summary']);
+  assert.deepEqual(steps.map((s) => s.stage || '-').join(''), 'AABCDDEEEFFFGGGHHI-');
+  assert.deepEqual(steps.map((s) => s.ord), steps.map((_, i) => i + 1));
   for (const s of steps) {
     for (const k of ['name', 'calls', 'where', 'inputs', 'outputs', 'prechecks', 'success', 'dry_run', 'duration', 'retry', 'on_fail']) assert.ok(k in s, `${s.id}.${k}`);
   }

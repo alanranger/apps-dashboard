@@ -20,7 +20,7 @@ const STAGES = [
       'alan-shared-resources/csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv', 'alan-shared-resources/csv processed/02 – products_cleaned.xlsx'] },
   { id: 'E', name: 'Events', steps: ['event_posts', 'event_index', 'publish_events'], needs: ['A', 'B'], seeds: ['app-cli/event-posts', 'app-cli/event-index'] },
   { id: 'F', name: 'Blogs', steps: ['blog_index', 'blog_posts', 'publish_blogs'], needs: ['A'], seeds: ['app-cli/blog-index', 'app-cli/blog-posts'] },
-  { id: 'G', name: 'Landing pages', steps: ['landing_pages', 'publish_landings'], needs: ['A'], seeds: ['app-cli/landings'] },
+  { id: 'G', name: 'Landing pages', steps: ['landing_pages', 'blocks_css', 'publish_landings'], needs: ['A'], seeds: ['app-cli/landings', 'app-cli/blocks-css'] },
   { id: 'H', name: 'Final ingest + keywords', steps: ['final_ingest', 'export_09'], needs: ['A'], needsAny: ['D', 'E', 'F', 'G'], seeds: [] },
   { id: 'I', name: 'Full audit ①', steps: ['audit'], needs: [], seeds: [] }
 ];
