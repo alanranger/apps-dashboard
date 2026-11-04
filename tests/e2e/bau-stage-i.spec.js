@@ -2,7 +2,7 @@
 // a simulated live I shows "Full audit ① started … runs in the background"; a simulated Run all finishes after I started ①.
 // Read-only: only the page's GET of the latest run is simulated; nothing is posted.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-stage-i.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';

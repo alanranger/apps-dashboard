@@ -48,7 +48,14 @@ function stageResult(stage, steps, ctx) {
   return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
     published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,
     repo: pub.repo_name || null, removals_unexplained: pub.removals_unexplained ?? null,
-    promoted_from: pub.promoted_from || ctx.promote?.run_id || null, ingest, ...undoRecord(mine, pub) };
+    promoted_from: pub.promoted_from || ctx.promote?.run_id || null, ingest, refetch_mode: refetchMode(mine, ctx), ...undoRecord(mine, pub) };
+}
+
+/** Live B: 'changed' when it re-read only the changed pages, 'full' when forced to re-read every page (null otherwise). */
+function refetchMode(mine, ctx) {
+  const plan = ctx.mode === 'live' ? mine.find((s) => s.counts?.refetch_plan)?.counts.refetch_plan : null;
+  if (!plan) return null;
+  return plan.force ? 'full' : 'changed';
 }
 
 /** A / C / H's 09 publish from their own step (counts.is_publish); D–G have a publish_* step; else any step that committed files. */

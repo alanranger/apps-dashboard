@@ -2,7 +2,7 @@
 // ETA shows, log grows) → finished, plus a stalled heartbeat (amber after 60 s, red after 3 min). Read-only: only the page's
 // GET of the latest run is replaced (route); nothing is posted and no stage runs.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-progress-modal.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';

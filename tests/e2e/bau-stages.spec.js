@@ -4,7 +4,7 @@
 // on simulated new pages (stage A): the saved choices are exactly those rows; 4) readability: expected changes are Info,
 // summary counts = per-level counts, Details collapsed, no horizontal scroll at 1920 / 390 px. Screenshots → EVIDENCE_DIR.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-stages.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect, nodeWrite } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import stages from '../../runner/stages.cjs';
@@ -115,7 +115,7 @@ test('08 buttons: each simulated new page has a suggested tag and Service / Land
   const data = await api(`?run=${runA.id}`);
   const items = (data.run.needs_alan || []).filter((n) => n.kind === 'new_08_page');
   expect(items.map((n) => n.url)).toEqual(SIMULATED);
-  await fetch(`${mcBaseUrl()}/api/update-all`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-mc-token': token }, body: JSON.stringify({ action: 'page_choice_clear_test' }) });
+  nodeWrite('POST /api/update-all page_choice_clear_test');
   const before = (await api('?page_choices=1')).choices;
   await openPage(page, `?run=${runA.id}`);
   const picks = { [SIMULATED[0]]: 'service', [SIMULATED[1]]: 'landing', [SIMULATED[2]]: 'exclude' };
@@ -133,7 +133,7 @@ test('08 buttons: each simulated new page has a suggested tag and Service / Land
   expect(added.map((r) => [r.url, r.choice]).sort()).toEqual(Object.entries(picks).sort());
   expect(after.filter((r) => !SIMULATED.includes(r.url))).toEqual(before.filter((r) => !SIMULATED.includes(r.url)));
   fs.writeFileSync(path.join(EVIDENCE, '08-choices-diff.json'), JSON.stringify({ added: added.map((r) => ({ url: r.url, choice: r.choice, suggested: r.suggested })), other_rows_unchanged: after.length - added.length }, null, 2));
-  const clear = await fetch(`${mcBaseUrl()}/api/update-all`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-mc-token': token }, body: JSON.stringify({ action: 'page_choice_clear_test' }) }).then((r) => r.json());
+  const clear = nodeWrite('POST /api/update-all page_choice_clear_test');
   expect(clear.removed).toBe(3);
 });
 

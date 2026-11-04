@@ -3,7 +3,7 @@
 // a refused re-promote says "This test run is already live …" instead of "run dry again, then Live".
 // Read-only: the real page; the newer test run and the refused run are simulated (route). Nothing is posted.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-already-live.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';

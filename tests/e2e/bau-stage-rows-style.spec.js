@@ -5,7 +5,7 @@
 // line gives its re-read count; the Live side of the Run all switch is disabled and a forced Live Run all is refused.
 // Read-only: real page and API; the forced Run all call is refused before anything is created.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… MOCKUP=… npx playwright test tests/e2e/bau-stage-rows-style.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect, refusedLiveRunAll } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -73,7 +73,8 @@ test('stage I: only "Start full audit ①…"; its ① line is in the Last runs 
   await expect(page.locator('[data-testid="stage-buttons-I"] button')).toHaveCount(1);
   await expect(page.getByTestId('stage-live-I')).toHaveText('Start full audit ①…');
   await expect(page.getByTestId('stage-run-I')).toHaveCount(0);
-  await expect(i.getByTestId('stage-typical')).toHaveText('Runs in the background (about 3 h) · also every Monday');
+  await expect(i.getByTestId('chip-background')).toHaveText('Background ~3 h');
+  await expect(i.getByTestId('stage-typical')).toContainText('also every Monday');
   const audit = i.locator('td[data-label="Last runs"] [data-testid="audit-status"]');
   await expect(audit).toContainText(/① (latest|running)/);
   await expect(audit.getByTestId('audit-open')).toHaveText('open audit');
@@ -91,11 +92,55 @@ test('Run panel: Check / Live switch (blue underline, Live disabled); a forced L
   expect(on[1]).toContain('rgb(110, 168, 254)');
   expect(on[2]).not.toBe('rgb(240, 165, 0)');
   await expect(page.getByTestId('run-all-live-note')).toContainText('Run all builds and checks every stage (nothing changes live)');
-  const r = await mcApi('/api/update-all', { token: session.token, method: 'POST', body: { action: 'start', mode: 'live' } }).catch((e) => e);
+  const r = await refusedLiveRunAll(session.token);
   expect(r.status).toBe(400);
   expect(r.message).toContain("Live Run all isn't available");
   await page.locator('#controlPanel').screenshot({ path: path.join(EVIDENCE, 'run-panel.png') });
 });
+
+test('timing chips: no "Typical:" text; A–H one Check + one Live chip on one line; I one Background chip; B "~10–17 min est."', async ({ page }) => {
+  await openPage(page);
+  await expect(page.locator('body')).not.toContainText('Typical:');
+  for (const id of 'ABCDEFGH') {
+    const row = page.locator(`tr[data-stage="${id}"]`);
+    await expect(row.getByTestId('chip-check')).toHaveCount(1);
+    await expect(row.getByTestId('chip-live')).toHaveCount(1);
+    const tops = await row.locator('[data-testid^="chip-"]').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+    expect(new Set(tops).size, `stage ${id} chips on one line: ${tops}`).toBe(1);
+  }
+  const i = page.locator('tr[data-stage="I"]');
+  await expect(i.locator('[data-testid^="chip-"]')).toHaveCount(1);
+  await expect(page.locator('tr[data-stage="B"]').getByTestId('chip-live')).toHaveText('Live ~10–17 min est.');
+});
+
+test('What it does: header, A first item exact, no digits except 05 / 07 / 09 and "7 CSVs"; stages sentence', async ({ page }) => {
+  await openPage(page);
+  await expect(page.locator('[data-testid="stages-table"] th').nth(1)).toHaveText('What it does');
+  await expect(page.getByTestId('what-it-does-A').locator('li').first()).toHaveText('Safety checks: not a Monday, nothing else running, site up');
+  const items = await page.locator('ol.does li').allTextContents();
+  expect(items.length).toBe(27);
+  for (const t of items) expect(t.replace(/\b0[579]\b/g, '').replace('7 CSVs', ''), t).not.toMatch(/\d/);
+  await expect(page.locator('#stagesPanel > p.muted')).toContainText('Every publishing stage refuses to publish anything removed without an explanation.');
+});
+
+test('Needs first: stage-letter chips; A "nothing"; H = A + one of D E F G', async ({ page }) => {
+  await openPage(page);
+  const a = page.locator('tr[data-stage="A"] [data-testid="needs-first"]');
+  await expect(a).toHaveText('nothing');
+  await expect(a).toHaveClass(/muted/);
+  const h = page.locator('tr[data-stage="H"] [data-testid="needs-first"]');
+  await expect(h.getByTestId('needs-chip')).toHaveText(['A', 'D', 'E', 'F', 'G']);
+  await expect(h).toContainText('one of');
+  await expect(page.locator('tr[data-stage="D"] [data-testid="needs-chip"]')).toHaveText(['A', 'C']);
+});
+
+for (const [name, width] of [['desktop', 1400], ['phone', 390]]) {
+  test(`screenshot: Stages table (${name})`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1200 });
+    await openPage(page);
+    await page.locator('#stagesPanel').screenshot({ path: path.join(EVIDENCE, `stages-table-${name}.png`) });
+  });
+}
 
 for (const [name, viewport] of [['desktop', { width: 1400, height: 1500 }], ['phone', { width: 390, height: 844 }]]) {
   test(`screenshots: whole page next to the mock-up (${name})`, async ({ page }) => {

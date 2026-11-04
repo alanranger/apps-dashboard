@@ -26,12 +26,15 @@ async function stepEstimates(run) {
   return out;
 }
 
+/** Live B counts only runs that re-read the changed pages (not the first full re-read); with none the page shows its estimate. */
+const timedRun = (r) => r.stages[0] !== 'B' || r.mode !== 'live' || r.stage_results?.B?.refetch_mode === 'changed';
+
 /** stage → { dry, live } typical run time in ms: median of the last 5 finished single-stage runs (undo runs excluded). */
 function stageTypical(runs) {
   const by = {};
   for (const r of runs) {
     const ok = ['succeeded', 'warned'].includes(r.status) && r.stages?.length === 1 && !r.options?.undo_of && r.started_at && r.finished_at;
-    if (!ok) continue;
+    if (!ok || !timedRun(r)) continue;
     const key = `${r.stages[0]}|${r.mode}`;
     (by[key] ||= []).push(Date.parse(r.finished_at) - Date.parse(r.started_at));
   }

@@ -1,11 +1,12 @@
 // BAU Monthly Live on the page (Claude/Alan 3 Nov, step 6), as the TEST account (agent). Nothing is ever published:
-// the agent account signs in as role alan, so the page's POSTs are blocked here and only Cancel is ever clicked.
+// the agent account signs in as role alan, so the shared guard (tests/helpers/bau-guard.mjs) blocks every write and
+// only Cancel is ever clicked.
 //  1) Live is only on the per-stage buttons; Run all stays dry (its Live option is disabled; the API refuses Run all live).
 //  2) The confirmation lists the right things: the dry run it promotes, files + pages (G), backups + tables (B); Cancel does nothing.
 //  3) Undo appears only after a live run: shown exactly on the stages with a live publish in the history; can't act as agent.
 // Since 3 Nov every stage A–H has run live, so 2) simulates a newer check for G (route) to reopen its Publish live….
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-live-page.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect, refusedLiveRunAll } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin, mcApi } from '../helpers/mc.mjs';
@@ -20,9 +21,7 @@ test.beforeAll(async () => { session = await mcLogin('agent'); fs.mkdirSync(EVID
 const latestRunId = async () => (await mcApi('/api/update-all?run=latest', { token: session.token })).run?.id || null;
 const shot = (page, name) => page.screenshot({ path: path.join(EVIDENCE, `${name}.png`), fullPage: true });
 
-/** The agent account signs in as role alan (it could really publish): the page may never POST in this spec. */
 async function openPage(page, query = '') {
-  await page.route((u) => u.pathname === '/api/update-all', (route) => (route.request().method() === 'POST' ? route.abort() : route.fallback()));
   await page.addInitScript((s) => { sessionStorage.setItem('mc_session_token', s.token); sessionStorage.setItem('mc_session_role', s.role); }, session);
   await page.goto(`${mcBaseUrl()}/bau-workflow.html${query}`);
   await expect(page.getByTestId('stage-run-A')).toBeVisible({ timeout: 30000 });
@@ -34,7 +33,7 @@ test('1. Live is only on the per-stage buttons; Run all stays dry', async ({ pag
   await expect(page.getByTestId('run-all-live-note')).toBeVisible();
   for (const s of [...FILE_STAGES, 'B']) await expect(page.getByTestId(`stage-live-${s}`)).toBeVisible();
   await expect(page.getByTestId('stage-live-I')).toHaveText('Start full audit ①…');
-  const runAllLive = await mcApi('/api/update-all', { token: session.token, method: 'POST', body: { action: 'start', mode: 'live' } }).catch((e) => e);
+  const runAllLive = await refusedLiveRunAll(session.token);
   expect([400, 403]).toContain(runAllLive.status);
   await shot(page, '1-live-only-on-stage-buttons');
 });

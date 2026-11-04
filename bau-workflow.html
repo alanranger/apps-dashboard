@@ -63,6 +63,12 @@
     button.bb-quiet { background: transparent; color: #c98a8a; border: 1px solid #3a2f33; }
     button.bb-disabled, button.bb:disabled { background: #1b2030; color: #6b7385; border: 1px solid #2a3040; cursor: not-allowed; opacity: 1; }
     .until { color: #8b93a3; font-size: 11.5px; text-align: center; width: 190px; }
+    .chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 6px; white-space: nowrap; align-items: center; }
+    .chips .md { margin-right: 0; min-width: 0; }
+    .chip-note { font-size: 11.5px; color: var(--text-muted); }
+    ol.does { margin: 0; padding-left: 18px; color: var(--text-muted); }
+    ol.does li { margin: 0 0 3px; }
+    .needs-chip { margin-right: 3px; font-size: 12px; }
     .stage-tag-mock { display: inline-block; background: #3a2c08; color: #f0a500; border-radius: 4px; padding: 0 6px; font-weight: 700; margin-right: 6px; }
     .run-status { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; background: rgba(0,0,0,0.25); }
     .run-status[hidden] { display: none; }
@@ -244,10 +250,10 @@
 
     <div class="panel" id="stagesPanel" style="display:none">
       <h2>Stages</h2>
-      <p class="muted" style="margin:-4px 0 10px;font-size:12px">Each stage runs pre-flight first, then its own steps, and publishes only its own files. If its inputs are missing, older than 7 days or out of date, the page says what to run first.</p>
+      <p class="muted" style="margin:-4px 0 10px;font-size:12px">Each stage runs pre-flight first, then its own steps, and publishes only its own files. If its inputs are missing, older than 7 days or out of date, the page says what to run first. Every publishing stage refuses to publish anything removed without an explanation.</p>
       <table class="stack" data-testid="stages-table">
-        <colgroup><col style="width:210px"><col style="width:230px"><col style="width:110px"><col><col style="width:210px"></colgroup>
-        <thead><tr><th>Stage</th><th>Steps</th><th>Needs first</th><th>Last runs</th><th></th></tr></thead>
+        <colgroup><col style="width:250px"><col style="width:280px"><col style="width:120px"><col><col style="width:210px"></colgroup>
+        <thead><tr><th>Stage</th><th>What it does</th><th>Needs first</th><th>Last runs</th><th></th></tr></thead>
         <tbody id="stageRows"></tbody>
       </table>
     </div>
@@ -386,10 +392,34 @@
     }
 
     /** "Typical: check about 2 min · live about 7 s" from the stage's last finished single-stage runs. */
+    /** Timing chips under the stage name: "Check 2 min" (grey) + "Live 7 s" (blue); I has "Background ~3 h". */
+    const shortTime = (ms) => (ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`);
     function typicalHtml(t, id) {
-      const part = (label, ms) => `${label} ${ms ? `about ${ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : `${Math.round(ms / 60000)} min`}` : 'not run yet'}`;
-      const text = id === 'I' ? 'Runs in the background (about 3 h) · also every Monday' : `Typical: ${part('check', t?.dry)} · ${part('live', t?.live)}`;
-      return `<div class="typ muted" style="font-size:12px;margin-top:4px" data-testid="stage-typical">${text}</div>`;
+      if (id === 'I') return '<div class="chips" data-testid="stage-typical"><span class="md md-live" data-testid="chip-background">Background ~3 h</span><span class="chip-note">also every Monday</span></div>';
+      const live = t?.live ? shortTime(t.live) : (id === 'B' ? '~10–17 min est.' : 'not run yet');
+      return `<div class="chips" data-testid="stage-typical"><span class="md md-test" data-testid="chip-check">Check ${t?.dry ? shortTime(t.dry) : 'not run yet'}</span><span class="md md-live" data-testid="chip-live">Live ${live}</span></div>`;
+    }
+
+    /** What each stage does, in Alan's words (no counts: the live counts are in the Last runs lines). */
+    const WHAT_IT_DOES = {
+      A: ['Safety checks: not a Monday, nothing else running, site up', 'Rebuilds all 7 CSVs from Squarespace (blogs, products, lessons, workshops, services, landing pages)', "Publishes only the CSVs that changed, and holds any new landing pages for Alan's decision"],
+      B: ['Backs up the chat database tables first', 'Imports the CSVs into the chat database', 'Re-reads only the pages that changed', 'Links each event date to its product, and updates the 05 file'],
+      C: ['Fetches Google reviews and merges them with the saved Trustpilot reviews', 'Applies the review decisions made on this page', "Holds any new reviews it can't match for a decision"],
+      D: ["Builds each product's schema: prices, dates, titles and review totals", "Updates the chat assistant's product file (07)", 'Publishes only the product files that changed'],
+      E: ["Builds each event date's schema and the hub page FAQs", 'Rebuilds the lessons and workshops lists', 'Publishes only the event files that changed'],
+      F: ['Rebuilds the blog index', 'Builds schema only for posts that changed on the site', 'Publishes them'],
+      G: ['Rebuilds schema for every landing and service page from what is live on the site', 'Publishes the files that changed'],
+      H: ['Backs up the chat database tables first', 'Re-imports the records, including the new product file, so the chat database matches the new schema', 'Updates the 09 target-keywords file'],
+      I: ['Renders every page and checks it for faults', 'Checks for broken links', 'Updates the site score'],
+    };
+    const doesHtml = (id) => `<ol class="does" data-testid="what-it-does-${id}">${(WHAT_IT_DOES[id] || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ol>`;
+
+    /** Needs first as stage-letter chips: "A", "A C", "A one of D E F G"; none → "nothing". */
+    function needsHtml(s) {
+      const chip = (x) => `<span class="stage-tag-mock needs-chip" data-testid="needs-chip">${esc(x)}</span>`;
+      const parts = (s.needs || []).map(chip);
+      if (s.needsAny) parts.push(`one of ${s.needsAny.map(chip).join('')}`);
+      return parts.length ? `<span data-testid="needs-first">${parts.join(' ')}</span>` : '<span class="muted" data-testid="needs-first">nothing</span>';
     }
 
     /** Stage I: live I only starts ①; its own latest run (fault_monitor_runs): running / stalled / done / failed. */
@@ -421,10 +451,9 @@
       stageInfo = info;
       const active = ['requested', 'running'].includes(run?.status);
       $('stageRows').innerHTML = info.defs.map((s) => {
-        const needs = [...(s.needs || []), ...(s.needsAny ? [`one of ${s.needsAny.join('/')}`] : [])].join(', ') || 'none';
         const hist = s.id === 'I' ? auditHistoryHtml(info) : stageHistoryHtml(info, s.id);
         return `<tr data-stage="${s.id}"><td data-label="Stage"><span class="stage-tag-mock">${s.id}</span><strong style="color:#fff">${esc(s.name)}</strong>${typicalHtml(info.typical?.[s.id], s.id)}</td>
-          <td data-label="Steps" class="muted">${esc(s.steps.join(', '))}</td><td data-label="Needs first">${esc(needs)}</td>
+          <td data-label="What it does">${doesHtml(s.id)}</td><td data-label="Needs first">${needsHtml(s)}</td>
           <td data-label="Last runs">${window.BauProgress?.rowHtml(s.id) ? `<div>${window.BauProgress.rowHtml(s.id)}</div>` : ''}${hist || '<span class="muted">never run</span>'}</td>
           <td><div class="btns" data-testid="stage-buttons-${s.id}">${stageButtons(s.id, active)}</div></td></tr>`;
       }).join('');

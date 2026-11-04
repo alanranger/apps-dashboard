@@ -3,7 +3,7 @@
 // saved rows are exactly those 4 ("these rows changed and no others"), then removes the test rows. The real held
 // review is shown but never clicked (Alan decides it).
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-held-reviews.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect, nodeWrite } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';
@@ -15,7 +15,7 @@ test.describe.configure({ timeout: 60 * 60 * 1000 });
 
 let token;
 const api = async (q) => (await fetch(`${mcBaseUrl()}/api/update-all${q}`, { headers: { 'x-mc-token': token } })).json();
-const post = async (body) => (await fetch(`${mcBaseUrl()}/api/update-all`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-mc-token': token }, body: JSON.stringify(body) })).json();
+const post = async (body) => nodeWrite(`POST /api/update-all ${body.action}`);
 
 test('held reviews: first name, date, stars, text, why held, suggestion; each button saves exactly its row', async ({ page }) => {
   fs.mkdirSync(EVIDENCE, { recursive: true });

@@ -2,7 +2,7 @@
 // and assert the step states land in the database (via the API) and on the page. Then force a failure and
 // prove Resume continues from the failed step.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app npx playwright test tests/e2e/update-all.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import { spawn } from 'node:child_process';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';
 

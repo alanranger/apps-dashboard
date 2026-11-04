@@ -2,7 +2,7 @@
 // AlanUpdateAllRunner (--once every 5 minutes) must pick the run up. Waits for the run to finish, then checks the
 // statuses, the Needs Alan panel and the summary, and saves a screenshot + the run JSON as evidence.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/update-all-final.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';

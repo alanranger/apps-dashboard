@@ -2,7 +2,7 @@
 // "Run all mode" beside Run all, and the stage history row with files + commit. Read-only: only the page's GET of
 // the latest run is replaced by a simulated run (route), nothing is posted and no stage runs.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-run-status.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin, mcApi } from '../helpers/mc.mjs';

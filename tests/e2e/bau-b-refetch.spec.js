@@ -1,7 +1,7 @@
 // BAU B "re-read only changed pages" (Alan 3 Nov): the Publish live confirmation shows the pages B re-reads in full
 // (from its test run), their count and the "Force full re-read" option. Read-only: live_plan=B is simulated; Cancel only.
 // Run: MC_AGENT_PASSWORD=… MC_BASE_URL=https://apps-dashboard-lilac.vercel.app EVIDENCE_DIR=… npx playwright test tests/e2e/bau-b-refetch.spec.js
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../helpers/bau-guard.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { mcBaseUrl, mcLogin } from '../helpers/mc.mjs';

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { progressReporter, loggingStore } from '../../runner/progress.mjs';
 
 const fakeStore = () => {
@@ -33,4 +34,13 @@ test('progress: sub-progress writes are throttled, log lines are not; a failed w
   assert.equal(store.patches.length, 2, 'only the two log lines were written');
   const broken = progressReporter({ updateRun: async () => { throw new Error('network'); } }, 'run-2', { minGapMs: 0 });
   await assert.doesNotReject(broken.line('still fine'));
+});
+
+test("typical times: live B counts only runs that re-read the changed pages (not the first full re-read)", () => {
+  const { stageTypical } = createRequire(import.meta.url)('../../api/_bau-progress.js');
+  const run = (stage, mode, mins, mode2) => ({ status: 'succeeded', stages: [stage], mode, options: {}, started_at: '2026-11-03T10:00:00Z',
+    finished_at: new Date(Date.parse('2026-11-03T10:00:00Z') + mins * 60000).toISOString(), stage_results: { [stage]: { refetch_mode: mode2 ?? null } } });
+  assert.equal(stageTypical([run('B', 'live', 71), run('B', 'dry', 1)]).B.live, undefined, 'the 71 min full re-read is not counted');
+  assert.equal(stageTypical([run('B', 'live', 71, 'full'), run('B', 'live', 12, 'changed')]).B.live, 12 * 60000);
+  assert.equal(stageTypical([run('A', 'live', 2)]).A.live, 2 * 60000, 'other stages unchanged');
 });
