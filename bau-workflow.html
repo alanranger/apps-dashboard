@@ -115,6 +115,7 @@
     .prereq { margin-top: 10px; color: var(--warn); display: none; gap: 10px; align-items: center; flex-wrap: wrap; }
     .stage-actions { display: flex; flex-wrap: wrap; gap: 6px; }
     button.live { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+    button.live[data-already-live] { color: var(--text-muted); border-color: var(--border); opacity: 0.8; }
     button.undo { background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.6); }
     .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 12px; z-index: 50; overflow-y: auto; }
     .modal-bg[hidden] { display: none; }
@@ -345,7 +346,22 @@
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
       const live = `<button class="small live" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>${id === 'I' ? 'Run ① live…' : 'Publish live…'}</button>`;
-      return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${live}${undoButton(id, off)}`;
+      return `<button class="small secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>Run this stage</button>${alreadyLiveButton(id) || live}${undoButton(id, off)}`;
+    }
+
+    /** The stage's newest ok test run was already published by its latest successful live run: nothing new to promote. */
+    function alreadyLive(id) {
+      const dry = stageInfo?.history?.dry?.[id];
+      const done = stageInfo?.history?.live_done?.[id];
+      if (id === 'I' || !dry || !done || done.undo_of || !['ok', 'warn'].includes(dry.status)) return null;
+      return done.promoted_from === dry.run_id ? done : null;
+    }
+    const liveRef = (h) => (h.commit ? `commit ${String(h.commit).slice(0, 7)}` : h.backup_run ? `backup bau_bk_${h.backup_run}_*` : `run ${String(h.run_id).slice(0, 8)}`);
+    function alreadyLiveButton(id) {
+      const done = alreadyLive(id);
+      if (!done) return '';
+      const tip = `Test run ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)})`;
+      return `<button class="small live" disabled data-testid="stage-live-${id}" data-already-live="1" title="${esc(tip)}">Already live — run a new test first</button>`;
     }
 
     /** B / H undo restores a database backup kept 14 days after the live run; file stages undo through git (no limit). */
@@ -572,10 +588,20 @@
       return `Nothing was published: a refused commit is dropped and stage ${stage || ''}'s files go back to their last published version. Once the cause is fixed, click Publish live… on the stage again (or Resume).`;
     }
 
+    /** A live promote refused because its test run is already live (or the publish list changed): say so, not "run dry again". */
+    function alreadyLiveAdvice(run) {
+      const stage = run.stages?.length === 1 ? run.stages[0] : null;
+      const done = stage ? stageInfo?.history?.live_done?.[stage] : null;
+      const tried = stage ? run.stage_results?.[stage]?.promoted_from : null;
+      if (run.mode !== 'live' || isUndo(run) || !done || done.undo_of || !/publish list is different|already/i.test(run.error || '')) return null;
+      if (tried && done.promoted_from !== tried) return null;
+      return `This test run is already live (published ${when(done.finished_at)}, ${liveRef(done)}). Run a new test run to publish this stage again.`;
+    }
+
     function failureHtml(run, steps) {
       if (!['failed', 'cancelled'].includes(run.status)) return '';
       const bad = steps.filter((s) => s.status === 'fail');
-      const todo = bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
+      const todo = alreadyLiveAdvice(run) || bad.flatMap((s) => stepNotes(s).filter((n) => n.level === 'problem' && n.todo).map((n) => n.todo))[0];
       const next = todo || (run.status === 'cancelled' ? 'Start it again when ready.' : run.mode === 'live' && !isUndo(run) ? liveNextStep(run) : 'Fix the problem, then press Resume (or run the stage as a test run again first).');
       return `<div class="note note-problem" data-testid="run-status-error">What went wrong: ${esc(run.error || bad[0]?.error || 'see Problems below')}</div>
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
