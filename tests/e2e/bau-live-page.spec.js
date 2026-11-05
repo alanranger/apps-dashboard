@@ -41,7 +41,8 @@ test('1. Live is only on the per-stage buttons; Run all stays dry', async ({ pag
 test('2. the confirmation lists the checked build and what it would publish; Cancel does nothing', async ({ page }) => {
   await page.route((u) => u.pathname === '/api/update-all' && u.searchParams.has('run'), async (route) => {
     const real = await (await route.fetch()).json();
-    real.stages.history.dry.G = { ...real.stages.history.dry.G, run_id: 'simulated-newer-dry-g', finished_at: new Date().toISOString(), status: 'ok' };
+    real.stages.history.dry.G = { ...real.stages.history.dry.G, run_id: 'simulated-newer-dry-g', finished_at: new Date().toISOString(), status: 'ok', published: ['simulated_landing_schema.json'] };
+    real.stages.history.dry.B = { ...real.stages.history.dry.B, run_id: 'simulated-newer-dry-b', finished_at: new Date().toISOString(), status: 'ok', would_change: 1 };
     await route.fulfill({ json: real });
   });
   await openPage(page);

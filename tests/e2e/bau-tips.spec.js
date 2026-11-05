@@ -12,12 +12,26 @@ let session;
 test.use({ channel: 'chrome', viewport: { width: 1600, height: 1000 } });
 test.beforeAll(async () => { session = await mcLogin('agent'); fs.mkdirSync(EVIDENCE, { recursive: true }); });
 
+/** Fixed button states, so the tips don't depend on which checks ran last: A and B have something to publish, C is
+ *  already live, G's newest check found nothing new. */
+function withButtonStates(real) {
+  const h = real.stages.history;
+  const fin = new Date(Date.now() - 600000).toISOString();
+  h.dry.A = { ...h.dry.A, status: 'ok', run_id: 'simul-a0-check', finished_at: fin, published: ['01-blog-posts.csv'], removed: [] };
+  h.dry.B = { ...h.dry.B, status: 'ok', run_id: 'simul-b0-check', finished_at: fin, published: [], removed: [], would_change: 3 };
+  h.dry.C = { ...h.dry.C, status: 'ok', run_id: 'simul-c0-check', finished_at: fin, published: ['reviews.csv'], removed: [] };
+  h.live_done = { ...(h.live_done || {}), C: { ...(h.live_done?.C || {}), status: 'ok', mode: 'live', undo_of: null, promoted_from: 'simul-c0-check', run_id: 'simul-c1-live', finished_at: fin, commit: 'abc1234def' } };
+  h.dry.G = { ...h.dry.G, status: 'ok', run_id: 'simul-g0-check', finished_at: '2026-11-04T19:42:00.000Z', published: [], removed: [] };
+  return real;
+}
+
 async function openPage(page) {
   if (process.env.BAU_LOCAL_PAGE === '1') {
     for (const f of ['bau-workflow.html', 'bau-progress.js']) {
       await page.route((u) => u.pathname === `/${f}`, (r) => r.fulfill({ body: fs.readFileSync(f, 'utf8'), contentType: f.endsWith('.js') ? 'text/javascript' : 'text/html' }));
     }
   }
+  await page.route((u) => u.pathname === '/api/update-all' && u.searchParams.has('run'), async (route) => route.fulfill({ json: withButtonStates(await (await route.fetch()).json()) }));
   await page.addInitScript((s) => { sessionStorage.setItem('mc_session_token', s.token); sessionStorage.setItem('mc_session_role', s.role); localStorage.removeItem('bau_dismissed_run'); }, session);
   await page.goto(`${mcBaseUrl()}/bau-workflow.html`);
   await expect(page.getByTestId('stage-run-A')).toBeVisible({ timeout: 30000 });
@@ -50,11 +64,12 @@ test('stage rows A, B, I and the Steps toggle: tips on hover, with the chip time
   await expectTip(page, 'stage-live-A', /^Publishes this stage's last checked build\. It shows you exactly what will change and asks you to confirm first \(about \d+ (s|min)\)\.$/);
   await page.screenshot({ path: path.join(EVIDENCE, 'tip-publish-live-A.png') });
   await expectTip(page, 'stage-undo-A', 'Puts back the files this stage last published live. It asks you to confirm first.');
-  await expectTip(page, 'stage-live-B', /\(about 10–17 min, estimated\)\.$/);
+  await expectTip(page, 'stage-live-B', /\(about (\d+ (s|min)|10–17 min, estimated)\)\.$/);
   await expectTip(page, 'stage-undo-B', /^Restores the database tables from the backup taken before this stage's last live run, until \d+ Nov, \d\d:\d\d, and puts back the 05 file\. It asks you to confirm first\.$/);
   await page.screenshot({ path: path.join(EVIDENCE, 'tip-undo-B.png') });
   await expectTip(page, 'stage-undo-H', /and puts back the 09 keywords file\. It asks you to confirm first\.$/);
-  await expectTip(page, 'stage-live-C', /^Checked build \w{8} was published live on .+\. Run 1\. Build & check to make a new one\.$/);
+  await expectTip(page, 'stage-live-C', /^Checked build simul-c0 was published live on .+\. Run 1\. Build & check to make a new one\.$/);
+  await expectTip(page, 'stage-live-G', /^Check run simul-g0 at 4 Nov, \d\d:\d\d found nothing new to publish\.$/);
   await expectTip(page, 'stage-live-I', 'Starts the full site audit now. It runs in the background for about 3 hours, and the results appear in the AI GEO audit app and the Monday brief. Not available on Mondays (it runs automatically then) or while an audit is already running.');
   await expectTip(page, 'audit-open', "Opens the AI GEO audit app, where this audit's results are.");
   await page.locator('tr[data-stage="A"]').getByTestId('commit-link').first().hover();

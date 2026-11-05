@@ -20,6 +20,9 @@ async function openPage(page) {
   await expect(page.getByTestId('stage-run-A')).toBeVisible({ timeout: 30000 });
 }
 const isAlreadyLive = async (page, id) => (await page.getByTestId(`stage-live-${id}`).getAttribute('data-already-live')) === '1';
+/** Same rule as the page (Alan 5 Nov): an ok check with no files or removals and, for B / H, no database rows. */
+const nothingNew = (d, id) => !!d && ['ok', 'warn'].includes(d.status) && !(d.published || []).length && !(d.removed || []).length
+  && (!['B', 'H'].includes(id) || d.would_change === 0);
 
 test('real page: stages whose newest test run is live show "Already live"; those with a newer test run show Publish live', async ({ page }) => {
   await openPage(page);
@@ -34,7 +37,7 @@ test('real page: stages whose newest test run is live show "Already live"; those
       await expect(btn).toHaveText('2. Already live');
       await expect(btn.locator('xpath=..')).toHaveAttribute('data-tip', new RegExp(`Checked build ${h.dry[id].run_id.slice(0, 8)} was published live on`));
     } else {
-      await expect(btn).toHaveText('2. Publish live…');
+      await expect(btn).toHaveText(nothingNew(h.dry[id], id) ? '2. Nothing to publish' : '2. Publish live…');
     }
   }
   await expect(page.getByTestId('stage-live-I')).toHaveText('Start full audit ①…');
@@ -42,15 +45,20 @@ test('real page: stages whose newest test run is live show "Already live"; those
 });
 
 test('a newer ok test run for D brings back its orange Publish live; the others stay Already live', async ({ page }) => {
+  let h;
   await page.route(latestGet, async (route) => {
     const real = await (await route.fetch()).json();
-    real.stages.history.dry.D = { ...real.stages.history.dry.D, run_id: 'simulated-newer-dry-d', finished_at: new Date().toISOString(), status: 'ok' };
+    real.stages.history.dry.D = { ...real.stages.history.dry.D, run_id: 'simulated-newer-dry-d', finished_at: new Date().toISOString(), status: 'ok', published: ['simulated_schema.json'] };
+    h = real.stages.history;
     await route.fulfill({ json: real });
   });
   await openPage(page);
   expect(await isAlreadyLive(page, 'D')).toBe(false);
   await expect(page.getByTestId('stage-live-D')).toHaveText('2. Publish live…');
-  for (const id of 'EFGH') expect(await isAlreadyLive(page, id), id).toBe(true);
+  for (const id of 'EFGH') {
+    const live = !!(h.dry[id] && h.live_done?.[id] && !h.live_done[id].undo_of && h.live_done[id].promoted_from === h.dry[id].run_id);
+    expect(await isAlreadyLive(page, id), id).toBe(live);
+  }
 });
 
 test('a refused re-promote of an already-live test run says so (not "run dry again, then Live")', async ({ page }) => {

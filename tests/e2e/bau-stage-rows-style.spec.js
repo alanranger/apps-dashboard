@@ -46,10 +46,10 @@ test('stage buttons: same width, height and font in every group; numbered labels
   }
   for (const id of 'ABCDEFGH') {
     await expect(page.getByTestId(`stage-run-${id}`)).toHaveText('1. Build & check');
-    await expect(page.getByTestId(`stage-live-${id}`)).toHaveText(/^2\. (Publish live…|Already live)$/);
+    await expect(page.getByTestId(`stage-live-${id}`)).toHaveText(/^2\. (Publish live…|Already live|Nothing to publish)$/);
   }
   await expect(page.getByTestId('stage-undo-A')).toHaveText('Undo last live…');
-  await expect(page.getByTestId('stage-live-D')).toHaveText('2. Already live');
+  await expect(page.getByTestId('stage-live-D')).toHaveText(/^2\. (Already live|Nothing to publish)$/);
 });
 
 test('colour means result only: LIVE tags are blue (never red), FAIL is the only red tag; D 19:27 shows REFUSED', async ({ page }) => {
