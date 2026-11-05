@@ -15,6 +15,7 @@ import { publishRemovals, livePublish, removalNotes, removalCounts, removalDetai
 import { liveDbIngest, csvImport, DB_TYPES, TYPE_FILES, affectedUrls } from './db-live.mjs';
 import { liveIngestSteps } from './ingest-live.mjs';
 import { checkPages, knownPageUrls, loadFingerprints, planSummary } from './content-check.mjs';
+import { EMPTY_COMPARE, parseCompare, emptyPosts, emptyPostNotes, feedsNote, goneCountText } from './blog-gone.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -701,10 +702,12 @@ async function blogPosts(ctx) {
   fs.writeFileSync(listFile, ['url', ...list].join('\n'));
   const regen = list.length ? await regenerateBlogPosts(sb, listFile) : noBlogPostsOutput(sb);
   if (regen.failure) return { notes: [problem(regen.failure.plain, regen.failure.todo)], details: regen.failure.details };
+  const empty = await emptyPosts(regen.posts, list, { ua: SITE_UA });
   const gone = deletedPostsPlan(sb, feed);
   fs.writeFileSync(path.join(sb.root, 'blog-deleted-posts.json'), JSON.stringify(gone));
-  const slugs = list.map((u) => u.split('/').pop());
-  const notes = list.length ? [info(`${plural(list.length, 'blog post')} changed on the site since last month; ${verb(ctx, 'they would be updated', 'they were updated')} (all 6 schema file types each).`)] : [];
+  const slugs = list.filter((u) => !empty.gone.includes(u)).map((u) => u.split('/').pop());
+  const notes = [feedsNote(sb.root, { info }), ...emptyPostNotes(empty, list.length, { info, check, problem })].filter(Boolean);
+  if (slugs.length) notes.push(info(`${plural(slugs.length, 'blog post')} changed on the site since last month; ${verb(ctx, 'they would be updated', 'they were updated')} (all 6 schema file types each).`));
   const dates = publishDateMismatches(regen.out, feed, slugs);
   if (dates.length) notes.push(check(`datePublished differs from the Squarespace publish date on ${dates.join('; ')}`, 'tell Claude: the generator must use the post\'s Squarespace publish date'));
   notes.push(...gone.plan.remove.map((s) => info(`Deleted post ${s}: its schema files ${verb(ctx, 'would be removed', 'were removed')} (no longer in the sitemap or feed).`)));
@@ -712,11 +715,17 @@ async function blogPosts(ctx) {
     would_regenerate: list.length, regenerate_scope: 'all 6 file types (_schema, _blogposting, _breadcrumb, _image, _faq / _howto when the page has them)',
     files_per_post: Object.fromEntries(regen.posts.map((p) => [p.slug, `${p.files.length} files${p.removed_stale.length ? `, stale removed: ${p.removed_stale.join(' ')}` : ''}`])),
     files_changed: regen.changed.length, deleted_posts: gone.slugs.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
-    notes, plain: list.length ? `${verb(ctx, 'Would update', 'Updated')} ${plural(list.length, 'changed blog post')} (all 6 file types each) with the Blog Posts tab's own generator: ${slugs.join(', ')}.` : 'No blog posts changed since last month.',
+    notes, plain: blogPostsPlain(ctx, slugs, empty.gone.length),
     details: [`${r.touchedOnly.length} posts only had their "updated" date bumped (held by the body check)`, `baseline: ${firstRun ? 'last 01 export (blogs-manifest.json is written by the first live run)' : 'blogs-manifest.json'}`,
       ...regen.posts.map((p) => `${p.slug}: ${p.files.join(', ')}`)],
     needsAlan: gone.plan.needsAlan.length ? [{ kind: 'deleted_blog_posts_over_limit', count: gone.plan.needsAlan.length, file: gone.plan.needsAlan.join('; ') }] : [],
     outputs: [`${manifestFile} (sandbox)`, listFile, regen.out].filter(Boolean) };
+}
+
+function blogPostsPlain(ctx, slugs, goneCount) {
+  if (slugs.length) return `${verb(ctx, 'Would update', 'Updated')} ${plural(slugs.length, 'changed blog post')} (all 6 file types each) with the Blog Posts tab's own generator: ${slugs.join(', ')}.`;
+  if (goneCount) return `Nothing to regenerate: ${goneCountText(goneCount)} on the site.`;
+  return 'No blog posts changed since last month.';
 }
 
 /** Claude 3 Nov (6.3): datePublished / dateCreated = the post's Squarespace publish day (feed publishOn), on every regenerated post. */
@@ -749,7 +758,7 @@ async function regenerateBlogPosts(sb, listFile) {
   if (run.code !== 0) return { failure: scriptFailure('Blog posts generator', run) };
   const report = JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8'));
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
-  const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
+  const diff = parseCompare(cmp.stdout) || EMPTY_COMPARE;
   fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
   return { error: null, out, posts: JSON.parse(report.log || '[]'), changed: changedFiles(diff) };
 }
