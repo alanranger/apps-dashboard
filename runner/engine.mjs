@@ -45,10 +45,26 @@ function stageResult(stage, steps, ctx) {
   const status = mine.reduce((w, s) => (RANK[s.status] > RANK[w] ? s.status : w), 'skipped');
   const pub = publishStep(mine)?.counts || {};
   const ingest = mine.find((s) => s.step_id === 'final_ingest')?.counts?.written || null;
-  return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null,
-    published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? (ctx.mode === 'live' ? 'published' : 'would publish') : null, commit: pub.commit || null,
-    repo: pub.repo_name || null, removals_unexplained: pub.removals_unexplained ?? null,
-    promoted_from: pub.promoted_from || ctx.promote?.run_id || null, ingest, refetch_mode: refetchMode(mine, ctx), ...undoRecord(mine, pub) };
+  return { status, mode: ctx.mode, finished_at: now(), sandbox: ctx.sandboxRoot || null, ...publishFields(pub, ctx),
+    promoted_from: pub.promoted_from || ctx.promote?.run_id || null, ingest, refetch_mode: refetchMode(mine, ctx),
+    would_change: wouldChange(mine), ...undoRecord(mine, pub) };
+}
+
+function publishFields(pub, ctx) {
+  const mode = ctx.mode === 'live' ? 'published' : 'would publish';
+  return { published: pub.files || [], removed: pub.removed || [], publish_mode: pub.files ? mode : null, commit: pub.commit || null,
+    repo: pub.repo_name || null, removals_unexplained: pub.removals_unexplained ?? null };
+}
+
+/**
+ * B / H: database rows the stage changes (CSV rows, pages re-read, 05 rows). null when the steps don't report
+ * db_rows_changed (other stages, or runs before it was recorded), so the page never reads "nothing" from a missing count.
+ */
+export function wouldChange(mine) {
+  const counts = mine.map((s) => s.counts || {});
+  if (!counts.some((c) => typeof c.db_rows_changed === 'number')) return null;
+  return counts.flatMap((c) => [c.db_rows_changed, c.refetch_plan?.reingest, c.export_rows_changed_vs_live])
+    .filter((v) => typeof v === 'number').reduce((a, b) => a + b, 0);
 }
 
 /** Live B: 'changed' when it re-read only the changed pages, 'full' when forced to re-read every page (null otherwise). */

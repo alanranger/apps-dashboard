@@ -16,6 +16,7 @@ import { liveDbIngest, csvImport, DB_TYPES, TYPE_FILES, affectedUrls } from './d
 import { liveIngestSteps } from './ingest-live.mjs';
 import { checkPages, knownPageUrls, loadFingerprints, planSummary } from './content-check.mjs';
 import { EMPTY_COMPARE, parseCompare, emptyPosts, emptyPostNotes, feedsNote, goneCountText } from './blog-gone.mjs';
+import { landingReviewNotes } from './landing-reviews.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -353,7 +354,7 @@ const ingestPreliminary = async (ctx) => {
   const counts = { ...r.counts, step2_scraped_sample: `${scraped.length - failedScrape.length}/${scraped.length}`, step2_duplicate_entities: dupes,
     step3_mappings_status: steps.rep.steps.find((s) => s.step.startsWith('mappings'))?.status, step4_finalize_status: steps.rep.steps.find((s) => s.step.startsWith('finalize'))?.status,
     export_rows: steps.exportRows, export_rows_live_file: steps.liveRows, export_rows_changed_vs_live: steps.rowsChanged,
-    duplicates_already_in_db: steps.rep.duplicates_already_in_db.length };
+    duplicates_already_in_db: steps.rep.duplicates_already_in_db.length, db_rows_changed: r.rowsChanged };
   const notes = [...r.notes];
   if (dupes) notes.push(problem(`${dupes} duplicate page entities would be created`, 'do not run live; tell Claude'));
   if (failedScrape.length) notes.push(check(`Sample page scrape failed: ${failedScrape.join(', ')}`, 'open the page; resume the run if it loads'));
@@ -372,7 +373,7 @@ async function finalIngest(ctx) {
   const r = await dryIngest(ctx, ['blog', 'course_events', 'workshop_events', 'course_products', 'workshop_products', 'landing_service_pages', 'product_schema'], `update-all-${ctx.runId}-final.json`);
   if (r.error) return r;
   const written = ctx.mode === 'live' ? r.counts : null;
-  return { ...r, counts: { ...r.counts, ...(written ? { written } : {}) },
+  return { ...r, counts: { ...r.counts, db_rows_changed: r.rowsChanged, ...(written ? { written } : {}) },
     plain: `${verb(ctx, 'Would ingest', 'Ingested')} the CSVs again, including the new product schema (07): ${plural(r.rowsChanged || 0, 'row')} changed, 0 duplicates.` };
 }
 
@@ -608,8 +609,11 @@ async function landingsReport(ctx, out, report, diff, reportOnly) {
   const selling = sellingNotes(readJson(path.join(out, 'alan-shared-resources', 'outputs', 'schema', 'landings', 'landing-selling-report.json'), {}));
   notes.push(...selling.notes);
   lines.push(...selling.details);
+  const reviews = await landingReviewNotes(path.join(out, 'alanranger-schema'), { ua: SITE_UA, check });
+  notes.push(...reviews.notes);
   return { notes,
     counts: { live_mode: reportOnly ? 'report-only (P5)' : 'live', compared: ex.files, landing_files: ex.landingFilesGenerated, would_change: changedFiles(diff).length,
+      review_pages_checked: reviews.checked,
       business_rating_nodes: 0, unexplained: ex.unexplained.length, files_written: report.files_written, seconds: report.seconds },
     plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} schema for ${ex.landingFilesGenerated} landing and service pages from what is live on the site; no business rating anywhere.`,
     details: lines, outputs: [`${out} (sandbox)`, file, path.join(out, 'compare.json')] };
@@ -622,7 +626,7 @@ async function runAppCli(command, sb) {
   const run = await sh('node', appCliArgs(command, sb, out), { cwd: SCHEMA_TOOLS, env: { ALAN_SITE_GAP_SECONDS: '2' }, timeoutMs: 30 * 60 * 1000 });
   if (run.code !== 0) return { out, failure: scriptFailure(APP_GENERATOR_NAME[command] || `${command} generator`, run) };
   const cmp = await sh('node', ['scripts/app-cli-compare.mjs', out, '--ignore-run-dates'], { cwd: SCHEMA_TOOLS });
-  const diff = JSON.parse(cmp.stdout.slice(cmp.stdout.indexOf('{')));
+  const diff = parseCompare(cmp.stdout) || { ...EMPTY_COMPARE, compared: 0, identical: 0 };
   fs.writeFileSync(path.join(out, 'compare.json'), JSON.stringify(diff, null, 2));
   return { out, diff, report: JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8')) };
 }

@@ -531,7 +531,7 @@
       if (id === 'I') return tipWrap(TIP.audit(), `<button class="bb bb-primary" data-testid="stage-live-I" data-stage-live="I" ${off}>Start full audit ①…</button>`);
       const live = tipWrap(TIP.publish(id), `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>2. Publish live…</button>`);
       return tipWrap(TIP.check(id), `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>1. Build &amp; check</button>`)
-        + (alreadyLiveButton(id) || live) + undoButton(id, off);
+        + (alreadyLiveButton(id) || nothingToPublishButton(id) || live) + undoButton(id, off);
     }
 
     // ---------- hover / focus tips (Alan 4 Nov): every control says what a click really does ----------
@@ -607,6 +607,20 @@
       if (!done) return '';
       const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Run 1. Build & check to make a new one.`;
       return tipWrap(tip, `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1">2. Already live</button>`);
+    }
+
+    /** The newest ok checked build has no files to publish or remove and (B / H) no database rows to change. */
+    function nothingToPublish(id) {
+      const dry = stageInfo?.history?.dry?.[id];
+      if (id === 'I' || !dry || !['ok', 'warn'].includes(dry.status)) return null;
+      if ((dry.published || []).length || (dry.removed || []).length) return null;
+      return !DB_STAGES.has(id) || dry.would_change === 0 ? dry : null;
+    }
+    function nothingToPublishButton(id) {
+      const dry = nothingToPublish(id);
+      if (!dry) return '';
+      const tip = `Check run ${String(dry.run_id).slice(0, 8)} at ${when(dry.finished_at)} found nothing new to publish.`;
+      return tipWrap(tip, `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-nothing-to-publish="1">2. Nothing to publish</button>`);
     }
 
     /** B / H undo restores a database backup kept 14 days after the live run; file stages undo through git (no limit). */

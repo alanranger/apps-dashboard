@@ -1,0 +1,372 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://www.alanranger.com/#person",
+      "name": "Alan Ranger",
+      "url": "https://www.alanranger.com/about",
+      "jobTitle": "Photographer & Tutor",
+      "worksFor": {
+        "@id": "https://www.alanranger.com/#org"
+      },
+      "sameAs": [
+        "https://www.instagram.com/alanrangerphotography/",
+        "https://www.youtube.com/@alanrangerphotography",
+        "https://www.linkedin.com/in/alanranger",
+        "https://www.facebook.com/alanrangerphotography/",
+        "https://bsky.app/profile/alanranger.bsky.social"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://www.alanranger.com/free-online-photography-course#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is the best online photography course?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The best online photography course depends on your goals, budget and timeframe. For a free, structured curriculum from a UK-based ABIPP-qualified tutor — with 60 modules, 30 exams, and a full five-badge progression from Foundation to Master — this Academy offers a 14-day free trial with no card required. For a shorter formally-accredited certificate, the Open University’s Digital Photography Course (10 weeks, £250, delivered in partnership with the RPS) is well-regarded. For phone-focused learning, iPhone Photography School specialises in smartphone technique. Choose by depth of curriculum, whether you want external accreditation, and your primary device."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the 80/20 rule in photography?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The 80/20 rule in photography is the idea that camera settings account for only about 20% of a strong photograph, while the other 80% comes from light, timing and composition — the seeing rather than the settings. Exposure, aperture, shutter speed and ISO are essential foundations, but once you can control them consistently, further improvement comes almost entirely from where you stand, when you press the shutter, what you include and leave out, and how you read the light. It’s the reason two people with identical cameras produce completely different results. This course is built around that balance: it teaches the full technical foundation and then spends most of its energy on the 80% — the creative judgement that turns a snapshot into a photograph."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is the 14-day trial really free? Will I be charged anything?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, genuinely free. The trial is unlocked by a £0 Stripe checkout — this exists so we can attach the trial to your account and email, not to take payment. No card details are requested. If you do nothing at the end of the 14 days, you won’t be charged and the modules will simply lock until you choose to upgrade."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens after the 14 days end?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Your access to the modules and exams pauses. You can upgrade to the full annual membership at £79/year to unlock everything permanently — including the downloads (practice packs, eBook, field checklists) that aren’t part of the trial. Your progress, bookmarks, exam results and certificates remain linked to your account so you can pick up exactly where you left off."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is this course suitable for absolute beginners with no photography experience?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — it’s specifically designed for people starting from scratch. The Foundation stage begins with Module 01 Exposure, the single most important concept in photography, and every module that follows assumes no prior knowledge. You’ll be walked through camera settings, composition, light and genre choices step by step, with practical assignments to try each idea in the real world. If you can hold a camera or a phone, you can do this."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What if I’m already fairly experienced — will the content be too basic?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not if you engage with the whole Academy rather than just the early camera-settings modules. Beyond the basics you unlock 40 Applied Learning scenarios covering real-world shooting situations, 10 composition and creativity guides on the parts YouTube tends to skip (light, timing, edges, intent), 15 practical assignments to test yourself against, and the five-badge progression from Foundation through to Master with 30 exams and 2 master certificates. If you want external recognition, the in-Academy RPS distinction prep guides you toward LRPS, ARPS and FRPS submissions. There’s plenty here to stretch someone with existing skills."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need an expensive camera to do the course?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Any camera works — a DSLR, a mirrorless, a compact, or a modern phone. Several modules explicitly cover phone photography. A tripod and a spare battery help on a few of the practical assignments but they’re optional. The course teaches the principles, not the gear."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does each module take?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most modules take 8–15 minutes to read, with optional deeper material if you want to go further. The complete 60-module course is roughly 10 hours of reading. Practical assignments are designed to be done over a weekend or on your next walk."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use the Academy on my phone and tablet as well as on a desktop?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — the Academy works on any device. That said, a desktop or laptop will give you the best experience: modules are text and image heavy and much easier to read and digest on a larger screen, and marking up your own images or downloading practice packs and field checklists is more comfortable there too. Phone access is genuinely useful for quick module reads, checking field checklists on location, or asking Robo-Ranger AI a question mid-shoot."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Will I get a certificate?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes — downloadable certificates for each of the 30 exams you pass, plus 2 master certificates when you complete the whole Academy. Certificates carry your name and the date passed. They are not formally accredited qualifications but they are recognised markers of structured learning — useful for portfolio and camera-club applications."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get direct help from you if I’m stuck?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, in three ways. Every module has help notes for common questions built in. Robo-Ranger AI is available 24/7 for on-demand answers about anything in the course. And you get direct-message Q&A access to me as a paid member — I answer photography questions personally. If you want a proper conversation, a private 1-2-1 Zoom session with me is available as a separate paid add-on whenever you need one."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you offer refunds on the annual membership?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No — the £79 annual isn’t refundable. That’s what the 14-day trial exists for: you can go through every module and exam before paying anything, so committing to the annual should feel like a fully informed decision. Once you upgrade, the twelve months of access are yours to use however you like — work through it in a month or spread it across the year — but access runs out at renewal."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.alanranger.com/#website",
+      "url": "https://www.alanranger.com/",
+      "name": "Alan Ranger Photography",
+      "publisher": {
+        "@id": "https://www.alanranger.com/#org"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.alanranger.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "description": "UK Landscape Photography Workshops, Beginners Courses and Private Lessons - Enhance your skill with Alan Ranger Photography - Qualified Tutor and Professional Photographer",
+      "image": "https://images.squarespace-cdn.com/content/v1/5013f4b2c4aaa4752ac69b17/b859ad2b-1442-4595-b9a4-410c32299bf8/ALAN+RANGER+photography+LOGO+BLACK.+switched+small.png"
+    },
+    {
+      "@type": [
+        "LocalBusiness",
+        "Organization"
+      ],
+      "@id": "https://www.alanranger.com/#org",
+      "name": "Alan Ranger Photography",
+      "url": "https://www.alanranger.com/",
+      "telephone": "+44 7817 017994",
+      "image": "https://images.squarespace-cdn.com/content/v1/5013f4b2c4aaa4752ac69b17/b859ad2b-1442-4595-b9a4-410c32299bf8/ALAN+RANGER+photography+LOGO+BLACK.+switched+small.png?format=1500w",
+      "legalName": "Alan Ranger Photography",
+      "email": "info@alanranger.com",
+      "sameAs": [
+        "https://www.instagram.com/alanrangerphotography/",
+        "https://www.youtube.com/@alanrangerphotography",
+        "https://www.linkedin.com/in/alanranger",
+        "https://www.facebook.com/alanrangerphotography/",
+        "https://bsky.app/profile/alanranger.bsky.social"
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "45 Hathaway Road",
+        "addressLocality": "Coventry",
+        "addressRegion": "West Midlands",
+        "postalCode": "CV4 9HW",
+        "addressCountry": "GB"
+      },
+      "location": {
+        "@id": "https://www.alanranger.com/#place"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://www.alanranger.com/free-online-photography-course#webpage",
+      "url": "https://www.alanranger.com/free-online-photography-course",
+      "name": "Online Photography Course for Beginners | 14-Day Free Trial",
+      "headline": "Online Photography Course for Beginners | 14-Day Free Trial",
+      "description": "Online photography course for beginners and improvers, taught by UK pro Alan Ranger. 60 modules, 30 exams, 5 levels. Start a 14-day free trial, no card needed.",
+      "inLanguage": "en-GB",
+      "isPartOf": {
+        "@id": "https://www.alanranger.com/#website"
+      },
+      "publisher": {
+        "@id": "https://www.alanranger.com/#org"
+      },
+      "about": {
+        "@id": "https://www.alanranger.com/#person"
+      },
+      "primaryImageOfPage": {
+        "@id": "https://www.alanranger.com/free-online-photography-course#primaryimage"
+      },
+      "mainEntity": {
+        "@id": "https://www.alanranger.com/free-online-photography-course#course"
+      }
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://www.alanranger.com/free-online-photography-course#primaryimage",
+      "url": "https://static1.squarespace.com/static/5013f4b2c4aaa4752ac69b17/t/668a7c6346bcff268c54c93d/1720351849817/_-2-23.jpg?format=1500w",
+      "contentUrl": "https://static1.squarespace.com/static/5013f4b2c4aaa4752ac69b17/t/668a7c6346bcff268c54c93d/1720351849817/_-2-23.jpg?format=1500w",
+      "name": "Online Photography Course for Beginners | 14-Day Free Trial primary image"
+    },
+    {
+      "@type": "Course",
+      "@id": "https://www.alanranger.com/free-online-photography-course#course",
+      "name": "Online Photography Course for Beginners | 14-Day Free Trial",
+      "description": "Online photography course for beginners and improvers, taught by UK pro Alan Ranger. 60 modules, 30 exams, 5 levels. Start a 14-day free trial, no card needed.",
+      "url": "https://www.alanranger.com/free-online-photography-course",
+      "inLanguage": "en-GB",
+      "image": {
+        "@id": "https://www.alanranger.com/free-online-photography-course#primaryimage"
+      },
+      "provider": {
+        "@id": "https://www.alanranger.com/#org"
+      },
+      "creator": {
+        "@id": "https://www.alanranger.com/#person"
+      },
+      "educationalLevel": "Beginner to Advanced",
+      "hasCourseInstance": [
+        {
+          "@type": "CourseInstance",
+          "courseMode": "Online",
+          "courseWorkload": "PT15H",
+          "instructor": {
+            "@id": "https://www.alanranger.com/#person"
+          }
+        }
+      ],
+      "offers": [
+        {
+          "@type": "Offer",
+          "category": "Free",
+          "name": "14-day free trial",
+          "price": "0",
+          "priceCurrency": "GBP",
+          "availability": "https://schema.org/InStock",
+          "url": "https://www.alanranger.com/free-online-photography-course"
+        },
+        {
+          "@type": "Offer",
+          "category": "Subscription",
+          "name": "Annual membership",
+          "price": "79.00",
+          "priceCurrency": "GBP",
+          "availability": "https://schema.org/InStock",
+          "url": "https://www.alanranger.com/free-online-photography-course",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "price": "79.00",
+            "priceCurrency": "GBP",
+            "billingDuration": "P1Y"
+          }
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": 4,
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "review": [
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Catalina Christensen"
+          },
+          "reviewBody": "A fantastic free resource to learn about photography!!! Very good explanations off all the necessary concepts to get familiar with photography.",
+          "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": "5",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "datePublished": "2025-08-25",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Google"
+          }
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Andrew Blaxhall"
+          },
+          "reviewBody": "Great helpful material, great presentation and ideas",
+          "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": "5",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "datePublished": "2025-08-24",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Google"
+          }
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Michael Simm"
+          },
+          "reviewBody": "I can’t recommend this course enough. It really does cover everything in a very comprehensive and easily digestible way. I’ve played around with photography for a lot of my life but this course gave me the opportunity to learn about the theory and also practical elements of the discipline. I’d definitely recommend purchasing the .pdf download. It’s much easier to navigate than the online course and I felt it was a good way to donate for this great resource.  Thank you Alan!!",
+          "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": "5",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "datePublished": "2025-08-24",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Google"
+          }
+        },
+        {
+          "@type": "Review",
+          "author": {
+            "@type": "Person",
+            "name": "Bruce Radebaugh"
+          },
+          "reviewBody": "Alan's lessons are clear, concise and maybe the best on helping with excellent tips to take better photos and attract more birds .",
+          "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": "5",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "datePublished": "2025-08-24",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Google"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "Place",
+      "@id": "https://www.alanranger.com/#place",
+      "name": "Alan Ranger Photography",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "45 Hathaway Road",
+        "addressLocality": "Coventry",
+        "addressRegion": "West Midlands",
+        "postalCode": "CV4 9HW",
+        "addressCountry": "GB"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://www.alanranger.com/free-online-photography-course#breadcrumbs",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://www.alanranger.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Free Online Photography Course",
+          "item": "https://www.alanranger.com/free-online-photography-course"
+        }
+      ]
+    }
+  ]
+}

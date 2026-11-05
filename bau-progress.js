@@ -26,10 +26,22 @@
     return [...(data.steps || [])].sort((a, b) => a.ord - b.ord).map((s) => ({ ...s, stage: defs.get(s.step_id)?.stage || null, name: s.name || defs.get(s.step_id)?.name || s.step_id }));
   }
 
+  /** Stage I only starts the full audit and finishes; the audit itself runs in the background, so it adds no time here. */
+  const BACKGROUND_STEPS = new Set(['audit']);
   function weights(steps, est) {
-    const known = steps.map((s) => est?.[s.step_id]).filter((v) => v > 0).sort((a, b) => a - b);
+    const known = steps.filter((s) => !BACKGROUND_STEPS.has(s.step_id)).map((s) => est?.[s.step_id]).filter((v) => v > 0).sort((a, b) => a - b);
     const fallback = known.length ? known[Math.floor(known.length / 2)] : 60000;
-    return { w: (s) => (est?.[s.step_id] > 0 ? est[s.step_id] : fallback), anyKnown: known.length > 0 };
+    const w = (s) => {
+      if (BACKGROUND_STEPS.has(s.step_id)) return 0;
+      return est?.[s.step_id] > 0 ? est[s.step_id] : fallback;
+    };
+    return { w, anyKnown: known.length > 0 };
+  }
+
+  /** "+ full audit ~3 h in the background" next to the estimate when the run includes stage I (a check only simulates it). */
+  function auditNote(run, list) {
+    if (!run.include_audit || !list.some((s) => BACKGROUND_STEPS.has(s.step_id))) return '';
+    return run.mode === 'live' ? ' + full audit ~3 h in the background' : ' + full audit ① (simulated in a check; live it runs ~3 h in the background)';
   }
 
   /** Fraction of the current step: the runner's sub-progress, else elapsed / typical duration (capped at 95%). */
@@ -168,7 +180,7 @@
     const runAll = !(run.stages?.length);
     const rows = runAll ? stageRows(list, run, est) : [];
     const curStage = m.cur?.stage ? rows.find((r) => r.id === m.cur.stage) : null;
-    const overall = runAll ? `<div class="pg-overall" data-testid="pg-overall">Overall: stage ${Math.max(1, rows.findIndex((r) => r.status === 'running') + 1)} of ${rows.length} · ${m.pct}% · ${esc(etaText(m))}</div>${barHtml(m.pct, 'pg-bar-overall')}` : '';
+    const overall = runAll ? `<div class="pg-overall" data-testid="pg-overall">Overall: stage ${Math.max(1, rows.findIndex((r) => r.status === 'running') + 1)} of ${rows.length} · ${m.pct}% · ${esc(etaText(m))}<span data-testid="pg-audit-note">${esc(auditNote(run, list))}</span></div>${barHtml(m.pct, 'pg-bar-overall')}` : '';
     const stagePart = curStage ? `<div class="muted">Stage ${esc(curStage.id)}: ${curStage.pct}%</div>${barHtml(curStage.pct, 'pg-bar')}` : (runAll ? '' : barHtml(m.overdue ? null : m.pct, 'pg-bar'));
     return `${overall}<p class="pg-big" data-testid="pg-step">Step ${idx + 1} of ${list.length}: ${esc(m.cur?.name || 'starting')}</p>
       <p data-testid="pg-sub">${esc(subLine(run, m.cur))}</p>${stagePart}
@@ -323,5 +335,5 @@
   function expect() { S.autoOpen = true; open(); }
 
   window.BauProgress = { update, open, close, rowHtml, expect, simulatedOnly: (run, steps) => simulatedOnly(run, orderedSteps({ steps, registry: S.data?.registry || [] })),
-    _model: { measure, etaText, stageRows, lastActivity } };
+    _model: { measure, etaText, stageRows, lastActivity, auditNote } };
 })();
