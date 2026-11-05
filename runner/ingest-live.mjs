@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import { loadEnv } from './store.mjs';
 import { checkPages, knownPageUrls, loadFingerprints, planSummary, recordFingerprints, reingestList } from './content-check.mjs';
+import { isExcludedUrl } from '../../alan-shared-resources/scripts/url-exclusions.mjs';
 
 const BASE = 'https://alan-chat-proxy.vercel.app';
 const CHAT_ENV = 'G:/Dropbox/alan ranger photography/Website Code/Chat AI Bot/.env.local';
@@ -31,7 +32,7 @@ export async function api(pathAndQuery, { method = 'GET', body } = {}) {
  */
 async function ingestContent(onProgress, { store, runId, force = false }) {
   const items = JSON.parse(await api('/api/tools?action=get_urls&recent=true')).urls || [];
-  const urls = [...new Set(items.map((i) => i.url).filter(Boolean))];
+  const urls = [...new Set(items.map((i) => i.url).filter((u) => u && !isExcludedUrl(u)))];
   const [stored, known] = await Promise.all([loadFingerprints(store), knownPageUrls(store)]);
   const results = await checkPages(urls, { stored, known, onProgress });
   const todo = reingestList(results, force);
