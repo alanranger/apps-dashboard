@@ -23,7 +23,7 @@ function rules(productFiles, blogSlugs) {
     ['landing_pages', (f) => f.endsWith('_landing_schema.json') || f === 'landings-manifest.json'],
     ['blocks_css', (f) => /^styles\/blocks(-sources|-manifest)?\.(css|json)$/.test(f)],
     ['product_schema', (f) => f === 'products-manifest.json' || productFiles.has(f)],
-    ['blog_posts', (f) => f === 'blogs-manifest.json' || blogSlugs.has(blogSlug(f))]
+    ['blog_posts', (f) => f === 'blogs-manifest.json' || f === 'blog-files.json' || blogSlugs.has(blogSlug(f))]
   ];
 }
 

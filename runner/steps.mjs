@@ -792,11 +792,35 @@ export function productPublishSet(sb, repo = REPO) {
   return { publish: set.filter((f) => !fs.existsSync(path.join(repo, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8')), remove: [] };
 }
 const BLOG_SUFFIXES = ['_schema.json', '_blogposting.json', '_breadcrumb.json', '_image.json', '_faq.json', '_howto.json'];
-/** F: blog index + changed post files, and the files of deleted posts (removed). */
+/** F: blog index + changed post files (+ blog-files.json when it changes), and the files of deleted posts (removed). */
 export function blogPublishSet(sb, repo = REPO) {
   const gone = readJson(path.join(sb.root, 'blog-deleted-posts.json'), { plan: { remove: [] } });
   const remove = gone.plan.remove.flatMap((slug) => BLOG_SUFFIXES.map((s) => `${slug}${s}`)).filter((f) => fs.existsSync(path.join(repo, f)));
-  return { publish: [...compareOf(sb, 'blog-index'), ...compareOf(sb, 'blog-posts')], remove };
+  const publish = [...compareOf(sb, 'blog-index'), ...compareOf(sb, 'blog-posts')];
+  const manifest = writeBlogFilesManifest(sb, repo, publish, remove);
+  return { publish: manifest ? [...publish, manifest] : publish, remove };
+}
+
+export const BLOG_FILES = 'blog-files.json';
+
+/** Which posts have the optional _howto / _faq files, so the blog loader requests only files that exist. */
+export function blogFilesManifest(names) {
+  const posts = new Set(names.filter((n) => n.endsWith('_blogposting.json')).map((n) => n.slice(0, -'_blogposting.json'.length)));
+  const pick = (suffix) => [...new Set(names.filter((n) => n.endsWith(suffix)).map((n) => n.slice(0, -suffix.length)))]
+    .filter((s) => posts.has(s)).sort();
+  return { howto: pick('_howto.json'), faq: pick('_faq.json') };
+}
+
+/** Written into the blog-index output from the repo as it will be after this publish; returns its name when it changed. */
+function writeBlogFilesManifest(sb, repo, publish, remove) {
+  const names = new Set([...fs.readdirSync(repo), ...publish.map((f) => path.basename(f))]);
+  remove.forEach((f) => names.delete(path.basename(f)));
+  const body = `${JSON.stringify(blogFilesManifest([...names]), null, 1)}\n`;
+  const out = path.join(appOut(sb, 'blog-index'), BLOG_FILES);
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, body);
+  const current = path.join(repo, BLOG_FILES);
+  return fs.existsSync(current) && fs.readFileSync(current, 'utf8') === body ? null : BLOG_FILES;
 }
 const appOut = (sb, command) => path.join(sb.root, 'app-cli', command, 'alanranger-schema');
 /** Publish sets per stage: each lists only its own generators' files; `sources` = where those files sit in the sandbox. */
