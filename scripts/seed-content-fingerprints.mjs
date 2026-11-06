@@ -20,7 +20,7 @@ const write = process.argv.includes('--write');
 const ids = [];
 for (let offset = 0; ; offset += 1000) {
   // updated_at: a re-ingest with identical HTML refreshes the existing row instead of adding one.
-  const page = await store.query(`page_html?select=id,url,created_at:updated_at&order=updated_at.desc.nullslast&limit=1000&offset=${offset}`);
+  const page = await store.query(`page_html?select=id,url,created_at:updated_at&order=updated_at.desc.nullslast,id.asc&limit=1000&offset=${offset}`);
   ids.push(...page);
   if (page.length < 1000) break;
 }
