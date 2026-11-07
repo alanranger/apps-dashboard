@@ -1,0 +1,555 @@
+{
+  "dry": false,
+  "rule": "rest_day_after_sunday_return",
+  "targets": 19,
+  "moves": 19,
+  "unplaced": 0,
+  "related_ids": [
+    "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:efuvkao5vtbbjhhiebibeg1e18",
+    "gcal:habit:75c54300-e8ef-434f-af4a-51bb546b3496:evt:4p59a26ekolgipb733sem84fn0",
+    "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:fmj3rff5ilb5pkns2oi447l0bk",
+    "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:o1juqoe6iunemtbu8ah684qa50",
+    "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:btcc1n757b5c50opk9ica9jkg0",
+    "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:6ot29hcjb7hhg4v07v0qsjm4uc",
+    "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:rekpqrk3o1tuole39jeeajcepc",
+    "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:bqo66ia9nkl4dmtgr5pv2keem0",
+    "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2t56irif3nu6r4vmk0kb6v9rf0",
+    "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:blbsmg3d3eep409q1a43i62poo",
+    "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:iok420726vkdatj4kr50f4gh24",
+    "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:jsf409ovqpnc8578fhd3mulsbk",
+    "gcal:habit:c2f135c9-7146-415d-8231-c2460a064e94:evt:d1qsc23r4aru3subpigvcfb89c",
+    "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2ormhln4uemvbfn0dt8reao2hg",
+    "gcal:habit:fc32dffb-6b5d-434b-86b9-d484ce434127:evt:tn6esmlad2o4vakrmsuukn4s8s",
+    "gcal:habit:4dd47c23-92a2-4d03-8474-4f557775e3a9:evt:v9ma918v91kcqabdjrqm69ukr4",
+    "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:lq5jrbpqvbn7a82hsv5bqm2bck",
+    "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:mhtig2nqv59jpj7bqfvmccun30",
+    "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:jus7gbocfkksn3otl27oh1e92k"
+  ],
+  "assertions": {
+    "2026-08-17": {
+      "cleared_planned": true,
+      "move_count": 1,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+          "to_day": "2026-07-31",
+          "start": "2026-07-31T12:00:00.000Z",
+          "end": "2026-07-31T16:00:00.000Z",
+          "related_id": "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:efuvkao5vtbbjhhiebibeg1e18"
+        }
+      ]
+    },
+    "2026-09-14": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Check Artfully Walls Sales",
+          "to_day": "2026-09-03",
+          "start": "2026-09-03T09:15:00.000Z",
+          "end": "2026-09-03T09:20:00.000Z",
+          "related_id": "gcal:habit:75c54300-e8ef-434f-af4a-51bb546b3496:evt:4p59a26ekolgipb733sem84fn0"
+        },
+        {
+          "title": "Publish Blog Post",
+          "to_day": "2026-08-30",
+          "start": "2026-08-30T13:00:00.000Z",
+          "end": "2026-08-30T15:00:00.000Z",
+          "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:fmj3rff5ilb5pkns2oi447l0bk"
+        }
+      ]
+    },
+    "2026-09-21": {
+      "cleared_planned": true,
+      "move_count": 1,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+          "to_day": "2026-08-25",
+          "start": "2026-08-25T09:00:00.000Z",
+          "end": "2026-08-25T13:00:00.000Z",
+          "related_id": "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:o1juqoe6iunemtbu8ah684qa50"
+        }
+      ]
+    },
+    "2026-09-28": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Backup Photos to Portable Drive",
+          "to_day": "2026-09-25",
+          "start": "2026-09-25T12:00:00.000Z",
+          "end": "2026-09-25T13:00:00.000Z",
+          "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:btcc1n757b5c50opk9ica9jkg0"
+        },
+        {
+          "title": "Update Event Schema for Classes & Workshops",
+          "to_day": "2026-08-27",
+          "start": "2026-08-27T12:30:00.000Z",
+          "end": "2026-08-27T14:30:00.000Z",
+          "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:6ot29hcjb7hhg4v07v0qsjm4uc"
+        }
+      ]
+    },
+    "2026-10-05": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Monthly Accounts — Bank Genie",
+          "to_day": "2026-09-30",
+          "start": "2026-09-30T10:45:00.000Z",
+          "end": "2026-09-30T12:15:00.000Z",
+          "related_id": "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:rekpqrk3o1tuole39jeeajcepc"
+        },
+        {
+          "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "to_day": "2026-08-26",
+          "start": "2026-08-26T10:45:00.000Z",
+          "end": "2026-08-26T12:45:00.000Z",
+          "related_id": "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:bqo66ia9nkl4dmtgr5pv2keem0"
+        }
+      ]
+    },
+    "2026-10-26": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Backup Photos to Portable Drive",
+          "to_day": "2026-10-22",
+          "start": "2026-10-22T12:30:00.000Z",
+          "end": "2026-10-22T13:30:00.000Z",
+          "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2t56irif3nu6r4vmk0kb6v9rf0"
+        },
+        {
+          "title": "Update Event Schema for Classes & Workshops",
+          "to_day": "2026-10-20",
+          "start": "2026-10-20T09:00:00.000Z",
+          "end": "2026-10-20T11:00:00.000Z",
+          "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:blbsmg3d3eep409q1a43i62poo"
+        }
+      ]
+    },
+    "2026-11-02": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Booking Sheet, Month End Update",
+          "to_day": "2026-10-27",
+          "start": "2026-10-27T11:45:00.000Z",
+          "end": "2026-10-27T12:45:00.000Z",
+          "related_id": "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:iok420726vkdatj4kr50f4gh24"
+        },
+        {
+          "title": "Publish Blog Post",
+          "to_day": "2026-10-27",
+          "start": "2026-10-27T13:15:00.000Z",
+          "end": "2026-10-27T15:15:00.000Z",
+          "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:jsf409ovqpnc8578fhd3mulsbk"
+        }
+      ]
+    },
+    "2026-11-16": {
+      "cleared_planned": true,
+      "move_count": 1,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Light & Logic newsletter issue",
+          "to_day": "2026-11-08",
+          "start": "2026-11-08T11:00:00.000Z",
+          "end": "2026-11-08T15:00:00.000Z",
+          "related_id": "gcal:habit:c2f135c9-7146-415d-8231-c2460a064e94:evt:d1qsc23r4aru3subpigvcfb89c"
+        }
+      ]
+    },
+    "2026-11-23": {
+      "cleared_planned": true,
+      "move_count": 6,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Backup Photos to Portable Drive",
+          "to_day": "2026-11-11",
+          "start": "2026-11-11T12:15:00.000Z",
+          "end": "2026-11-11T13:15:00.000Z",
+          "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2ormhln4uemvbfn0dt8reao2hg"
+        },
+        {
+          "title": "Hotel bookings — Alan actions",
+          "to_day": "2026-11-18",
+          "start": "2026-11-18T14:15:00.000Z",
+          "end": "2026-11-18T14:45:00.000Z",
+          "related_id": "gcal:habit:fc32dffb-6b5d-434b-86b9-d484ce434127:evt:tn6esmlad2o4vakrmsuukn4s8s"
+        },
+        {
+          "title": "Hotel bookings check (Claude)",
+          "to_day": "2026-11-10",
+          "start": "2026-11-10T11:45:00.000Z",
+          "end": "2026-11-10T12:30:00.000Z",
+          "related_id": "gcal:habit:4dd47c23-92a2-4d03-8474-4f557775e3a9:evt:v9ma918v91kcqabdjrqm69ukr4"
+        },
+        {
+          "title": "Publish Blog Post",
+          "to_day": "2026-11-10",
+          "start": "2026-11-10T13:00:00.000Z",
+          "end": "2026-11-10T15:00:00.000Z",
+          "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:lq5jrbpqvbn7a82hsv5bqm2bck"
+        },
+        {
+          "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "to_day": "2026-10-20",
+          "start": "2026-10-20T11:15:00.000Z",
+          "end": "2026-10-20T13:15:00.000Z",
+          "related_id": "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:mhtig2nqv59jpj7bqfvmccun30"
+        },
+        {
+          "title": "Update Event Schema for Classes & Workshops",
+          "to_day": "2026-10-13",
+          "start": "2026-10-13T09:00:00.000Z",
+          "end": "2026-10-13T11:00:00.000Z",
+          "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:jus7gbocfkksn3otl27oh1e92k"
+        }
+      ]
+    }
+  },
+  "nov23": {
+    "cleared_planned": true,
+    "move_count": 6,
+    "unplaced": [],
+    "dest_issues": [],
+    "landings": [
+      {
+        "title": "Backup Photos to Portable Drive",
+        "to_day": "2026-11-11",
+        "start": "2026-11-11T12:15:00.000Z",
+        "end": "2026-11-11T13:15:00.000Z",
+        "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2ormhln4uemvbfn0dt8reao2hg"
+      },
+      {
+        "title": "Hotel bookings — Alan actions",
+        "to_day": "2026-11-18",
+        "start": "2026-11-18T14:15:00.000Z",
+        "end": "2026-11-18T14:45:00.000Z",
+        "related_id": "gcal:habit:fc32dffb-6b5d-434b-86b9-d484ce434127:evt:tn6esmlad2o4vakrmsuukn4s8s"
+      },
+      {
+        "title": "Hotel bookings check (Claude)",
+        "to_day": "2026-11-10",
+        "start": "2026-11-10T11:45:00.000Z",
+        "end": "2026-11-10T12:30:00.000Z",
+        "related_id": "gcal:habit:4dd47c23-92a2-4d03-8474-4f557775e3a9:evt:v9ma918v91kcqabdjrqm69ukr4"
+      },
+      {
+        "title": "Publish Blog Post",
+        "to_day": "2026-11-10",
+        "start": "2026-11-10T13:00:00.000Z",
+        "end": "2026-11-10T15:00:00.000Z",
+        "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:lq5jrbpqvbn7a82hsv5bqm2bck"
+      },
+      {
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "to_day": "2026-10-20",
+        "start": "2026-10-20T11:15:00.000Z",
+        "end": "2026-10-20T13:15:00.000Z",
+        "related_id": "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:mhtig2nqv59jpj7bqfvmccun30"
+      },
+      {
+        "title": "Update Event Schema for Classes & Workshops",
+        "to_day": "2026-10-13",
+        "start": "2026-10-13T09:00:00.000Z",
+        "end": "2026-10-13T11:00:00.000Z",
+        "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:jus7gbocfkksn3otl27oh1e92k"
+      }
+    ]
+  },
+  "verify_remaining_on_mondays": [],
+  "move_rows": [
+    {
+      "log_id": "5b8054e4-bc66-4112-ae5c-64bf66bba602",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "from_monday": "2026-08-17",
+      "ideal_date": "2026-07-27",
+      "calendar_event_id": "efuvkao5vtbbjhhiebibeg1e18",
+      "to_day": "2026-07-31",
+      "new_start": "2026-07-31T12:00:00.000Z",
+      "new_end": "2026-07-31T16:00:00.000Z",
+      "duration_min": 240,
+      "related_id": "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:efuvkao5vtbbjhhiebibeg1e18",
+      "pinChange": "diary_pin:2026-07-31T12:00:00.000Z|2026-07-31T16:00:00.000Z"
+    },
+    {
+      "log_id": "b6fdbbd7-91e5-41ee-96b8-36941bf2bc97",
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "from_monday": "2026-09-14",
+      "ideal_date": "2026-09-10",
+      "calendar_event_id": "4p59a26ekolgipb733sem84fn0",
+      "to_day": "2026-09-03",
+      "new_start": "2026-09-03T09:15:00.000Z",
+      "new_end": "2026-09-03T09:20:00.000Z",
+      "duration_min": 5,
+      "related_id": "gcal:habit:75c54300-e8ef-434f-af4a-51bb546b3496:evt:4p59a26ekolgipb733sem84fn0",
+      "pinChange": "diary_pin:2026-09-03T09:15:00.000Z|2026-09-03T09:20:00.000Z"
+    },
+    {
+      "log_id": "907e622d-151d-4c06-b8bf-b5936e9bd38f",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "from_monday": "2026-09-14",
+      "ideal_date": "2026-09-10",
+      "calendar_event_id": "fmj3rff5ilb5pkns2oi447l0bk",
+      "to_day": "2026-08-30",
+      "new_start": "2026-08-30T13:00:00.000Z",
+      "new_end": "2026-08-30T15:00:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:fmj3rff5ilb5pkns2oi447l0bk",
+      "pinChange": "diary_pin:2026-08-30T13:00:00.000Z|2026-08-30T15:00:00.000Z"
+    },
+    {
+      "log_id": "775cef9b-4db8-43bd-b479-d13545511840",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "from_monday": "2026-09-21",
+      "ideal_date": "2026-09-21",
+      "calendar_event_id": "o1juqoe6iunemtbu8ah684qa50",
+      "to_day": "2026-08-25",
+      "new_start": "2026-08-25T09:00:00.000Z",
+      "new_end": "2026-08-25T13:00:00.000Z",
+      "duration_min": 240,
+      "related_id": "gcal:habit:b002933c-0068-4dca-8661-f4098ccd714d:evt:o1juqoe6iunemtbu8ah684qa50",
+      "pinChange": "diary_pin:2026-08-25T09:00:00.000Z|2026-08-25T13:00:00.000Z"
+    },
+    {
+      "log_id": "99c312d9-da6f-4520-91ba-cf21409dcf44",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "from_monday": "2026-09-28",
+      "ideal_date": "2026-09-28",
+      "calendar_event_id": "btcc1n757b5c50opk9ica9jkg0",
+      "to_day": "2026-09-25",
+      "new_start": "2026-09-25T12:00:00.000Z",
+      "new_end": "2026-09-25T13:00:00.000Z",
+      "duration_min": 60,
+      "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:btcc1n757b5c50opk9ica9jkg0",
+      "pinChange": "diary_pin:2026-09-25T12:00:00.000Z|2026-09-25T13:00:00.000Z"
+    },
+    {
+      "log_id": "c9d9b9cd-a2eb-4aca-9150-6c5e1c2c13ca",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "from_monday": "2026-09-28",
+      "ideal_date": "2026-09-28",
+      "calendar_event_id": "6ot29hcjb7hhg4v07v0qsjm4uc",
+      "to_day": "2026-08-27",
+      "new_start": "2026-08-27T12:30:00.000Z",
+      "new_end": "2026-08-27T14:30:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:6ot29hcjb7hhg4v07v0qsjm4uc",
+      "pinChange": "diary_pin:2026-08-27T12:30:00.000Z|2026-08-27T14:30:00.000Z"
+    },
+    {
+      "log_id": "e455ec8f-7d42-4894-8875-e5f92bd0fe38",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "from_monday": "2026-10-05",
+      "ideal_date": "2026-10-05",
+      "calendar_event_id": "rekpqrk3o1tuole39jeeajcepc",
+      "to_day": "2026-09-30",
+      "new_start": "2026-09-30T10:45:00.000Z",
+      "new_end": "2026-09-30T12:15:00.000Z",
+      "duration_min": 90,
+      "related_id": "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:rekpqrk3o1tuole39jeeajcepc",
+      "pinChange": "diary_pin:2026-09-30T10:45:00.000Z|2026-09-30T12:15:00.000Z"
+    },
+    {
+      "log_id": "13ce6d36-c209-4353-9655-2fd9353d3e99",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "from_monday": "2026-10-05",
+      "ideal_date": "2026-10-02",
+      "calendar_event_id": "bqo66ia9nkl4dmtgr5pv2keem0",
+      "to_day": "2026-08-26",
+      "new_start": "2026-08-26T10:45:00.000Z",
+      "new_end": "2026-08-26T12:45:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:bqo66ia9nkl4dmtgr5pv2keem0",
+      "pinChange": "diary_pin:2026-08-26T10:45:00.000Z|2026-08-26T12:45:00.000Z"
+    },
+    {
+      "log_id": "86add020-a8bd-4131-afd1-d8e9f1d868eb",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "from_monday": "2026-10-26",
+      "ideal_date": "2026-10-26",
+      "calendar_event_id": "2t56irif3nu6r4vmk0kb6v9rf0",
+      "to_day": "2026-10-22",
+      "new_start": "2026-10-22T12:30:00.000Z",
+      "new_end": "2026-10-22T13:30:00.000Z",
+      "duration_min": 60,
+      "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2t56irif3nu6r4vmk0kb6v9rf0",
+      "pinChange": "diary_pin:2026-10-22T12:30:00.000Z|2026-10-22T13:30:00.000Z"
+    },
+    {
+      "log_id": "1e987b04-c3d4-4562-be56-d4d39656b3d9",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "from_monday": "2026-10-26",
+      "ideal_date": "2026-10-26",
+      "calendar_event_id": "blbsmg3d3eep409q1a43i62poo",
+      "to_day": "2026-10-20",
+      "new_start": "2026-10-20T09:00:00.000Z",
+      "new_end": "2026-10-20T11:00:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:blbsmg3d3eep409q1a43i62poo",
+      "pinChange": "diary_pin:2026-10-20T09:00:00.000Z|2026-10-20T11:00:00.000Z"
+    },
+    {
+      "log_id": "d2cad5e8-7cf0-4067-a23a-7eb06c969411",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "from_monday": "2026-11-02",
+      "ideal_date": "2026-11-01",
+      "calendar_event_id": "iok420726vkdatj4kr50f4gh24",
+      "to_day": "2026-10-27",
+      "new_start": "2026-10-27T11:45:00.000Z",
+      "new_end": "2026-10-27T12:45:00.000Z",
+      "duration_min": 60,
+      "related_id": "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:iok420726vkdatj4kr50f4gh24",
+      "pinChange": "diary_pin:2026-10-27T11:45:00.000Z|2026-10-27T12:45:00.000Z"
+    },
+    {
+      "log_id": "5517f8e1-e32b-419c-9dfa-1f6302b32701",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "from_monday": "2026-11-02",
+      "ideal_date": "2026-10-29",
+      "calendar_event_id": "jsf409ovqpnc8578fhd3mulsbk",
+      "to_day": "2026-10-27",
+      "new_start": "2026-10-27T13:15:00.000Z",
+      "new_end": "2026-10-27T15:15:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:jsf409ovqpnc8578fhd3mulsbk",
+      "pinChange": "diary_pin:2026-10-27T13:15:00.000Z|2026-10-27T15:15:00.000Z"
+    },
+    {
+      "log_id": "c98065b6-c3be-40b3-aa15-6145ccf4fd8b",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "from_monday": "2026-11-16",
+      "ideal_date": "2026-11-15",
+      "calendar_event_id": "d1qsc23r4aru3subpigvcfb89c",
+      "to_day": "2026-11-08",
+      "new_start": "2026-11-08T11:00:00.000Z",
+      "new_end": "2026-11-08T15:00:00.000Z",
+      "duration_min": 240,
+      "related_id": "gcal:habit:c2f135c9-7146-415d-8231-c2460a064e94:evt:d1qsc23r4aru3subpigvcfb89c",
+      "pinChange": "diary_pin:2026-11-08T11:00:00.000Z|2026-11-08T15:00:00.000Z"
+    },
+    {
+      "log_id": "68b351d0-1d20-4e62-81fe-194b7806b5e6",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-23",
+      "calendar_event_id": "2ormhln4uemvbfn0dt8reao2hg",
+      "to_day": "2026-11-11",
+      "new_start": "2026-11-11T12:15:00.000Z",
+      "new_end": "2026-11-11T13:15:00.000Z",
+      "duration_min": 60,
+      "related_id": "gcal:habit:38fe0fbd-3eb6-41df-9480-a862d5104cef:evt:2ormhln4uemvbfn0dt8reao2hg",
+      "pinChange": "diary_pin:2026-11-11T12:15:00.000Z|2026-11-11T13:15:00.000Z"
+    },
+    {
+      "log_id": "77feeba5-997d-406c-ac90-cc70c8499f79",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-25",
+      "calendar_event_id": "tn6esmlad2o4vakrmsuukn4s8s",
+      "to_day": "2026-11-18",
+      "new_start": "2026-11-18T14:15:00.000Z",
+      "new_end": "2026-11-18T14:45:00.000Z",
+      "duration_min": 30,
+      "related_id": "gcal:habit:fc32dffb-6b5d-434b-86b9-d484ce434127:evt:tn6esmlad2o4vakrmsuukn4s8s",
+      "pinChange": "diary_pin:2026-11-18T14:15:00.000Z|2026-11-18T14:45:00.000Z"
+    },
+    {
+      "log_id": "ab2067a9-13f2-4890-a2fc-fdcf04c76f63",
+      "habit_id": "4dd47c23-92a2-4d03-8474-4f557775e3a9",
+      "title": "Hotel bookings check (Claude)",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-25",
+      "calendar_event_id": "v9ma918v91kcqabdjrqm69ukr4",
+      "to_day": "2026-11-10",
+      "new_start": "2026-11-10T11:45:00.000Z",
+      "new_end": "2026-11-10T12:30:00.000Z",
+      "duration_min": 45,
+      "related_id": "gcal:habit:4dd47c23-92a2-4d03-8474-4f557775e3a9:evt:v9ma918v91kcqabdjrqm69ukr4",
+      "pinChange": "diary_pin:2026-11-10T11:45:00.000Z|2026-11-10T12:30:00.000Z"
+    },
+    {
+      "log_id": "abf68637-a6f4-4561-8d98-ab40ea12bbcb",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-19",
+      "calendar_event_id": "lq5jrbpqvbn7a82hsv5bqm2bck",
+      "to_day": "2026-11-10",
+      "new_start": "2026-11-10T13:00:00.000Z",
+      "new_end": "2026-11-10T15:00:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:2d5898bd-fa64-42d7-9649-d16fa771e945:evt:lq5jrbpqvbn7a82hsv5bqm2bck",
+      "pinChange": "diary_pin:2026-11-10T13:00:00.000Z|2026-11-10T15:00:00.000Z"
+    },
+    {
+      "log_id": "a73073ac-e429-427f-81ca-1db37faa1da9",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-20",
+      "calendar_event_id": "mhtig2nqv59jpj7bqfvmccun30",
+      "to_day": "2026-10-20",
+      "new_start": "2026-10-20T11:15:00.000Z",
+      "new_end": "2026-10-20T13:15:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:0a7aa275-b148-4364-a184-fc14daea8edb:evt:mhtig2nqv59jpj7bqfvmccun30",
+      "pinChange": "diary_pin:2026-10-20T11:15:00.000Z|2026-10-20T13:15:00.000Z"
+    },
+    {
+      "log_id": "fb7fde95-23e3-46e7-80e8-8ff75afddbd9",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "from_monday": "2026-11-23",
+      "ideal_date": "2026-11-23",
+      "calendar_event_id": "jus7gbocfkksn3otl27oh1e92k",
+      "to_day": "2026-10-13",
+      "new_start": "2026-10-13T09:00:00.000Z",
+      "new_end": "2026-10-13T11:00:00.000Z",
+      "duration_min": 120,
+      "related_id": "gcal:habit:755f6aa0-3daa-470b-a4d8-c4f301ba1235:evt:jus7gbocfkksn3otl27oh1e92k",
+      "pinChange": "diary_pin:2026-10-13T09:00:00.000Z|2026-10-13T11:00:00.000Z"
+    }
+  ],
+  "unplaced_rows": []
+}

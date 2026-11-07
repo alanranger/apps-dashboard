@@ -1,0 +1,347 @@
+{
+  "mode": "reconcile",
+  "flags": {
+    "auto_sync_enabled": true,
+    "auto_sync_signed_off": true,
+    "cursor_writes_available": true
+  },
+  "horizon": {
+    "from": "2026-07-20",
+    "to": "2027-07-18"
+  },
+  "google_matches_db": false,
+  "status_line": "Google matches DB: ✗ — 5 mismatches",
+  "checked_count": 415,
+  "mismatch_count": 5,
+  "mismatches": [
+    {
+      "kind": "habit",
+      "title": "MC 🔁 SEO Performance Review",
+      "db_start": "2026-08-09T09:00:00.000Z",
+      "db_end": "2026-08-09T12:00:00.000Z",
+      "event_id": null,
+      "reason": "placed_missing_calendar_event_id",
+      "titleOk": false,
+      "startOk": false,
+      "endOk": false
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Backup Photos to Portable Drive",
+      "db_start": "2026-08-24T08:00:00.000Z",
+      "db_end": "2026-08-24T09:00:00.000Z",
+      "event_id": null,
+      "reason": "placed_missing_calendar_event_id",
+      "titleOk": false,
+      "startOk": false,
+      "endOk": false
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "db_start": "2026-09-23T09:00:00.000Z",
+      "db_end": "2026-09-23T12:00:00.000Z",
+      "event_id": null,
+      "reason": "placed_missing_calendar_event_id",
+      "titleOk": false,
+      "startOk": false,
+      "endOk": false
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Publish Blog Post",
+      "db_start": "2026-10-15T10:00:00.000Z",
+      "db_end": "2026-10-15T12:00:00.000Z",
+      "event_id": null,
+      "reason": "placed_missing_calendar_event_id",
+      "titleOk": false,
+      "startOk": false,
+      "endOk": false
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Publish Blog Post",
+      "db_start": "2026-11-26T11:00:00.000Z",
+      "db_end": "2026-11-26T13:00:00.000Z",
+      "event_id": null,
+      "reason": "placed_missing_calendar_event_id",
+      "titleOk": false,
+      "startOk": false,
+      "endOk": false
+    }
+  ],
+  "managed_orphans_count": 655,
+  "managed_orphans_sample": [
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Prep — Constantin Xiao 1-2-1 Zoom",
+      "event_id": "0q9970q66n5175tqfkg3j3fak8",
+      "gcal_start": "2026-07-25T09:00:00+01:00",
+      "gcal_end": "2026-07-25T09:30:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — Constantin Xiao 1-2-1 Zoom",
+      "event_id": "d7v2biobogq9q3e4lei1ou86gk",
+      "gcal_start": "2026-07-25T10:30:00+01:00",
+      "gcal_end": "2026-07-25T11:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "event_id": "us5na9cnp7nq4fb5o8j7am1c5k",
+      "gcal_start": "2026-07-27T10:00:00+01:00",
+      "gcal_end": "2026-07-27T14:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Update Event Schema for Classes & Workshops",
+      "event_id": "ug2nc3qr2tbq30atbhg4jlpqfs",
+      "gcal_start": "2026-07-28T10:00:00+01:00",
+      "gcal_end": "2026-07-28T12:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Backup Photos to Portable Drive",
+      "event_id": "elbjoppf0p6pus7g4ia1f65g48",
+      "gcal_start": "2026-07-28T12:15:00+01:00",
+      "gcal_end": "2026-07-28T13:15:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — after BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "event_id": "vik9p9bblebcs5o1ou9d6g6nbs",
+      "gcal_start": "2026-07-28T16:30:00+01:00",
+      "gcal_end": "2026-07-28T17:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P1 · MC-7 · Mon recrawl reviews",
+      "event_id": "pglfvnh37dag7853jbj8ihp1n8",
+      "gcal_start": "2026-07-28T18:00:00+01:00",
+      "gcal_end": "2026-07-28T19:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Hotel bookings check (Claude)",
+      "event_id": "29mios6fl6j53rt71e1n2bh9hs",
+      "gcal_start": "2026-07-29T10:00:00+01:00",
+      "gcal_end": "2026-07-29T10:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Hotel bookings — Alan actions",
+      "event_id": "925q32d8ihalq664t4upn7kfns",
+      "gcal_start": "2026-07-29T11:00:00+01:00",
+      "gcal_end": "2026-07-29T11:30:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P2 · MC-9 · AI-citation scoping",
+      "event_id": "ei9abbk63335t4dqvbo1mpuk8k",
+      "gcal_start": "2026-07-29T14:45:00+01:00",
+      "gcal_end": "2026-07-29T16:15:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — after P2 · MC-9 · AI-citation scoping",
+      "event_id": "q33qd5c297r6ql1qum7003a6ok",
+      "gcal_start": "2026-07-29T16:15:00+01:00",
+      "gcal_end": "2026-07-29T16:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P0 · MC-21 · Admiral loan — awaiting funds",
+      "event_id": "96cqpd6n5dopap80f9i7jqqsgk",
+      "gcal_start": "2026-07-29T18:00:00+01:00",
+      "gcal_end": "2026-07-29T18:15:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — after P0 · MC-21 · Admiral loan — awaiting funds",
+      "event_id": "an1b0n8kao8jr1vbn36m5hqh1o",
+      "gcal_start": "2026-07-29T18:15:00+01:00",
+      "gcal_end": "2026-07-29T18:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P0 · MC-22 · Card move",
+      "event_id": "m6itq10a1g0nabih0gb7gj2c38",
+      "gcal_start": "2026-07-29T19:00:00+01:00",
+      "gcal_end": "2026-07-29T19:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Publish Blog Post",
+      "event_id": "qq9cp7umlsmcg4aqqc25bc2kfs",
+      "gcal_start": "2026-07-30T11:00:00+01:00",
+      "gcal_end": "2026-07-30T13:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P0 · MC-32 · White Horse Farm Inn 3–6 Aug — confirm policy + trip prep",
+      "event_id": "25crskamj3a56melavn380usa4",
+      "gcal_start": "2026-07-30T14:00:00+01:00",
+      "gcal_end": "2026-07-30T14:30:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — after P0 · MC-32 · White Horse Farm Inn 3–6 Aug — confirm policy +",
+      "event_id": "o7q8uon7s3h01l69cc2v01ql6k",
+      "gcal_start": "2026-07-30T14:30:00+01:00",
+      "gcal_end": "2026-07-30T15:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P0 · MC-23 · Clear-down checklist",
+      "event_id": "puo4j03vb34gnoguo29braa0cs",
+      "gcal_start": "2026-07-30T15:15:00+01:00",
+      "gcal_end": "2026-07-30T16:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Prep — Composition Class x3",
+      "event_id": "nehps3huqsc4uutsgl4vh4a49s",
+      "gcal_start": "2026-07-30T18:30:00+01:00",
+      "gcal_end": "2026-07-30T19:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC ⏳ Decompress — Composition Class x3",
+      "event_id": "duemqs7g8mh435lrm0emrm5ugg",
+      "gcal_start": "2026-07-30T21:00:00+01:00",
+      "gcal_end": "2026-07-30T21:30:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Send Out Joining Details",
+      "event_id": "ota1gqpvaqdchlbdk5gh9mhqfg",
+      "gcal_start": "2026-07-31T10:00:00+01:00",
+      "gcal_end": "2026-07-31T11:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "event_id": "mktctfi5k1vdpodotrqbf36pu4",
+      "gcal_start": "2026-07-31T11:15:00+01:00",
+      "gcal_end": "2026-07-31T13:15:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "P3 · MC-12 · Page-3 competitor sign-off",
+      "event_id": "depinkqj8m4kft0i14rnm4keq4",
+      "gcal_start": "2026-07-31T17:00:00+01:00",
+      "gcal_end": "2026-07-31T17:45:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🔁 Booking Sheet, Month End Update",
+      "event_id": "4ak3qf8opsoe5umco4rdn88fn8",
+      "gcal_start": "2026-08-01T11:00:00+01:00",
+      "gcal_end": "2026-08-01T12:00:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    },
+    {
+      "kind": "google_orphan",
+      "title": "MC 🚗 Travel out — Long Exposure Photography Workshop - Burnham on Sea Sunset",
+      "event_id": "qpq38bc9hbl3m5gc13kriv1huo",
+      "gcal_start": "2026-08-01T16:15:00+01:00",
+      "gcal_end": "2026-08-01T18:30:00+01:00",
+      "reason": "unplaced_or_unlinked_still_on_google"
+    }
+  ],
+  "masters": 415,
+  "masters_missing_event_id": 5,
+  "pending_flush_writes": 4,
+  "pending_flush_sample": [
+    {
+      "action": "insert",
+      "entity_type": "habit",
+      "event_id": "mktctfi5k1vdpodotrqbf36pu4",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "from": null,
+      "to": {
+        "start": "2026-07-31T10:15:00.000Z",
+        "end": "2026-07-31T12:15:00.000Z",
+        "day": "2026-07-31"
+      },
+      "live_from": "recurring_log",
+      "display_id": null,
+      "source": "gcal_push_queue",
+      "source_id": "0911af79-6002-4ef3-bb6a-07bb8ca5a4ac"
+    },
+    {
+      "action": "insert",
+      "entity_type": "habit",
+      "event_id": "1ugjn8mrs68o3e2820s1mtmqhk",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "from": null,
+      "to": {
+        "start": "2026-12-25T11:15:00.000Z",
+        "end": "2026-12-25T13:15:00.000Z",
+        "day": "2026-12-25"
+      },
+      "live_from": "recurring_log",
+      "display_id": null,
+      "source": "gcal_push_queue",
+      "source_id": "118c36fb-816e-48c5-b09f-b78e6a6c3a98"
+    },
+    {
+      "action": "insert",
+      "entity_type": "habit",
+      "event_id": "a4bob4sntlcjpttnrin32umsk4",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "from": null,
+      "to": {
+        "start": "2026-12-30T10:00:00.000Z",
+        "end": "2026-12-30T10:45:00.000Z",
+        "day": "2026-12-30"
+      },
+      "live_from": "recurring_log",
+      "display_id": null,
+      "source": "gcal_push_queue",
+      "source_id": "16b8e2aa-5e83-44d1-9884-e8e0ca22735a"
+    },
+    {
+      "action": "insert",
+      "entity_type": "habit",
+      "event_id": "ab84599fogi3qi4vihic0he144",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "from": null,
+      "to": {
+        "start": "2026-12-30T11:00:00.000Z",
+        "end": "2026-12-30T11:30:00.000Z",
+        "day": "2026-12-30"
+      },
+      "live_from": "recurring_log",
+      "display_id": null,
+      "source": "gcal_push_queue",
+      "source_id": "80420751-6b02-4e34-8bf2-a52955a15711"
+    }
+  ],
+  "pending_flush_live_db_times": true,
+  "left_uncertain": 0
+}

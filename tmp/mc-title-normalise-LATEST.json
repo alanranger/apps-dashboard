@@ -1,0 +1,434 @@
+{
+  "generated_at": "2026-07-27T18:40:03.416Z",
+  "flags_before": {
+    "auto_sync_enabled": false,
+    "auto_sync_signed_off": false,
+    "cursor_writes_available": true
+  },
+  "flags_after": {
+    "auto_sync_enabled": false,
+    "auto_sync_signed_off": false,
+    "cursor_writes_available": true
+  },
+  "before_status": "Google matches DB: ✗ — 55 mismatches",
+  "after_status": "Google matches DB: ✗ — 5 mismatches",
+  "title_only_attempted": 50,
+  "patched_ok": 50,
+  "patched_failed": 0,
+  "remaining_mismatches": [
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Hotel bookings check (Claude)",
+      "db_start": "2027-01-14T11:15:00.000Z",
+      "db_end": "2027-01-14T12:00:00.000Z",
+      "gcal_start": "2027-01-14T11:15:00Z",
+      "gcal_end": "2027-01-14T12:00:00Z",
+      "event_id": "qqt3cvane3gfopfisg55eeld38",
+      "titleOk": false,
+      "startOk": true,
+      "endOk": true
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Publish Blog Post",
+      "db_start": "2027-01-14T13:15:00.000Z",
+      "db_end": "2027-01-14T15:15:00.000Z",
+      "gcal_start": "2027-01-14T13:15:00Z",
+      "gcal_end": "2027-01-14T15:15:00Z",
+      "event_id": "hdiooacdbhqnlic391i0885njs",
+      "titleOk": false,
+      "startOk": true,
+      "endOk": true
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Hotel bookings — Alan actions",
+      "db_start": "2027-01-14T12:15:00.000Z",
+      "db_end": "2027-01-14T12:45:00.000Z",
+      "gcal_start": "2027-01-14T12:15:00Z",
+      "gcal_end": "2027-01-14T12:45:00Z",
+      "event_id": "i4jirkqglgb8c7chsascc0k03o",
+      "titleOk": false,
+      "startOk": true,
+      "endOk": true
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "db_start": "2027-01-20T11:15:00.000Z",
+      "db_end": "2027-01-20T13:15:00.000Z",
+      "gcal_start": "2027-01-20T11:15:00Z",
+      "gcal_end": "2027-01-20T13:15:00Z",
+      "event_id": "gu0rpeavot108lu1ignfb3kgjk",
+      "titleOk": false,
+      "startOk": true,
+      "endOk": true
+    },
+    {
+      "kind": "habit",
+      "title": "MC 🔁 Send Out Joining Details",
+      "db_start": "2027-01-26T10:00:00.000Z",
+      "db_end": "2027-01-26T11:00:00.000Z",
+      "gcal_start": "2027-01-26T10:00:00Z",
+      "gcal_end": "2027-01-26T11:00:00Z",
+      "event_id": "1nko2qq32va97ugis6vjvp3v7k",
+      "titleOk": false,
+      "startOk": true,
+      "endOk": true
+    }
+  ],
+  "results": [
+    {
+      "event_id": "bn078esenvt2jpfnmetoucdhoo",
+      "expect_title": "MC 🔁 Publish Blog Post",
+      "kind": "habit",
+      "db_start": "2026-08-27T10:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0np73n7k18621lhm2qo093j3nk",
+      "expect_title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "kind": "habit",
+      "db_start": "2026-09-17T10:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "q96bs6mj8316c5kplkset61ve4",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-09-25T14:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "jugne0bsl55mpg4s8q3g928m4s",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-09-25T12:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "p1abn90ci0jst37geoo530jp3c",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-09-25T13:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "cnh3hjg0qivel09avr8508ocuc",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-09-30T11:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "dik9s3s9qb0689mm819vnsd10g",
+      "expect_title": "MC 🔁 Booking Sheet, Month End Update",
+      "kind": "habit",
+      "db_start": "2026-09-30T09:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "r6qguiu5449eij3qnor6d7os2s",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-09-30T12:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "javb92m7ha8mtsdjckjd5cqvho",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-10-01T09:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "q9ev8abg8tcbvleor52nreqo2k",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-10-07T12:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "5o7u4unsms01lvdnb90at4qr7k",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-10-07T13:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "hnbuov59i2buktkk33lbrgue3k",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-10-07T10:45:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0v57ocfgsbgqduu1jprf3io0u4",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-10-13T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "vr9tg4rucsurpqmcr4b4hbd3ho",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-10-13T09:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "90d9mv3qd36s215kjcgd1av074",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-10-20T09:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "5k56g9uip997d7r5k7chbl4k14",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-10-20T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "6eoan8me3iof6i8ogipmbphtp0",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-10-22T09:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "9t48j1l0cijmmnio64htssfg08",
+      "expect_title": "MC 🔁 Publish Blog Post",
+      "kind": "habit",
+      "db_start": "2026-10-22T10:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "u5sbh8sdnokj8bfi0rlej58brc",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-10-27T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "t5g8r4ijfeg1uvr2l8o2fi1t9o",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-10-27T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "4kvhten9sje71qch0hu58b59qk",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-11-02T13:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0ehuh6t77kj3oetef6ag4pe5bs",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-11-02T14:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0anj21rpbte304c2eraqg5hnh0",
+      "expect_title": "MC 🔁 Monthly Accounts — Bank Genie",
+      "kind": "habit",
+      "db_start": "2026-11-02T11:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "kuncoe7aoqfptimnco3qd6sbus",
+      "expect_title": "MC 🔁 SEO Performance Review",
+      "kind": "habit",
+      "db_start": "2026-11-04T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "e9qts2sqh9unoq1em8du5uii14",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-11-05T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "vkonfmno1ar61rhs4n0asns12k",
+      "expect_title": "MC 🔁 Publish Blog Post",
+      "kind": "habit",
+      "db_start": "2026-11-05T11:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "ku6g6si2hn8sde144ao17cjlao",
+      "expect_title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "kind": "habit",
+      "db_start": "2026-11-08T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "kqdsiqi6k732vs6infp4hqo31k",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-11-10T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "237q1s88d1aell69d7fmpmsks4",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-11-10T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "vu6s8cripigqiagqecr4522m34",
+      "expect_title": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+      "kind": "habit",
+      "db_start": "2026-11-18T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0k26pl9arva7jlrulcn5ib63ak",
+      "expect_title": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "kind": "habit",
+      "db_start": "2026-11-18T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "g9urvtl3trp989dmdssl33uoio",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-11-19T12:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "0gd2a19slpuldqbq8ee0mmhc6c",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-11-19T11:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "krt0gvqkfds419fqhsnn7gsd74",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-11-19T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "86jt1577vf69f7fh38c2v84us0",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-11-30T12:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "83tc6qmbf5b9arsjbtfc71r1oc",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-11-30T11:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "4np01rjrr4m6rb4lcml91lcd6k",
+      "expect_title": "MC 🔁 Publish Blog Post",
+      "kind": "habit",
+      "db_start": "2026-12-03T11:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "6rgufm0l99molojq02fl8r5oig",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2026-12-03T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "66u9inc7jgi8oljjefecn568ms",
+      "expect_title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "kind": "habit",
+      "db_start": "2026-12-05T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "ljqksh4c7npcj4fdvv38bvgcmk",
+      "expect_title": "MC 🔁 SEO Performance Review",
+      "kind": "habit",
+      "db_start": "2026-12-06T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "ei66h0udloniq1jheaplfpegh4",
+      "expect_title": "MC 🔁 Check Artfully Walls Sales",
+      "kind": "habit",
+      "db_start": "2026-12-09T11:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "t7dbekrj41idvqikufkab78tnc",
+      "expect_title": "MC 🔁 Light & Logic newsletter issue",
+      "kind": "habit",
+      "db_start": "2026-12-14T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "iuhfb5vc8ef9p5bjlu1dvvuc3c",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-12-16T12:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "cfrj4dh54pd69ltmm20i2kivas",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-12-16T11:15:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "7gs1pqu3e738brv83c4k25t2b4",
+      "expect_title": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "kind": "habit",
+      "db_start": "2026-12-26T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "m0qno3sbhn4jpk0b4v8ubv3a6c",
+      "expect_title": "MC 🔁 Hotel bookings check (Claude)",
+      "kind": "habit",
+      "db_start": "2026-12-30T12:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "ljp06tll18b8o844mjh8tecgvg",
+      "expect_title": "MC 🔁 Hotel bookings — Alan actions",
+      "kind": "habit",
+      "db_start": "2026-12-30T13:30:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "j849k1qos9e55ob9vbe3br5vsk",
+      "expect_title": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+      "kind": "habit",
+      "db_start": "2027-01-09T11:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "k9ad8r6de7bt37sivcgni6b9f8",
+      "expect_title": "MC 🔁 Send Out Joining Details",
+      "kind": "habit",
+      "db_start": "2027-01-14T10:00:00.000Z",
+      "ok": true
+    },
+    {
+      "event_id": "i7jd02b2c0tla1grtlhuc8uju4",
+      "expect_title": "MC 🔁 Check Artfully Walls Sales",
+      "kind": "habit",
+      "db_start": "2027-01-14T15:45:00.000Z",
+      "ok": true
+    }
+  ],
+  "after_retry_status": "Google matches DB: ✓",
+  "after_retry_mismatches": []
+}

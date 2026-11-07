@@ -1,0 +1,131 @@
+{
+  "at": "2026-07-27T12:37:17.792Z",
+  "horizon": {
+    "from": "2026-07-27",
+    "to": "2026-09-20",
+    "weeks": 8,
+    "today": "2026-07-27"
+  },
+  "gcal_health": {
+    "label": "4 calendars ok",
+    "ok": true,
+    "faults": []
+  },
+  "counts": {
+    "db_items": 96,
+    "db_habits": 52,
+    "db_tasks": 24,
+    "db_travel": 36,
+    "primary_mc_events": 128,
+    "matched": 96,
+    "time_mismatch": 0,
+    "missing_in_gcal": 0,
+    "missing_event_id": 0,
+    "orphan_gcal_mc_all": 32,
+    "orphan_unexpected": 0,
+    "orphan_expected_buffers_reminders_fixtures": 32,
+    "push_queue_open": 0,
+    "diary_vs_db_mismatches": 0
+  },
+  "aligned": true,
+  "soft_aligned": true,
+  "time_mismatch": [],
+  "missing_in_gcal": [],
+  "missing_event_id": [],
+  "missing_event_id_total": 0,
+  "orphan_gcal_mc": [],
+  "orphan_gcal_mc_total": 0,
+  "orphan_expected_sample": [
+    {
+      "event_id": "nehps3huqsc4uutsgl4vh4a49s",
+      "summary": "MC ⏳ Prep — Composition Class x3",
+      "start": "2026-07-30T18:30:00+01:00",
+      "end": "2026-07-30T19:00:00+01:00",
+      "day": "2026-07-30",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "duemqs7g8mh435lrm0emrm5ugg",
+      "summary": "MC ⏳ Decompress — Composition Class x3",
+      "start": "2026-07-30T21:00:00+01:00",
+      "end": "2026-07-30T21:30:00+01:00",
+      "day": "2026-07-30",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "44gu43276tkmilqds4ashv1efg",
+      "summary": "MC ⏳ Prep — The Secrets of Woodland Photography - Masterclass Summer",
+      "start": "2026-08-02T09:30:00+01:00",
+      "end": "2026-08-02T10:00:00+01:00",
+      "day": "2026-08-02",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "jgbri46q3bb2nr63cbad2k6600",
+      "summary": "MC ⏰ Cancel Hotel Rudyard (Peak Heathers) by 8 Aug if numbers short — ref 2OQO",
+      "start": "2026-08-02T11:00:00+01:00",
+      "end": "2026-08-02T11:20:00+01:00",
+      "day": "2026-08-02",
+      "bucket": "reminder"
+    },
+    {
+      "event_id": "rb6c3uvn8rm7h5d73u7g6fn30c",
+      "summary": "MC ⏳ Decompress — The Secrets of Woodland Photography - Masterclass Summer",
+      "start": "2026-08-02T16:00:00+01:00",
+      "end": "2026-08-02T16:30:00+01:00",
+      "day": "2026-08-02",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "c6e63kaaptu0hhkdcp1gjcagjo",
+      "summary": "MC ⏳ Prep — Jo Galloway 1-2-1 Zoom",
+      "start": "2026-08-12T15:00:00+01:00",
+      "end": "2026-08-12T15:30:00+01:00",
+      "day": "2026-08-12",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "p8qipai4gad4vccdh19aui05h0",
+      "summary": "MC ⏳ Decompress — Jo Galloway 1-2-1 Zoom",
+      "start": "2026-08-12T16:30:00+01:00",
+      "end": "2026-08-12T17:00:00+01:00",
+      "day": "2026-08-12",
+      "bucket": "buffer"
+    },
+    {
+      "event_id": "jnk10hibaa3q05ihrg8k9se0gk",
+      "summary": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+      "start": "2026-08-21T09:00:00+01:00",
+      "end": "2026-08-21T09:20:00+01:00",
+      "day": "2026-08-21",
+      "bucket": "reminder"
+    },
+    {
+      "event_id": "lajma28erc1qi7uaosq3sdm73g",
+      "summary": "MC ⚽ Before: Ipswich Town vs Sunderland",
+      "start": "2026-08-22T14:00:00+01:00",
+      "end": "2026-08-22T15:00:00+01:00",
+      "day": "2026-08-22",
+      "bucket": "fixture"
+    },
+    {
+      "event_id": "a9ktoe3m9en03b2vllvc76h7vs",
+      "summary": "MC ⚽ After: Ipswich Town vs Sunderland",
+      "start": "2026-08-22T17:00:00+01:00",
+      "end": "2026-08-22T18:00:00+01:00",
+      "day": "2026-08-22",
+      "bucket": "fixture"
+    }
+  ],
+  "orphan_expected_total": 32,
+  "diary_vs_db": {
+    "ok": true,
+    "error": null,
+    "compared": 96,
+    "mismatches": [],
+    "live_block_count": 96,
+    "mismatch_count": 0
+  },
+  "open_push": [],
+  "verdict": "ALIGNED"
+}

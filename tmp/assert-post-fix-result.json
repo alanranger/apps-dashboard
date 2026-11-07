@@ -1,0 +1,154 @@
+{
+  "holidaySource": {
+    "count": 83,
+    "inRange": [
+      "2026-08-31"
+    ]
+  },
+  "deleted": [
+    "bhcc8qenibs36v2lvlio1ua7fo",
+    "0np73n7k18621lhm2qo093j3nk",
+    "g89h2cj849r1nas8ibdok3h56c",
+    "aak7c7a4ll22ku78tg4er4mkl0",
+    "p1abn90ci0jst37geoo530jp3c",
+    "q96bs6mj8316c5kplkset61ve4"
+  ],
+  "overlaps": [],
+  "zeroGaps": [],
+  "capBreaches": [],
+  "windowBreaches": [],
+  "residentialHits": [],
+  "holidayHits": [],
+  "holidayHitsOutOfScope": [],
+  "dayDetail": {
+    "2026-08-07": {
+      "taskMinutes": 195,
+      "blocks": [
+        "P0 · MC 🔁 Monthly Accounts — Bank Genie 10:00–11:30",
+        "P0 · MC 🔁 Booking Sheet, Month End Update 12:00–13:00",
+        "P3 · MC-14 · Sign-off: Traditional SEO 13:30–14:15"
+      ]
+    },
+    "2026-08-10": {
+      "taskMinutes": 240,
+      "blocks": [
+        "P1 · MC 🔁 Publish Blog Post 10:00–12:00",
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates 12:30–14:30"
+      ]
+    },
+    "2026-08-11": {
+      "taskMinutes": 240,
+      "blocks": [
+        "P3 · MC-2 · Walkthrough: Money rebuild 10:00–10:45",
+        "P3 · MC-13 · Sign-off: URL Money Pages 11:15–11:45",
+        "P3 · MC-15 · Sign-off: Backlinks 12:15–13:00",
+        "P3 · MC-16 · Sign-off: Portfolio 13:30–14:00",
+        "P3 · MC-17 · Sign-off: Authority 14:30–15:00",
+        "P3 · MC-18 · Sign-off: Local and Reviews 15:30–16:00",
+        "P3 · MC-19 · Sign-off: Revenue Truth re-review 16:30–17:00"
+      ]
+    },
+    "2026-08-12": {
+      "taskMinutes": 165,
+      "blocks": [
+        "P3 · MC-1 · Walkthrough: integrity checker 10:00–11:00",
+        "P1 · MC 🔁 Hotel bookings check (Claude) 11:30–12:15",
+        "P1 · MC 🔁 Hotel bookings — Alan actions 12:45–13:15",
+        "P3 · MC-20 · Sign-off: History 13:45–14:15"
+      ]
+    },
+    "2026-08-13": {
+      "taskMinutes": 230,
+      "blocks": [
+        "P2 · MC 🔁 Check Artfully Walls Sales 10:00–10:05",
+        "P1 · MC 🔁 Publish Blog Post 10:35–12:35",
+        "P1 · MC-50/51 · Book hotels — Yorkshire Dales + An 13:05–14:05",
+        "P3 · MC-3 · Walkthrough: weekend page fixes 14:35–15:20"
+      ]
+    },
+    "2026-08-14": {
+      "taskMinutes": 180,
+      "blocks": [
+        "P0 · MC 🔁 Send Out Joining Details 13:30–14:30",
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates 15:00–17:00"
+      ]
+    },
+    "2026-08-20": {
+      "taskMinutes": 215,
+      "blocks": [
+        "P1 · MC 🔁 Publish Blog Post 10:00–12:00",
+        "P1 · MC 🔁 Hotel bookings check (Claude) 12:30–13:15",
+        "P1 · MC 🔁 Hotel bookings — Alan actions 13:45–14:15",
+        "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks  14:45–15:05"
+      ]
+    },
+    "2026-08-21": {
+      "taskMinutes": 240,
+      "blocks": [
+        "P0 · MC 🔁 Send Out Joining Details 10:00–11:00",
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates 11:30–13:30",
+        "P0 · MC-42 · Gower: reschedule dates then book hot 14:00–15:00"
+      ]
+    },
+    "2026-08-30": {
+      "taskMinutes": 180,
+      "blocks": [
+        "P1 · MC 🔁 SEO Performance Review 11:00–14:00"
+      ]
+    },
+    "2026-08-31": {
+      "taskMinutes": 0,
+      "blocks": []
+    },
+    "2026-09-02": {
+      "taskMinutes": 210,
+      "blocks": [
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates 10:00–12:00",
+        "P1 · MC 🔁 Hotel bookings check (Claude) 12:30–13:15",
+        "P1 · MC 🔁 Hotel bookings — Alan actions 13:45–14:15",
+        "MC ⏰ Hotel deadline — Ellerby Country Inn cancel b 14:45–15:00"
+      ]
+    },
+    "2026-09-03": {
+      "taskMinutes": 240,
+      "blocks": [
+        "P1 · MC 🔁 Publish Blog Post 10:00–12:00",
+        "P0 · MC 🔁 Send Out Joining Details 12:30–13:30",
+        "P0 · MC 🔁 Booking Sheet, Month End Update 14:00–15:00"
+      ]
+    },
+    "2026-09-14": {
+      "taskMinutes": 205,
+      "blocks": [
+        "P1 · MC 🔁 Publish Blog Post 10:00–12:00",
+        "P2 · MC 🔁 Check Artfully Walls Sales 12:30–12:35",
+        "P2 · MC-11 · Money review (monthly) 13:05–14:05",
+        "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONF 14:35–14:55"
+      ]
+    },
+    "2026-09-15": {
+      "taskMinutes": 230,
+      "blocks": [
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates 10:00–12:00",
+        "P1 · MC 🔁 Hotel bookings check (Claude) 12:30–13:15",
+        "P1 · MC 🔁 Hotel bookings — Alan actions 13:45–14:15",
+        "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cance 14:45–15:00",
+        "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks 15:30–15:50"
+      ]
+    },
+    "2026-09-17": {
+      "taskMinutes": 180,
+      "blocks": [
+        "P1 · MC 🔁 Publish Blog Post 10:00–12:00",
+        "P0 · MC 🔁 Send Out Joining Details 12:30–13:30"
+      ]
+    },
+    "2026-09-22": {
+      "taskMinutes": 240,
+      "blocks": [
+        "P1 · MC 🔁 BAU global refresh — Day 2 10:00–14:00"
+      ]
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,31 @@
+{
+  "ran_at": "2026-07-27T13:11:08.738Z",
+  "dry": false,
+  "horizon": {
+    "timeMin": "2026-07-13T00:00:00.000Z",
+    "timeMax": "2027-07-26T00:00:00.000Z",
+    "weeks": 52
+  },
+  "rest": {
+    "desired": 19,
+    "created": 0,
+    "updated": 19,
+    "pruned": 0,
+    "failed": []
+  },
+  "away": {
+    "desired": 11,
+    "created": 0,
+    "updated": 11,
+    "pruned": 0,
+    "failed": []
+  },
+  "fixtures": {
+    "rows": 38,
+    "already_linked_live": 38,
+    "recreated": 0,
+    "linked": 0,
+    "failed": []
+  },
+  "writeGcal": true
+}

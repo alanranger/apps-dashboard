@@ -1,0 +1,70 @@
+{
+  "run": {
+    "id": "a4c53ace-7fc9-417a-9abd-96efdce3f460",
+    "status": "succeeded",
+    "mode": "dry",
+    "stages": [
+      "F"
+    ]
+  },
+  "before": {
+    "shared": {
+      "head": "f46191e666b6436c6010264a33d8963ed507569a",
+      "status": [
+        "?? docs/ACADEMY-COMPLETE-SPEC.md",
+        "?? docs/ACADEMY-COMPLETE-SPEC.pdf",
+        "?? docs/SCHEMA-ARCHITECTURE-SITE-MAP.md",
+        "?? docs/SCHEMA-ARCHITECTURE-SITE-MAP.pdf",
+        "?? docs/generate-schema-arch-pdf.mjs",
+        "?? docs/generate_academy_spec_pdf.py",
+        "?? docs/generate_schema_arch_pdf.py",
+        "?? docs/schema-architecture-flow.png"
+      ],
+      "hashes": {
+        "docs/ACADEMY-COMPLETE-SPEC.md": "3676102798f79a7c44ca59d34730196080f8f606e90084ba5f20f1762d80f80b",
+        "docs/ACADEMY-COMPLETE-SPEC.pdf": "532cb7d079641489a375d07a4b116900102bd59907fddd0b442fe2598b03f070",
+        "docs/SCHEMA-ARCHITECTURE-SITE-MAP.md": "c8334fbf0ed507b942bd448ded1fac82ff3d7f5398f713334b724f52a3a94164",
+        "docs/SCHEMA-ARCHITECTURE-SITE-MAP.pdf": "da2bc018934e1798e6568b93b14f063267adfa893e2be6a95a264586adfd25b6",
+        "docs/generate-schema-arch-pdf.mjs": "b7f7fd9097691142057d0daf5dce639f0807dfcf5660ea3db55ea28ae43d093a",
+        "docs/generate_academy_spec_pdf.py": "f8b5edb86d803304e88b4d1792abd6029c6f556fb4ff20c8f6e3d47550741418",
+        "docs/generate_schema_arch_pdf.py": "3a15699e424753f1c49d2901d7083e4308c081e51ec7910a287b8a0b044c115e",
+        "docs/schema-architecture-flow.png": "e49b5356725f3dc81b0743616e9927297a3cab7240208cbd8215d608252214c5"
+      }
+    },
+    "schema": {
+      "head": "1d85581cfbeed5d299d86439bd9e2114335cd70a",
+      "status": [],
+      "hashes": {}
+    }
+  },
+  "after": {
+    "shared": {
+      "head": "f46191e666b6436c6010264a33d8963ed507569a",
+      "status": [
+        "?? docs/ACADEMY-COMPLETE-SPEC.md",
+        "?? docs/ACADEMY-COMPLETE-SPEC.pdf",
+        "?? docs/SCHEMA-ARCHITECTURE-SITE-MAP.md",
+        "?? docs/SCHEMA-ARCHITECTURE-SITE-MAP.pdf",
+        "?? docs/generate-schema-arch-pdf.mjs",
+        "?? docs/generate_academy_spec_pdf.py",
+        "?? docs/generate_schema_arch_pdf.py",
+        "?? docs/schema-architecture-flow.png"
+      ],
+      "hashes": {
+        "docs/ACADEMY-COMPLETE-SPEC.md": "3676102798f79a7c44ca59d34730196080f8f606e90084ba5f20f1762d80f80b",
+        "docs/ACADEMY-COMPLETE-SPEC.pdf": "532cb7d079641489a375d07a4b116900102bd59907fddd0b442fe2598b03f070",
+        "docs/SCHEMA-ARCHITECTURE-SITE-MAP.md": "c8334fbf0ed507b942bd448ded1fac82ff3d7f5398f713334b724f52a3a94164",
+        "docs/SCHEMA-ARCHITECTURE-SITE-MAP.pdf": "da2bc018934e1798e6568b93b14f063267adfa893e2be6a95a264586adfd25b6",
+        "docs/generate-schema-arch-pdf.mjs": "b7f7fd9097691142057d0daf5dce639f0807dfcf5660ea3db55ea28ae43d093a",
+        "docs/generate_academy_spec_pdf.py": "f8b5edb86d803304e88b4d1792abd6029c6f556fb4ff20c8f6e3d47550741418",
+        "docs/generate_schema_arch_pdf.py": "3a15699e424753f1c49d2901d7083e4308c081e51ec7910a287b8a0b044c115e",
+        "docs/schema-architecture-flow.png": "e49b5356725f3dc81b0743616e9927297a3cab7240208cbd8215d608252214c5"
+      }
+    },
+    "schema": {
+      "head": "1d85581cfbeed5d299d86439bd9e2114335cd70a",
+      "status": [],
+      "hashes": {}
+    }
+  }
+}

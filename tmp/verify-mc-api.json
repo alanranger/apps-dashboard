@@ -1,0 +1,452 @@
+{
+  "mc_source": "supabase_rest_same_as_mc_bootstrap",
+  "open_tasks": 27,
+  "open_with_slot": 23,
+  "open_missing_slot": [
+    {
+      "id": 10,
+      "title": "22 amber findings → 0",
+      "due": null
+    },
+    {
+      "id": 22,
+      "title": "Card move",
+      "due": null
+    },
+    {
+      "id": 23,
+      "title": "Clear-down checklist",
+      "due": null
+    },
+    {
+      "id": 45,
+      "title": "DB quick-wins pack 1–5 (page_html + GSC orphan + index + vacuum)",
+      "due": null
+    }
+  ],
+  "active_habits": 15,
+  "recurring_log_scheduled": 120,
+  "log_missing_eid": 0,
+  "tasks": [
+    {
+      "display_id": 1,
+      "title": "Walkthrough: integrity checker",
+      "state": "todo",
+      "due_date": "2026-07-29",
+      "scheduled_start": "2026-07-29T09:00:00+00:00",
+      "scheduled_end": "2026-07-29T10:00:00+00:00",
+      "calendar_event_id": "1imh17fb9j30dp766403hqca5o",
+      "est_minutes": null,
+      "priority": "p3"
+    },
+    {
+      "display_id": 2,
+      "title": "Walkthrough: Money rebuild",
+      "state": "todo",
+      "due_date": "2026-07-30",
+      "scheduled_start": "2026-07-28T13:45:00+00:00",
+      "scheduled_end": "2026-07-28T14:30:00+00:00",
+      "calendar_event_id": "k04po9dlqou8kotp1muv6dkv58",
+      "est_minutes": 45,
+      "priority": "p3"
+    },
+    {
+      "display_id": 3,
+      "title": "Walkthrough: weekend page fixes",
+      "state": "todo",
+      "due_date": "2026-07-31",
+      "scheduled_start": "2026-07-29T10:30:00+00:00",
+      "scheduled_end": "2026-07-29T11:15:00+00:00",
+      "calendar_event_id": "inoa18ev34cg4das1ulm1fmqn4",
+      "est_minutes": 45,
+      "priority": "p3"
+    },
+    {
+      "display_id": 7,
+      "title": "Mon recrawl reviews",
+      "state": "todo",
+      "due_date": "2026-07-27",
+      "scheduled_start": "2026-07-28T09:00:00+00:00",
+      "scheduled_end": "2026-07-28T10:00:00+00:00",
+      "calendar_event_id": "7gp9udivme2kemep8b1075p8v8",
+      "est_minutes": null,
+      "priority": "p1"
+    },
+    {
+      "display_id": 8,
+      "title": "Rev-weighting brief",
+      "state": "todo",
+      "due_date": "2026-07-26",
+      "scheduled_start": "2026-07-27T11:15:00+00:00",
+      "scheduled_end": "2026-07-27T13:45:00+00:00",
+      "calendar_event_id": "47qmhlqo3eksv2dqmcgi8vc5gk",
+      "est_minutes": 150,
+      "priority": "p1"
+    },
+    {
+      "display_id": 9,
+      "title": "AI-citation scoping",
+      "state": "todo",
+      "due_date": "2026-07-27",
+      "scheduled_start": "2026-07-28T10:30:00+00:00",
+      "scheduled_end": "2026-07-28T12:00:00+00:00",
+      "calendar_event_id": "8dp5juqnam0rcaa5d1t0cebmao",
+      "est_minutes": 90,
+      "priority": "p2"
+    },
+    {
+      "display_id": 10,
+      "title": "22 amber findings → 0",
+      "state": "waiting",
+      "due_date": null,
+      "scheduled_start": null,
+      "scheduled_end": null,
+      "calendar_event_id": null,
+      "est_minutes": null,
+      "priority": "p1"
+    },
+    {
+      "display_id": 11,
+      "title": "Money review",
+      "state": "todo",
+      "due_date": "2026-09-01",
+      "scheduled_start": "2026-09-01T10:30:00+00:00",
+      "scheduled_end": "2026-09-01T11:30:00+00:00",
+      "calendar_event_id": "ukfmq5ltmhr5f8ena601fo66cs",
+      "est_minutes": 60,
+      "priority": "p2"
+    },
+    {
+      "display_id": 12,
+      "title": "Page-3 competitor sign-off",
+      "state": "waiting",
+      "due_date": "2026-07-25",
+      "scheduled_start": "2026-07-27T10:00:00+00:00",
+      "scheduled_end": "2026-07-27T10:45:00+00:00",
+      "calendar_event_id": "tg21360khatnirft34g5d2lalk",
+      "est_minutes": 45,
+      "priority": "p3"
+    },
+    {
+      "display_id": 13,
+      "title": "Sign-off: URL Money Pages",
+      "state": "todo",
+      "due_date": "2026-08-01",
+      "scheduled_start": "2026-08-07T13:45:00+00:00",
+      "scheduled_end": "2026-08-07T14:15:00+00:00",
+      "calendar_event_id": "m2mgpecbvtjcpr7doovievthlg",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 14,
+      "title": "Sign-off: Traditional SEO",
+      "state": "todo",
+      "due_date": "2026-08-01",
+      "scheduled_start": "2026-08-07T12:30:00+00:00",
+      "scheduled_end": "2026-08-07T13:15:00+00:00",
+      "calendar_event_id": "691p6nukbf05p9u7fjupapchl4",
+      "est_minutes": 45,
+      "priority": "p3"
+    },
+    {
+      "display_id": 15,
+      "title": "Sign-off: Backlinks",
+      "state": "todo",
+      "due_date": "2026-08-05",
+      "scheduled_start": "2026-08-11T09:00:00+00:00",
+      "scheduled_end": "2026-08-11T09:45:00+00:00",
+      "calendar_event_id": "4sq0o5qtgldfq6der6u0bpdo2g",
+      "est_minutes": 45,
+      "priority": "p3"
+    },
+    {
+      "display_id": 16,
+      "title": "Sign-off: Portfolio",
+      "state": "todo",
+      "due_date": "2026-08-05",
+      "scheduled_start": "2026-08-11T10:15:00+00:00",
+      "scheduled_end": "2026-08-11T10:45:00+00:00",
+      "calendar_event_id": "607hc8286v9cu2umhe5jfaitc4",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 17,
+      "title": "Sign-off: Authority",
+      "state": "todo",
+      "due_date": "2026-08-08",
+      "scheduled_start": "2026-08-11T11:15:00+00:00",
+      "scheduled_end": "2026-08-11T11:45:00+00:00",
+      "calendar_event_id": "g2cgddgsoimun70k8oa2mfff8s",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 18,
+      "title": "Sign-off: Local & Reviews",
+      "state": "todo",
+      "due_date": "2026-08-08",
+      "scheduled_start": "2026-08-11T12:15:00+00:00",
+      "scheduled_end": "2026-08-11T12:45:00+00:00",
+      "calendar_event_id": "132no8hi86rupn564ho1l8kiq4",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 19,
+      "title": "Sign-off: Revenue Truth re-review",
+      "state": "todo",
+      "due_date": "2026-08-10",
+      "scheduled_start": "2026-08-11T13:15:00+00:00",
+      "scheduled_end": "2026-08-11T13:45:00+00:00",
+      "calendar_event_id": "a6fbk73lulilk1hamojbr78s38",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 20,
+      "title": "Sign-off: History",
+      "state": "todo",
+      "due_date": "2026-08-12",
+      "scheduled_start": "2026-08-12T09:00:00+00:00",
+      "scheduled_end": "2026-08-12T09:30:00+00:00",
+      "calendar_event_id": "he91671tj90c2dml3s46r2j9u4",
+      "est_minutes": 30,
+      "priority": "p3"
+    },
+    {
+      "display_id": 21,
+      "title": "Hastings decision",
+      "state": "waiting",
+      "due_date": "2026-07-24",
+      "scheduled_start": "2026-07-27T09:00:00+00:00",
+      "scheduled_end": "2026-07-27T09:30:00+00:00",
+      "calendar_event_id": "pjc00oqca6nn9b15cb93n7iip0",
+      "est_minutes": null,
+      "priority": "p0"
+    },
+    {
+      "display_id": 22,
+      "title": "Card move",
+      "state": "todo",
+      "due_date": null,
+      "scheduled_start": null,
+      "scheduled_end": null,
+      "calendar_event_id": null,
+      "est_minutes": null,
+      "priority": "p0"
+    },
+    {
+      "display_id": 23,
+      "title": "Clear-down checklist",
+      "state": "todo",
+      "due_date": null,
+      "scheduled_start": null,
+      "scheduled_end": null,
+      "calendar_event_id": null,
+      "est_minutes": null,
+      "priority": "p0"
+    },
+    {
+      "display_id": 25,
+      "title": "Scoping session",
+      "state": "todo",
+      "due_date": "2026-07-28",
+      "scheduled_start": "2026-07-28T12:30:00+00:00",
+      "scheduled_end": "2026-07-28T13:15:00+00:00",
+      "calendar_event_id": "rd53318m8u1hopt94b7mdebebc",
+      "est_minutes": 45,
+      "priority": "p2"
+    },
+    {
+      "display_id": 27,
+      "title": "Applied Learning next article",
+      "state": "todo",
+      "due_date": "2026-08-01",
+      "scheduled_start": "2026-08-08T10:00:00+00:00",
+      "scheduled_end": "2026-08-08T12:30:00+00:00",
+      "calendar_event_id": "ljff3h49l3ddm3c2vujog82qf0",
+      "est_minutes": 150,
+      "priority": "p1"
+    },
+    {
+      "display_id": 28,
+      "title": "JLR comeback next step",
+      "state": "todo",
+      "due_date": "2026-08-15",
+      "scheduled_start": "2026-08-15T10:00:00+00:00",
+      "scheduled_end": "2026-08-15T11:00:00+00:00",
+      "calendar_event_id": "3j0bm2q9nuvpvosmldvhm6p5ks",
+      "est_minutes": 60,
+      "priority": "p1"
+    },
+    {
+      "display_id": 32,
+      "title": "White Horse Farm Inn 3–6 Aug — confirm policy + trip prep",
+      "state": "todo",
+      "due_date": "2026-07-24",
+      "scheduled_start": "2026-07-25T10:00:00+00:00",
+      "scheduled_end": "2026-07-25T10:30:00+00:00",
+      "calendar_event_id": "dgmg7eba9opnt65vkiqrqjccro",
+      "est_minutes": 30,
+      "priority": "p0"
+    },
+    {
+      "display_id": 35,
+      "title": "Verify Exmoor cancellation carried no charge",
+      "state": "todo",
+      "due_date": "2026-07-24",
+      "scheduled_start": "2026-07-25T13:30:00+00:00",
+      "scheduled_end": "2026-07-25T13:50:00+00:00",
+      "calendar_event_id": "l3b82dof0tcm1u5e1ofjdpksj4",
+      "est_minutes": 20,
+      "priority": "p2"
+    },
+    {
+      "display_id": 42,
+      "title": "Gower workshop: reschedule dates then book hotel",
+      "state": "todo",
+      "due_date": "2026-08-18",
+      "scheduled_start": "2026-08-18T09:00:00+00:00",
+      "scheduled_end": "2026-08-18T10:00:00+00:00",
+      "calendar_event_id": "b48rj9itf8l2qjai3rlu2vrosk",
+      "est_minutes": null,
+      "priority": "p0"
+    },
+    {
+      "display_id": 45,
+      "title": "DB quick-wins pack 1–5 (page_html + GSC orphan + index + vacuum)",
+      "state": "waiting",
+      "due_date": null,
+      "scheduled_start": null,
+      "scheduled_end": null,
+      "calendar_event_id": null,
+      "est_minutes": null,
+      "priority": "p1"
+    }
+  ],
+  "recurring": [
+    {
+      "id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "active": true,
+      "last_scheduled": "2026-10-26",
+      "duration_min": 60,
+      "priority": "p3"
+    },
+    {
+      "id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "active": true,
+      "last_scheduled": "2026-11-17",
+      "duration_min": 240,
+      "priority": "p1"
+    },
+    {
+      "id": "65bb5023-40a3-4797-8e9c-e0b85f0581b6",
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "active": true,
+      "last_scheduled": "2026-11-18",
+      "duration_min": 240,
+      "priority": "p1"
+    },
+    {
+      "id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "active": true,
+      "last_scheduled": "2026-11-02",
+      "duration_min": 60,
+      "priority": "p0"
+    },
+    {
+      "id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "active": true,
+      "last_scheduled": "2026-11-12",
+      "duration_min": 5,
+      "priority": "p2"
+    },
+    {
+      "id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "active": true,
+      "last_scheduled": "2026-11-24",
+      "duration_min": 30,
+      "priority": "p1"
+    },
+    {
+      "id": "4dd47c23-92a2-4d03-8474-4f557775e3a9",
+      "title": "Hotel bookings check (Claude)",
+      "active": true,
+      "last_scheduled": "2026-11-24",
+      "duration_min": 45,
+      "priority": "p1"
+    },
+    {
+      "id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "active": true,
+      "last_scheduled": "2026-11-16",
+      "duration_min": 240,
+      "priority": "p0"
+    },
+    {
+      "id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "active": true,
+      "last_scheduled": "2026-11-03",
+      "duration_min": 90,
+      "priority": "p0"
+    },
+    {
+      "id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "active": true,
+      "last_scheduled": "2026-11-26",
+      "duration_min": 120,
+      "priority": "p1"
+    },
+    {
+      "id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "active": true,
+      "last_scheduled": "2026-11-25",
+      "duration_min": 120,
+      "priority": "p1"
+    },
+    {
+      "id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "active": true,
+      "last_scheduled": "2026-11-26",
+      "duration_min": 60,
+      "priority": "p0"
+    },
+    {
+      "id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "active": true,
+      "last_scheduled": "2026-11-04",
+      "duration_min": 180,
+      "priority": "p1"
+    },
+    {
+      "id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "active": true,
+      "last_scheduled": "2026-10-26",
+      "duration_min": 120,
+      "priority": "p2"
+    },
+    {
+      "id": "e6d11356-6276-48af-a5d3-58874c31ce5d",
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "active": true,
+      "last_scheduled": "2026-11-19",
+      "duration_min": 180,
+      "priority": "p1"
+    }
+  ],
+  "log_count": 120
+}

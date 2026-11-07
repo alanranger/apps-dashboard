@@ -1,0 +1,538 @@
+{
+  "verified_at": "2026-07-24T09:44:12.375Z",
+  "sources": {
+    "tasks": 23,
+    "recurring_log": 120,
+    "gcal_events_total": 283,
+    "gcal_mc_unique": 98
+  },
+  "tasks": {
+    "checked": 23,
+    "missing_on_gcal": [],
+    "mismatches": [],
+    "ok": 23
+  },
+  "habits": {
+    "checked": 120,
+    "missing_on_gcal": [],
+    "mismatches": [],
+    "ok": 120,
+    "by_title": {
+      "Send Out Joining Details": 19,
+      "Review/Amend Course & Workshop Dates + check Hotel Bookings": 19,
+      "Hotel bookings — Alan actions": 17,
+      "Hotel bookings check (Claude)": 17,
+      "Publish Blog Post": 18,
+      "Booking Sheet, Month End Update": 4,
+      "Monthly Accounts — Bank Genie": 4,
+      "SEO Performance Review": 4,
+      "Check Artfully Walls Sales": 4,
+      "Light & Logic newsletter issue": 4,
+      "Backup Photos to Portable Drive": 2,
+      "Update Event Schema for Classes & Workshops": 2,
+      "BAU global refresh — Day 1: CSVs + preliminary ingest": 2,
+      "BAU global refresh — Day 2: schemas + final ingest + verify": 2,
+      "Upload sites — LocalViking, TOGDays, Where Can We Go": 2
+    },
+    "date_range": {
+      "min": "2026-07-24",
+      "max": "2026-11-26"
+    }
+  },
+  "orphans": {
+    "total": 98,
+    "travel_buffer_deadline": [
+      {
+        "id": "dai2npv5iie7k5n8nsrkiisve8",
+        "summary": "MC 🚗 Travel out — Warwick University (Malek shoot)",
+        "start": "2026-07-24T08:15:00+01:00"
+      },
+      {
+        "id": "76to8u23g3po1gm20aa1r5noko",
+        "summary": "MC 🚗 Travel back — Warwick University → home",
+        "start": "2026-07-24T11:00:00+01:00"
+      },
+      {
+        "id": "blaikjk3f4l6g4ijr2mk73g0fo",
+        "summary": "MC ⏳ Prep — Constantin 1-2-1",
+        "start": "2026-07-25T09:00:00+01:00"
+      },
+      {
+        "id": "7lv2u8oka7h7dec3crs249hvj8",
+        "summary": "MC ⏳ Decompress — Constantin 1-2-1",
+        "start": "2026-07-25T10:30:00+01:00"
+      },
+      {
+        "id": "m43itbubk59mck5uig3ovfdus0",
+        "summary": "MC ⏳ Prep — Composition Class",
+        "start": "2026-07-30T18:30:00+01:00"
+      },
+      {
+        "id": "7ov9tcuku7i0677b9065l5vfsg",
+        "summary": "MC ⏳ Decompress — Composition Class",
+        "start": "2026-07-30T21:00:00+01:00"
+      },
+      {
+        "id": "obfndn91bbjnroga8ce4n4dpj4",
+        "summary": "MC 🚗 Travel out — Burnham on Sea (Long Exposure)",
+        "start": "2026-08-01T16:00:00+01:00"
+      },
+      {
+        "id": "c9rkjl19l9cr63h6549l4hm3j4",
+        "summary": "MC 🚗 Travel back — Burnham on Sea → home",
+        "start": "2026-08-01T21:15:00+01:00"
+      },
+      {
+        "id": "sasau987alu59kiosk82cpf2rc",
+        "summary": "MC ⏳ Prep — Woodland Masterclass",
+        "start": "2026-08-02T09:30:00+01:00"
+      },
+      {
+        "id": "9ok34fgmqcbhcoec0besf96geg",
+        "summary": "MC ⏳ Decompress — Woodland Masterclass",
+        "start": "2026-08-02T16:00:00+01:00"
+      },
+      {
+        "id": "i1jske3agrviuati04eh1huk00",
+        "summary": "MC 🚗 Travel out — Rosedale Abbey (David Ward workshop)",
+        "start": "2026-08-03T09:00:00+01:00"
+      },
+      {
+        "id": "m2svuf0fekgo1lpnnl7pfijok4",
+        "summary": "MC 🚗 Travel back — Rosedale Abbey → home",
+        "start": "2026-08-06T14:00:00+01:00"
+      },
+      {
+        "id": "92jcn3mnta2cdj9pkhg6i1d2mc",
+        "summary": "MC ⏳ Prep — Jo Galloway 1-2-1",
+        "start": "2026-08-12T15:00:00+01:00"
+      },
+      {
+        "id": "7cd42td21emg6ljnc9g50pvieg",
+        "summary": "MC ⏳ Decompress — Jo Galloway 1-2-1",
+        "start": "2026-08-12T16:30:00+01:00"
+      },
+      {
+        "id": "7lh4746ljiir8tneaguer1b07c",
+        "summary": "MC 🚗 Travel out — Peak Heathers Sunset (Hathersage)",
+        "start": "2026-08-15T15:45:00+01:00"
+      },
+      {
+        "id": "01t95ske39e9f33m49d10rvab0",
+        "summary": "MC 🚗 Travel — Surprise View → Hotel Rudyard",
+        "start": "2026-08-15T21:15:00+01:00"
+      },
+      {
+        "id": "ebhdaj6m7g6emu285092gvug1g",
+        "summary": "MC 🚗 Travel — Hotel Rudyard → The Roaches",
+        "start": "2026-08-16T05:00:00+01:00"
+      },
+      {
+        "id": "eu5gdtcobi6nrjkebb4nidfjo8",
+        "summary": "MC 🚗 Travel back — The Roaches → home",
+        "start": "2026-08-16T08:45:00+01:00"
+      },
+      {
+        "id": "bvv4j3aell7hj2hljttj76qpu0",
+        "summary": "MC ⏳ Prep — Abstract and Macro Workshop",
+        "start": "2026-08-23T10:00:00+01:00"
+      },
+      {
+        "id": "c3fmdj7ur043ojpaknuasgnq30",
+        "summary": "MC ⏳ Decompress — Abstract and Macro Workshop",
+        "start": "2026-08-23T12:30:00+01:00"
+      },
+      {
+        "id": "df5v37g6rphnu136vd46h4r6ec",
+        "summary": "MC 🚗 Travel out — Kenilworth Castle (Long Exposure)",
+        "start": "2026-09-01T17:30:00+01:00"
+      },
+      {
+        "id": "lrfepqe8jm1h01pk8tj3tu1mqg",
+        "summary": "MC 🚗 Travel back — Kenilworth → home",
+        "start": "2026-09-01T20:00:00+01:00"
+      },
+      {
+        "id": "f9mcf4ej13nhoercgb4vc9d8b4",
+        "summary": "MC 🚗 Travel out — Hartland Quay Hotel (Devon)",
+        "start": "2026-09-04T08:00:00+01:00"
+      },
+      {
+        "id": "ltn1fumetasvgqv4ke44vmbqu4",
+        "summary": "MC 🚗 Travel back — Hartland Quay → home",
+        "start": "2026-09-06T12:30:00+01:00"
+      },
+      {
+        "id": "p1raalp6p23c59cqhl05fbqk0g",
+        "summary": "MC ⏳ Prep — Lightroom Wk1",
+        "start": "2026-09-07T18:30:00+01:00"
+      },
+      {
+        "id": "ip7p6tmeuu5q86tdji222of4do",
+        "summary": "MC ⏳ Decompress — Lightroom Wk1",
+        "start": "2026-09-07T21:00:00+01:00"
+      },
+      {
+        "id": "rm0s9co00m6mcvgolai31pin4s",
+        "summary": "MC ⏳ Prep — Abstract and Macro Workshop",
+        "start": "2026-09-08T17:30:00+01:00"
+      },
+      {
+        "id": "d2nc5dp4e1i4rb49aeksnr27ro",
+        "summary": "MC ⏳ Decompress — Abstract and Macro Workshop",
+        "start": "2026-09-08T20:00:00+01:00"
+      },
+      {
+        "id": "547k16l0u92gbna0hm41ghgdsc",
+        "summary": "MC 🚗 Travel out — Coventry Urban Architecture",
+        "start": "2026-09-09T17:30:00+01:00"
+      },
+      {
+        "id": "1q9pnm2n69midodatftt5mu52o",
+        "summary": "MC 🚗 Travel back — Coventry Urban → home",
+        "start": "2026-09-09T20:15:00+01:00"
+      },
+      {
+        "id": "igsl4u7plj8kaa49qqmiegu5kc",
+        "summary": "MC 🚗 Travel out — Yorkshire Coast (Ellerby Country Inn)",
+        "start": "2026-09-10T10:00:00+01:00"
+      },
+      {
+        "id": "dfk6me8s7l76evpgj4cnlk11lc",
+        "summary": "MC 🚗 Travel back — Yorkshire Coast → home",
+        "start": "2026-09-13T13:00:00+01:00"
+      },
+      {
+        "id": "7m7cn4akmtq4fj0jr4521um2r0",
+        "summary": "MC ⏳ Prep — Lightroom Wk2",
+        "start": "2026-09-14T18:30:00+01:00"
+      },
+      {
+        "id": "o7l1jm290fe99802ca9h86o0rg",
+        "summary": "MC ⏳ Decompress — Lightroom Wk2",
+        "start": "2026-09-14T21:00:00+01:00"
+      },
+      {
+        "id": "2s9t45mc597ks8onsl5gjkikbs",
+        "summary": "MC 🚗 Travel out — Chesterton Windmill",
+        "start": "2026-09-16T17:00:00+01:00"
+      },
+      {
+        "id": "sp7l28r2jq51nd2dk40b8pmqjk",
+        "summary": "MC 🚗 Travel back — Chesterton Windmill → home",
+        "start": "2026-09-16T20:00:00+01:00"
+      },
+      {
+        "id": "r5vumeo1od3klkmru521o6o2rg",
+        "summary": "MC ⏳ Prep — Camera Course Wk1 (Thu cohort)",
+        "start": "2026-09-17T18:30:00+01:00"
+      },
+      {
+        "id": "jkajtrqu9i991iulsbtcjt4sv0",
+        "summary": "MC ⏳ Decompress — Camera Course Wk1 (Thu cohort)",
+        "start": "2026-09-17T21:00:00+01:00"
+      },
+      {
+        "id": "27r2vdvq01d02slslp9dtf0b2k",
+        "summary": "MC 🚗 Travel out — Ravenstone Manor (Lake District)",
+        "start": "2026-09-18T05:15:00+01:00"
+      },
+      {
+        "id": "q1oakaskp9qpq25gjpkukvoij8",
+        "summary": "MC 🚗 Travel back — Ravenstone Manor → home",
+        "start": "2026-09-20T13:30:00+01:00"
+      },
+      {
+        "id": "8ihdg0p47livbdeotgm0su4mjk",
+        "summary": "MC ⏳ Prep — Lightroom Wk3",
+        "start": "2026-09-21T18:30:00+01:00"
+      },
+      {
+        "id": "b6226mpm63vjru2teplbtdpjhs",
+        "summary": "MC ⏳ Decompress — Lightroom Wk3",
+        "start": "2026-09-21T21:00:00+01:00"
+      },
+      {
+        "id": "qr6s3ssesuru6igenm2h9o7rsc",
+        "summary": "MC ⏳ Prep — Camera Course Wk1 (Tue cohort)",
+        "start": "2026-09-22T18:30:00+01:00"
+      },
+      {
+        "id": "il2s9lki5lm4n58b3b9u8uet5c",
+        "summary": "MC ⏳ Decompress — Camera Course Wk1 (Tue cohort)",
+        "start": "2026-09-22T21:00:00+01:00"
+      },
+      {
+        "id": "8v6m8ih14iuf85ehh293qhvcn8",
+        "summary": "MC 🚗 Travel out — Kenilworth (Long Exposure Sunset)",
+        "start": "2026-09-23T16:55:00+01:00"
+      },
+      {
+        "id": "sm70ri9322kog1i7o8l1rogk0o",
+        "summary": "MC 🚗 Travel back — Kenilworth → home",
+        "start": "2026-09-23T19:45:00+01:00"
+      },
+      {
+        "id": "lpdvl2cq4p0rjriecl37ektc58",
+        "summary": "MC ⏳ Prep — Camera Course Wk2 (Thu cohort)",
+        "start": "2026-09-24T18:30:00+01:00"
+      },
+      {
+        "id": "qophi0r4e2166vsu54dcftejik",
+        "summary": "MC ⏳ Decompress — Camera Course Wk2 (Thu cohort)",
+        "start": "2026-09-24T21:00:00+01:00"
+      },
+      {
+        "id": "k81nml1orn9iunmtbfacva326k",
+        "summary": "MC 🚗 Travel out — Snowdonia (Eagles Hotel, Llanrwst)",
+        "start": "2026-09-26T06:30:00+01:00"
+      },
+      {
+        "id": "o35r74eqhn9hr6fg4gpkm827og",
+        "summary": "MC 🚗 Travel back — Snowdonia → home",
+        "start": "2026-09-27T16:00:00+01:00"
+      },
+      {
+        "id": "8csca43c5mtmfj0u6av8iopmgs",
+        "summary": "MC ⏳ Prep — Camera Course Wk2 (Tue cohort)",
+        "start": "2026-09-29T18:30:00+01:00"
+      },
+      {
+        "id": "t7of28qdast9pvrh4tl8c1upik",
+        "summary": "MC ⏳ Decompress — Camera Course Wk2 (Tue cohort)",
+        "start": "2026-09-29T21:00:00+01:00"
+      },
+      {
+        "id": "7hl07hc769qpjd28tf7nv66pd0",
+        "summary": "MC 🚗 Travel out — Dorset Jurassic Coast (Kingston)",
+        "start": "2026-10-02T10:30:00+01:00"
+      },
+      {
+        "id": "qu3p97gua1lutfu6h71ib0c2v0",
+        "summary": "MC 🚗 Travel back — Dorset → home",
+        "start": "2026-10-04T14:00:00+01:00"
+      },
+      {
+        "id": "ooogv7rb35g20trae449boaeks",
+        "summary": "MC 🚗 Travel out — Chesterton Windmill",
+        "start": "2026-10-05T16:30:00+01:00"
+      },
+      {
+        "id": "ej5420dvi34khnt6u25uphkup0",
+        "summary": "MC 🚗 Travel back — Chesterton Windmill → home",
+        "start": "2026-10-05T19:30:00+01:00"
+      },
+      {
+        "id": "phu3hgslksfemno987e7f6onas",
+        "summary": "MC 🚗 Travel out — Lake Vyrnwy (Wales)",
+        "start": "2026-10-10T06:45:00+01:00"
+      },
+      {
+        "id": "s9ii3iorl2mk67m67bbpfth8as",
+        "summary": "MC 🚗 Travel back — Lake Vyrnwy → home",
+        "start": "2026-10-11T15:00:00+01:00"
+      },
+      {
+        "id": "l8tll94017ijq4lpe10t18n5qo",
+        "summary": "MC ⏳ Prep — Camera Course Wk1",
+        "start": "2026-10-12T18:30:00+01:00"
+      },
+      {
+        "id": "9137562u4eb1gli8hrn1fa1gsc",
+        "summary": "MC ⏳ Decompress — Camera Course Wk1",
+        "start": "2026-10-12T21:00:00+01:00"
+      },
+      {
+        "id": "0k23i8v6tb643535fabee1rvfg",
+        "summary": "MC ⏳ Prep — Camera Course Wk1 (2nd cohort)",
+        "start": "2026-10-14T18:30:00+01:00"
+      },
+      {
+        "id": "hv5s99g9kdjath03k8d82aapgo",
+        "summary": "MC ⏳ Decompress — Camera Course Wk1 (2nd cohort)",
+        "start": "2026-10-14T21:00:00+01:00"
+      },
+      {
+        "id": "5lm9nuocr6c5bukm2q95pn5a7k",
+        "summary": "MC 🚗 Travel out — Woodland Walk (Piles Coppice)",
+        "start": "2026-10-16T08:30:00+01:00"
+      },
+      {
+        "id": "95tq100b2lhnndigqvsdtrpang",
+        "summary": "MC 🚗 Travel back — Woodland Walk → home",
+        "start": "2026-10-16T11:30:00+01:00"
+      },
+      {
+        "id": "k4dqfqf1hi90gru2aramtt1cm0",
+        "summary": "MC 🚗 Travel out — Padley Gorge (Peak District)",
+        "start": "2026-10-17T07:00:00+01:00"
+      },
+      {
+        "id": "g7b24ukritug4srvorhn7sgoe8",
+        "summary": "MC 🚗 Travel back — Padley Gorge → home",
+        "start": "2026-10-17T16:00:00+01:00"
+      },
+      {
+        "id": "lsteqg0f4oja0dfcvdbbkhun6o",
+        "summary": "MC ⏳ Prep — Woodland Masterclass (Autumn)",
+        "start": "2026-10-18T09:30:00+01:00"
+      },
+      {
+        "id": "vptnjjj83s3tats7oug0eonga4",
+        "summary": "MC ⏳ Decompress — Woodland Masterclass (Autumn)",
+        "start": "2026-10-18T16:00:00+01:00"
+      },
+      {
+        "id": "4ibj02t47of3944a8el9hdauv8",
+        "summary": "MC ⏳ Prep — Camera Course Wk2",
+        "start": "2026-10-19T18:30:00+01:00"
+      },
+      {
+        "id": "4la74k88kovon5v541e1imjmhg",
+        "summary": "MC ⏳ Decompress — Camera Course Wk2",
+        "start": "2026-10-19T21:00:00+01:00"
+      },
+      {
+        "id": "aug0t7pgr6mgde5brnara37a3g",
+        "summary": "MC ⏳ Prep — Camera Course Wk2 (2nd cohort)",
+        "start": "2026-10-21T18:30:00+01:00"
+      },
+      {
+        "id": "vfifjr4qvk80jstu75mfh85i6k",
+        "summary": "MC ⏳ Decompress — Camera Course Wk2 (2nd cohort)",
+        "start": "2026-10-21T21:00:00+01:00"
+      },
+      {
+        "id": "shp5a4c8eqdk5eklvf6ng9g2nk",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (1 of 6)",
+        "start": "2026-10-23T06:45:00+01:00"
+      },
+      {
+        "id": "f96n77sq2fah5324cruup4codo",
+        "summary": "MC 🚗 Travel back — Batsford → home (1 of 6)",
+        "start": "2026-10-23T15:30:00+01:00"
+      },
+      {
+        "id": "43c0nt0g8gqimlcomqlikiclc0",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (2 of 6)",
+        "start": "2026-10-24T06:45:00+01:00"
+      },
+      {
+        "id": "7ug6mmfjt5q799ho9hp68vl2js",
+        "summary": "MC 🚗 Travel back — Batsford → home (2 of 6)",
+        "start": "2026-10-24T15:30:00+01:00"
+      },
+      {
+        "id": "a0p8i0tqdbp2u92bf6hi1b1oc4",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (3 of 6)",
+        "start": "2026-10-25T06:45:00Z"
+      },
+      {
+        "id": "tiuu70g6kq0749m807md7kns50",
+        "summary": "MC 🚗 Travel back — Batsford → home (3 of 6)",
+        "start": "2026-10-25T15:30:00Z"
+      },
+      {
+        "id": "ub9loha451nmepid6kk12878p4",
+        "summary": "MC ⏳ Prep — Camera Course Wk3",
+        "start": "2026-10-26T18:30:00Z"
+      },
+      {
+        "id": "vodbds307ff4gpchf8vunqp124",
+        "summary": "MC ⏳ Decompress — Camera Course Wk3",
+        "start": "2026-10-26T21:00:00Z"
+      },
+      {
+        "id": "7itjc9rjh94nphtuj9f3jt3li4",
+        "summary": "MC ⏳ Prep — Camera Course Wk3 (2nd cohort)",
+        "start": "2026-10-28T18:30:00Z"
+      },
+      {
+        "id": "hbq6l451vdjp83cvs1ugnb0fqk",
+        "summary": "MC ⏳ Decompress — Camera Course Wk3 (2nd cohort)",
+        "start": "2026-10-28T21:00:00Z"
+      },
+      {
+        "id": "o5g6nv1a4enm7aivhaoeheubmg",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (4 of 6)",
+        "start": "2026-10-29T06:45:00Z"
+      },
+      {
+        "id": "kbus9uclgkfukjl6ai44rvrggs",
+        "summary": "MC 🚗 Travel back — Batsford → home (4 of 6)",
+        "start": "2026-10-29T15:30:00Z"
+      },
+      {
+        "id": "p72rms55vqvd9g0fgil67mfdqc",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (5 of 6)",
+        "start": "2026-10-30T06:45:00Z"
+      },
+      {
+        "id": "pjblkh40pn27qiib5hglp8ohck",
+        "summary": "MC 🚗 Travel back — Batsford → home (5 of 6)",
+        "start": "2026-10-30T15:30:00Z"
+      },
+      {
+        "id": "unkvrv1tstrev3dvt5jlgj73bk",
+        "summary": "MC 🚗 Travel out — Batsford Arboretum (6 of 6)",
+        "start": "2026-10-31T06:45:00Z"
+      },
+      {
+        "id": "hmqcdeaqqdo3i79sml5rpjnk84",
+        "summary": "MC 🚗 Travel back — Batsford → home (6 of 6)",
+        "start": "2026-10-31T15:30:00Z"
+      },
+      {
+        "id": "jousfmant5g98829r2effnrb5k",
+        "summary": "MC 🚗 Travel out — Padley Gorge (Autumn)",
+        "start": "2026-11-01T07:00:00Z"
+      },
+      {
+        "id": "0lsi9tfs7q13jhf6uufeqih4e8",
+        "summary": "MC 🚗 Travel back — Padley Gorge → home",
+        "start": "2026-11-01T16:00:00Z"
+      },
+      {
+        "id": "eg5l0qfgl26kt7lbu1v1c6j40k",
+        "summary": "MC 🚗 Travel out — Woodland Walk (Crackley Woods)",
+        "start": "2026-11-06T08:40:00Z"
+      },
+      {
+        "id": "klt4qrenqc3047cgovthiuav8s",
+        "summary": "MC 🚗 Travel back — Crackley Woods → home",
+        "start": "2026-11-06T11:30:00Z"
+      },
+      {
+        "id": "3rldl6fa47uqu2hi3i05ri4bu4",
+        "summary": "MC 🚗 Travel out — Padley Gorge (Autumn)",
+        "start": "2026-11-07T07:00:00Z"
+      },
+      {
+        "id": "klqcdb3mif5njnf6vrc04qieu8",
+        "summary": "MC 🚗 Travel back — Padley Gorge → home",
+        "start": "2026-11-07T16:00:00Z"
+      },
+      {
+        "id": "p510afd7504b8d0fh6j2uqvb5g",
+        "summary": "MC 🚗 Travel out — Lake District (Autumn in Cumbria)",
+        "start": "2026-11-13T05:15:00Z"
+      },
+      {
+        "id": "c7tgga26ipn1l6nsnknnsdddrk",
+        "summary": "MC 🚗 Travel back — Lake District → home",
+        "start": "2026-11-15T14:30:00Z"
+      },
+      {
+        "id": "s3jt382j87aetpk078fifrbb1g",
+        "summary": "MC 🚗 Travel out — Norfolk (Blakeney)",
+        "start": "2026-11-20T05:30:00Z"
+      },
+      {
+        "id": "4lca0qbsfh1d7s2g2btrepi04k",
+        "summary": "MC 🚗 Travel back — Norfolk → home",
+        "start": "2026-11-22T14:00:00Z"
+      }
+    ],
+    "other": []
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "mode": "dry_run",
+  "flags": {
+    "auto_sync_enabled": false,
+    "auto_sync_signed_off": false,
+    "cursor_writes_available": true
+  },
+  "note": "NOT signed off — auto-sync will not write until Alan approves this dry-run",
+  "flush": {
+    "write_count": 15,
+    "skipped_count": 0,
+    "queue_raw": 15,
+    "queue_collapsed": 15,
+    "backlog_rows": 0,
+    "live_db_times": true,
+    "writes": [
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "ljr0kvip2fbm5psoksajj5gbu0",
+        "summary": "MC 🔁 Publish Blog Post",
+        "from": null,
+        "to": {
+          "start": "2026-08-06T09:00:00.000Z",
+          "end": "2026-08-06T11:00:00.000Z",
+          "day": "2026-08-06"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "444f3684-c154-4f1f-8356-9e04af5fb718"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "6k4v5408hghhub6bmcga2jtcig",
+        "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+        "from": null,
+        "to": {
+          "start": "2026-08-01T10:00:00.000Z",
+          "end": "2026-08-01T14:00:00.000Z",
+          "day": "2026-08-01"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "6a5bb2ba-a9aa-4ac6-b84e-34d6b453dd51"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "p503a8ik1rfab15tck090p7jc8",
+        "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+        "from": null,
+        "to": {
+          "start": "2026-09-28T09:00:00.000Z",
+          "end": "2026-09-28T13:00:00.000Z",
+          "day": "2026-09-28"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "35c65039-7289-47bc-b923-23f4753e4923"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "2tioufaueh2mvomm5p8j16fdts",
+        "summary": "P3 · MC-3 · Walkthrough: weekend page fixes",
+        "from": null,
+        "to": {
+          "start": "2026-08-12T12:00:00.000Z",
+          "end": "2026-08-12T12:45:00.000Z",
+          "day": "2026-08-12"
+        },
+        "live_from": "tasks",
+        "display_id": 3,
+        "source": "gcal_push_queue",
+        "source_id": "6fdd7f3e-8b4b-4611-b405-ed687372fde9"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "1r5lf78cg1qulelc0dd5h767kk",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "from": null,
+        "to": {
+          "start": "2026-08-08T12:15:00.000Z",
+          "end": "2026-08-08T13:45:00.000Z",
+          "day": "2026-08-08"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "5034e758-6fdb-4c35-88c5-66a8ff604eb2"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "oqaprklut122u9qf1u8vbk96u0",
+        "summary": "MC 🔁 Light & Logic newsletter issue",
+        "from": null,
+        "to": {
+          "start": "2026-09-21T09:00:00.000Z",
+          "end": "2026-09-21T13:00:00.000Z",
+          "day": "2026-09-21"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "f5a603b0-d3ea-492f-a610-de553b05ef02"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "q6s2gjuiln1bgbp7hhjkmvvjeo",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "from": null,
+        "to": {
+          "start": "2026-09-27T10:00:00.000Z",
+          "end": "2026-09-27T12:00:00.000Z",
+          "day": "2026-09-27"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "44249b8d-de65-402b-bff1-62bfd5d3b3e9"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "j9k9nt6emc12ap1i4np9npgmhg",
+        "summary": "MC 🔁 Light & Logic newsletter issue",
+        "from": null,
+        "to": {
+          "start": "2026-08-16T10:45:00.000Z",
+          "end": "2026-08-16T14:45:00.000Z",
+          "day": "2026-08-16"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "56485c28-efdf-4bb7-89b4-ed00987dd563"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "agfg5ki6bsonkoko32kk9tqabo",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "from": null,
+        "to": {
+          "start": "2027-01-04T10:00:00.000Z",
+          "end": "2027-01-04T11:30:00.000Z",
+          "day": "2027-01-04"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "a26a5881-a2c8-42f4-9432-093a21e9ea90"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "rbb3u4c31fqs30508kbf023v7s",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "from": null,
+        "to": {
+          "start": "2026-11-11T11:45:00.000Z",
+          "end": "2026-11-11T13:45:00.000Z",
+          "day": "2026-11-11"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "489e3e75-b5c5-48f0-bbaf-6d2f7fd07d7f"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "qpeepqqs9ggkg0bsr75mm6ti58",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "from": null,
+        "to": {
+          "start": "2026-10-08T09:15:00.000Z",
+          "end": "2026-10-08T09:30:00.000Z",
+          "day": "2026-10-08"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "fe6281ed-49cd-4fea-9f28-2a241a9dca10"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "immft7p7a02cap3d6b2u6qn20o",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "from": null,
+        "to": {
+          "start": "2026-12-07T10:00:00.000Z",
+          "end": "2026-12-07T11:30:00.000Z",
+          "day": "2026-12-07"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "dddf38ca-4990-4cdc-9231-d37a61201756"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "e3ou64q5ge4d24cohpfkb742ek",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "from": null,
+        "to": {
+          "start": "2026-11-12T16:30:00.000Z",
+          "end": "2026-11-12T16:45:00.000Z",
+          "day": "2026-11-12"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "272eca1f-c0fc-49ac-be94-cedb48445116"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "nam69uos7cv0h23r1tectsctio",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "from": null,
+        "to": {
+          "start": "2026-08-21T12:30:00.000Z",
+          "end": "2026-08-21T13:30:00.000Z",
+          "day": "2026-08-21"
+        },
+        "live_from": "recurring_log",
+        "display_id": null,
+        "source": "gcal_push_queue",
+        "source_id": "c81008cf-a081-45ca-a95d-b25afcf2f08f"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "un6uldg2159m3u9if39q49b33s",
+        "summary": "P0 · MC-42 · Gower workshop: reschedule dates then book hotel",
+        "from": null,
+        "to": {
+          "start": "2026-08-20T14:00:00.000Z",
+          "end": "2026-08-20T15:00:00.000Z",
+          "day": "2026-08-20"
+        },
+        "live_from": "tasks",
+        "display_id": 42,
+        "source": "gcal_push_queue",
+        "source_id": "e5e03b7b-e57d-4203-9b9f-b22d086de363"
+      }
+    ],
+    "skipped": []
+  }
+}

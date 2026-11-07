@@ -1,0 +1,78 @@
+[
+  {
+    "venue_name": "Hay Woods / Rowington",
+    "postcode": "CV35 7JQ",
+    "departure_time": "2026-12-04T07:30:00Z",
+    "workshop": "Woodland Photography Walk Solihull 4 Dec",
+    "status": 200,
+    "result": {
+      "ok": true,
+      "source": "distance_matrix",
+      "minutes": 18,
+      "meters": 13124,
+      "traffic_model": "pessimistic",
+      "origin": "CV4 9HW",
+      "destination": "CV35 7JQ",
+      "venue": null,
+      "travel_block": null,
+      "wrote_venue": false
+    }
+  },
+  {
+    "venue_name": "Leamington Spa Clarendon Ave",
+    "postcode": "CV32 5PP",
+    "departure_time": "2026-12-10T17:30:00Z",
+    "workshop": "Christmas Photography Workshop Evening 10 Dec",
+    "status": 200,
+    "result": {
+      "ok": true,
+      "source": "distance_matrix",
+      "minutes": 35,
+      "meters": 14905,
+      "traffic_model": "pessimistic",
+      "origin": "CV4 9HW",
+      "destination": "CV32 5PP",
+      "venue": null,
+      "travel_block": null,
+      "wrote_venue": false
+    }
+  },
+  {
+    "venue_name": "Lapworth Church Ln",
+    "postcode": "B94 5NX",
+    "departure_time": "2026-12-29T07:00:00Z",
+    "workshop": "Christmas Photography Walk 29 Dec",
+    "status": 200,
+    "result": {
+      "ok": true,
+      "source": "distance_matrix",
+      "minutes": 24,
+      "meters": 17685,
+      "traffic_model": "pessimistic",
+      "origin": "CV4 9HW",
+      "destination": "B94 5NX",
+      "venue": null,
+      "travel_block": null,
+      "wrote_venue": false
+    }
+  },
+  {
+    "venue_name": "Lake District B5291",
+    "postcode": "CA12 4RE",
+    "departure_time": "2027-01-22T05:30:00Z",
+    "workshop": "Lake District Winter 22 Jan",
+    "status": 200,
+    "result": {
+      "ok": true,
+      "source": "distance_matrix",
+      "minutes": 261,
+      "meters": 341766,
+      "traffic_model": "pessimistic",
+      "origin": "CV4 9HW",
+      "destination": "CA12 4RE",
+      "venue": null,
+      "travel_block": null,
+      "wrote_venue": false
+    }
+  }
+]

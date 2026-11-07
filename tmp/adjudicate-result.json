@@ -1,0 +1,378 @@
+{
+  "totals": {
+    "events": 264,
+    "mc_blocks": 193,
+    "tied": 187,
+    "unmatched_color10": 6,
+    "busy_non_mc": 71
+  },
+  "overlaps": [
+    {
+      "day": "2026-08-07",
+      "a": {
+        "id": "enh2ofbqif2o4ehovqke8o0kjk",
+        "title": "P3 · MC-2 · Walkthrough: Money rebuild",
+        "start": "2026-08-07T14:45:00+01:00",
+        "end": "2026-08-07T15:30:00+01:00"
+      },
+      "b": {
+        "id": "m2mgpecbvtjcpr7doovievthlg",
+        "title": "P3 · MC-13 · Sign-off: URL Money Pages",
+        "start": "2026-08-07T14:45:00+01:00",
+        "end": "2026-08-07T15:15:00+01:00"
+      },
+      "overlapMin": 30
+    },
+    {
+      "day": "2026-08-10",
+      "a": {
+        "id": "g89h2cj849r1nas8ibdok3h56c",
+        "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+        "start": "2026-08-10T14:30:00+01:00",
+        "end": "2026-08-10T15:15:00+01:00"
+      },
+      "b": {
+        "id": "ls20gle8ucqqgvsstlhjn4hf9s",
+        "title": "P3 · MC-3 · Walkthrough: weekend page fixes",
+        "start": "2026-08-10T14:30:00+01:00",
+        "end": "2026-08-10T15:15:00+01:00"
+      },
+      "overlapMin": 45
+    },
+    {
+      "day": "2026-08-14",
+      "a": {
+        "id": "ne08s5tg9bv7jpum571iqog840",
+        "title": "P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027",
+        "start": "2026-08-14T14:30:00+01:00",
+        "end": "2026-08-14T15:30:00+01:00"
+      },
+      "b": {
+        "id": "biefgku8s4bpja7phl4mqj16c0",
+        "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+        "start": "2026-08-14T15:00:00+01:00",
+        "end": "2026-08-14T17:00:00+01:00"
+      },
+      "overlapMin": 30
+    },
+    {
+      "day": "2026-08-20",
+      "a": {
+        "id": "svdhdk3f5eee9t9a4tpqkkrdn8",
+        "title": "P1 · MC 🔁 Publish Blog Post",
+        "start": "2026-08-20T10:00:00+01:00",
+        "end": "2026-08-20T12:00:00+01:00"
+      },
+      "b": {
+        "id": "9f8a7gqhl57qbm39hkgqeprlt4",
+        "title": "P0 · MC-42 · Gower: reschedule dates then book hotel",
+        "start": "2026-08-20T10:45:00+01:00",
+        "end": "2026-08-20T11:45:00+01:00"
+      },
+      "overlapMin": 60
+    }
+  ],
+  "zeroGaps": [
+    {
+      "day": "2026-08-10",
+      "gap": 0,
+      "a": {
+        "id": "skthnamhog1ug4s51hhip39it4",
+        "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+        "end": "2026-08-10T14:30:00+01:00"
+      },
+      "b": {
+        "id": "g89h2cj849r1nas8ibdok3h56c",
+        "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+        "start": "2026-08-10T14:30:00+01:00"
+      }
+    },
+    {
+      "day": "2026-08-14",
+      "gap": 0,
+      "a": {
+        "id": "1rlpfjag61ocf5ctrtm1hroa10",
+        "title": "P0 · MC 🔁 Send Out Joining Details",
+        "end": "2026-08-14T14:30:00+01:00"
+      },
+      "b": {
+        "id": "ne08s5tg9bv7jpum571iqog840",
+        "title": "P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027",
+        "start": "2026-08-14T14:30:00+01:00"
+      }
+    },
+    {
+      "day": "2026-09-18",
+      "gap": 0,
+      "a": {
+        "id": "27r2vdvq01d02slslp9dtf0b2k",
+        "title": "MC 🚗 Travel out — Ravenstone Manor (Lake District)",
+        "end": "2026-09-18T09:00:00+01:00"
+      },
+      "b": {
+        "id": "12v0odkh7a3obfo1gpkohmamas",
+        "title": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+        "start": "2026-09-18T09:00:00+01:00"
+      }
+    }
+  ],
+  "capBreaches": [
+    {
+      "day": "2026-08-07",
+      "minutes": 330
+    },
+    {
+      "day": "2026-08-10",
+      "minutes": 360
+    },
+    {
+      "day": "2026-08-20",
+      "minutes": 255
+    },
+    {
+      "day": "2026-09-15",
+      "minutes": 315
+    },
+    {
+      "day": "2026-09-22",
+      "minutes": 315
+    }
+  ],
+  "windowBreaches": [
+    {
+      "day": "2026-08-21",
+      "id": "jnk10hibaa3q05ihrg8k9se0gk",
+      "title": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+      "start": "2026-08-21T09:00:00+01:00",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    },
+    {
+      "day": "2026-09-01",
+      "id": "53q73k1i7nh6lcsp3sjniv5dqc",
+      "title": "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy",
+      "start": "2026-09-01T09:00:00+01:00",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    },
+    {
+      "day": "2026-09-02",
+      "id": "ju35jpe0ubc06uc5tij60u48b0",
+      "title": "MC ⏰ Hotel deadline — Ellerby Country Inn cancel by 5 Sep",
+      "start": "2026-09-02T09:00:00+01:00",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    },
+    {
+      "day": "2026-09-18",
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "title": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "start": "2026-09-18T09:00:00+01:00",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    },
+    {
+      "day": "2026-09-20",
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "title": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "start": "2026-09-20T09:00:00+01:00",
+      "startMin": 540,
+      "window": "11:00–16:00"
+    },
+    {
+      "day": "2026-10-02",
+      "id": "g4kk445v4epa7540133tasg6bc",
+      "title": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+      "start": "2026-10-02T09:00:00+01:00",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    },
+    {
+      "day": "2026-10-26",
+      "id": "kofm1s8bjb5rdpjtgig9ereuok",
+      "title": "MC ⏰ Hotel deadline — Ravenstone Nov (£1,804) cancel by 29 Oct",
+      "start": "2026-10-26T09:00:00Z",
+      "startMin": 540,
+      "window": "10:00–17:00"
+    }
+  ],
+  "duringBlocked": [
+    {
+      "day": "2026-08-02",
+      "id": "sasau987alu59kiosk82cpf2rc",
+      "title": "MC ⏳ Prep — Woodland Masterclass",
+      "start": "2026-08-02T09:30:00+01:00"
+    },
+    {
+      "day": "2026-08-02",
+      "id": "9ok34fgmqcbhcoec0besf96geg",
+      "title": "MC ⏳ Decompress — Woodland Masterclass",
+      "start": "2026-08-02T16:00:00+01:00"
+    },
+    {
+      "day": "2026-08-05",
+      "id": "bhcc8qenibs36v2lvlio1ua7fo",
+      "title": "P1 · MC-52 · Hotel register — fill 6 missing deadlines",
+      "start": "2026-08-05T11:30:00+01:00"
+    },
+    {
+      "day": "2026-09-01",
+      "id": "53q73k1i7nh6lcsp3sjniv5dqc",
+      "title": "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy",
+      "start": "2026-09-01T09:00:00+01:00"
+    },
+    {
+      "day": "2026-09-01",
+      "id": "q2pr801t3i2se9c7mjcg5qe0c8",
+      "title": "P0 · MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-09-01T10:00:00+01:00"
+    },
+    {
+      "day": "2026-09-01",
+      "id": "ukfmq5ltmhr5f8ena601fo66cs",
+      "title": "P2 · MC-11 · Money review (monthly)",
+      "start": "2026-09-01T11:30:00+01:00"
+    },
+    {
+      "day": "2026-09-07",
+      "id": "p1raalp6p23c59cqhl05fbqk0g",
+      "title": "MC ⏳ Prep — Lightroom Wk1",
+      "start": "2026-09-07T18:30:00+01:00"
+    },
+    {
+      "day": "2026-09-07",
+      "id": "ip7p6tmeuu5q86tdji222of4do",
+      "title": "MC ⏳ Decompress — Lightroom Wk1",
+      "start": "2026-09-07T21:00:00+01:00"
+    },
+    {
+      "day": "2026-09-08",
+      "id": "gvb8nps0ka9ikkdodrie5ndo4s",
+      "title": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-09-08T10:00:00+01:00"
+    },
+    {
+      "day": "2026-09-08",
+      "id": "rm0s9co00m6mcvgolai31pin4s",
+      "title": "MC ⏳ Prep — Abstract and Macro Workshop",
+      "start": "2026-09-08T17:30:00+01:00"
+    },
+    {
+      "day": "2026-09-08",
+      "id": "d2nc5dp4e1i4rb49aeksnr27ro",
+      "title": "MC ⏳ Decompress — Abstract and Macro Workshop",
+      "start": "2026-09-08T20:00:00+01:00"
+    },
+    {
+      "day": "2026-09-17",
+      "id": "ebnqh5b7mmic6gj8pej0q9chh8",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-09-17T10:00:00+01:00"
+    },
+    {
+      "day": "2026-09-17",
+      "id": "ke9m270v5i91bkj65ttquoetuo",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-17T12:30:00+01:00"
+    },
+    {
+      "day": "2026-09-17",
+      "id": "r5vumeo1od3klkmru521o6o2rg",
+      "title": "MC ⏳ Prep — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T18:30:00+01:00"
+    },
+    {
+      "day": "2026-09-17",
+      "id": "jkajtrqu9i991iulsbtcjt4sv0",
+      "title": "MC ⏳ Decompress — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T21:00:00+01:00"
+    },
+    {
+      "day": "2026-09-18",
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "title": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "start": "2026-09-18T09:00:00+01:00"
+    },
+    {
+      "day": "2026-09-20",
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "title": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "start": "2026-09-20T09:00:00+01:00"
+    }
+  ],
+  "reviewDupes": [
+    {
+      "day": "2026-09-15",
+      "count": 2,
+      "ids": [
+        "lp9ar8hesvf99q7un81poa0q88",
+        "0np73n7k18621lhm2qo093j3nk"
+      ],
+      "titles": [
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+        "P1 · MC 🔁 Review/Amend Course and Workshop Dates"
+      ]
+    }
+  ],
+  "unmatchedColor10": [
+    {
+      "id": "53q73k1i7nh6lcsp3sjniv5dqc",
+      "title": "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy",
+      "start": "2026-09-01T09:00:00+01:00",
+      "calendarId": "primary"
+    },
+    {
+      "id": "ju35jpe0ubc06uc5tij60u48b0",
+      "title": "MC ⏰ Hotel deadline — Ellerby Country Inn cancel by 5 Sep",
+      "start": "2026-09-02T09:00:00+01:00",
+      "calendarId": "primary"
+    },
+    {
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "title": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "start": "2026-09-18T09:00:00+01:00",
+      "calendarId": "primary"
+    },
+    {
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "title": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "start": "2026-09-20T09:00:00+01:00",
+      "calendarId": "primary"
+    },
+    {
+      "id": "g4kk445v4epa7540133tasg6bc",
+      "title": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+      "start": "2026-10-02T09:00:00+01:00",
+      "calendarId": "primary"
+    },
+    {
+      "id": "kofm1s8bjb5rdpjtgig9ereuok",
+      "title": "MC ⏰ Hotel deadline — Ravenstone Nov (£1,804) cancel by 29 Oct",
+      "start": "2026-10-26T09:00:00Z",
+      "calendarId": "primary"
+    }
+  ],
+  "selfTest": {
+    "overlap_7_aug_mc2_mc13": true,
+    "overlap_10_aug_mc3_hotel": true,
+    "overlap_14_aug_mc50_review": true,
+    "overlap_20_aug_mc42_blog": true,
+    "zero_gap_10_aug": true,
+    "zero_gap_14_aug": true,
+    "cap_7_aug": true,
+    "cap_10_aug": true,
+    "cap_20_aug": true,
+    "cap_15_sep": true,
+    "cap_22_sep": true,
+    "window_reminders_09": 7,
+    "dup_review_15_sep": true,
+    "mc52_during_david_ward": true
+  },
+  "dayCapsSample": {
+    "2026-08-07": 330,
+    "2026-08-10": 360,
+    "2026-08-20": 255,
+    "2026-09-15": 315,
+    "2026-09-22": 315
+  }
+}

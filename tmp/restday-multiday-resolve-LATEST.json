@@ -1,0 +1,385 @@
+{
+  "dry": false,
+  "rule": "rest_day_after_multiday_workshop",
+  "workshop_multiday": [
+    {
+      "title": "Post Processing Masterclass - David Ward",
+      "firstDay": "2026-08-04",
+      "lastDay": "2026-08-06",
+      "restDay": "2026-08-07",
+      "event_id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g64o4cd266h1jcgi170pk8gpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6go4aghn68o4ad1g68o38gpk610kch9n71230dhj8gsj4h1o6kr0"
+    },
+    {
+      "title": "Gower Peninsula Photo Workshop - Landscape Photography Wales",
+      "firstDay": "2026-08-28",
+      "lastDay": "2026-08-30",
+      "restDay": "2026-08-31",
+      "event_id": "_6or34or571i36chg75j6aohn6pj30e326lgjipi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Hartland Quay, Devon Seascape Photography Workshops",
+      "firstDay": "2026-09-04",
+      "lastDay": "2026-09-06",
+      "restDay": "2026-09-07",
+      "event_id": "_6or36o9h6opjcopj70o32d1i6ko3ep31coqjioi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Landscape Photography Workshops Yorkshire | Coast and Moors",
+      "firstDay": "2026-09-10",
+      "lastDay": "2026-09-13",
+      "restDay": "2026-09-14",
+      "event_id": "_6oqmacb1cli3gpb3cgqj2p1k65i68p9k6hj3eoi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Lake District Photography Workshop Late Summer in Cumbria",
+      "firstDay": "2026-09-18",
+      "lastDay": "2026-09-20",
+      "restDay": "2026-09-21",
+      "event_id": "_6lh64o9ickr38opo6co34db375gm4dpj6pi62pi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Landscape Photography Snowdonia Photography Workshop",
+      "firstDay": "2026-09-26",
+      "lastDay": "2026-09-27",
+      "restDay": "2026-09-28",
+      "event_id": "_6lh64ohi6hi6cc1o6kp34eb571j3ac9p6pimcdi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": " Dorset Photography Workshop | Jurassic Coast Photography",
+      "firstDay": "2026-10-02",
+      "lastDay": "2026-10-04",
+      "restDay": "2026-10-05",
+      "event_id": "_6lh64ob5cdim4c9g6hhjeoho64rjacj46dhm6ca0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy ",
+      "firstDay": "2026-10-10",
+      "lastDay": "2026-10-11",
+      "restDay": "2026-10-12",
+      "event_id": "_6lh64o9kcdgj8phkckomcopjcgpm4ohgclhj6pa0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Lake District Photography Workshops | Autumn in Cumbria",
+      "firstDay": "2026-11-13",
+      "lastDay": "2026-11-15",
+      "restDay": "2026-11-16",
+      "event_id": "_6lh64o9i6som6p9lckqmcc3668o66dhh6oq30pi0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Norfolk Photography Workshop | Cromer to Hunstanton",
+      "firstDay": "2026-11-20",
+      "lastDay": "2026-11-22",
+      "restDay": "2026-11-23",
+      "event_id": "_6lh64ohockojap9iccq3gcr3ccqjae9o65im6oq0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Lake District Photography Workshop | Winter in Cumbria",
+      "firstDay": "2027-01-22",
+      "lastDay": "2027-01-24",
+      "restDay": "2027-01-25",
+      "event_id": "_6lh64o9iccp38d9j6gqj0o9gckq36cj2cko68ca0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Suffolk Landscape Photography Workshop - Long Exposure",
+      "firstDay": "2027-02-05",
+      "lastDay": "2027-02-07",
+      "restDay": "2027-02-08",
+      "event_id": "_6op68oj3ckqj8cr368q3ie9hc8qjae9g65h66da0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Hartland Quay, Devon Seascape Photography Workshop",
+      "firstDay": "2027-02-18",
+      "lastDay": "2027-02-21",
+      "restDay": "2027-02-22",
+      "event_id": "_6oq32eb4c9gjedj4clhm2cph70r3aor2corjcoq0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Lake District Photography Workshop | Spring in Cumbria",
+      "firstDay": "2027-03-12",
+      "lastDay": "2027-03-14",
+      "restDay": "2027-03-15",
+      "event_id": "_6lh64o9ichh32p9k74r3coho6opj8cr46hi36oq0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Northumberland Landscape Photography Workshop | 4 Days | Mar",
+      "firstDay": "2027-03-18",
+      "lastDay": "2027-03-21",
+      "restDay": "2027-03-22",
+      "event_id": "_6oqjgd1mcdhj0eb368ojacplcgrmcd9m6ph3gda0etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Dartmoor Photography Workshop | Woodlands, Moors and Tors",
+      "firstDay": "2027-04-02",
+      "lastDay": "2027-04-04",
+      "restDay": "2027-04-05",
+      "event_id": "_6oqj0d9oclgm6o9jccrj0c1l74rjce3170qj4c20etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Yorkshire Dales Photography Workshop - Landscape Photography",
+      "firstDay": "2027-04-16",
+      "lastDay": "2027-04-18",
+      "restDay": "2027-04-19",
+      "event_id": "_6lh64o9jccs30p9iccq3gcpjc8rj4e1o68p66c20etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Exmoor Photography Workshops - Seascapes | Lynmouth",
+      "firstDay": "2027-05-08",
+      "lastDay": "2027-05-09",
+      "restDay": "2027-05-10",
+      "event_id": "_6lh64ohm6op6achkc4r3id1h70qjac35coo3ie20etrnebj1dhgmssj1dpjmashecdnmq"
+    },
+    {
+      "title": "Menai and Anglesey Photography Workshop | Wales | May",
+      "firstDay": "2027-05-14",
+      "lastDay": "2027-05-16",
+      "restDay": "2027-05-17",
+      "event_id": "_6oq3ce1pcli3id9m6krj4c9m6lijic1ocpimcdi0etrnebj1dhgmssj1dpjmashecdnmq"
+    }
+  ],
+  "rest_days": [
+    "2026-08-07",
+    "2026-08-31",
+    "2026-09-07",
+    "2026-09-14",
+    "2026-09-21",
+    "2026-09-28",
+    "2026-10-05",
+    "2026-10-12",
+    "2026-11-16",
+    "2026-11-23",
+    "2027-01-25",
+    "2027-02-08",
+    "2027-02-22",
+    "2027-03-15",
+    "2027-03-22",
+    "2027-04-05",
+    "2027-04-19",
+    "2027-05-10",
+    "2027-05-17"
+  ],
+  "wrong_rule_examples_check": {
+    "2026-08-24": {
+      "is_rest": false,
+      "note": "must NOT be rest (single-day Abstract & Macro Sun 23 Aug)"
+    },
+    "2026-10-19": {
+      "is_rest": false,
+      "note": "check — only rest if a multi-day workshop ended 18 Oct"
+    },
+    "2027-01-12": {
+      "is_rest": false,
+      "note": "check — only rest if a multi-day workshop ended 11 Jan 2027"
+    }
+  },
+  "tasks_on_rest": [
+    {
+      "display_id": 1,
+      "title": "Walkthrough: integrity checker",
+      "day": "2026-08-07"
+    },
+    {
+      "display_id": 14,
+      "title": "Sign-off: Traditional SEO",
+      "day": "2026-08-07"
+    },
+    {
+      "display_id": 13,
+      "title": "Sign-off: URL Money Pages",
+      "day": "2026-08-07"
+    },
+    {
+      "display_id": 2,
+      "title": "Walkthrough: Money rebuild",
+      "day": "2026-08-07"
+    }
+  ],
+  "targets": 2,
+  "moves": 2,
+  "unplaced": 0,
+  "related_ids": [
+    "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:ko8up50cr0u69s27udgau3c4es",
+    "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:1r5lf78cg1qulelc0dd5h767kk"
+  ],
+  "assertions": {
+    "2026-08-07": {
+      "cleared_planned": true,
+      "move_count": 2,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": [
+        {
+          "title": "Booking Sheet, Month End Update",
+          "to_day": "2026-07-30",
+          "start": "2026-07-30T11:15:00.000Z",
+          "end": "2026-07-30T12:15:00.000Z",
+          "related_id": "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:ko8up50cr0u69s27udgau3c4es"
+        },
+        {
+          "title": "Monthly Accounts — Bank Genie",
+          "to_day": "2026-07-29",
+          "start": "2026-07-29T10:45:00.000Z",
+          "end": "2026-07-29T12:15:00.000Z",
+          "related_id": "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:1r5lf78cg1qulelc0dd5h767kk"
+        }
+      ]
+    },
+    "2026-08-31": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-09-07": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-09-14": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-09-21": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-09-28": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-10-05": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-10-12": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-11-16": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2026-11-23": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-01-25": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-02-08": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-02-22": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-03-15": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-03-22": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-04-05": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-04-19": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-05-10": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    },
+    "2027-05-17": {
+      "cleared_planned": true,
+      "move_count": 0,
+      "unplaced": [],
+      "dest_issues": [],
+      "landings": []
+    }
+  },
+  "verify_remaining_on_rest_days": [],
+  "move_rows": [
+    {
+      "log_id": "2dac7e94-2042-44b5-ab27-379d5ebae536",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "from_rest_day": "2026-08-07",
+      "ideal_date": "2026-08-01",
+      "calendar_event_id": "ko8up50cr0u69s27udgau3c4es",
+      "to_day": "2026-07-30",
+      "new_start": "2026-07-30T11:15:00.000Z",
+      "new_end": "2026-07-30T12:15:00.000Z",
+      "duration_min": 60,
+      "related_id": "gcal:habit:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:evt:ko8up50cr0u69s27udgau3c4es",
+      "pinChange": "diary_pin:2026-07-30T11:15:00.000Z|2026-07-30T12:15:00.000Z"
+    },
+    {
+      "log_id": "0f73286a-8df0-4f74-b40f-07b1e8b92871",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "from_rest_day": "2026-08-07",
+      "ideal_date": "2026-08-03",
+      "calendar_event_id": "1r5lf78cg1qulelc0dd5h767kk",
+      "to_day": "2026-07-29",
+      "new_start": "2026-07-29T10:45:00.000Z",
+      "new_end": "2026-07-29T12:15:00.000Z",
+      "duration_min": 90,
+      "related_id": "gcal:habit:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:evt:1r5lf78cg1qulelc0dd5h767kk",
+      "pinChange": "diary_pin:2026-07-29T10:45:00.000Z|2026-07-29T12:15:00.000Z"
+    }
+  ],
+  "unplaced_rows": []
+}

@@ -1,0 +1,3092 @@
+{
+  "generated_at": "2026-07-27T20:58:01.903Z",
+  "mode": "report_only",
+  "horizon": {
+    "from": "2026-07-27",
+    "to": "2027-01-31",
+    "timeMin": "2026-07-20T00:00:00.000Z",
+    "timeMax": "2027-02-01T00:00:00.000Z"
+  },
+  "gcal_health": {
+    "health": [
+      {
+        "id": "primary",
+        "ok": true,
+        "count": 474
+      },
+      {
+        "id": "ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com",
+        "ok": true,
+        "count": 38
+      },
+      {
+        "id": "nht93uaqhhd191kc3fg1kjs57k6bunhn@import.calendar.google.com",
+        "ok": true,
+        "count": 32
+      },
+      {
+        "id": "c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com",
+        "ok": true,
+        "count": 23
+      }
+    ],
+    "assessment": {
+      "label": "4 calendars ok",
+      "ok": true,
+      "faults": []
+    },
+    "event_count": 567,
+    "primary_count": 474
+  },
+  "rules": {
+    "arrive_before_start_min": "30",
+    "depart_at_stated_end": "true",
+    "home_postcode": "CV4 9HW",
+    "buffer_scope": "home_only",
+    "prep_buffer_min": "30",
+    "decompress_buffer_min": "30",
+    "event_colour_id": "10",
+    "title_prefix_travel": "MC 🚗",
+    "title_prefix_buffer": "MC ⏳",
+    "title_prefix_recurring": "MC 🔁",
+    "title_prefix_deadline": "MC ⏰",
+    "residential_extra_night": "client_option",
+    "missed_habit_policy": "roll_forward_capped",
+    "missed_habit_max_rolls": "3",
+    "hotel_deadline_reminder_days": "3",
+    "working_hours_weekday_start": "10:00",
+    "working_hours_weekday_end": "17:00",
+    "working_hours_weekend_start": "11:00",
+    "working_hours_weekend_end": "16:00",
+    "working_days": "mon,tue,wed,thu,fri,sat,sun",
+    "exclude_bank_holidays": "true",
+    "decompress_after_task_min": "30",
+    "manual_move_policy": "pin_forever",
+    "manual_move_changes_due_date": "false",
+    "client_work_outranks_admin": "true",
+    "gap_becomes_task": "true",
+    "multiday_needs_hotel": "true",
+    "direct_hotel_release_weeks": "2",
+    "habit_horizon_edge_weeks": "4",
+    "travel_horizon_edge_weeks": "4",
+    "travel_horizon_weeks": "104",
+    "fixture_buffer_min": "60",
+    "daily_task_cap_min": "240",
+    "busy_map_scope": "all_calendars",
+    "multiday_blocks_full_span": "true",
+    "missed_habit_direction": "backward_if_time_critical",
+    "blocked_dates_manual": "none",
+    "recurring_personal_blocks": "cleaner:fortnightly Friday 09:00-13:00",
+    "window_overrun_max_min": "60",
+    "window_overrun_blocked_by": "workshop,class,tuition,client_shoot,personal_block",
+    "workshop_derived_horizon": "indefinite",
+    "busy_map_excludes_mc_blocks": "true",
+    "mc_blocks_are_output_only": "true",
+    "busy_map_fingerprint_required": "true",
+    "habit_horizon_weeks": "26",
+    "daily_task_cap_tolerance_min": "30",
+    "deadline_reminder_window_exempt": "true",
+    "fixture_horizon_weeks": "60",
+    "title_prefix_fixture": "MC ⚽",
+    "admin_gap_min": "15",
+    "gcal_writes_available": "false",
+    "rest_day_after_multiday_workshop": "true",
+    "teaching_day_whole_day_block": "false",
+    "residential_arrive_hm": "16:00",
+    "auto_sync_signed_off": "true",
+    "auto_sync_enabled": "true",
+    "gcal_push_inflight_until": "0",
+    "gcal_reconcile_status_line": "Google matches DB: ✓"
+  },
+  "buckets": {
+    "db_google_match": {
+      "rule": "db_google_match (live pull)",
+      "checked": 252,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "db_master_missing_google": {
+      "rule": "db_master_with_event_id_missing_on_google",
+      "checked": 252,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "google_orphan_mc": {
+      "rule": "google_mc_event_without_db_master",
+      "checked": 423,
+      "violations": [
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "0q9970q66n5175tqfkg3j3fak8",
+          "date": "2026-07-25",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Prep — Constantin Xiao 1-2-1 Zoom",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "d7v2biobogq9q3e4lei1ou86gk",
+          "date": "2026-07-25",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — Constantin Xiao 1-2-1 Zoom",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "7p6d3vb9oj3bjnm8vocr0rn998",
+          "date": "2026-07-28",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "veauh1fb9h3a84u0rfruhv1188",
+          "date": "2026-07-29",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "bjun006uuv8ucnr926tdbllgvs",
+          "date": "2026-07-29",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "q33qd5c297r6ql1qum7003a6ok",
+          "date": "2026-07-29",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P2 · MC-9 · AI-citation scoping",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "an1b0n8kao8jr1vbn36m5hqh1o",
+          "date": "2026-07-29",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P0 · MC-21 · Admiral loan — awaiting funds",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "dl897oqbvnil2jif46acpmujso",
+          "date": "2026-07-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "uko8m38b48ms6ol8ob9v1upkm8",
+          "date": "2026-07-31",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "kh8fdutf3kqokkbv9hf9p1hh1c",
+          "date": "2026-08-04",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Rosedale Abbey",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "p8sivlob8m9v1rt7k99pv5c4v0",
+          "date": "2026-08-07",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Post Processing Masterclass - David Ward",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "kth0g94p9r3suts8lvijatq8vs",
+          "date": "2026-08-08",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "dg60ie9ubiblor6m5mnm6p8mko",
+          "date": "2026-08-09",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "cgf0qdo1ogcsvoahulnsf58jp4",
+          "date": "2026-08-09",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P3 · MC-14 · Sign-off: Traditional SEO",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "1kb3nrcpirebt8go1khlj7j3gs",
+          "date": "2026-08-10",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "j6gc7u8m6n0glsvuo12lcflovk",
+          "date": "2026-08-10",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "8ndtjid2les6c2sp0r70taotjo",
+          "date": "2026-08-11",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P3 · MC-18 · Sign-off: Local & Reviews",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "23kldn9v6kl5pucmrthfmmnen0",
+          "date": "2026-08-11",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P3 · MC-15 · Sign-off: Backlinks",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "ek01sd53fo8frgj976oamekbbk",
+          "date": "2026-08-12",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "21259mk63tvr218ik98k871vfs",
+          "date": "2026-08-20",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after P0 · MC-42 · Gower workshop: reschedule dates then book hote",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "jnk10hibaa3q05ihrg8k9se0gk",
+          "date": "2026-08-21",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "gtqju7dsonvpu7adrps2elvdk4",
+          "date": "2026-08-21",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "3rlqu5n4v4374l7kk80ejse9rs",
+          "date": "2026-08-26",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "6oumbvis94787r25q0dest44cc",
+          "date": "2026-08-28",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — wales - Gower Peninsular",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "2tun1q3fv4ukfkeioe73udikgk",
+          "date": "2026-08-31",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Gower Peninsula Photo Workshop - Landscape Photography Wales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "7h1bmfl88c9p52vt91rno9d260",
+          "date": "2026-09-01",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "6nppvake75jfdn6bhdfghiove4",
+          "date": "2026-09-02",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "4vpstaetohj50cgnvq0rgb7njc",
+          "date": "2026-09-02",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "nme5iap1jqekpdahmg7p8njtj8",
+          "date": "2026-09-04",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Hartland Quay",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "cido8f8ipkf2qmrttnpen8n68c",
+          "date": "2026-09-07",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Hartland Quay, Devon Seascape Photography Workshops",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "mam34ps77u96jobavfkrv2vfc8",
+          "date": "2026-09-08",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after SEO Performance Review",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "4c9k57evh67j8n2c9ur72d8qpc",
+          "date": "2026-09-10",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Saltburn / Ellerby",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "effefe30qg9oismh3urg6rhsjk",
+          "date": "2026-09-14",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Landscape Photography Workshops Yorkshire | Coast and Moors",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "aeks779rm0sheqe58nvcv5tteg",
+          "date": "2026-09-16",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "e4frkhmifis250ahigll429mqs",
+          "date": "2026-09-16",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "t3mt71rbess3tue2ij6d9mtr48",
+          "date": "2026-09-18",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Bassenthwaite / Ravenstone",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "12v0odkh7a3obfo1gpkohmamas",
+          "date": "2026-09-18",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "aqrbdgkvvn3oe6n2snddvnv898",
+          "date": "2026-09-20",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "q74htejvgc105tm097ujk533rc",
+          "date": "2026-09-21",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Lake District Photography Workshop Late Summer in Cumbria",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "vradt36iuhohh52j10pvj19hs0",
+          "date": "2026-09-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "qpu996v3b4icaopo5ladeg8d48",
+          "date": "2026-09-26",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Capel Curig",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "pbg1nag7nee0vpjpt58nc29tuc",
+          "date": "2026-09-28",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Landscape Photography Snowdonia Photography Workshop",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "jqa9rid9cggsmruidl89b1nq40",
+          "date": "2026-09-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "8cm0a4ld1scclad7c4r3k8i8sg",
+          "date": "2026-09-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "7gaarna6gu1ou2e2enlueb355o",
+          "date": "2026-10-02",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Wareham / Kingston",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "g4kk445v4epa7540133tasg6bc",
+          "date": "2026-10-02",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "dmcfgbsgulb4531rj439ctop00",
+          "date": "2026-10-05",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Dorset Photography Workshop | Jurassic Coast Photography",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "gq275btvbd8lrrd4dmoqj4sd54",
+          "date": "2026-10-07",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "dm97md790b1ee3ne726h4ho0a4",
+          "date": "2026-10-08",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "uglrdp9uqrntq191migdu4h520",
+          "date": "2026-10-10",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Lake Vyrnwy",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "iauen1fdibdhmrcjl38ebth0t4",
+          "date": "2026-10-12",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "fnns4c2br2oejp2slp89j8klt8",
+          "date": "2026-10-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "n52a6qv3g745ts2js6ed77v1dk",
+          "date": "2026-10-16",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "gkk00hkunras3a4altsltlqeoc",
+          "date": "2026-10-21",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "lsf73ms9k1o8chkone6kpu2r7g",
+          "date": "2026-10-22",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "hs50t86mnl1np7nnho95rl583o",
+          "date": "2026-10-22",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "36ob38vnf9k66odpdlcpivbelk",
+          "date": "2026-10-27",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "sis1059no1e4aaj14b2fd0jb7k",
+          "date": "2026-11-05",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "tbuvdfb15mr0bvais6t243rdts",
+          "date": "2026-11-10",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "2v4k1ovuc8k9sg491h42srgdfk",
+          "date": "2026-11-11",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel deadline — White Horse OVERSTRAND (£940) cancel by 17 Nov",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "ft2dr3ptqkfepmojkfjqpn0o58",
+          "date": "2026-11-11",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "qq74v64e3t0skjl5qq59041cu4",
+          "date": "2026-11-11",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "p95d96h7287maeijarl5tjct8c",
+          "date": "2026-11-13",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Lake District",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "5gf504vh9mkqak8p5i5f8g6440",
+          "date": "2026-11-16",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Lake District Photography Workshops | Autumn in Cumbria",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "6bvu1chsti51e2u1d2uli86iko",
+          "date": "2026-11-19",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "qctjseq2issvpgiou68tjm5aeg",
+          "date": "2026-11-20",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Blakeney Norfolk",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "8ahk4jiua6jjn59eo6mtu4dkvk",
+          "date": "2026-11-23",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Norfolk Photography Workshop | Cromer to Hunstanton",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "efv67ec5m7td6dcso57tc8o1oo",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "lqrj5n4hu3m6bjint81am7fc9g",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "n9s6mqu3n0o5cqsggu76pkcvag",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "4gmb3as6h6tqr8654fjg5uhb1c",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "69b6rbveis4d1oegku3vhtagd8",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "lt7535jbpt0burc10i02tucajk",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "0j54435tvgclvfrv9i0ble5tnk",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "2m2u9ec0q8pr1ecjadcj1g83m8",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "3ojn4manjdhik7q1696bf9b17k",
+          "date": "2026-11-24",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "hgnrbfahn0pk53rj2kq62mdgu0",
+          "date": "2026-11-25",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "rr2he667jjo9e4jtpq7p033im0",
+          "date": "2026-11-25",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "sj7n0nh36i6s8eouc5tl2ntnss",
+          "date": "2026-11-25",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "nn58gdplsrnmmo1pv1k49crphc",
+          "date": "2026-11-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "qoadfm77m3ra0ui49e5435vjq4",
+          "date": "2026-11-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "u3ur6618ds6bjec96p7mmfo970",
+          "date": "2026-11-30",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "6jqpuj2vktbrn3i4s2gmdi298o",
+          "date": "2026-12-01",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "3rrbr6mg0drak7gq22885hf5uc",
+          "date": "2026-12-09",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "dnc1ucm4uri86cqp6ooapf5qao",
+          "date": "2026-12-10",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "d6vnrsqgr2h01qneifbsnk0ue0",
+          "date": "2026-12-11",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "eapd87304vpv21kk7ooarid0d8",
+          "date": "2026-12-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "h8mj5p1ng61kvnn2hg5j2cr20g",
+          "date": "2026-12-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "vn00ufr9hco8rjp62624ql32po",
+          "date": "2026-12-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "nf8sbvn4omh5hk8q63a68q4of8",
+          "date": "2026-12-15",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Light & Logic newsletter issue",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "gb1jadpnm907u8tmrqvtoj7o94",
+          "date": "2026-12-18",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "q61sj05oeu0g6g0kn527jgslik",
+          "date": "2026-12-22",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "2jup7cj0r9iacctjblr7osga58",
+          "date": "2026-12-28",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "6osaoh1n5hau8sl1hipfnh3dro",
+          "date": "2026-12-28",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "ol9t2ug6fr1kmcbaliqdd6s98o",
+          "date": "2026-12-28",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "nl2bgjhj1if70blpe9770lfgfo",
+          "date": "2027-01-03",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "26hbd2k9svv7uho7jtoh4kdgno",
+          "date": "2027-01-04",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel deadline — Ravenstone Jan (£2,211) cancel by 7-8 Jan",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "spj185ti52156n4jasm0terdik",
+          "date": "2027-01-04",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "sfct1uocgs0ot5lrs7mpqc9hd4",
+          "date": "2027-01-06",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "ddbb8t92e0gor1bioujup8qqoo",
+          "date": "2027-01-08",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "bvf4pp4gq9qdieigpo5quv9qhs",
+          "date": "2027-01-12",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "agcct9npi32lq93tmholhvsku4",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "e9nhco130b37ikcg4dr9l4siis",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "gdg0vqs7smdnnd4kgsh265lj4k",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "63om6t0gnecb8d74ofbgg9qh9s",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "l037ma386v7imtu7mvqd3caf84",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "t2fj5pmh0tha865t3hjhr4kvn0",
+          "date": "2027-01-13",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "chjctgtr04frq36qvaicf9pua4",
+          "date": "2027-01-14",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel decision — Angel Inn Wangford (£2,231) 1-day cancel window",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "326kovnrr0fqp3r4u4obaqp0m0",
+          "date": "2027-01-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "9ueuos4251vuj1qb7inb9jll54",
+          "date": "2027-01-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "ao2kn5as5bvbh80l30t7khi42g",
+          "date": "2027-01-14",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "jn1dbccvkilvjmsaijnnkprf8o",
+          "date": "2027-01-20",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "reefp561mbj6ubetktif1uf400",
+          "date": "2027-01-20",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "sla22e5ut34asugbc1qjms501o",
+          "date": "2027-01-20",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "4n4qms4rfa139ogj6q513kfio4",
+          "date": "2027-01-20",
+          "db_value": "buffer_or_travel_title",
+          "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "qgrtk77qpu902t1g46eidito3k",
+          "date": "2027-01-22",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🚫 AWAY — Lake District B5291",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "mtl4qal81cvmhnkl8ptf969nm4",
+          "date": "2027-01-25",
+          "db_value": "away_rest_banner",
+          "google_value": "MC 🛌 REST — after Lake District Photography Workshop | Winter in Cumbria",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        },
+        {
+          "rule": "google_orphan_mc",
+          "layer": "Google↔DB",
+          "id": "mqqgn6gu9m5pd0a0ifok3taf2g",
+          "date": "2027-01-31",
+          "db_value": "unreferenced_mc",
+          "google_value": "MC ⏰ Hotel deadline — The Angel Inn, 39 High Street, Wangford NR34 8RL cancel by 2027-02-03",
+          "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 118
+    },
+    "rest_day": {
+      "rule": "rest_day_after_multiday_workshop",
+      "checked": 134,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "away_span": {
+      "rule": "away_spans_hard_busy_incl_edges",
+      "checked": 134,
+      "violations": [
+        {
+          "rule": "away_span",
+          "layer": "Rule↔DB",
+          "id": "b7b40d72-c9d9-4c0d-8e55-89bf263c7528",
+          "date": "2027-01-21",
+          "db_value": "Send Out Joining Details",
+          "google_value": null,
+          "detail": "habit on away/travel-edge day"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 1
+    },
+    "bank_holiday": {
+      "rule": "exclude_bank_holidays",
+      "checked": 134,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "blocked_manual": {
+      "rule": "blocked_dates_manual",
+      "checked": 134,
+      "violations": [],
+      "cannot_check": "blocked_dates_manual=none (nothing to violate)",
+      "violation_count": 0
+    },
+    "google_on_blocked": {
+      "rule": "google_mc_on_rest_or_away",
+      "checked": 125,
+      "violations": [
+        {
+          "rule": "google_on_blocked",
+          "layer": "Google↔Rule",
+          "id": "12v0odkh7a3obfo1gpkohmamas",
+          "date": "2026-09-18",
+          "db_value": null,
+          "google_value": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+          "detail": "away/travel-edge day"
+        },
+        {
+          "rule": "google_on_blocked",
+          "layer": "Google↔Rule",
+          "id": "aqrbdgkvvn3oe6n2snddvnv898",
+          "date": "2026-09-20",
+          "db_value": null,
+          "google_value": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+          "detail": "away/travel-edge day"
+        },
+        {
+          "rule": "google_on_blocked",
+          "layer": "Google↔Rule",
+          "id": "g4kk445v4epa7540133tasg6bc",
+          "date": "2026-10-02",
+          "db_value": null,
+          "google_value": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+          "detail": "away/travel-edge day"
+        },
+        {
+          "rule": "google_on_blocked",
+          "layer": "Google↔Rule",
+          "id": "oprkctnu7lunqg547q07gm13i8",
+          "date": "2026-11-14",
+          "db_value": null,
+          "google_value": "MC ⏰ Hotel deadline — The White Horse, 34 High Street, OVERSTRAND NR27 0AB cancel by 2026-11-17",
+          "detail": "away/travel-edge day"
+        },
+        {
+          "rule": "google_on_blocked",
+          "layer": "Google↔Rule",
+          "id": "ojm19oglnf8522a21nr4qka23k",
+          "date": "2027-01-21",
+          "db_value": null,
+          "google_value": "MC 🔁 Send Out Joining Details",
+          "detail": "away/travel-edge day"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 5
+    },
+    "working_hours": {
+      "rule": "working_hours (pinned exempt)",
+      "checked": 127,
+      "violations": [
+        {
+          "rule": "working_hours",
+          "layer": "Rule↔DB",
+          "id": "37010cb0-4b0f-4556-9501-98b84c8f2a36",
+          "date": "2026-12-23",
+          "db_value": "Send Out Joining Details 2026-12-23T08:00:00.000Z–2026-12-23T09:00:00.000Z",
+          "google_value": null,
+          "detail": "starts_before_10:00"
+        },
+        {
+          "rule": "working_hours",
+          "layer": "Rule↔DB",
+          "id": "9fcc8232-0e6a-434a-a68f-3d6e3bcd9be0",
+          "date": "2026-12-30",
+          "db_value": "Send Out Joining Details 2026-12-30T08:00:00.000Z–2026-12-30T09:00:00.000Z",
+          "google_value": null,
+          "detail": "starts_before_10:00"
+        },
+        {
+          "rule": "working_hours",
+          "layer": "Rule↔DB",
+          "id": "ffabae23-c3e6-438b-9e3d-9f677a815db2",
+          "date": "2026-08-17",
+          "db_value": "Publish Blog Post 2026-08-17T19:00:00.000Z–2026-08-17T21:00:00.000Z",
+          "google_value": null,
+          "detail": "ends_after_17:00_plus_tol"
+        },
+        {
+          "rule": "working_hours",
+          "layer": "Rule↔DB",
+          "id": "f0b4ec96-16e6-42de-9e6b-49b85771df76",
+          "date": "2026-08-09",
+          "db_value": "SEO Performance Review 2026-08-09T09:00:00.000Z–2026-08-09T12:00:00.000Z",
+          "google_value": null,
+          "detail": "starts_before_11:00"
+        },
+        {
+          "rule": "working_hours",
+          "layer": "Rule↔DB",
+          "id": "a57b4351-b55e-42d7-ba5e-a77ae4d55a7c",
+          "date": "2026-08-24",
+          "db_value": "Backup Photos to Portable Drive 2026-08-24T08:00:00.000Z–2026-08-24T09:00:00.000Z",
+          "google_value": null,
+          "detail": "starts_before_10:00"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 5
+    },
+    "daily_cap": {
+      "rule": "daily_task_cap_min+tolerance",
+      "checked": 77,
+      "violations": [
+        {
+          "rule": "daily_cap",
+          "layer": "Rule↔DB",
+          "id": "2026-08-09",
+          "date": "2026-08-09",
+          "db_value": "375m",
+          "google_value": null,
+          "detail": "cap=240+tol=30"
+        },
+        {
+          "rule": "daily_cap",
+          "layer": "Rule↔DB",
+          "id": "2026-07-28",
+          "date": "2026-07-28",
+          "db_value": "300m",
+          "google_value": null,
+          "detail": "cap=240+tol=30"
+        },
+        {
+          "rule": "daily_cap",
+          "layer": "Rule↔DB",
+          "id": "2026-11-18",
+          "date": "2026-11-18",
+          "db_value": "480m",
+          "google_value": null,
+          "detail": "cap=240+tol=30"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 3
+    },
+    "admin_decompress_gap": {
+      "rule": "admin_gap_min / decompress_after_task_min",
+      "checked": 57,
+      "violations": [
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "f0b4ec96-16e6-42de-9e6b-49b85771df76|237f77c8-8505-4036-a14d-7e17f9fe51dc",
+          "date": "2026-08-09",
+          "db_value": "SEO Performance Review → Review/Amend Course & Workshop Dates + check Hotel Bookings gap=-120 need=15",
+          "google_value": null,
+          "detail": "tiers admin/admin admin=15 decompress=30"
+        },
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "71a19348-4333-42c7-88f2-6754d0e2054c|39ca0b44-6ae9-44f3-8ba2-36d233a9d660",
+          "date": "2026-08-13",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings → Check Artfully Walls Sales gap=-60 need=15",
+          "google_value": null,
+          "detail": "tiers admin/admin admin=15 decompress=30"
+        },
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "39ca0b44-6ae9-44f3-8ba2-36d233a9d660|99438cba-3cd2-4004-b546-84d21b70ab9c",
+          "date": "2026-08-13",
+          "db_value": "Check Artfully Walls Sales → Sign-off: Local & Reviews gap=10 need=30",
+          "google_value": null,
+          "detail": "tiers admin/substantial admin=15 decompress=30"
+        },
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "9bfb584e-dfe9-412b-bfc7-b150147b646d|986c2d79-b523-4405-855d-ee3533b5473f",
+          "date": "2026-09-23",
+          "db_value": "Upload sites — LocalViking, TOGDays, Where Can We Go → Hotel bookings check (Claude) gap=-75 need=15",
+          "google_value": null,
+          "detail": "tiers admin/admin admin=15 decompress=30"
+        },
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "324c8c49-3bb3-4b23-88a9-c7f01991c069|cc744626-b6be-4e90-b475-731b7c007d57",
+          "date": "2026-11-18",
+          "db_value": "BAU global refresh — Day 2: schemas + final ingest + verify → BAU global refresh — Day 1: CSVs + preliminary ingest gap=-240 need=15",
+          "google_value": null,
+          "detail": "tiers admin/admin admin=15 decompress=30"
+        },
+        {
+          "rule": "admin_decompress_gap",
+          "layer": "Rule↔DB",
+          "id": "d1862f9a-9e6f-4947-b911-880b54ae98ff|b6fdbbd7-91e5-41ee-96b8-36941bf2bc97",
+          "date": "2026-09-15",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings → Check Artfully Walls Sales gap=-30 need=15",
+          "google_value": null,
+          "detail": "tiers admin/admin admin=15 decompress=30"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 6
+    },
+    "habit_overlap": {
+      "rule": "habit_vs_habit_overlap",
+      "checked": 49,
+      "violations": [
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "f0b4ec96-16e6-42de-9e6b-49b85771df76|237f77c8-8505-4036-a14d-7e17f9fe51dc",
+          "date": "2026-08-09",
+          "db_value": "SEO Performance Review 2026-08-09T09:00:00.000Z",
+          "google_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings 2026-08-09T10:00:00.000Z",
+          "detail": "overlap"
+        },
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "71a19348-4333-42c7-88f2-6754d0e2054c|39ca0b44-6ae9-44f3-8ba2-36d233a9d660",
+          "date": "2026-08-13",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings 2026-08-13T12:30:00.000Z",
+          "google_value": "Check Artfully Walls Sales 2026-08-13T13:30:00.000Z",
+          "detail": "overlap"
+        },
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "d1862f9a-9e6f-4947-b911-880b54ae98ff|b6fdbbd7-91e5-41ee-96b8-36941bf2bc97",
+          "date": "2026-09-15",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings 2026-09-15T12:30:00.000Z",
+          "google_value": "Check Artfully Walls Sales 2026-09-15T14:00:00.000Z",
+          "detail": "overlap"
+        },
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "9bfb584e-dfe9-412b-bfc7-b150147b646d|986c2d79-b523-4405-855d-ee3533b5473f",
+          "date": "2026-09-23",
+          "db_value": "Upload sites — LocalViking, TOGDays, Where Can We Go 2026-09-23T09:00:00.000Z",
+          "google_value": "Hotel bookings check (Claude) 2026-09-23T10:45:00.000Z",
+          "detail": "overlap"
+        },
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "9bfb584e-dfe9-412b-bfc7-b150147b646d|d9d04bc5-5fe6-482a-a69e-7ded3f83dd20",
+          "date": "2026-09-23",
+          "db_value": "Upload sites — LocalViking, TOGDays, Where Can We Go 2026-09-23T09:00:00.000Z",
+          "google_value": "Hotel bookings — Alan actions 2026-09-23T11:45:00.000Z",
+          "detail": "overlap"
+        },
+        {
+          "rule": "habit_overlap",
+          "layer": "Rule↔DB",
+          "id": "324c8c49-3bb3-4b23-88a9-c7f01991c069|cc744626-b6be-4e90-b475-731b7c007d57",
+          "date": "2026-11-18",
+          "db_value": "BAU global refresh — Day 2: schemas + final ingest + verify 2026-11-18T10:00:00.000Z",
+          "google_value": "BAU global refresh — Day 1: CSVs + preliminary ingest 2026-11-18T10:00:00.000Z",
+          "detail": "overlap"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 6
+    },
+    "fixture_buffers": {
+      "rule": "fixture_buffer_min flanks",
+      "checked": 23,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "travel_residential_arrive": {
+      "rule": "residential_arrive_hm",
+      "checked": 31,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "travel_arrive_before": {
+      "rule": "arrive_before_start_min",
+      "checked": 31,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "travel_depart_end": {
+      "rule": "depart_at_stated_end",
+      "checked": 31,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "travel_multiday_hotel": {
+      "rule": "multiday_needs_hotel",
+      "checked": 12,
+      "violations": [
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "183c4d28-f5a4-4c61-9b8c-6f5204f5f7c6",
+          "date": "2026-08-03",
+          "db_value": "David Ward Post Processing Workshop 2 (Alan ATTENDING)",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "a3bd1f83-1720-4260-8c4e-da13089d0f41",
+          "date": "2026-08-15",
+          "db_value": "Peak District Heathers Sunset",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "0b477f9e-e9c9-4f11-8d47-4cb3dc2cfcc6",
+          "date": "2026-08-27",
+          "db_value": "Gower Peninsula Photo Workshop - Landscape Photography Wales",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "0a28cb9b-0e36-4e18-874d-1d1398412970",
+          "date": "2026-09-03",
+          "db_value": "Hartland Quay, Devon Seascape Photography Workshops",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "cb023e35-e55e-40f6-9592-23b61d038ae1",
+          "date": "2026-09-25",
+          "db_value": "Snowdonia Landscape Photography Workshop + Fairy Glen",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "efe934b8-3b8e-4541-b2a2-beb3f13f4246",
+          "date": "2026-10-01",
+          "db_value": "Dorset Jurassic Coast Photography Workshop",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "47b8ea33-50e4-4819-9eb7-ed17c011d254",
+          "date": "2026-10-09",
+          "db_value": "Wales - Pistyll Rhaeadr and Lake Vyrnwy",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "01509213-5c34-4924-9895-ed1540cc0120",
+          "date": "2026-11-12",
+          "db_value": "Autumn in Cumbria Landscape Photography Workshop",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        },
+        {
+          "rule": "multiday_needs_hotel",
+          "layer": "Rule↔DB",
+          "id": "e3c21dcb-743f-4949-a93e-51b95d49d526",
+          "date": "2026-11-19",
+          "db_value": "Norfolk - Cromer to Hunstanton Photography Workshop",
+          "google_value": null,
+          "detail": "multi-day travel pair with no matching workshop_hotels row"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 9
+    },
+    "hotel_deadline": {
+      "rule": "hotel_deadline_reminder_days",
+      "checked": 9,
+      "violations": [
+        {
+          "rule": "hotel_deadline",
+          "layer": "DB↔Google",
+          "id": "ffcd6851-65af-4609-b72b-b8e3c75aeead",
+          "date": "2026-07-28",
+          "db_value": "David Ward workshop (Alan ATTENDING)",
+          "google_value": null,
+          "detail": "no reminder_event_id (policy 3d before cancel)"
+        },
+        {
+          "rule": "hotel_deadline",
+          "layer": "Rule↔DB",
+          "id": "042f3976-9c45-4897-a1b5-a66ae2646c0a",
+          "date": "2026-09-10",
+          "db_value": "Yorkshire — The Forge (2nd hotel)",
+          "google_value": null,
+          "detail": "free_cancel_until missing"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 2
+    },
+    "direct_hotel_release": {
+      "rule": "direct_hotel_release_weeks",
+      "checked": 1,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "missed_habit": {
+      "rule": "missed_habit_policy/max_rolls/direction",
+      "checked": 0,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "anchor_direction": {
+      "rule": "time_critical anchor direction",
+      "checked": 172,
+      "violations": [
+        {
+          "rule": "anchor_direction",
+          "layer": "Rule↔DB",
+          "id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+          "date": "2026-08-07",
+          "db_value": "Send Out Joining Details",
+          "google_value": null,
+          "detail": "no candidate day in window (blocked/holiday)"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 1
+    },
+    "prep_buffer_min": {
+      "rule": "prep_buffer_min",
+      "checked": 39,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "duplicate_logs": {
+      "rule": "duplicate_recurring_log_same_habit_date",
+      "checked": 110,
+      "violations": [],
+      "cannot_check": null,
+      "violation_count": 0
+    },
+    "busy_collision": {
+      "rule": "mc_vs_client_workshop_personal_busy",
+      "checked": 134,
+      "violations": [
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "n76oipgk2ep6049qn48lndahvo",
+          "date": "2026-09-01",
+          "db_value": "Money review",
+          "google_value": "Josh Birthday (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "52l9ekpjl8151rndg6qv7oj1k0",
+          "date": "2027-01-30",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": "⚽️ Aston Villa vs Ipswich Town (c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "ojm19oglnf8522a21nr4qka23k",
+          "date": "2027-01-21",
+          "db_value": "Send Out Joining Details",
+          "google_value": "Guest Confirmation for Ravenstone Manor Hotel Booking Reference BDC5217647499 (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "afc7f344-e06e-4eda-a2e0-a0106e7bc84c",
+          "date": "2026-12-26",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "o0fhfi9rorddbv5jre3fv56gkk",
+          "date": "2026-12-19",
+          "db_value": "Publish Blog Post",
+          "google_value": "⚽️ Brighton and Hove Albion vs Ipswich Town (c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "e4c639f3-0ec8-4859-9903-6d88298fbaa1",
+          "date": "2026-12-30",
+          "db_value": "Hotel bookings check (Claude)",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "37010cb0-4b0f-4556-9501-98b84c8f2a36",
+          "date": "2026-12-23",
+          "db_value": "Send Out Joining Details",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "9fcc8232-0e6a-434a-a68f-3d6e3bcd9be0",
+          "date": "2026-12-30",
+          "db_value": "Send Out Joining Details",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "9127fa64-4875-4fe1-a29c-bf9e62a96556",
+          "date": "2026-12-30",
+          "db_value": "Hotel bookings — Alan actions",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "k26ubesl7a270tdqn6l8genqas",
+          "date": "2026-12-05",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": "⚽️ Leeds United vs Ipswich Town (c_0e7gnac3odl7ki0jfjiaedot9g@group.calendar.google.com)",
+          "detail": "time overlap with non-MC busy"
+        },
+        {
+          "rule": "busy_collision",
+          "layer": "Google↔Rule",
+          "id": "26dcb088-2317-4d87-8f4e-9a300b380b14",
+          "date": "2026-12-31",
+          "db_value": "Publish Blog Post",
+          "google_value": "Block Out Festive Break (primary)",
+          "detail": "time overlap with non-MC busy"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 11
+    },
+    "habit_missing_event_id": {
+      "rule": "scheduled_habit_missing_calendar_event_id",
+      "checked": 110,
+      "violations": [
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "afc7f344-e06e-4eda-a2e0-a0106e7bc84c",
+          "date": "2026-12-26",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "e4c639f3-0ec8-4859-9903-6d88298fbaa1",
+          "date": "2026-12-30",
+          "db_value": "Hotel bookings check (Claude)",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "37010cb0-4b0f-4556-9501-98b84c8f2a36",
+          "date": "2026-12-23",
+          "db_value": "Send Out Joining Details",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "9fcc8232-0e6a-434a-a68f-3d6e3bcd9be0",
+          "date": "2026-12-30",
+          "db_value": "Send Out Joining Details",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "9127fa64-4875-4fe1-a29c-bf9e62a96556",
+          "date": "2026-12-30",
+          "db_value": "Hotel bookings — Alan actions",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "b477bd52-7b4d-4598-9f36-48d57cf0fa1c",
+          "date": "2026-10-06",
+          "db_value": "SEO Performance Review",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "26dcb088-2317-4d87-8f4e-9a300b380b14",
+          "date": "2026-12-31",
+          "db_value": "Publish Blog Post",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "eeea1750-d0bf-4926-a152-b4b35a6714e2",
+          "date": "2026-10-15",
+          "db_value": "Publish Blog Post",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "324c8c49-3bb3-4b23-88a9-c7f01991c069",
+          "date": "2026-11-18",
+          "db_value": "BAU global refresh — Day 2: schemas + final ingest + verify",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "1e987b04-c3d4-4562-be56-d4d39656b3d9",
+          "date": "2026-10-26",
+          "db_value": "Update Event Schema for Classes & Workshops",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "86add020-a8bd-4131-afd1-d8e9f1d868eb",
+          "date": "2026-10-26",
+          "db_value": "Backup Photos to Portable Drive",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "d6691795-2ad9-40e8-81a2-0d0ab6591c35",
+          "date": "2026-11-26",
+          "db_value": "Publish Blog Post",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "cc744626-b6be-4e90-b475-731b7c007d57",
+          "date": "2026-11-18",
+          "db_value": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "5517f8e1-e32b-419c-9dfa-1f6302b32701",
+          "date": "2026-10-27",
+          "db_value": "Publish Blog Post",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "9bfb584e-dfe9-412b-bfc7-b150147b646d",
+          "date": "2026-09-23",
+          "db_value": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "d1862f9a-9e6f-4947-b911-880b54ae98ff",
+          "date": "2026-09-15",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "32770e15-4239-4be0-8956-5ab9be88cc8e",
+          "date": "2026-09-02",
+          "db_value": "SEO Performance Review",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "71a19348-4333-42c7-88f2-6754d0e2054c",
+          "date": "2026-08-13",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "ffabae23-c3e6-438b-9e3d-9f677a815db2",
+          "date": "2026-08-17",
+          "db_value": "Publish Blog Post",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "f0b4ec96-16e6-42de-9e6b-49b85771df76",
+          "date": "2026-08-09",
+          "db_value": "SEO Performance Review",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "63934dbf-cc7f-496a-a841-dfeaa78acce7",
+          "date": "2026-07-31",
+          "db_value": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "ae3e0784-2907-4124-852b-cb2d5632a45c",
+          "date": "2026-08-24",
+          "db_value": "Update Event Schema for Classes & Workshops",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "a57b4351-b55e-42d7-ba5e-a77ae4d55a7c",
+          "date": "2026-08-24",
+          "db_value": "Backup Photos to Portable Drive",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        },
+        {
+          "rule": "habit_missing_event_id",
+          "layer": "DB↔Google",
+          "id": "2dac7e94-2042-44b5-ab27-379d5ebae536",
+          "date": "2026-07-31",
+          "db_value": "Booking Sheet, Month End Update",
+          "google_value": null,
+          "detail": "scheduled but calendar_event_id null"
+        }
+      ],
+      "cannot_check": null,
+      "violation_count": 24
+    }
+  },
+  "orphans_google_no_db": [
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "0q9970q66n5175tqfkg3j3fak8",
+      "date": "2026-07-25",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Prep — Constantin Xiao 1-2-1 Zoom",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "d7v2biobogq9q3e4lei1ou86gk",
+      "date": "2026-07-25",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — Constantin Xiao 1-2-1 Zoom",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "7p6d3vb9oj3bjnm8vocr0rn998",
+      "date": "2026-07-28",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "veauh1fb9h3a84u0rfruhv1188",
+      "date": "2026-07-29",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "bjun006uuv8ucnr926tdbllgvs",
+      "date": "2026-07-29",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "q33qd5c297r6ql1qum7003a6ok",
+      "date": "2026-07-29",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P2 · MC-9 · AI-citation scoping",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "an1b0n8kao8jr1vbn36m5hqh1o",
+      "date": "2026-07-29",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P0 · MC-21 · Admiral loan — awaiting funds",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "dl897oqbvnil2jif46acpmujso",
+      "date": "2026-07-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "uko8m38b48ms6ol8ob9v1upkm8",
+      "date": "2026-07-31",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "kh8fdutf3kqokkbv9hf9p1hh1c",
+      "date": "2026-08-04",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Rosedale Abbey",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "p8sivlob8m9v1rt7k99pv5c4v0",
+      "date": "2026-08-07",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Post Processing Masterclass - David Ward",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "kth0g94p9r3suts8lvijatq8vs",
+      "date": "2026-08-08",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "dg60ie9ubiblor6m5mnm6p8mko",
+      "date": "2026-08-09",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "cgf0qdo1ogcsvoahulnsf58jp4",
+      "date": "2026-08-09",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P3 · MC-14 · Sign-off: Traditional SEO",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "1kb3nrcpirebt8go1khlj7j3gs",
+      "date": "2026-08-10",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "j6gc7u8m6n0glsvuo12lcflovk",
+      "date": "2026-08-10",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "8ndtjid2les6c2sp0r70taotjo",
+      "date": "2026-08-11",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P3 · MC-18 · Sign-off: Local & Reviews",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "23kldn9v6kl5pucmrthfmmnen0",
+      "date": "2026-08-11",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P3 · MC-15 · Sign-off: Backlinks",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "ek01sd53fo8frgj976oamekbbk",
+      "date": "2026-08-12",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "21259mk63tvr218ik98k871vfs",
+      "date": "2026-08-20",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after P0 · MC-42 · Gower workshop: reschedule dates then book hote",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "jnk10hibaa3q05ihrg8k9se0gk",
+      "date": "2026-08-21",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "gtqju7dsonvpu7adrps2elvdk4",
+      "date": "2026-08-21",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "3rlqu5n4v4374l7kk80ejse9rs",
+      "date": "2026-08-26",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "6oumbvis94787r25q0dest44cc",
+      "date": "2026-08-28",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — wales - Gower Peninsular",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "2tun1q3fv4ukfkeioe73udikgk",
+      "date": "2026-08-31",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Gower Peninsula Photo Workshop - Landscape Photography Wales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "7h1bmfl88c9p52vt91rno9d260",
+      "date": "2026-09-01",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "6nppvake75jfdn6bhdfghiove4",
+      "date": "2026-09-02",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "4vpstaetohj50cgnvq0rgb7njc",
+      "date": "2026-09-02",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "nme5iap1jqekpdahmg7p8njtj8",
+      "date": "2026-09-04",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Hartland Quay",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "cido8f8ipkf2qmrttnpen8n68c",
+      "date": "2026-09-07",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Hartland Quay, Devon Seascape Photography Workshops",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "mam34ps77u96jobavfkrv2vfc8",
+      "date": "2026-09-08",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after SEO Performance Review",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "4c9k57evh67j8n2c9ur72d8qpc",
+      "date": "2026-09-10",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Saltburn / Ellerby",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "effefe30qg9oismh3urg6rhsjk",
+      "date": "2026-09-14",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Landscape Photography Workshops Yorkshire | Coast and Moors",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "aeks779rm0sheqe58nvcv5tteg",
+      "date": "2026-09-16",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "e4frkhmifis250ahigll429mqs",
+      "date": "2026-09-16",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "t3mt71rbess3tue2ij6d9mtr48",
+      "date": "2026-09-18",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Bassenthwaite / Ravenstone",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "date": "2026-09-18",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "date": "2026-09-20",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "q74htejvgc105tm097ujk533rc",
+      "date": "2026-09-21",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Lake District Photography Workshop Late Summer in Cumbria",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "vradt36iuhohh52j10pvj19hs0",
+      "date": "2026-09-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "qpu996v3b4icaopo5ladeg8d48",
+      "date": "2026-09-26",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Capel Curig",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "pbg1nag7nee0vpjpt58nc29tuc",
+      "date": "2026-09-28",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Landscape Photography Snowdonia Photography Workshop",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "jqa9rid9cggsmruidl89b1nq40",
+      "date": "2026-09-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "8cm0a4ld1scclad7c4r3k8i8sg",
+      "date": "2026-09-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "7gaarna6gu1ou2e2enlueb355o",
+      "date": "2026-10-02",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Wareham / Kingston",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "g4kk445v4epa7540133tasg6bc",
+      "date": "2026-10-02",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "dmcfgbsgulb4531rj439ctop00",
+      "date": "2026-10-05",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Dorset Photography Workshop | Jurassic Coast Photography",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "gq275btvbd8lrrd4dmoqj4sd54",
+      "date": "2026-10-07",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "dm97md790b1ee3ne726h4ho0a4",
+      "date": "2026-10-08",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "uglrdp9uqrntq191migdu4h520",
+      "date": "2026-10-10",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Lake Vyrnwy",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "iauen1fdibdhmrcjl38ebth0t4",
+      "date": "2026-10-12",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "fnns4c2br2oejp2slp89j8klt8",
+      "date": "2026-10-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "n52a6qv3g745ts2js6ed77v1dk",
+      "date": "2026-10-16",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "gkk00hkunras3a4altsltlqeoc",
+      "date": "2026-10-21",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "lsf73ms9k1o8chkone6kpu2r7g",
+      "date": "2026-10-22",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "hs50t86mnl1np7nnho95rl583o",
+      "date": "2026-10-22",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "36ob38vnf9k66odpdlcpivbelk",
+      "date": "2026-10-27",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "sis1059no1e4aaj14b2fd0jb7k",
+      "date": "2026-11-05",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "tbuvdfb15mr0bvais6t243rdts",
+      "date": "2026-11-10",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "2v4k1ovuc8k9sg491h42srgdfk",
+      "date": "2026-11-11",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel deadline — White Horse OVERSTRAND (£940) cancel by 17 Nov",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "ft2dr3ptqkfepmojkfjqpn0o58",
+      "date": "2026-11-11",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "qq74v64e3t0skjl5qq59041cu4",
+      "date": "2026-11-11",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "p95d96h7287maeijarl5tjct8c",
+      "date": "2026-11-13",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Lake District",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "5gf504vh9mkqak8p5i5f8g6440",
+      "date": "2026-11-16",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Lake District Photography Workshops | Autumn in Cumbria",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "6bvu1chsti51e2u1d2uli86iko",
+      "date": "2026-11-19",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "qctjseq2issvpgiou68tjm5aeg",
+      "date": "2026-11-20",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Blakeney Norfolk",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "8ahk4jiua6jjn59eo6mtu4dkvk",
+      "date": "2026-11-23",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Norfolk Photography Workshop | Cromer to Hunstanton",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "efv67ec5m7td6dcso57tc8o1oo",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "lqrj5n4hu3m6bjint81am7fc9g",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "n9s6mqu3n0o5cqsggu76pkcvag",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "4gmb3as6h6tqr8654fjg5uhb1c",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "69b6rbveis4d1oegku3vhtagd8",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "lt7535jbpt0burc10i02tucajk",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "0j54435tvgclvfrv9i0ble5tnk",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "2m2u9ec0q8pr1ecjadcj1g83m8",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "3ojn4manjdhik7q1696bf9b17k",
+      "date": "2026-11-24",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Publish Blog Post",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "hgnrbfahn0pk53rj2kq62mdgu0",
+      "date": "2026-11-25",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "rr2he667jjo9e4jtpq7p033im0",
+      "date": "2026-11-25",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "sj7n0nh36i6s8eouc5tl2ntnss",
+      "date": "2026-11-25",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "nn58gdplsrnmmo1pv1k49crphc",
+      "date": "2026-11-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "qoadfm77m3ra0ui49e5435vjq4",
+      "date": "2026-11-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "u3ur6618ds6bjec96p7mmfo970",
+      "date": "2026-11-30",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "6jqpuj2vktbrn3i4s2gmdi298o",
+      "date": "2026-12-01",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "3rrbr6mg0drak7gq22885hf5uc",
+      "date": "2026-12-09",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "dnc1ucm4uri86cqp6ooapf5qao",
+      "date": "2026-12-10",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "d6vnrsqgr2h01qneifbsnk0ue0",
+      "date": "2026-12-11",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "eapd87304vpv21kk7ooarid0d8",
+      "date": "2026-12-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "h8mj5p1ng61kvnn2hg5j2cr20g",
+      "date": "2026-12-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "vn00ufr9hco8rjp62624ql32po",
+      "date": "2026-12-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "nf8sbvn4omh5hk8q63a68q4of8",
+      "date": "2026-12-15",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Light & Logic newsletter issue",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "gb1jadpnm907u8tmrqvtoj7o94",
+      "date": "2026-12-18",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "q61sj05oeu0g6g0kn527jgslik",
+      "date": "2026-12-22",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "2jup7cj0r9iacctjblr7osga58",
+      "date": "2026-12-28",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "6osaoh1n5hau8sl1hipfnh3dro",
+      "date": "2026-12-28",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "ol9t2ug6fr1kmcbaliqdd6s98o",
+      "date": "2026-12-28",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "nl2bgjhj1if70blpe9770lfgfo",
+      "date": "2027-01-03",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "26hbd2k9svv7uho7jtoh4kdgno",
+      "date": "2027-01-04",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel deadline — Ravenstone Jan (£2,211) cancel by 7-8 Jan",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "spj185ti52156n4jasm0terdik",
+      "date": "2027-01-04",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "sfct1uocgs0ot5lrs7mpqc9hd4",
+      "date": "2027-01-06",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "ddbb8t92e0gor1bioujup8qqoo",
+      "date": "2027-01-08",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "bvf4pp4gq9qdieigpo5quv9qhs",
+      "date": "2027-01-12",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "agcct9npi32lq93tmholhvsku4",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "e9nhco130b37ikcg4dr9l4siis",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "gdg0vqs7smdnnd4kgsh265lj4k",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "63om6t0gnecb8d74ofbgg9qh9s",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "l037ma386v7imtu7mvqd3caf84",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "t2fj5pmh0tha865t3hjhr4kvn0",
+      "date": "2027-01-13",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "chjctgtr04frq36qvaicf9pua4",
+      "date": "2027-01-14",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel decision — Angel Inn Wangford (£2,231) 1-day cancel window",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "326kovnrr0fqp3r4u4obaqp0m0",
+      "date": "2027-01-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "9ueuos4251vuj1qb7inb9jll54",
+      "date": "2027-01-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "ao2kn5as5bvbh80l30t7khi42g",
+      "date": "2027-01-14",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "jn1dbccvkilvjmsaijnnkprf8o",
+      "date": "2027-01-20",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "reefp561mbj6ubetktif1uf400",
+      "date": "2027-01-20",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "sla22e5ut34asugbc1qjms501o",
+      "date": "2027-01-20",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Send Out Joining Details",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "4n4qms4rfa139ogj6q513kfio4",
+      "date": "2027-01-20",
+      "db_value": "buffer_or_travel_title",
+      "google_value": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "qgrtk77qpu902t1g46eidito3k",
+      "date": "2027-01-22",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🚫 AWAY — Lake District B5291",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "mtl4qal81cvmhnkl8ptf969nm4",
+      "date": "2027-01-25",
+      "db_value": "away_rest_banner",
+      "google_value": "MC 🛌 REST — after Lake District Photography Workshop | Winter in Cumbria",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    },
+    {
+      "rule": "google_orphan_mc",
+      "layer": "Google↔DB",
+      "id": "mqqgn6gu9m5pd0a0ifok3taf2g",
+      "date": "2027-01-31",
+      "db_value": "unreferenced_mc",
+      "google_value": "MC ⏰ Hotel deadline — The Angel Inn, 39 High Street, Wangford NR34 8RL cancel by 2027-02-03",
+      "detail": "Primary MC-titled event not referenced by tasks/habits/travel/fixtures/hotels"
+    }
+  ],
+  "db_missing_google": [],
+  "totals": {
+    "buckets": 25,
+    "checks": 2601,
+    "violations": 191,
+    "buckets_cannot_fully_check": 1,
+    "google_orphans": 118,
+    "google_orphans_unreferenced_mc": 8,
+    "google_orphans_buffer_or_travel": 88,
+    "google_orphans_away_rest_banner": 22,
+    "db_missing_google": 0
+  },
+  "classification_notes": [
+    "google_orphan_mc is classified: unreferenced_mc (likely real), buffer_or_travel_title (Prep/Decompress/Travel often lack row FK in this join), away_rest_banner (expected masters), fixture_flank.",
+    "db_master_missing_google may include stale calendar_event_id after unplace/skip or events outside returned calendar set.",
+    "travel_residential_arrive only flags multi-night spans (≥1.5d); day-trips excluded.",
+    "busy_collision includes personal Block Out / birthdays overlapping habits — real rule pressure.",
+    "CANNOT_FULL buckets are explicit — do not treat as pass."
+  ]
+}

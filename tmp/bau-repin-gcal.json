@@ -1,0 +1,26 @@
+{
+  "day1": {
+    "id": "b4khv5nm00retv5mriga3fmed4",
+    "htmlLink": "https://www.google.com/calendar/event?eid=YjRraHY1bm0wMHJldHY1bXJpZ2EzZm1lZDQgaW5mb0BhbGFucmFuZ2VyLmNvbQ",
+    "start": {
+      "dateTime": "2026-09-28T11:45:00+01:00",
+      "timeZone": "Europe/London"
+    },
+    "end": {
+      "dateTime": "2026-09-28T13:15:00+01:00",
+      "timeZone": "Europe/London"
+    }
+  },
+  "day2": {
+    "id": "e2ffpqeivilr6uk2s3tbrquec0",
+    "htmlLink": "https://www.google.com/calendar/event?eid=ZTJmZnBxZWl2aWxyNnVrMnMzdGJycXVlYzAgaW5mb0BhbGFucmFuZ2VyLmNvbQ",
+    "start": {
+      "dateTime": "2026-09-28T13:30:00+01:00",
+      "timeZone": "Europe/London"
+    },
+    "end": {
+      "dateTime": "2026-09-28T15:30:00+01:00",
+      "timeZone": "Europe/London"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "ok": true,
+  "cutoff": "2026-07-30",
+  "challenge": "Away 31 Jul–6 Aug → last working day = Thu 30 Jul (not Fri 31 Jul). Same-day pack of all three impossible (~180m needed; densest free block 105m).",
+  "pack": {
+    "MC-21": "2026-07-29 14:15–14:30",
+    "MC-22": "2026-07-29 16:15–17:00",
+    "MC-23": "2026-07-30 15:15–16:45"
+  },
+  "pending_wrote": 3,
+  "rows": [
+    {
+      "change_type": "task_bump",
+      "target_date": "2026-07-29",
+      "urgency": "high",
+      "status": "pending",
+      "related_id": "task_bump:finance:MC-21:2026-07-29",
+      "summary": "Finance re-bump MC-21 → 2026-07-29 14:15–14:30",
+      "proposed_action": "MOVE MC-21 (\"Admiral loan — awaiting funds\") event rgqhviqp1n6lnbjhm1mbtuqsvk to 2026-07-29 14:15–14:30 (was 2026-07-30 15:45–16:00). Update tasks.scheduled_start/end. Chain: 21→22 same day 29 Jul; 23 next day 30 Jul (only ≥90m gap). All ≤30 Jul pre-away.",
+      "reason": "Targeted finance-chain re-bump — deps + pre-away ≤30 Jul"
+    },
+    {
+      "change_type": "task_bump",
+      "target_date": "2026-07-29",
+      "urgency": "high",
+      "status": "pending",
+      "related_id": "task_bump:finance:MC-22:2026-07-29",
+      "summary": "Finance re-bump MC-22 → 2026-07-29 16:15–17:00",
+      "proposed_action": "MOVE MC-22 (\"Card move\") event 42a5ajb5kt5knccdt0c1tkahfk to 2026-07-29 16:15–17:00 (was 2026-07-29 12:45–13:30). Update tasks.scheduled_start/end. Chain: 21→22 same day 29 Jul; 23 next day 30 Jul (only ≥90m gap). All ≤30 Jul pre-away.",
+      "reason": "Targeted finance-chain re-bump — deps + pre-away ≤30 Jul"
+    },
+    {
+      "change_type": "task_bump",
+      "target_date": "2026-07-30",
+      "urgency": "high",
+      "status": "pending",
+      "related_id": "task_bump:finance:MC-23:2026-07-30",
+      "summary": "Finance re-bump MC-23 → 2026-07-30 15:15–16:45",
+      "proposed_action": "MOVE MC-23 (\"Clear-down checklist\") event sdku9588l6mb2cfkqp28ndopko to 2026-07-30 15:15–16:45 (was 2026-07-31 15:30–17:00). Update tasks.scheduled_start/end. Chain: 21→22 same day 29 Jul; 23 next day 30 Jul (only ≥90m gap). All ≤30 Jul pre-away.",
+      "reason": "Targeted finance-chain re-bump — deps + pre-away ≤30 Jul"
+    }
+  ],
+  "calendar_writes": 0
+}

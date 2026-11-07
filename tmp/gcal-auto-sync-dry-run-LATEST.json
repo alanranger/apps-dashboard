@@ -1,0 +1,772 @@
+{
+  "ran_at": "2026-07-27T13:46:39.431Z",
+  "phase": "phase3_dry_run_first_pass",
+  "auto_sync_will_write": false,
+  "note": "Awaiting Alan sign-off. auto_sync_enabled=false, auto_sync_signed_off=false.",
+  "dry": {
+    "mode": "dry_run",
+    "flags": {
+      "auto_sync_enabled": false,
+      "auto_sync_signed_off": false,
+      "cursor_writes_available": true
+    },
+    "note": "NOT signed off — auto-sync will not write until Alan approves this dry-run",
+    "flush": {
+      "write_count": 8,
+      "skipped_count": 102,
+      "queue_raw": 4,
+      "queue_collapsed": 4,
+      "backlog_rows": 106,
+      "writes": [
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "depinkqj8m4kft0i14rnm4keq4",
+          "summary": "P3 · MC-12 · Page-3 competitor sign-off",
+          "from": null,
+          "to": {
+            "start": "2026-07-31T16:00:00.000Z",
+            "end": "2026-07-31T16:45:00.000Z"
+          },
+          "source": "gcal_push_queue",
+          "source_id": "6d138371-cae9-46d0-8a25-d74552b67bfc"
+        },
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "96cqpd6n5dopap80f9i7jqqsgk",
+          "summary": "P0 · MC-21 · Admiral loan — awaiting funds",
+          "from": null,
+          "to": {
+            "start": "2026-07-29T17:00:00.000Z",
+            "end": "2026-07-29T17:15:00.000Z"
+          },
+          "source": "gcal_push_queue",
+          "source_id": "0a3b24c4-d9bb-4531-a6e3-e03a54bc7f83"
+        },
+        {
+          "action": "patch",
+          "entity_type": "habit",
+          "event_id": "b78a2utdcheog4sph19g82a0gc",
+          "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+          "from": null,
+          "to": {
+            "start": "2026-07-31T13:00:00.000Z",
+            "end": "2026-07-31T15:00:00.000Z"
+          },
+          "source": "gcal_push_queue",
+          "source_id": "d84d2c35-0ffd-40ba-955e-8b49dedf90e2"
+        },
+        {
+          "action": "patch",
+          "entity_type": "habit",
+          "event_id": "us5na9cnp7nq4fb5o8j7am1c5k",
+          "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+          "from": null,
+          "to": {
+            "start": "2026-07-28T11:30:00.000Z",
+            "end": "2026-07-28T15:30:00.000Z"
+          },
+          "source": "gcal_push_queue",
+          "source_id": "0a862c58-5fb6-4b4c-82c0-2f458bbd01c7"
+        },
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "m2mgpecbvtjcpr7doovievthlg",
+          "summary": "P3 · MC-13 · Sign-off: URL Money Pages",
+          "from": null,
+          "to": {
+            "start": "2026-08-09T08:00:00.000Z",
+            "end": "2026-08-09T08:30:00.000Z",
+            "day": "2026-08-09"
+          },
+          "source": "pending_diary_changes",
+          "source_id": "5db6ceb1-99a6-478f-8602-cf16d83f74c5"
+        },
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "enh2ofbqif2o4ehovqke8o0kjk",
+          "summary": "P3 · MC-2 · Walkthrough: Money rebuild",
+          "from": null,
+          "to": {
+            "start": "2026-08-09T08:30:00.000Z",
+            "end": "2026-08-09T09:15:00.000Z",
+            "day": "2026-08-09"
+          },
+          "source": "pending_diary_changes",
+          "source_id": "95be0f90-2812-49c3-a3f6-22f16e748148"
+        },
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "remc39e9mdat616al5lrmgg51g",
+          "summary": "P3 · MC-1 · Walkthrough: integrity checker",
+          "from": null,
+          "to": {
+            "start": "2026-08-09T09:15:00.000Z",
+            "end": "2026-08-09T10:15:00.000Z",
+            "day": "2026-08-09"
+          },
+          "source": "pending_diary_changes",
+          "source_id": "2dfa7b92-4f74-44d5-8bcf-ec4d974aaf8a"
+        },
+        {
+          "action": "patch",
+          "entity_type": "task",
+          "event_id": "mis1jfuc6i9ctvqfkbbm5p3lhg",
+          "summary": "P1 · MC-51 · Anglesey May 2027 — no hotel booked, check Nant Yr Odyn",
+          "from": null,
+          "to": {
+            "start": "2026-08-17T08:00:00.000Z",
+            "end": "2026-08-17T09:00:00.000Z",
+            "day": "2026-08-17"
+          },
+          "source": "pending_diary_changes",
+          "source_id": "b1894716-1a58-46a9-926c-29fd5d108273"
+        }
+      ],
+      "skipped": [
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-08-03",
+          "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-08-07 10:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-08-07",
+          "summary": "Move habit: Send Out Joining Details → 2026-08-07 11:45–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-11-20",
+          "summary": "Move habit: Send Out Joining Details → 2026-11-19 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:65bb5023-40a3-4797-8e9c-e0b85f0581b6:2026-11-17",
+          "summary": "Move habit: BAU global refresh — Day 2: schemas + final ingest + verify → 2026-11-18 10:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-08-05",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-08-07 13:00–13:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-11-18",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-19 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-08-05",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-08-07 14:00–14:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-11-18",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-19 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-11-19",
+          "summary": "Move habit: Publish Blog Post → 2026-11-19 13:15–15:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-08-07",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-08-08 11:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-11-20",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-11-23 11:45–13:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2027-01-22",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2027-01-20 11:15–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:755f6aa0-3daa-470b-a4d8-c4f301ba1235:2026-11-23",
+          "summary": "Move habit: Update Event Schema for Classes & Workshops → 2026-11-24 10:00–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:c2f135c9-7146-415d-8231-c2460a064e94:2026-08-15",
+          "summary": "Move habit: Light & Logic newsletter issue → 2026-08-14 13:00–17:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-09-07",
+          "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-09-09 10:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-04",
+          "summary": "Move habit: Send Out Joining Details → 2026-09-03 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-11",
+          "summary": "Move habit: Send Out Joining Details → 2026-09-09 11:45–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-18",
+          "summary": "Move habit: Send Out Joining Details → 2026-09-17 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-10-02",
+          "summary": "Move habit: Send Out Joining Details → 2026-10-01 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-09-09",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-09-09 13:00–13:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-09-09",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-09-09 14:00–14:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-09-10",
+          "summary": "Move habit: Publish Blog Post → 2026-09-14 12:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-08-14",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-08-13 13:30–15:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-09-04",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-09-03 11:15–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-09-18",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-09-17 11:15–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-10-02",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-10-01 11:15–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:6ec9689d-5426-4276-9e17-824cb4ea4fc1:2026-09-04",
+          "summary": "Move habit: SEO Performance Review → 2026-09-02 10:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:75c54300-e8ef-434f-af4a-51bb546b3496:2026-09-10",
+          "summary": "Move habit: Check Artfully Walls Sales → 2026-09-09 14:45–14:50"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "travel_back_fix:rosedale:2026-08-06",
+          "summary": "FIX travel_back David Ward / Rosedale — depart 17:00 not 14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:2026-08-01",
+          "summary": "Move habit: Booking Sheet, Month End Update → 2026-07-31 13:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:2026-09-01",
+          "summary": "Move habit: Booking Sheet, Month End Update → 2026-09-02 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:2026-10-01",
+          "summary": "Move habit: Booking Sheet, Month End Update → 2026-09-30 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:2026-11-01",
+          "summary": "Move habit: Booking Sheet, Month End Update → 2026-11-02 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:e1423beb-0c21-42c4-ae8d-77a14f78e7e6:2026-12-01",
+          "summary": "Move habit: Booking Sheet, Month End Update → 2026-11-30 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:c2f135c9-7146-415d-8231-c2460a064e94:2026-11-15",
+          "summary": "Move habit: Light & Logic newsletter issue → 2026-11-17 10:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:c2f135c9-7146-415d-8231-c2460a064e94:2026-12-15",
+          "summary": "Move habit: Light & Logic newsletter issue → 2026-12-14 10:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-10-05",
+          "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-10-07 10:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-11-02",
+          "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-11-02 11:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-08-14",
+          "summary": "Move habit: Send Out Joining Details → 2026-08-13 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-08-28",
+          "summary": "Move habit: Send Out Joining Details → 2026-08-27 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-25",
+          "summary": "Move habit: Send Out Joining Details → 2026-09-25 13:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-10-09",
+          "summary": "Move habit: Send Out Joining Details → 2026-10-07 11:45–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-10-23",
+          "summary": "Move habit: Send Out Joining Details → 2026-10-22 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-11-06",
+          "summary": "Move habit: Send Out Joining Details → 2026-11-05 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-12-04",
+          "summary": "Move habit: Send Out Joining Details → 2026-12-03 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2027-01-15",
+          "summary": "Move habit: Send Out Joining Details → 2027-01-14 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2027-01-22",
+          "summary": "Move habit: Send Out Joining Details → 2027-01-26 10:00–11:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:b002933c-0068-4dca-8661-f4098ccd714d:2026-11-16",
+          "summary": "Move habit: BAU global refresh — Day 1: CSVs + preliminary ingest → 2026-11-18 10:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:65bb5023-40a3-4797-8e9c-e0b85f0581b6:2027-01-12",
+          "summary": "Move habit: BAU global refresh — Day 2: schemas + final ingest + verify → 2027-01-09 11:00–15:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-08-12",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-08-11 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-08-19",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-08-18 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-09-02",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-09-02 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-09-23",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-09-25 14:15–15:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-09-30",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-09-30 12:30–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-10-07",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-10-07 13:00–13:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-10-14",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-10-13 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-10-21",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-10-20 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-10-28",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-10-27 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-11-04",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-02 13:00–13:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-11-11",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-10 10:00–10:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-11-25",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-24 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-12-02",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-30 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-12-16",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-12-16 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-12-30",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2026-12-30 12:30–13:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2027-01-13",
+          "summary": "Move habit: Hotel bookings check (Claude) → 2027-01-14 11:15–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-08-12",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-08-11 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-08-19",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-08-18 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-09-02",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-09-02 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-09-23",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-09-25 15:15–15:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-09-30",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-09-30 13:30–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-10-07",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-10-07 14:00–14:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-10-14",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-10-13 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-10-21",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-10-20 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-10-28",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-10-27 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-11-04",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-02 14:00–14:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-11-11",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-10 11:00–11:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-11-25",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-24 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-12-02",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-30 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-12-16",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-12-16 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-12-30",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2026-12-30 13:30–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2027-01-13",
+          "summary": "Move habit: Hotel bookings — Alan actions → 2027-01-14 12:15–12:45"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-07-30",
+          "summary": "Move habit: Publish Blog Post → 2026-07-30 11:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-08-13",
+          "summary": "Move habit: Publish Blog Post → 2026-08-13 11:30–13:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-08-27",
+          "summary": "Move habit: Publish Blog Post → 2026-08-27 11:30–13:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-10-22",
+          "summary": "Move habit: Publish Blog Post → 2026-10-22 11:30–13:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-11-05",
+          "summary": "Move habit: Publish Blog Post → 2026-11-05 11:30–13:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-12-03",
+          "summary": "Move habit: Publish Blog Post → 2026-12-03 11:30–13:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2027-01-14",
+          "summary": "Move habit: Publish Blog Post → 2027-01-14 13:15–15:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-07-31",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-07-31 14:15–16:15"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-08-28",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-08-30 14:00–16:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-11-06",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-11-08 11:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-12-04",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-12-05 11:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-12-25",
+          "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-12-26 11:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:6ec9689d-5426-4276-9e17-824cb4ea4fc1:2026-11-04",
+          "summary": "Move habit: SEO Performance Review → 2026-11-04 10:00–13:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:6ec9689d-5426-4276-9e17-824cb4ea4fc1:2026-12-04",
+          "summary": "Move habit: SEO Performance Review → 2026-12-06 11:00–14:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:75c54300-e8ef-434f-af4a-51bb546b3496:2026-08-13",
+          "summary": "Move habit: Check Artfully Walls Sales → 2026-08-13 14:00–14:05"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:75c54300-e8ef-434f-af4a-51bb546b3496:2026-12-10",
+          "summary": "Move habit: Check Artfully Walls Sales → 2026-12-09 11:15–11:20"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:75c54300-e8ef-434f-af4a-51bb546b3496:2027-01-14",
+          "summary": "Move habit: Check Artfully Walls Sales → 2027-01-14 15:45–15:50"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:755f6aa0-3daa-470b-a4d8-c4f301ba1235:2027-01-25",
+          "summary": "Place habit: Update Event Schema for Classes & Workshops — 2027-01-27 10:00–12:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:38fe0fbd-3eb6-41df-9480-a862d5104cef:2026-09-28",
+          "summary": "Move habit: Backup Photos to Portable Drive → 2026-09-25 16:00–17:00"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:38fe0fbd-3eb6-41df-9480-a862d5104cef:2026-11-23",
+          "summary": "Move habit: Backup Photos to Portable Drive → 2026-11-25 13:30–14:30"
+        },
+        {
+          "reason": "backlog_unparsed",
+          "source": "habit_place:38fe0fbd-3eb6-41df-9480-a862d5104cef:2027-01-25",
+          "summary": "Place habit: Backup Photos to Portable Drive — 2027-01-26 13:30–14:30"
+        }
+      ]
+    }
+  },
+  "reconcile": {
+    "mode": "reconcile",
+    "flags": {
+      "auto_sync_enabled": false,
+      "auto_sync_signed_off": false,
+      "cursor_writes_available": true
+    },
+    "horizon": {
+      "from": "2026-07-20",
+      "to": "2027-07-18"
+    },
+    "masters": 335,
+    "masters_missing_event_id": 0,
+    "gcal_managed_candidates": 441,
+    "orphan_managed_not_in_db_ids": 106,
+    "pending_flush_writes": 8,
+    "pending_flush_sample": [
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "depinkqj8m4kft0i14rnm4keq4",
+        "summary": "P3 · MC-12 · Page-3 competitor sign-off",
+        "from": null,
+        "to": {
+          "start": "2026-07-31T16:00:00.000Z",
+          "end": "2026-07-31T16:45:00.000Z"
+        },
+        "source": "gcal_push_queue",
+        "source_id": "6d138371-cae9-46d0-8a25-d74552b67bfc"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "96cqpd6n5dopap80f9i7jqqsgk",
+        "summary": "P0 · MC-21 · Admiral loan — awaiting funds",
+        "from": null,
+        "to": {
+          "start": "2026-07-29T17:00:00.000Z",
+          "end": "2026-07-29T17:15:00.000Z"
+        },
+        "source": "gcal_push_queue",
+        "source_id": "0a3b24c4-d9bb-4531-a6e3-e03a54bc7f83"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "b78a2utdcheog4sph19g82a0gc",
+        "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+        "from": null,
+        "to": {
+          "start": "2026-07-31T13:00:00.000Z",
+          "end": "2026-07-31T15:00:00.000Z"
+        },
+        "source": "gcal_push_queue",
+        "source_id": "d84d2c35-0ffd-40ba-955e-8b49dedf90e2"
+      },
+      {
+        "action": "patch",
+        "entity_type": "habit",
+        "event_id": "us5na9cnp7nq4fb5o8j7am1c5k",
+        "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+        "from": null,
+        "to": {
+          "start": "2026-07-28T11:30:00.000Z",
+          "end": "2026-07-28T15:30:00.000Z"
+        },
+        "source": "gcal_push_queue",
+        "source_id": "0a862c58-5fb6-4b4c-82c0-2f458bbd01c7"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "m2mgpecbvtjcpr7doovievthlg",
+        "summary": "P3 · MC-13 · Sign-off: URL Money Pages",
+        "from": null,
+        "to": {
+          "start": "2026-08-09T08:00:00.000Z",
+          "end": "2026-08-09T08:30:00.000Z",
+          "day": "2026-08-09"
+        },
+        "source": "pending_diary_changes",
+        "source_id": "5db6ceb1-99a6-478f-8602-cf16d83f74c5"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "enh2ofbqif2o4ehovqke8o0kjk",
+        "summary": "P3 · MC-2 · Walkthrough: Money rebuild",
+        "from": null,
+        "to": {
+          "start": "2026-08-09T08:30:00.000Z",
+          "end": "2026-08-09T09:15:00.000Z",
+          "day": "2026-08-09"
+        },
+        "source": "pending_diary_changes",
+        "source_id": "95be0f90-2812-49c3-a3f6-22f16e748148"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "remc39e9mdat616al5lrmgg51g",
+        "summary": "P3 · MC-1 · Walkthrough: integrity checker",
+        "from": null,
+        "to": {
+          "start": "2026-08-09T09:15:00.000Z",
+          "end": "2026-08-09T10:15:00.000Z",
+          "day": "2026-08-09"
+        },
+        "source": "pending_diary_changes",
+        "source_id": "2dfa7b92-4f74-44d5-8bcf-ec4d974aaf8a"
+      },
+      {
+        "action": "patch",
+        "entity_type": "task",
+        "event_id": "mis1jfuc6i9ctvqfkbbm5p3lhg",
+        "summary": "P1 · MC-51 · Anglesey May 2027 — no hotel booked, check Nant Yr Odyn",
+        "from": null,
+        "to": {
+          "start": "2026-08-17T08:00:00.000Z",
+          "end": "2026-08-17T09:00:00.000Z",
+          "day": "2026-08-17"
+        },
+        "source": "pending_diary_changes",
+        "source_id": "b1894716-1a58-46a9-926c-29fd5d108273"
+      }
+    ],
+    "left_uncertain": 0
+  }
+}

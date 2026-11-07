@@ -1,0 +1,21 @@
+{
+  "range": {
+    "from": "2026-07-27",
+    "to": "2026-09-20",
+    "weeks": 8,
+    "today": "2026-07-28"
+  },
+  "counts": {
+    "diary_blocks": 194,
+    "gcal_timed": 194,
+    "matched": 194,
+    "time_drift": 0,
+    "only_in_diary": 0,
+    "only_in_gcal": 0,
+    "only_in_gcal_mc": 0
+  },
+  "only_in_diary": [],
+  "time_drift": [],
+  "only_in_gcal_mc": [],
+  "only_in_gcal_personal_sample": []
+}

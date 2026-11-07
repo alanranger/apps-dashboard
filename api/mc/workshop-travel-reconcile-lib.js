@@ -29,11 +29,10 @@ function daysApart(a, b) {
 }
 
 function isOrphanAgainstParent(row, parent) {
+  // Parent gone/cancelled → orphan. Date drift alone is handled by travel-regenerate
+  // (move to live times), not delete — otherwise mid-horizon reschedules leave gaps.
   if (!parent || parent.status === 'cancelled') return true;
-  const parentStart = eventStartIso(parent);
-  const anchor = row.workshop_start || row.starts_at;
-  if (!parentStart || !anchor) return false;
-  return daysApart(parentStart, anchor) > ORPHAN_DRIFT_DAYS;
+  return false;
 }
 
 async function resolveParent(row, byId) {

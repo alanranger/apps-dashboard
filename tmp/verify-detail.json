@@ -1,0 +1,139 @@
+{
+  "verified_at": "2026-07-24T09:46:51.338Z",
+  "exact_id_hits": {
+    "habits": 120,
+    "habits_total": 120,
+    "tasks": 23,
+    "tasks_total": 23
+  },
+  "habit_date_mismatches": 0,
+  "habit_duration_mismatches": [],
+  "task_mismatches": [],
+  "task_due_drifts": [
+    {
+      "id": 32,
+      "due": "2026-07-24",
+      "scheduled": "2026-07-25",
+      "days": 1
+    },
+    {
+      "id": 35,
+      "due": "2026-07-24",
+      "scheduled": "2026-07-25",
+      "days": 1
+    },
+    {
+      "id": 21,
+      "due": "2026-07-24",
+      "scheduled": "2026-07-27",
+      "days": 3
+    },
+    {
+      "id": 12,
+      "due": "2026-07-25",
+      "scheduled": "2026-07-27",
+      "days": 2
+    },
+    {
+      "id": 8,
+      "due": "2026-07-26",
+      "scheduled": "2026-07-27",
+      "days": 1
+    },
+    {
+      "id": 7,
+      "due": "2026-07-27",
+      "scheduled": "2026-07-28",
+      "days": 1
+    },
+    {
+      "id": 9,
+      "due": "2026-07-27",
+      "scheduled": "2026-07-28",
+      "days": 1
+    },
+    {
+      "id": 2,
+      "due": "2026-07-30",
+      "scheduled": "2026-07-28",
+      "days": -2
+    },
+    {
+      "id": 3,
+      "due": "2026-07-31",
+      "scheduled": "2026-07-29",
+      "days": -2
+    },
+    {
+      "id": 14,
+      "due": "2026-08-01",
+      "scheduled": "2026-08-07",
+      "days": 6
+    },
+    {
+      "id": 13,
+      "due": "2026-08-01",
+      "scheduled": "2026-08-07",
+      "days": 6
+    },
+    {
+      "id": 27,
+      "due": "2026-08-01",
+      "scheduled": "2026-08-08",
+      "days": 7
+    },
+    {
+      "id": 15,
+      "due": "2026-08-05",
+      "scheduled": "2026-08-11",
+      "days": 6
+    },
+    {
+      "id": 16,
+      "due": "2026-08-05",
+      "scheduled": "2026-08-11",
+      "days": 6
+    },
+    {
+      "id": 17,
+      "due": "2026-08-08",
+      "scheduled": "2026-08-11",
+      "days": 3
+    },
+    {
+      "id": 18,
+      "due": "2026-08-08",
+      "scheduled": "2026-08-11",
+      "days": 3
+    },
+    {
+      "id": 19,
+      "due": "2026-08-10",
+      "scheduled": "2026-08-11",
+      "days": 1
+    }
+  ],
+  "gcal_census": {
+    "habit": 120,
+    "task": 0,
+    "travel": 60,
+    "prep": 20,
+    "decomp": 20,
+    "deadline": 0,
+    "other": 0
+  },
+  "gcal_mc_total": 220,
+  "other_samples": [],
+  "bau_upload_rows": [
+    "2026-09-21 | BAU global refresh — Day 1: CSVs + preliminary ingest",
+    "2026-09-22 | BAU global refresh — Day 2: schemas + final ingest + verify",
+    "2026-09-23 | Upload sites — LocalViking, TOGDays, Where Can We Go",
+    "2026-11-17 | BAU global refresh — Day 1: CSVs + preliminary ingest",
+    "2026-11-18 | BAU global refresh — Day 2: schemas + final ingest + verify",
+    "2026-11-19 | Upload sites — LocalViking, TOGDays, Where Can We Go"
+  ],
+  "title_cosmetic": [
+    "Light & Logic (DB) vs Light and Logic (calendar) — 4 newsletter events",
+    "Review/Amend Course & Workshop Dates + check Hotel Bookings (DB) shortened on calendar"
+  ]
+}

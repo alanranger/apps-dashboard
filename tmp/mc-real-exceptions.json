@@ -1,0 +1,1302 @@
+{
+  "generated_at": "2026-07-27T17:13:18.538Z",
+  "byKind": {
+    "fixture": 38,
+    "window": 15,
+    "missed_habit": 9,
+    "cap": 15,
+    "overlap": 37,
+    "hotel": 4,
+    "gap": 66
+  },
+  "report": [
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-08-30",
+      "summary": "Fixture moved: ⚽️ Manchester United vs Ipswich Town — 2026-08-30",
+      "id": "3768820a-aa9f-477a-aac1-0b4e6f41919f"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-13",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "6ffa192b-82ee-4ff2-b8da-7d3103451d65"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-09-04",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Liverpool — 2026-09-04",
+      "id": "65b1e15a-b56b-4a08-b831-10ae9fb66bc7"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-20",
+      "summary": "Missed habit: BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "id": "f62e24ed-f3f8-495f-a7ee-c2a27ad1420b"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-22",
+      "summary": "Missed habit: Hotel bookings check (Claude)",
+      "id": "7f682fd4-9c7d-4540-9670-999a9ab91691"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-17",
+      "summary": "Missed habit: Send Out Joining Details",
+      "id": "9c30412f-b95e-4dac-a1c1-0b441ec2833a"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-22",
+      "summary": "Missed habit: Hotel bookings — Alan actions",
+      "id": "7f3bb6e1-9077-4c92-b2c5-ba5dbfdb28a4"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-23",
+      "summary": "Missed habit: Publish Blog Post",
+      "id": "7513bc0d-2148-4a49-987d-36b09cc081e5"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-22",
+      "summary": "Missed habit: Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "id": "d7dcc5cf-fc13-42d6-96d4-3d06c8492c54"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-21",
+      "summary": "Missed habit: BAU global refresh — Day 2: schemas + final ingest + verify",
+      "id": "b6a1698b-5e23-4b65-9df7-fffa40769b52"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-09-12",
+      "summary": "Fixture moved: ⚽️ Crystal Palace vs Ipswich Town — 2026-09-12",
+      "id": "7a041949-b999-453c-ae0b-6743da84bd5e"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-21",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "896764a6-3872-49be-8199-4b149def5b85"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-24",
+      "summary": "Missed habit: Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "id": "d8f976dc-4a62-4077-b965-670caa9c0676"
+    },
+    {
+      "kind": "missed_habit",
+      "why": "Habit occurrence missed — skip or place manually",
+      "date": "2026-07-24",
+      "summary": "Missed habit: Send Out Joining Details",
+      "id": "b8630a6e-720a-43e8-b242-376a8931c266"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-09-19",
+      "summary": "Fixture moved: ⚽️ Everton vs Ipswich Town — 2026-09-19",
+      "id": "ae9415ca-038f-48a3-9308-5f066f5265f5"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-10-10",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Fulham — 2026-10-10",
+      "id": "38af8f2b-a29b-40f4-816a-90fb3afc97f7"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-10-17",
+      "summary": "Fixture moved: ⚽️ Manchester City vs Ipswich Town — 2026-10-17",
+      "id": "56e9c5ee-3029-4042-891d-01dc8b7205ac"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-10-24",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Nottingham Forest — 2026-10-24",
+      "id": "caa0004f-c20c-4b9b-bbb0-a81b0c6f493f"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-15",
+      "summary": "Rule breach: 315m MC work on 2026-09-15 exceeds 240m cap +30m tolerance",
+      "id": "a4645389-3c6b-4d9a-b785-07cbeed6690d"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-07",
+      "summary": "Rule breach: P3 · MC-2 · Walkthrough: Money rebuild overlaps P3 · MC-13 · Sign-off: URL Money Pages by 30m on 2026-08-07",
+      "id": "8476a2ce-e27d-4692-9bbe-df2d22d803e2"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-10-31",
+      "summary": "Fixture moved: ⚽️ Hull City vs Ipswich Town — 2026-10-31",
+      "id": "14cbbe9d-d5a7-44a3-99b6-0baa83e9a46f"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-11-07",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Bournemouth — 2026-11-07",
+      "id": "b5917258-7035-49e9-b0be-65790fa334b6"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-11-21",
+      "summary": "Fixture moved: ⚽️ Tottenham Hotspur vs Ipswich Town — 2026-11-21",
+      "id": "d6896d5b-ff08-4316-83e1-6053cfc51037"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-11-28",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Aston Villa — 2026-11-28",
+      "id": "173e03b9-45c3-4f56-b795-4e48b70fba88"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-02",
+      "summary": "Fixture moved: ⚽️ Coventry City vs Ipswich Town — 2026-12-02",
+      "id": "178a54e9-b574-4193-91a2-1eb009159cc0"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-05",
+      "summary": "Fixture moved: ⚽️ Leeds United vs Ipswich Town — 2026-12-05",
+      "id": "68a0123a-c67a-47a2-a265-e2ce9b712f26"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-12",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Newcastle United — 2026-12-12",
+      "id": "66575740-4a91-41ba-b5db-1100faac17df"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-19",
+      "summary": "Fixture moved: ⚽️ Brighton and Hove Albion vs Ipswich Town — 2026-12-19",
+      "id": "7a46b0c0-774d-463f-8357-c8961f3281dc"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-26",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Brentford — 2026-12-26",
+      "id": "24815e69-82ca-406d-bc08-42794fbf6066"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-09-17",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "89aa294a-5521-417b-8780-c12fc3d4ad71"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-14",
+      "summary": "Rule breach: P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027 overlaps P1 · MC 🔁 Review/Amend Course and Workshop Dates by 30m on 2026-08-14",
+      "id": "834bc7c2-2949-407b-9c03-44d734b4e04d"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-12-30",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Chelsea — 2026-12-30",
+      "id": "83a8d483-ff7c-4c0d-aa90-beebd7b00473"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-01-02",
+      "summary": "Fixture moved: ⚽️ Arsenal vs Ipswich Town — 2027-01-02",
+      "id": "f10121a3-bbdb-4723-95cd-9889699b98c9"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-01-06",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Coventry City — 2027-01-06",
+      "id": "1e244bf6-37dc-4fd7-9dd5-0a8b3a86ac3b"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-01-16",
+      "summary": "Fixture moved: ⚽️ Bournemouth vs Ipswich Town — 2027-01-16",
+      "id": "056e922a-45ae-47a4-82e7-ab2451ddf93b"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-01-23",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Hull City — 2027-01-23",
+      "id": "c8ef7ab2-2120-47b0-b2dd-8e4abb458599"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-01-30",
+      "summary": "Fixture moved: ⚽️ Aston Villa vs Ipswich Town — 2027-01-30",
+      "id": "633f7751-d8fc-4e8b-b137-51b7691f47ce"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-08-20",
+      "summary": "Over target: 255m MC work on 2026-08-20 (target 240m, within 30m tolerance — not a breach)",
+      "id": "4dee26a3-64ce-49b1-a148-896bb4cceeb9"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-22",
+      "summary": "Rule breach: 315m MC work on 2026-09-22 exceeds 240m cap +30m tolerance",
+      "id": "07fe027f-c09a-4bfd-8216-d625e3488192"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-02-06",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Tottenham Hotspur — 2027-02-06",
+      "id": "303e0071-a06b-4138-b620-02cd39543d17"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-02-10",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Arsenal — 2027-02-10",
+      "id": "f6cbec3b-2300-4e20-aee0-08f75ff25d02"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-02-20",
+      "summary": "Fixture moved: ⚽️ Chelsea vs Ipswich Town — 2027-02-20",
+      "id": "e7025344-4950-47b1-9545-34677ba50014"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-02-27",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Brighton and Hove Albion — 2027-02-27",
+      "id": "adadd406-893e-4f60-ad77-f218d20a134f"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-03-03",
+      "summary": "Fixture moved: ⚽️ Brentford vs Ipswich Town — 2027-03-03",
+      "id": "685ec252-cba4-4027-ad90-526e6beecfaa"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-03-13",
+      "summary": "Fixture moved: ⚽️ Liverpool vs Ipswich Town — 2027-03-13",
+      "id": "a32565d5-613f-4dbd-8364-8f13cfd48587"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-03-20",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Crystal Palace — 2027-03-20",
+      "id": "f761487e-8956-475a-8a18-691d915ff320"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-04-10",
+      "summary": "Fixture moved: ⚽️ Sunderland vs Ipswich Town — 2027-04-10",
+      "id": "09de8ad2-1bd1-4ff5-a012-24b537ea722a"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2026-08-22",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Sunderland — 2026-08-22",
+      "id": "111e491b-5eb2-48f8-932a-9aa8aa7850f4"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-04-17",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Manchester United — 2027-04-17",
+      "id": "4def5796-5b1b-4af8-9dc8-777160ac73f4"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-04-24",
+      "summary": "Fixture moved: ⚽️ Newcastle United vs Ipswich Town — 2027-04-24",
+      "id": "81434775-7c37-4f4d-91df-6cd5110c7387"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-05-01",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Leeds United — 2027-05-01",
+      "id": "2c7e3d3a-c26e-4857-b6c2-e976d554bdb9"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-05-08",
+      "summary": "Fixture moved: ⚽️ Fulham vs Ipswich Town — 2027-05-08",
+      "id": "c9315467-ff7a-42cd-856e-526061b0ecd1"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-05-15",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Manchester City — 2027-05-15",
+      "id": "ebb7b563-9eb8-45ce-9983-7d6dda78d535"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-05-23",
+      "summary": "Fixture moved: ⚽️ Nottingham Forest vs Ipswich Town — 2027-05-23",
+      "id": "8de31d9f-323e-41a9-be8e-2d208cdef07c"
+    },
+    {
+      "kind": "fixture",
+      "why": "Fixture flank create/move still pending",
+      "date": "2027-05-30",
+      "summary": "Fixture moved: ⚽️ Ipswich Town vs Everton — 2027-05-30",
+      "id": "cc96439e-2c01-4640-b34c-fc061fa64c35"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-07-29",
+      "summary": "Rule breach: MC-? ends 19:45, after 17:00 window",
+      "id": "8f8b0b8f-f417-4132-bc28-596a0a40c63e"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-12-28",
+      "summary": "Rule breach: MC-? starts 10:00, before 10:00 window",
+      "id": "62174d6e-1ac2-4170-a13a-577116388d4a"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-12-28",
+      "summary": "Rule breach: MC-? starts 11:00, before 10:00 window",
+      "id": "b534ee24-0897-4dd6-af47-030e52dca4c2"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-07-28",
+      "summary": "Rule breach: 300m MC work on 2026-07-28 exceeds 240m cap +30m tolerance",
+      "id": "16ff3666-58ac-42b1-9995-a86210472a5e"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-07-30",
+      "summary": "Over target: 270m MC work on 2026-07-30 (target 240m, within 30m tolerance — not a breach)",
+      "id": "826f2b85-c82a-4585-a58c-6e1612e26c93"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-28",
+      "summary": "Over target: 255m MC work on 2026-09-28 (target 240m, within 30m tolerance — not a breach)",
+      "id": "ee1d3b7e-cea6-41c8-9057-ffb4a22a3455"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-11-18",
+      "summary": "Over target: 255m MC work on 2026-11-18 (target 240m, within 30m tolerance — not a breach)",
+      "id": "e0f4d1bd-9ccd-4d2b-a1b2-664bbfb57227"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-11-23",
+      "summary": "Over target: 255m MC work on 2026-11-23 (target 240m, within 30m tolerance — not a breach)",
+      "id": "cf4080ec-255d-4670-b78d-e4b67b07de2b"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-03",
+      "summary": "Rule breach: MC 🚗 Travel out — Rosedale Abbey (David Ward workshop) overlaps P0 · MC 🔁 Monthly Accounts — Bank Genie by 90m on 2026-08-03",
+      "id": "1bf39d00-339a-4cb5-bdeb-0a3af6e12f2e"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-03",
+      "summary": "Rule breach: MC 🚗 Travel out — Rosedale Abbey (David Ward workshop) overlaps P1 · MC 🔁 Hotel bookings check (Claude) by 30m on 2026-08-03",
+      "id": "63d3ef5f-b871-4bfc-baa2-0c2724d3f77b"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-04",
+      "summary": "Rule breach: MC 🚗 Travel out — Hartland Quay Hotel (Devon) overlaps P1 · MC 🔁 Review/Amend Course and Workshop Dates by 120m on 2026-09-04",
+      "id": "c19300a4-3e79-4e8b-ab9b-1caefe4811bd"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-06",
+      "summary": "Rule breach: MC 🚗 Travel back — Hartland Quay → home overlaps P0 · MC 🔁 Monthly Accounts — Bank Genie by 90m on 2026-09-06",
+      "id": "958177f6-2861-4936-87fd-9379462aec1b"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-10",
+      "summary": "Rule breach: P2 · MC 🔁 Check Artfully Walls Sales overlaps MC 🚗 Travel out — Yorkshire Coast (Ellerby Country Inn) by 5m on 2026-09-10",
+      "id": "34e5a664-d6e6-4be3-831e-3942b6f67c10"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-10",
+      "summary": "Rule breach: MC 🚗 Travel out — Yorkshire Coast (Ellerby Country Inn) overlaps P1 · MC 🔁 Publish Blog Post by 120m on 2026-09-10",
+      "id": "d9f79616-c33b-4fcf-ae51-83ed739b2b79"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-13",
+      "summary": "Rule breach: MC 🚗 Travel back — Yorkshire Coast → home overlaps P1 · MC 🔁 Review/Amend Course and Workshop Dates by 120m on 2026-09-13",
+      "id": "b94129fd-c1ce-4b0f-9dde-560455764c90"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-02",
+      "summary": "Rule breach: P1 · MC 🔁 Review/Amend Course and Workshop Dates overlaps MC 🚗 Travel out — Dorset Jurassic Coast (Kingston) by 90m on 2026-10-02",
+      "id": "a38ca6a8-b645-4ca3-8ce7-48d3f84f0546"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-07-30",
+      "summary": "Rule breach: 345m MC work on 2026-07-30 exceeds 240m cap +30m tolerance",
+      "id": "d416e995-1564-4380-9d87-ab0d7d895d47"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-12-28",
+      "summary": "Rule breach: MC-? starts 10:00, before 10:00 window",
+      "id": "674b52e8-9228-4869-8983-2c340ce2382f"
+    },
+    {
+      "kind": "hotel",
+      "why": "Needs Alan hotel decision",
+      "date": "2026-09-10",
+      "summary": "Cancellation email for registered hotel: The Forge, Whitby",
+      "id": "5a2390ce-2539-47e0-9c12-8c112bfd4722"
+    },
+    {
+      "kind": "hotel",
+      "why": "Needs Alan hotel decision",
+      "date": null,
+      "summary": "Gmail booking not in workshop_hotels: Your updated booking at High Trenhouse",
+      "id": "d9792e14-4f81-45a7-b4df-ba271e4874a3"
+    },
+    {
+      "kind": "hotel",
+      "why": "Needs Alan hotel decision",
+      "date": null,
+      "summary": "Gmail booking not in workshop_hotels: 🛄 Thanks! Your booking is confirmed at The Fylingdales Inn",
+      "id": "3157b137-3eb1-4628-96c4-23b532fec0f5"
+    },
+    {
+      "kind": "hotel",
+      "why": "Needs Alan hotel decision",
+      "date": "2026-08-15",
+      "summary": "Upcoming hotel row with no matching Gmail confirmation: Hotel Rudyard",
+      "id": "004807f1-891f-4309-817b-073c5dd8c5c3"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-07-29",
+      "summary": "Rule breach: MC-? ends 18:15, after 17:00 window",
+      "id": "0de86818-92cf-4a4b-a899-0054091fd9fb"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-03",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "84ebc1eb-e7db-4c31-8cfc-232038d05f10"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-09",
+      "summary": "Rule breach: MC-? starts 09:00, before 11:00 window",
+      "id": "fb85b888-87b3-4755-b313-1c6da2e05ae4"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-21",
+      "summary": "Rule breach: MC-? ends 22:30, after 17:00 window",
+      "id": "9892f45b-d883-408d-870d-06793e9d5a1c"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-09-03",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "33c218a4-04c4-43aa-971b-e9ea518c1295"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-08-08",
+      "summary": "Rule breach: MC-? starts 09:00, before 11:00 window",
+      "id": "7ae8b20e-a8b5-40a7-917d-3300802d399e"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2026-12-28",
+      "summary": "Rule breach: MC-? starts 11:00, before 10:00 window",
+      "id": "f97f1790-a775-4525-8e95-6451ab2d3537"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-11-24",
+      "summary": "Over target: 255m MC work on 2026-11-24 (target 240m, within 30m tolerance — not a breach)",
+      "id": "32d8c04b-d572-4b2f-9e9d-e2244d5f1235"
+    },
+    {
+      "kind": "window",
+      "why": "Outside working window / bank holiday — confirm keep or move",
+      "date": "2027-01-01",
+      "summary": "Rule breach: MC-? starts 09:00, before 10:00 window",
+      "id": "78db9648-fe37-4268-a70e-6ae1f0996982"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-30",
+      "summary": "Over target: 255m MC work on 2026-09-30 (target 240m, within 30m tolerance — not a breach)",
+      "id": "a3043367-25d8-4b61-9c82-6cb175c9af65"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-08-08",
+      "summary": "Over target: 255m MC work on 2026-08-08 (target 240m, within 30m tolerance — not a breach)",
+      "id": "9bd57297-c0be-45de-a042-7bbf5425b9e0"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-08",
+      "summary": "Over target: 270m MC work on 2026-09-08 (target 240m, within 30m tolerance — not a breach)",
+      "id": "174e3287-6f9b-4d0f-84ba-edd1d1b16a8f"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-09",
+      "summary": "Over target: 255m MC work on 2026-09-09 (target 240m, within 30m tolerance — not a breach)",
+      "id": "15b9fe21-9b7d-4b94-85d0-550b7d2a593d"
+    },
+    {
+      "kind": "cap",
+      "why": "Day still over hard cap after auto-moves — pick what to cut",
+      "date": "2026-09-16",
+      "summary": "Over target: 245m MC work on 2026-09-16 (target 240m, within 30m tolerance — not a breach)",
+      "id": "afba7688-e5d2-4d62-8901-be1252115704"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-22",
+      "summary": "Rule breach: MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify overlaps MC 🔁 Hotel bookings check (Claude) by 45m on 2026-09-22",
+      "id": "fdb097c2-f9a6-470c-8d02-f7368f926ae6"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-01",
+      "summary": "Rule breach: MC 🔁 Send Out Joining Details overlaps MC 🔁 Booking Sheet, Month End Update by 60m on 2026-10-01",
+      "id": "cde325ba-f916-4c76-87f4-16895db976d8"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-07",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🔁 Hotel bookings — Alan actions by 30m on 2026-10-07",
+      "id": "ee76de2e-11f3-4829-950f-d0565a7c8291"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-14",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🔁 Hotel bookings check (Claude) by 45m on 2026-10-14",
+      "id": "14654537-a129-4257-abbe-0ee663dca600"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-16",
+      "summary": "Rule breach: MC 🔁 Light & Logic newsletter issue overlaps MC 🚗 Travel back — Woodland Photography Walk → home by 30m on 2026-10-16",
+      "id": "bb1d2213-9255-4e23-8e76-77603ed562e7"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-21",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🔁 Hotel bookings — Alan actions by 30m on 2026-10-21",
+      "id": "128e0a8a-5841-4436-afd8-a841a36c9af6"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-03",
+      "summary": "Rule breach: MC 🚗 Travel out — David Ward Post Processing Workshop 2 (Alan ATTENDING) overlaps MC 🔁 Booking Sheet, Month End Update by 60m on 2026-08-03",
+      "id": "f4b18558-145d-4aa3-b100-d1c2fa753f43"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-01",
+      "summary": "Rule breach: MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy overlaps MC 🔁 Booking Sheet, Month End Update by 20m on 2026-09-01",
+      "id": "b6b82700-21f1-46f5-9c6d-fa57baa70be8"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-22",
+      "summary": "Rule breach: MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify overlaps MC 🔁 Hotel bookings — Alan actions by 30m on 2026-09-22",
+      "id": "a4ce2ba7-11f5-48b4-bd77-8362cdf768d0"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-07",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🔁 Hotel bookings check (Claude) by 45m on 2026-10-07",
+      "id": "c5be7a3b-d77e-4ae4-8611-2972ea8dee51"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-14",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🔁 Hotel bookings — Alan actions by 30m on 2026-10-14",
+      "id": "5a4ef53c-cd66-4de2-8d68-c7c8cbcb9f6c"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-21",
+      "summary": "Rule breach: MC 🔁 Hotel bookings check (Claude) overlaps MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings by 45m on 2026-10-21",
+      "id": "3d742ac5-7388-4e3d-a1b6-08d24a145258"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-11-03",
+      "summary": "Rule breach: MC 🔁 Monthly Accounts — Bank Genie overlaps MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings by 30m on 2026-11-03",
+      "id": "000b43cd-b489-436c-8cf3-b979b47cf29e"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-12-04",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🚗 Travel back — Woodland Photography Walk | Solihull | Hay Woods - Winter → home by 18m on 2026-12-04",
+      "id": "b9215bb5-27ce-440b-92a0-4e84ff9b8941"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2027-01-14",
+      "summary": "Rule breach: MC ⏰ Hotel decision — Angel Inn Wangford (£2,231) 1-day cancel window overlaps MC 🔁 Check Artfully Walls Sales by 5m on 2027-01-14",
+      "id": "2e6c6f2e-154a-4864-8a74-b718710ec8bb"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-10",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps P1 · MC-8 · Rev-weighting brief by 75m on 2026-08-10",
+      "id": "48c34c5b-9953-4de4-9385-9a8558eaa546"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-08-10",
+      "summary": "Rule breach: P1 · MC-8 · Rev-weighting brief overlaps MC 🔁 Hotel bookings — Alan actions by 30m on 2026-08-10",
+      "id": "2ca35b17-810d-41aa-96d2-bfd406bda459"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-09",
+      "summary": "Rule breach: MC 🔁 Publish Blog Post overlaps MC 🚗 Travel out — Yorkshire Coast Landscape Photography Workshop by 90m on 2026-09-09",
+      "id": "d8a7ee44-43ff-4fa7-89c1-f5b7bbe33800"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-09",
+      "summary": "Rule breach: MC 🚗 Travel out — Yorkshire Coast Landscape Photography Workshop overlaps MC ⏳ Decompress — after Publish Blog Post by 30m on 2026-09-09",
+      "id": "e8e179f6-f229-4e6d-970d-f3c3cc0adbac"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-22",
+      "summary": "Rule breach: MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify overlaps MC ⏳ Decompress — after Hotel bookings check (Claude) by 15m on 2026-09-22",
+      "id": "3008f635-d0ff-493d-9b5d-561fb7039e52"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-09-22",
+      "summary": "Rule breach: MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify overlaps MC ⏳ Decompress — after Hotel bookings — Alan actions by 30m on 2026-09-22",
+      "id": "d63c0e7c-8ef7-4c68-9ab9-260cbae4ad57"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-07",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC ⏳ Decompress — after Hotel bookings check (Claude) by 15m on 2026-10-07",
+      "id": "99f564a4-fe47-4229-a3d5-b62161adab8f"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-08",
+      "summary": "Rule breach: MC 🔁 Send Out Joining Details overlaps MC ⏳ Decompress — after Check Artfully Walls Sales by 30m on 2026-10-08",
+      "id": "11700dc7-4a03-4806-a093-e176c3e1a2ce"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-14",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC ⏳ Decompress — after Hotel bookings check (Claude) by 15m on 2026-10-14",
+      "id": "1bc9a03a-eed6-4a1e-9ba9-ec6b246b2114"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-21",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC ⏳ Decompress — after Hotel bookings — Alan actions by 30m on 2026-10-21",
+      "id": "7afe56e0-8c18-4a09-a61c-47c0060c216a"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2026-10-14",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC ⏳ Decompress — after Hotel bookings — Alan actions by 30m on 2026-10-14",
+      "id": "eab08812-a3bb-41fc-9ae9-d8294a028774"
+    },
+    {
+      "kind": "overlap",
+      "why": "Both blocks fixed/unmovable or no free slot in 14d",
+      "date": "2027-01-21",
+      "summary": "Rule breach: MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings overlaps MC 🚗 Travel out — Lake District Photography Workshop | Winter in Cumbria by 21m on 2027-01-21",
+      "id": "24e176c8-ac6e-4638-ba21-655e1bf68234"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-07",
+      "summary": "Rule breach: MC-? → MC-? gap -120m < 30m decompress",
+      "id": "32b40063-9693-4aef-9839-e69aed7b7572"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-08",
+      "summary": "Rule breach: MC-? → MC-? gap -60m < 30m decompress",
+      "id": "ef53af21-9a7a-45bb-b49d-0041c811df50"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-14",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "484a4c2c-8b0f-4d89-8bd5-2b6de4b8cc7a"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-07",
+      "summary": "Rule breach: MC-? → MC-? gap -45m < 30m decompress",
+      "id": "2c65baa5-6577-48e7-af61-09099de782e9"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-10",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "b403db07-1b6e-4f97-97d1-df0f1599d2ef"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-20",
+      "summary": "Rule breach: MC-? → MC-? gap -75m < 30m decompress",
+      "id": "cd74569d-d731-4fab-98e7-bcafa1013f2d"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-18",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "eb0ee517-df4f-485b-965b-8c14d524edce"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-14",
+      "summary": "Rule breach: MC-? → MC-? gap -120m < 30m decompress",
+      "id": "901efe06-5e57-4440-b133-8fb3972b81d2"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-16",
+      "summary": "Rule breach: MC-? → MC-? gap -150m < 30m decompress",
+      "id": "ca5f7935-e841-440e-9709-335b23749296"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-07-29",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "b361e872-bc58-4334-a9cb-d47642dc4ea3"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-07-30",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "f079f342-01e5-4236-ba02-b81c2e666e3c"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-03",
+      "summary": "Rule breach: MC-? → MC-? gap -135m < 30m decompress",
+      "id": "e0f5885f-30b6-47ec-88aa-6909a42f257b"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-17",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "da6a0d04-1d8a-4fb0-8ad3-682577718923"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-24",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "5bf1e6c2-7b11-41f1-b8b5-64a6e57f8af4"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-01",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "9486aba6-f626-4566-b8fa-9b1e1dbfc6c2"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-04",
+      "summary": "Rule breach: MC-? → MC-? gap -120m < 30m decompress",
+      "id": "04b8b101-84bf-4a07-b82d-73244f94f565"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-06",
+      "summary": "Rule breach: MC-? → MC-? gap -240m < 30m decompress",
+      "id": "62bfc6cd-52d6-424d-92cb-b523a0b021da"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-09",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "d399b0aa-a644-449b-a964-48ce6d31d3a3"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-10",
+      "summary": "Rule breach: MC-? → MC-? gap -5m < 30m decompress",
+      "id": "5b219254-6ce4-44cc-8413-f1b988745704"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-13",
+      "summary": "Rule breach: MC-? → MC-? gap -210m < 30m decompress",
+      "id": "9245bc43-4ab0-4648-8058-5a93b09e63aa"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-14",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "80403ecc-8430-4ed1-a5f8-b4f9dbc42e1d"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-23",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "3f0ce33d-9d5e-4b22-8bbc-feeaebe72a75"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-28",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "c96a9d70-e558-4c7c-a83d-d1360a982da6"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-02",
+      "summary": "Rule breach: MC-? → MC-? gap -90m < 30m decompress",
+      "id": "ab0a30bc-cb2b-46ea-9209-5ee2caafe128"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-05",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "0d03f644-f015-4b58-9fc9-6180c92228ec"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-12",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "b81625fb-8798-4e50-88d1-259f4cf89733"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-19",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "882594de-ae17-4617-98e0-db65ec6c3df2"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-26",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "db16c371-416b-4e85-93bf-2757365a97cd"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-28",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "42419f0c-f32b-4390-b21d-9dc0d9051fd6"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-02",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "2786c0d7-4bf7-41d3-aa40-2fc624775be3"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-04",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "e600c9ae-485a-42e2-905e-124750b784d2"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-09",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "a92a87a6-adbf-4541-ab12-6f5e7469bfe4"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-11",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "53b9727e-06a7-4ec9-871c-3ae69a9eb52a"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-18",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "ab31ea58-fc7a-4f3b-ab5b-6e6e43ee2504"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-23",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "5ac0e5b4-7657-4a29-939b-8799f961f50c"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-30",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "c0f6d098-1e08-4de0-87c9-75f34ff4ad0f"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-07",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "48aa586e-5293-4c8b-92e9-cb0eca718580"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-14",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "7e503c77-d5a4-427b-8603-685510467739"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-21",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "85128ad4-339d-4465-b55e-c88d7f0abb7d"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-28",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "2d2e1146-bdba-4e44-bedf-3b6608fec797"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-30",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "4b448e30-fdc8-4ce1-b14d-92a980e67bc7"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2027-01-04",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "c2b625ed-1c8a-4479-ab62-645702a79241"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2027-01-13",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "5de2c8c6-b505-4d49-b384-0936999d6960"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2027-01-18",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "ce95316d-9682-40a4-bbc0-d79fa397121e"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-21",
+      "summary": "Rule breach: MC-? → MC-? gap -45m < 30m decompress",
+      "id": "bcf7e327-025e-438b-9089-9a953f89c7a9"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-30",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "dec8c15a-5007-4fc0-92d6-8bdd39c2984e"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-01",
+      "summary": "Rule breach: MC-? → MC-? gap -60m < 30m decompress",
+      "id": "eefe1d12-077f-41d4-b243-19b7e8461f81"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-08",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "98520cc0-1bd5-4964-8450-e5408ca4235e"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-09",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "09b17f3f-732f-4705-b847-05a232a3675c"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-11",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "e7e87337-3e13-43e8-93bb-53cfbd43f800"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-12",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "321eefcd-3762-47e7-8dc4-7884db4a4af7"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-16",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "9434fc02-31e7-4309-89f9-50112a41334c"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-21",
+      "summary": "Rule breach: MC-? → MC-? gap -20m < 30m decompress",
+      "id": "0a35d35b-048c-40a6-9b15-eca77429e456"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-08-26",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "6899caa3-c4df-4790-957d-8b8b43f0a9ec"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-02",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "7b22dd95-f267-48ed-bdd5-98d52f488efd"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-15",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "ac2e3396-25a6-435b-b3fc-6ae458a9543e"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-09-22",
+      "summary": "Rule breach: MC-? → MC-? gap -240m < 30m decompress",
+      "id": "0ce82232-8c43-4d2a-82d4-b05357581f24"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-10-27",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "bdc5889a-2e2e-4c65-9ca7-1930dc242c67"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-03",
+      "summary": "Rule breach: MC-? → MC-? gap -30m < 30m decompress",
+      "id": "1eccf18a-4ab4-4df4-84fe-211056347e6c"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-12",
+      "summary": "Rule breach: MC-? → MC-? gap -60m < 30m decompress",
+      "id": "5a271d62-52e1-4693-af19-3e9dd592eb77"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-24",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "353d242a-ab7d-4277-8e2a-ad55d8e18c1e"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-25",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "d312f450-e94d-4d4d-af87-2b0fbfd1cb1d"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-12-04",
+      "summary": "Rule breach: MC-? → MC-? gap -30m < 30m decompress",
+      "id": "97babdb5-8cf3-4df6-87df-dc5ed7b34539"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-10",
+      "summary": "Rule breach: MC-? → MC-? gap 15m < 30m decompress",
+      "id": "aa8e66df-f5d7-4adc-9abb-be29e9079f34"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2026-11-19",
+      "summary": "Rule breach: MC-? → MC-? gap 0m < 30m decompress",
+      "id": "a4231ee9-c4b3-49d2-a774-9b7250d38522"
+    },
+    {
+      "kind": "gap",
+      "why": "Tight gap — need manual slide (no legal auto slot)",
+      "date": "2027-01-14",
+      "summary": "Rule breach: MC-? → MC-? gap -20m < 30m decompress",
+      "id": "c13b5794-b470-49bb-aea2-150dc814cbad"
+    }
+  ]
+}

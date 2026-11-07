@@ -1,0 +1,2120 @@
+{
+  "generated_at": "2026-07-27T20:39:41.239Z",
+  "root_a": {
+    "stale_links_cleared": [
+      {
+        "log_id": "a613c9fa-249b-413e-bea5-bda90658758e",
+        "event_id": "gm6fv4pe5iqhen9g4kc1t8kq9k",
+        "title": "Publish Blog Post",
+        "ideal": "2026-08-13"
+      },
+      {
+        "log_id": "6e076a94-0be5-4333-b308-ab3ffa34a72b",
+        "event_id": "b78a2utdcheog4sph19g82a0gc",
+        "title": "Update Event Schema for Classes & Workshops",
+        "ideal": "2026-07-27"
+      },
+      {
+        "log_id": "ba011337-584e-449c-9b10-ab3f44d3cd56",
+        "event_id": "k9ad8r6de7bt37sivcgni6b9f8",
+        "title": "Send Out Joining Details",
+        "ideal": "2027-01-15"
+      },
+      {
+        "log_id": "afc7f344-e06e-4eda-a2e0-a0106e7bc84c",
+        "event_id": "7gs1pqu3e738brv83c4k25t2b4",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-12-25"
+      },
+      {
+        "log_id": "c26b2994-db1f-4738-9221-17f38b91a726",
+        "event_id": "66u9inc7jgi8oljjefecn568ms",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-12-04"
+      },
+      {
+        "log_id": "993940f5-96c6-44d3-b7c9-9236514c8f57",
+        "event_id": "j849k1qos9e55ob9vbe3br5vsk",
+        "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+        "ideal": "2027-01-12"
+      },
+      {
+        "log_id": "77feeba5-997d-406c-ac90-cc70c8499f79",
+        "event_id": "tn6esmlad2o4vakrmsuukn4s8s",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-11-25"
+      },
+      {
+        "log_id": "b477bd52-7b4d-4598-9f36-48d57cf0fa1c",
+        "event_id": "te3fd5m9kb8smgpui1ub9onc6g",
+        "title": "SEO Performance Review",
+        "ideal": "2026-10-04"
+      },
+      {
+        "log_id": "75f84138-dfdd-4a0a-81f7-742ab68cbfe7",
+        "event_id": "4np01rjrr4m6rb4lcml91lcd6k",
+        "title": "Publish Blog Post",
+        "ideal": "2026-12-03"
+      },
+      {
+        "log_id": "8831068b-a551-4487-8fb5-8d03942d44cb",
+        "event_id": "iuhfb5vc8ef9p5bjlu1dvvuc3c",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-12-16"
+      },
+      {
+        "log_id": "f853c8f0-286a-4f39-aca8-0b5d79b5880c",
+        "event_id": "ljqksh4c7npcj4fdvv38bvgcmk",
+        "title": "SEO Performance Review",
+        "ideal": "2026-12-04"
+      },
+      {
+        "log_id": "68bc11be-542e-4a68-b780-038f7632abec",
+        "event_id": "86jt1577vf69f7fh38c2v84us0",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-12-02"
+      },
+      {
+        "log_id": "9127fa64-4875-4fe1-a29c-bf9e62a96556",
+        "event_id": "ljp06tll18b8o844mjh8tecgvg",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-12-30"
+      },
+      {
+        "log_id": "2617e295-1687-45bd-8736-25f23014d97b",
+        "event_id": "83tc6qmbf5b9arsjbtfc71r1oc",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-12-02"
+      },
+      {
+        "log_id": "68b351d0-1d20-4e62-81fe-194b7806b5e6",
+        "event_id": "2ormhln4uemvbfn0dt8reao2hg",
+        "title": "Backup Photos to Portable Drive",
+        "ideal": "2026-11-23"
+      },
+      {
+        "log_id": "6d921b83-029d-436a-857a-dfd2f36e1cc3",
+        "event_id": "qqt3cvane3gfopfisg55eeld38",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2027-01-13"
+      },
+      {
+        "log_id": "4f42e5e9-2913-4165-a965-8cf016a9f5d2",
+        "event_id": "i4jirkqglgb8c7chsascc0k03o",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2027-01-13"
+      },
+      {
+        "log_id": "c2cd4983-285a-44ac-9512-b1d24c2cbcba",
+        "event_id": "hdiooacdbhqnlic391i0885njs",
+        "title": "Publish Blog Post",
+        "ideal": "2027-01-14"
+      },
+      {
+        "log_id": "b443e77c-e2a0-4b76-ba58-f0e9920acae2",
+        "event_id": "cfrj4dh54pd69ltmm20i2kivas",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-12-16"
+      },
+      {
+        "log_id": "ab2067a9-13f2-4890-a2fc-fdcf04c76f63",
+        "event_id": "v9ma918v91kcqabdjrqm69ukr4",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-11-25"
+      },
+      {
+        "log_id": "7c3293b4-29c2-4030-9dd0-0722b0ac3b16",
+        "event_id": "gu0rpeavot108lu1ignfb3kgjk",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2027-01-22"
+      },
+      {
+        "log_id": "2544ab40-2322-4e1a-bb66-cf2ea8f2ce5d",
+        "event_id": "ei66h0udloniq1jheaplfpegh4",
+        "title": "Check Artfully Walls Sales",
+        "ideal": "2026-12-10"
+      },
+      {
+        "log_id": "a34a144e-4a45-48bf-a6de-ddc66c5314cd",
+        "event_id": "i7jd02b2c0tla1grtlhuc8uju4",
+        "title": "Check Artfully Walls Sales",
+        "ideal": "2027-01-14"
+      },
+      {
+        "log_id": "26dcb088-2317-4d87-8f4e-9a300b380b14",
+        "event_id": "eot9ta657g6494msl9oavt9e1g",
+        "title": "Publish Blog Post",
+        "ideal": "2026-12-31"
+      },
+      {
+        "log_id": "9fcc8232-0e6a-434a-a68f-3d6e3bcd9be0",
+        "event_id": "i7flfmugvotf6ps314b0d1td7o",
+        "title": "Send Out Joining Details",
+        "ideal": "2027-01-01"
+      },
+      {
+        "log_id": "37010cb0-4b0f-4556-9501-98b84c8f2a36",
+        "event_id": "0ctlrn0c36r7h9b95kjohmecb8",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-12-25"
+      },
+      {
+        "log_id": "e4c639f3-0ec8-4859-9903-6d88298fbaa1",
+        "event_id": "m0qno3sbhn4jpk0b4v8ubv3a6c",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-12-30"
+      },
+      {
+        "log_id": "6f13f947-32a9-4ceb-b287-41f61114d5c5",
+        "event_id": "2nnsr3adiqrfog2c34r33jce6k",
+        "title": "Booking Sheet, Month End Update",
+        "ideal": "2026-12-01"
+      },
+      {
+        "log_id": "aedfaf8d-5e23-4422-bf2d-f12a1d9048c4",
+        "event_id": "t7dbekrj41idvqikufkab78tnc",
+        "title": "Light & Logic newsletter issue",
+        "ideal": "2026-12-15"
+      },
+      {
+        "log_id": "b7b40d72-c9d9-4c0d-8e55-89bf263c7528",
+        "event_id": "1nko2qq32va97ugis6vjvp3v7k",
+        "title": "Send Out Joining Details",
+        "ideal": "2027-01-22"
+      },
+      {
+        "log_id": "3c2044cd-3214-4280-bf8c-d638cb550ca6",
+        "event_id": "6rgufm0l99molojq02fl8r5oig",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-12-04"
+      },
+      {
+        "log_id": "fb7fde95-23e3-46e7-80e8-8ff75afddbd9",
+        "event_id": "jus7gbocfkksn3otl27oh1e92k",
+        "title": "Update Event Schema for Classes & Workshops",
+        "ideal": "2026-11-23"
+      },
+      {
+        "log_id": "44e6de06-97a8-4098-add4-23ace6c01644",
+        "event_id": "bcruqqfttt88gi667v7unr8jg8",
+        "title": "Update Event Schema for Classes & Workshops",
+        "ideal": "2026-07-26"
+      },
+      {
+        "log_id": "87ca4405-ba2d-42eb-9a4c-fe1a64a25739",
+        "event_id": "clv9ovbrrp3a9grdsq3ko63o88",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-08-19"
+      },
+      {
+        "log_id": "f703d055-3cf2-4064-bd07-edd6cfed1888",
+        "event_id": "jnbpn33p9dav8hv9gfc3ovngm4",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-08-19"
+      },
+      {
+        "log_id": "a3e4226f-24a8-41c5-9d35-94ebfdfa3228",
+        "event_id": "237q1s88d1aell69d7fmpmsks4",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-11-11"
+      },
+      {
+        "log_id": "420a7c2b-2593-41e7-af81-978b3e537b46",
+        "event_id": "0ehuh6t77kj3oetef6ag4pe5bs",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-11-04"
+      },
+      {
+        "log_id": "afd3f663-7b77-4d39-a7a4-a0e6a5cb5555",
+        "event_id": "u5sbh8sdnokj8bfi0rlej58brc",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-10-28"
+      },
+      {
+        "log_id": "0b5c7006-e7c8-4193-96fe-692cc4b9ad3a",
+        "event_id": "0v57ocfgsbgqduu1jprf3io0u4",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-10-14"
+      },
+      {
+        "log_id": "d9d04bc5-5fe6-482a-a69e-7ded3f83dd20",
+        "event_id": "q96bs6mj8316c5kplkset61ve4",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-09-23"
+      },
+      {
+        "log_id": "6aa4ae69-ca49-4545-bafc-4c4ee3783e63",
+        "event_id": "4kvhten9sje71qch0hu58b59qk",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-11-04"
+      },
+      {
+        "log_id": "97d1feca-0932-4c87-9d5e-00cb39a44a0e",
+        "event_id": "t5g8r4ijfeg1uvr2l8o2fi1t9o",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-10-28"
+      },
+      {
+        "log_id": "1f938a55-4585-4bd3-8d2a-1359ede08d36",
+        "event_id": "vr9tg4rucsurpqmcr4b4hbd3ho",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-10-14"
+      },
+      {
+        "log_id": "986c2d79-b523-4405-855d-ee3533b5473f",
+        "event_id": "p1abn90ci0jst37geoo530jp3c",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-09-23"
+      },
+      {
+        "log_id": "00d5e909-07c1-4caf-9b7e-b001d3846f3e",
+        "event_id": "7q08te3bvss0dump9i7qjupt6k",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-08-12"
+      },
+      {
+        "log_id": "8bbbd09f-0464-42c1-a1ab-5ca87e7974a1",
+        "event_id": "pg197jgnqqvp5nqqk8oo8bnpig",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-09-02"
+      },
+      {
+        "log_id": "c7e6f202-14e5-4d9a-bc5d-728c98125647",
+        "event_id": "cnh3hjg0qivel09avr8508ocuc",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-09-30"
+      },
+      {
+        "log_id": "3da5b8a4-bf54-4794-af76-fe396a77f4b7",
+        "event_id": "q9ev8abg8tcbvleor52nreqo2k",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-10-07"
+      },
+      {
+        "log_id": "508e9cb7-88f2-4ac6-8340-1a82e8263289",
+        "event_id": "90d9mv3qd36s215kjcgd1av074",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-10-21"
+      },
+      {
+        "log_id": "e59879be-7ce4-48ad-a19a-11d494b19094",
+        "event_id": "ggua02nc0i4d9maogu1kkto41k",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-08-12"
+      },
+      {
+        "log_id": "1c31ebdf-42a9-407f-8957-32c72b474187",
+        "event_id": "09hjv91atb9qgkd1tn66rdgijg",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-09-02"
+      },
+      {
+        "log_id": "08c279fa-716e-47dc-b3b0-806d4801a32a",
+        "event_id": "r6qguiu5449eij3qnor6d7os2s",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-09-30"
+      },
+      {
+        "log_id": "5acf94f4-2344-40ca-84cd-503aef627c0c",
+        "event_id": "5o7u4unsms01lvdnb90at4qr7k",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-10-07"
+      },
+      {
+        "log_id": "13d23d5e-929d-4db5-85fb-2e14b38a0b33",
+        "event_id": "5k56g9uip997d7r5k7chbl4k14",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-10-21"
+      },
+      {
+        "log_id": "d6c54ea9-a355-4187-80c3-0ba6f7c028ae",
+        "event_id": "0gd2a19slpuldqbq8ee0mmhc6c",
+        "title": "Hotel bookings check (Claude)",
+        "ideal": "2026-11-18"
+      },
+      {
+        "log_id": "3dcc0213-4584-4491-9940-152f79ad5a6d",
+        "event_id": "kqdsiqi6k732vs6infp4hqo31k",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-11-11"
+      },
+      {
+        "log_id": "f644652c-8cc5-4b53-b9b2-d5a56b9682e5",
+        "event_id": "g9urvtl3trp989dmdssl33uoio",
+        "title": "Hotel bookings — Alan actions",
+        "ideal": "2026-11-18"
+      },
+      {
+        "log_id": "5517f8e1-e32b-419c-9dfa-1f6302b32701",
+        "event_id": "2vtp2km6n7cqgdcnjbkip43b0c",
+        "title": "Publish Blog Post",
+        "ideal": "2026-10-29"
+      },
+      {
+        "log_id": "cc744626-b6be-4e90-b475-731b7c007d57",
+        "event_id": "0k26pl9arva7jlrulcn5ib63ak",
+        "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+        "ideal": "2026-11-16"
+      },
+      {
+        "log_id": "e2c83103-b5db-456c-b229-e75357a00f87",
+        "event_id": "e3ou64q5ge4d24cohpfkb742ek",
+        "title": "Check Artfully Walls Sales",
+        "ideal": "2026-11-12"
+      },
+      {
+        "log_id": "1c9fd654-07b2-4e03-9bc2-0c6c575395dd",
+        "event_id": "kuncoe7aoqfptimnco3qd6sbus",
+        "title": "SEO Performance Review",
+        "ideal": "2026-11-04"
+      },
+      {
+        "log_id": "f2468a57-c839-4ab5-b8df-b4e4a88cedbf",
+        "event_id": "vkonfmno1ar61rhs4n0asns12k",
+        "title": "Publish Blog Post",
+        "ideal": "2026-11-05"
+      },
+      {
+        "log_id": "7a236174-5489-459d-b0df-5450c0571c91",
+        "event_id": "krt0gvqkfds419fqhsnn7gsd74",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-11-20"
+      },
+      {
+        "log_id": "eeea1750-d0bf-4926-a152-b4b35a6714e2",
+        "event_id": "fkgf6klp7rb9rca9fqjsfb4qe8",
+        "title": "Publish Blog Post",
+        "ideal": "2026-10-15"
+      },
+      {
+        "log_id": "3efb3c56-3b5e-4b36-9881-8193efc4f0bb",
+        "event_id": "te3fd5m9kb8smgpui1ub9onc6g",
+        "title": "SEO Performance Review",
+        "ideal": "2026-10-06"
+      },
+      {
+        "log_id": "2afda026-ff3b-4a23-8c6a-1963fedf8f03",
+        "event_id": "ku6g6si2hn8sde144ao17cjlao",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-11-06"
+      },
+      {
+        "log_id": "371037f9-71a3-4e89-8f7e-af6f53ee122c",
+        "event_id": "dik9s3s9qb0689mm819vnsd10g",
+        "title": "Booking Sheet, Month End Update",
+        "ideal": "2026-10-01"
+      },
+      {
+        "log_id": "810c39bb-3ec7-44a8-b933-152b930e3c70",
+        "event_id": "e9qts2sqh9unoq1em8du5uii14",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-11-06"
+      },
+      {
+        "log_id": "abf68637-a6f4-4561-8d98-ab40ea12bbcb",
+        "event_id": "lq5jrbpqvbn7a82hsv5bqm2bck",
+        "title": "Publish Blog Post",
+        "ideal": "2026-11-19"
+      },
+      {
+        "log_id": "324c8c49-3bb3-4b23-88a9-c7f01991c069",
+        "event_id": "vu6s8cripigqiagqecr4522m34",
+        "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+        "ideal": "2026-11-17"
+      },
+      {
+        "log_id": "d6691795-2ad9-40e8-81a2-0d0ab6591c35",
+        "event_id": "b42etjfihovkm5501addumabes",
+        "title": "Publish Blog Post",
+        "ideal": "2026-11-26"
+      },
+      {
+        "log_id": "86add020-a8bd-4131-afd1-d8e9f1d868eb",
+        "event_id": "9rtpv5lbn3dbn2k21ngsfkiq20",
+        "title": "Backup Photos to Portable Drive",
+        "ideal": "2026-10-26"
+      },
+      {
+        "log_id": "1e987b04-c3d4-4562-be56-d4d39656b3d9",
+        "event_id": "be18i32avvq681alg0mdphrkg0",
+        "title": "Update Event Schema for Classes & Workshops",
+        "ideal": "2026-10-26"
+      },
+      {
+        "log_id": "c98065b6-c3be-40b3-aa15-6145ccf4fd8b",
+        "event_id": "d1qsc23r4aru3subpigvcfb89c",
+        "title": "Light & Logic newsletter issue",
+        "ideal": "2026-11-15"
+      },
+      {
+        "log_id": "a55d28a5-a95f-4623-81ae-8343c86665a8",
+        "event_id": "6eoan8me3iof6i8ogipmbphtp0",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-10-23"
+      },
+      {
+        "log_id": "13ce6d36-c209-4353-9655-2fd9353d3e99",
+        "event_id": "bqo66ia9nkl4dmtgr5pv2keem0",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-10-02"
+      },
+      {
+        "log_id": "d3c1ba53-f097-43da-b11d-2f2106bb1fa9",
+        "event_id": "9t48j1l0cijmmnio64htssfg08",
+        "title": "Publish Blog Post",
+        "ideal": "2026-10-22"
+      },
+      {
+        "log_id": "1490c938-3d50-4529-8013-2e615e32572d",
+        "event_id": "hnbuov59i2buktkk33lbrgue3k",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-10-09"
+      },
+      {
+        "log_id": "2789f870-0147-4e04-adb0-d373f3a984ad",
+        "event_id": "0anj21rpbte304c2eraqg5hnh0",
+        "title": "Monthly Accounts — Bank Genie",
+        "ideal": "2026-11-02"
+      },
+      {
+        "log_id": "e455ec8f-7d42-4894-8875-e5f92bd0fe38",
+        "event_id": "rekpqrk3o1tuole39jeeajcepc",
+        "title": "Monthly Accounts — Bank Genie",
+        "ideal": "2026-10-05"
+      },
+      {
+        "log_id": "d2cad5e8-7cf0-4067-a23a-7eb06c969411",
+        "event_id": "iok420726vkdatj4kr50f4gh24",
+        "title": "Booking Sheet, Month End Update",
+        "ideal": "2026-11-01"
+      },
+      {
+        "log_id": "a73073ac-e429-427f-81ca-1db37faa1da9",
+        "event_id": "mhtig2nqv59jpj7bqfvmccun30",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-11-20"
+      },
+      {
+        "log_id": "aedf38fe-0764-4643-a86b-a252d0e76404",
+        "event_id": "javb92m7ha8mtsdjckjd5cqvho",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-10-02"
+      },
+      {
+        "log_id": "9bfb584e-dfe9-412b-bfc7-b150147b646d",
+        "event_id": "2lhfsqqadic13tf5me49fk1quc",
+        "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+        "ideal": "2026-09-23"
+      },
+      {
+        "log_id": "0c5c414c-1283-4493-abd3-3028c077ec76",
+        "event_id": "jugne0bsl55mpg4s8q3g928m4s",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-09-25"
+      },
+      {
+        "log_id": "7fcd80a1-1714-4c0d-af5c-4a859da2903d",
+        "event_id": "ke9m270v5i91bkj65ttquoetuo",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-09-18"
+      },
+      {
+        "log_id": "f454562f-8309-4a2b-a583-9325d49e06b0",
+        "event_id": "2ebfv6pogu9kinek55rvgdtafg",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-09-04"
+      },
+      {
+        "log_id": "fca035b1-01db-4b10-9c4e-655ac49c8f71",
+        "event_id": "q2pr801t3i2se9c7mjcg5qe0c8",
+        "title": "Booking Sheet, Month End Update",
+        "ideal": "2026-09-01"
+      },
+      {
+        "log_id": "1cec4ec5-72de-4b02-9201-5e7decb4601c",
+        "event_id": "qgobv8npb34asccqeqmos50vgs",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-09-11"
+      },
+      {
+        "log_id": "d02db42e-8b74-486c-aba7-153e9d1e785b",
+        "event_id": "q24uruh2qkckdpbdd9irf8olik",
+        "title": "Monthly Accounts — Bank Genie",
+        "ideal": "2026-09-07"
+      },
+      {
+        "log_id": "33d49312-5975-4ace-8897-a519e64bcd69",
+        "event_id": "mbg1f3k2coga0jtq8df1jhl00o",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-09-04"
+      },
+      {
+        "log_id": "32770e15-4239-4be0-8956-5ab9be88cc8e",
+        "event_id": "gvb8nps0ka9ikkdodrie5ndo4s",
+        "title": "SEO Performance Review",
+        "ideal": "2026-09-04"
+      },
+      {
+        "log_id": "b6fdbbd7-91e5-41ee-96b8-36941bf2bc97",
+        "event_id": "4p59a26ekolgipb733sem84fn0",
+        "title": "Check Artfully Walls Sales",
+        "ideal": "2026-09-10"
+      },
+      {
+        "log_id": "d1862f9a-9e6f-4947-b911-880b54ae98ff",
+        "event_id": "l2vnee790pcd1ta3dofgf2tbgs",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-09-11"
+      },
+      {
+        "log_id": "6be6932d-8ebb-4bc3-bb27-f456ce3c300e",
+        "event_id": "4v4ldhf40sgevudcb04tbf4888",
+        "title": "Publish Blog Post",
+        "ideal": "2026-08-06"
+      },
+      {
+        "log_id": "ae3e0784-2907-4124-852b-cb2d5632a45c",
+        "event_id": "h5vvmpguih2sr3dp0iqipeogc8",
+        "title": "Update Event Schema for Classes & Workshops",
+        "ideal": "2026-08-24"
+      },
+      {
+        "log_id": "ffabae23-c3e6-438b-9e3d-9f677a815db2",
+        "event_id": "hbv6kj9a7rasaat4lm4hd0i45s",
+        "title": "Publish Blog Post",
+        "ideal": "2026-08-20"
+      },
+      {
+        "log_id": "39ca0b44-6ae9-44f3-8ba2-36d233a9d660",
+        "event_id": "quh8ta3i1ess9iubk10mjfica0",
+        "title": "Check Artfully Walls Sales",
+        "ideal": "2026-08-13"
+      },
+      {
+        "log_id": "a57b4351-b55e-42d7-ba5e-a77ae4d55a7c",
+        "event_id": "89om9r7r79ick9e4fcb7fbi8ac",
+        "title": "Backup Photos to Portable Drive",
+        "ideal": "2026-08-24"
+      },
+      {
+        "log_id": "8ff3667e-0900-4070-a815-de2f720ee93e",
+        "event_id": "bn078esenvt2jpfnmetoucdhoo",
+        "title": "Publish Blog Post",
+        "ideal": "2026-08-27"
+      },
+      {
+        "log_id": "f0b4ec96-16e6-42de-9e6b-49b85771df76",
+        "event_id": "7ktkfqgo0a0k1teqspmfgl6ir0",
+        "title": "SEO Performance Review",
+        "ideal": "2026-08-04"
+      },
+      {
+        "log_id": "63934dbf-cc7f-496a-a841-dfeaa78acce7",
+        "event_id": "tgcj34kb42acorl8t82ei0dmj8",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-07-31"
+      },
+      {
+        "log_id": "2dac7e94-2042-44b5-ab27-379d5ebae536",
+        "event_id": "ko8up50cr0u69s27udgau3c4es",
+        "title": "Booking Sheet, Month End Update",
+        "ideal": "2026-08-01"
+      },
+      {
+        "log_id": "9ee477c1-6d03-4e23-b293-1e8129d9360f",
+        "event_id": "9au756nnfksuh5fnubbc1eu4fg",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-07-24"
+      },
+      {
+        "log_id": "40e28554-e75e-4a8b-8d3f-510d25c22008",
+        "event_id": "4aglol1084narr3k3qm88u5qe8",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-07-24"
+      },
+      {
+        "log_id": "6b4926ff-d6c4-4ace-bce7-24c820069330",
+        "event_id": "ljr0kvip2fbm5psoksajj5gbu0",
+        "title": "Publish Blog Post",
+        "ideal": "2026-07-30"
+      },
+      {
+        "log_id": "0f73286a-8df0-4f74-b40f-07b1e8b92871",
+        "event_id": "1r5lf78cg1qulelc0dd5h767kk",
+        "title": "Monthly Accounts — Bank Genie",
+        "ideal": "2026-08-03"
+      },
+      {
+        "log_id": "71a19348-4333-42c7-88f2-6754d0e2054c",
+        "event_id": "biefgku8s4bpja7phl4mqj16c0",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-08-14"
+      },
+      {
+        "log_id": "2c7536e2-e5ca-4f62-9edb-a9efbc5f87f5",
+        "event_id": "1rlpfjag61ocf5ctrtm1hroa10",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-08-14"
+      },
+      {
+        "log_id": "d5efd227-f0b8-480e-abe7-828db420bd1a",
+        "event_id": "24skah3i9tr6eie5145oi4okdo",
+        "title": "Send Out Joining Details",
+        "ideal": "2026-08-28"
+      },
+      {
+        "log_id": "237f77c8-8505-4036-a14d-7e17f9fe51dc",
+        "event_id": "skthnamhog1ug4s51hhip39it4",
+        "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "ideal": "2026-08-07"
+      }
+    ],
+    "google_deleted": [
+      {
+        "id": "oipn07vkul7iqqjh8jsjabupro",
+        "summary": "MC 🚗 Travel out — Malek Almousa graduation portraits",
+        "day": "2026-07-24",
+        "reason": "classify:delete_pattern"
+      },
+      {
+        "id": "q2shla3ihlvcpcvg9ah9ag4bdc",
+        "summary": "MC 🚗 Travel back — Malek Almousa graduation portraits → home",
+        "day": "2026-07-24",
+        "reason": "classify:delete_pattern"
+      },
+      {
+        "id": "q9ke4k97u7b303sqp7pmb1h3g0",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-07-29",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "2kjo0eja18al5dtnt7o41057po",
+        "summary": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+        "day": "2026-07-29",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "r014722a8nio83dtneb3437qlc",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-07-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "6k4v5408hghhub6bmcga2jtcig",
+        "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2026-08-01",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "jleqvkd7sqbr7lu8k7sjliu3m4",
+        "summary": "MC 🔁 Booking Sheet, Month End Update",
+        "day": "2026-08-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "07edamd900vfj5aca8pssfoedo",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "day": "2026-08-08",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "s7jsslamaob0530tnqni4ibato",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-08-09",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "m9h4j0t1fljpn7v1ockmcbsulk",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-08-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "to8o8dmcfathhmo3cv44otqdn8",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-08-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "inhl0i6ujvpk80dmhknu9mrtbs",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-08-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "mecp06so06i3k2vkb2tf420flg",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-08-12",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "l2oa7ljmtqi0cal0jpkar7b1jo",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-08-12",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4riqkuigfn25gq42o1ieu3l69o",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "day": "2026-08-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "922u6pr6qhltqbi76dga8odf5c",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-08-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "vhrf76gj2ltif5r0sk434ceras",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-08-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "j9k9nt6emc12ap1i4np9npgmhg",
+        "summary": "MC 🔁 Light & Logic newsletter issue",
+        "day": "2026-08-16",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "kp7rv2u8tvto0tkbk5hq44isos",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-08-20",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ia9vfec52tsr9df47795dqt1l8",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-08-20",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "nqd0vtp0sou7n87fm7kgscrp4c",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-08-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "rg8nh5crfucrmjsa4rduj695js",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-08-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "o9685d1c37qu8a90c0klu9jj7s",
+        "summary": "MC 🔁 Booking Sheet, Month End Update",
+        "day": "2026-09-01",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "67925gdk29gs0udnvho7v2mrv4",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-09-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "hi1h02ttvsg3hm1q7kvfv5slm4",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-09-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "o5ab944ulcukrc6pkje15q8dgg",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-09-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "q3chvd7jpu91r6d8epeo3djjbc",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-09-03",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "a5kb5jaeh4bkint7n1g1e53grc",
+        "summary": "MC 🔁 SEO Performance Review",
+        "day": "2026-09-08",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "8u1r8icdsf4lgm58m34fsa8kpc",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "day": "2026-09-08",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ahjgjvi0at9alpds284qr1v99o",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-09-09",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "799m1ep6ghld5qa9ch8bn1q5f0",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-09-09",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4lp3aefbiotoeieft5oeqmp250",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-09-09",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "i7nhaphu6dlao0ecav7ilepr5o",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-09-09",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "op1e83j7gkvsl194gh42ek3dg0",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "day": "2026-09-16",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "2mkub090gj768hunbp207cl124",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-09-17",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "d77e6qmh7s3g7694b11m4ia99k",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-09-22",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ueck7ueuiuevt17stj29mfc1ok",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-09-22",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "bvifnv0sj4apsg1alh2780vpus",
+        "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2026-09-23",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "hde4n6g4kvoblkjcg25g2v5uf4",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-09-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "p503a8ik1rfab15tck090p7jc8",
+        "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+        "day": "2026-09-28",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ki59duse67urnnfkubj0i5aedc",
+        "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+        "day": "2026-09-29",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "5c7o34f43tej482ie7o5dmb4ls",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-09-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "k6bgvr4jin722hscqrlfoagu3c",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-09-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "rkdmdqqi1tchfrvcm6bomffnds",
+        "summary": "MC 🔁 Backup Photos to Portable Drive",
+        "day": "2026-09-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "72qmuibdb69pftm84vqseca3bg",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-10-01",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "b125epjq1end9cb76ac5gic24k",
+        "summary": "MC 🔁 Booking Sheet, Month End Update",
+        "day": "2026-10-01",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "bj81ms43uptginimde1k6nh2ic",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "day": "2026-10-05",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "mbh9o7nvu7in7u2rbcjl9qbos4",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-10-07",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "tmj67s6uk0jpc5qmes4kaj1ne0",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-10-07",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "2l4odvcqbevbeitvqi3ho4vtu8",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-10-08",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "l5ecisiumhjhm5t6tdjb2980t0",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-10-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "iipe18v7urdmh54sm2mdntjc3k",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-10-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "akeivv5p7lvmtpsdtr9l6lp65k",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-10-16",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "7bg29su3gff8ihtq8j137ahnao",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-10-21",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "hah5q37idm9br49d5t2dbdcm8c",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-10-21",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "jgq220b9pue1r3vni17tlqsl94",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-10-22",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "64hfrnfpi4unshmgprlqqmlchc",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-10-22",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "np0c159ipeds6haqop3g2k1q5g",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-10-22",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "iplr1orpu8nj0if0q8lv778b5s",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-10-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ppgss96r85e4un6b09t7bthi58",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-10-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ae3ks9c9sl6tn8sc3tl3sg1sns",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-10-28",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "hth13h244nt9tu3lamj8lc89qg",
+        "summary": "MC 🔁 Booking Sheet, Month End Update",
+        "day": "2026-11-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4hfnpj3483v6ljn5290n4f0k60",
+        "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+        "day": "2026-11-03",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "1uh3mifp9b8pmtqcq6ptoljhmo",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-11-03",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "tdk44utdn679kqb4p31u7eb1ag",
+        "summary": "MC 🔁 SEO Performance Review",
+        "day": "2026-11-04",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "fj2qq3s0tfjuvnv1n939g2c9ns",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-11-05",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "bttm76k62dluhaqn827mp5e7sg",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-11-05",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "tskdcnksss29ehc4t9t7f0pm08",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-11-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "2qba6pkeoco791dhm55t65hu4k",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-11-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "qknotqj5mrdcpn3glq8pegck08",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-11-11",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "geg3j5dke00iua56tr09r287ko",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-11-11",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4da1j3k5umbaedqsqmip2ilk6s",
+        "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+        "day": "2026-11-17",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "vv82e26t7kc2dbi4shfof2pcd8",
+        "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2026-11-18",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "i1uqn9agbh613la6409chlqr3g",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-11-19",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "5vtkj949d47tgh5bf9edu9jtu4",
+        "summary": "MC 🛌 REST — after Norfolk Photography Workshop | Cromer to Hunstanton",
+        "day": "2026-11-23",
+        "reason": "classify:delete_pattern"
+      },
+      {
+        "id": "62s6a4je538hqq5g74s9bvjvj8",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-11-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "0tgrofmb29695mp96ggsrs4udg",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-11-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ret7t0vlohtj72auj8q83remv0",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-11-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "u2pn4vvdhk7pnb8kbm1o9ql018",
+        "summary": "MC 🔁 Backup Photos to Portable Drive",
+        "day": "2026-11-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "v47ebsd7ms5cenguvopd001rrg",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-11-25",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "6v0n8so9fg410l0pnnptfev6i0",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-11-25",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "oivgh9le3vgvicqljcmnhbf778",
+        "summary": "MC 🔁 Light & Logic newsletter issue",
+        "day": "2026-11-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ru9nsfvheq7nmjdvh6t5kd26ug",
+        "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+        "day": "2026-11-28",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "q78ukrtgd46e0dk0g117563a7c",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-11-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "3gsd8bq4sgufgmnnrrpgj4blhg",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-11-30",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "emu0k77vl831138hc95n7gbdvg",
+        "summary": "MC 🔁 Booking Sheet, Month End Update",
+        "day": "2026-12-01",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "3dgnavi84n6jl4fa2ffnplkcug",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2026-12-02",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "aetpk279u6seepoaengnr0h3ps",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2026-12-03",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "a7pfji7padhjc5j4ar51thf3fo",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-12-04",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "mkmjjou0pjb936ldc7dvuomm78",
+        "summary": "MC 🔁 SEO Performance Review",
+        "day": "2026-12-05",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "r5kjlae259dfsukbdhvupirouc",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "day": "2026-12-10",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4t9d4ear9huou6qq8bikjabqds",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-12-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "8b2jo0ldfrvu3pt7f9d8plet90",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-12-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "b1ultla7ev7ri0oc2qu5cf0l3k",
+        "summary": "MC 🔁 Light & Logic newsletter issue",
+        "day": "2026-12-15",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ul2rioit5sqrsmgrdtn7n09d40",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-12-24",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "h1q8e2t9u637hlklcan0d451t8",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2026-12-28",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "v926onv4t6jfaf45kp3uirgsh8",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2026-12-28",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4eopogummf42ggrogoiv670dis",
+        "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2027-01-12",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ng51vksjghgui861ihct4aakms",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "4qvpvetj7f10qgn0hsm0r79b4k",
+        "summary": "MC 🔁 Hotel bookings check (Claude)",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "1ps2ssck5r58el25631mevt5no",
+        "summary": "MC 🔁 Hotel bookings — Alan actions",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "js7kjocvsern2i0rbthccofs84",
+        "summary": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "p8tesoeh5rj8qese6tk8n3rqcc",
+        "summary": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "sieubn6vckhf7ucejj7psadhak",
+        "summary": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+        "day": "2027-01-13",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "ssortti6ddiavs6btpjsivs1o0",
+        "summary": "MC 🔁 Check Artfully Walls Sales",
+        "day": "2027-01-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "d5uv2edia2jcoq9gn8l6lo33og",
+        "summary": "MC 🔁 Publish Blog Post",
+        "day": "2027-01-14",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "i8pd8n0ok00p6taigvvko1kej4",
+        "summary": "MC 🔁 Send Out Joining Details",
+        "day": "2027-01-20",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "gvbu7ekftl4ooge0cap9ge5hk8",
+        "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2027-01-21",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "8f22v3dcge9fj4ksp8e6rt8424",
+        "summary": "MC 🛌 REST — after Lake District Photography Workshop | Winter in Cumbria",
+        "day": "2027-01-25",
+        "reason": "classify:delete_pattern"
+      },
+      {
+        "id": "c3o1muproervbubcdb5169vvh8",
+        "summary": "MC 🔁 Backup Photos to Portable Drive",
+        "day": "2027-01-26",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "rc9h2ja6j20ihapm1one9hnec0",
+        "summary": "MC 🔁 Backup Photos to Portable Drive",
+        "day": "2027-01-26",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "1klstiu0kdk6k57um4lj0ejthk",
+        "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+        "day": "2027-01-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      },
+      {
+        "id": "3ftnkjeh0ce8f0bgjbpfl01ido",
+        "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+        "day": "2027-01-27",
+        "reason": "unplaced_or_unreferenced_habit"
+      }
+    ],
+    "google_delete_failed": [],
+    "uncertain_listed": [
+      {
+        "id": "0q9970q66n5175tqfkg3j3fak8",
+        "summary": "MC ⏳ Prep — Constantin Xiao 1-2-1 Zoom",
+        "day": "2026-07-25",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "d7v2biobogq9q3e4lei1ou86gk",
+        "summary": "MC ⏳ Decompress — Constantin Xiao 1-2-1 Zoom",
+        "day": "2026-07-25",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "7p6d3vb9oj3bjnm8vocr0rn998",
+        "summary": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2026-07-28",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "veauh1fb9h3a84u0rfruhv1188",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-07-29",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "bjun006uuv8ucnr926tdbllgvs",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-07-29",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "q33qd5c297r6ql1qum7003a6ok",
+        "summary": "MC ⏳ Decompress — after P2 · MC-9 · AI-citation scoping",
+        "day": "2026-07-29",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "an1b0n8kao8jr1vbn36m5hqh1o",
+        "summary": "MC ⏳ Decompress — after P0 · MC-21 · Admiral loan — awaiting funds",
+        "day": "2026-07-29",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "dl897oqbvnil2jif46acpmujso",
+        "summary": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-07-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "uko8m38b48ms6ol8ob9v1upkm8",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-07-31",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "kth0g94p9r3suts8lvijatq8vs",
+        "summary": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+        "day": "2026-08-08",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "dg60ie9ubiblor6m5mnm6p8mko",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-08-09",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "cgf0qdo1ogcsvoahulnsf58jp4",
+        "summary": "MC ⏳ Decompress — after P3 · MC-14 · Sign-off: Traditional SEO",
+        "day": "2026-08-09",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "1kb3nrcpirebt8go1khlj7j3gs",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-08-10",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "j6gc7u8m6n0glsvuo12lcflovk",
+        "summary": "MC ⏳ Decompress — after Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "day": "2026-08-10",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "8ndtjid2les6c2sp0r70taotjo",
+        "summary": "MC ⏳ Decompress — after P3 · MC-18 · Sign-off: Local & Reviews",
+        "day": "2026-08-11",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "23kldn9v6kl5pucmrthfmmnen0",
+        "summary": "MC ⏳ Decompress — after P3 · MC-15 · Sign-off: Backlinks",
+        "day": "2026-08-11",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "ek01sd53fo8frgj976oamekbbk",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-08-12",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "21259mk63tvr218ik98k871vfs",
+        "summary": "MC ⏳ Decompress — after P0 · MC-42 · Gower workshop: reschedule dates then book hote",
+        "day": "2026-08-20",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "gtqju7dsonvpu7adrps2elvdk4",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-08-21",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "3rlqu5n4v4374l7kk80ejse9rs",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-08-26",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "7h1bmfl88c9p52vt91rno9d260",
+        "summary": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+        "day": "2026-09-01",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "6nppvake75jfdn6bhdfghiove4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-09-02",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "4vpstaetohj50cgnvq0rgb7njc",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-09-02",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "mam34ps77u96jobavfkrv2vfc8",
+        "summary": "MC ⏳ Decompress — after SEO Performance Review",
+        "day": "2026-09-08",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "aeks779rm0sheqe58nvcv5tteg",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-09-16",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "e4frkhmifis250ahigll429mqs",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-09-16",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "vradt36iuhohh52j10pvj19hs0",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-09-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "jqa9rid9cggsmruidl89b1nq40",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-09-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "8cm0a4ld1scclad7c4r3k8i8sg",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-09-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "gq275btvbd8lrrd4dmoqj4sd54",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-10-07",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "dm97md790b1ee3ne726h4ho0a4",
+        "summary": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+        "day": "2026-10-08",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "fnns4c2br2oejp2slp89j8klt8",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-10-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "n52a6qv3g745ts2js6ed77v1dk",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-10-16",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "gkk00hkunras3a4altsltlqeoc",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-10-21",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "lsf73ms9k1o8chkone6kpu2r7g",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-10-22",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "hs50t86mnl1np7nnho95rl583o",
+        "summary": "MC ⏳ Decompress — after Publish Blog Post",
+        "day": "2026-10-22",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "36ob38vnf9k66odpdlcpivbelk",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-10-27",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "sis1059no1e4aaj14b2fd0jb7k",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-11-05",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "tbuvdfb15mr0bvais6t243rdts",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-10",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "2v4k1ovuc8k9sg491h42srgdfk",
+        "summary": "MC ⏰ Hotel deadline — White Horse OVERSTRAND (£940) cancel by 17 Nov",
+        "day": "2026-11-11",
+        "action": "leave_protected",
+        "reason": "not safe to auto-delete"
+      },
+      {
+        "id": "ft2dr3ptqkfepmojkfjqpn0o58",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-11",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "qq74v64e3t0skjl5qq59041cu4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-11",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "6bvu1chsti51e2u1d2uli86iko",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-11-19",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "efv67ec5m7td6dcso57tc8o1oo",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "lqrj5n4hu3m6bjint81am7fc9g",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "n9s6mqu3n0o5cqsggu76pkcvag",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "4gmb3as6h6tqr8654fjg5uhb1c",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "69b6rbveis4d1oegku3vhtagd8",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "lt7535jbpt0burc10i02tucajk",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "0j54435tvgclvfrv9i0ble5tnk",
+        "summary": "MC ⏳ Decompress — after Publish Blog Post",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "2m2u9ec0q8pr1ecjadcj1g83m8",
+        "summary": "MC ⏳ Decompress — after Publish Blog Post",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "3ojn4manjdhik7q1696bf9b17k",
+        "summary": "MC ⏳ Decompress — after Publish Blog Post",
+        "day": "2026-11-24",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "hgnrbfahn0pk53rj2kq62mdgu0",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-25",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "rr2he667jjo9e4jtpq7p033im0",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-25",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "sj7n0nh36i6s8eouc5tl2ntnss",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2026-11-25",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "nn58gdplsrnmmo1pv1k49crphc",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "qoadfm77m3ra0ui49e5435vjq4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "u3ur6618ds6bjec96p7mmfo970",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-11-30",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "6jqpuj2vktbrn3i4s2gmdi298o",
+        "summary": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+        "day": "2026-12-01",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "3rrbr6mg0drak7gq22885hf5uc",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-09",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "dnc1ucm4uri86cqp6ooapf5qao",
+        "summary": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+        "day": "2026-12-10",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "d6vnrsqgr2h01qneifbsnk0ue0",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-12-11",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "eapd87304vpv21kk7ooarid0d8",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "h8mj5p1ng61kvnn2hg5j2cr20g",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "vn00ufr9hco8rjp62624ql32po",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "nf8sbvn4omh5hk8q63a68q4of8",
+        "summary": "MC ⏳ Decompress — after Light & Logic newsletter issue",
+        "day": "2026-12-15",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "gb1jadpnm907u8tmrqvtoj7o94",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2026-12-18",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "q61sj05oeu0g6g0kn527jgslik",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-22",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "2jup7cj0r9iacctjblr7osga58",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-28",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "6osaoh1n5hau8sl1hipfnh3dro",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-28",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "ol9t2ug6fr1kmcbaliqdd6s98o",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2026-12-28",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "nl2bgjhj1if70blpe9770lfgfo",
+        "summary": "MC ⏳ Decompress — after Booking Sheet, Month End Update",
+        "day": "2027-01-03",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "26hbd2k9svv7uho7jtoh4kdgno",
+        "summary": "MC ⏰ Hotel deadline — Ravenstone Jan (£2,211) cancel by 7-8 Jan",
+        "day": "2027-01-04",
+        "action": "leave_protected",
+        "reason": "not safe to auto-delete"
+      },
+      {
+        "id": "spj185ti52156n4jasm0terdik",
+        "summary": "MC ⏳ Decompress — after Monthly Accounts — Bank Genie",
+        "day": "2027-01-04",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "sfct1uocgs0ot5lrs7mpqc9hd4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2027-01-06",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "ddbb8t92e0gor1bioujup8qqoo",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2027-01-08",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "bvf4pp4gq9qdieigpo5quv9qhs",
+        "summary": "MC ⏳ Decompress — after BAU global refresh — Day 2: schemas + final ingest + verify",
+        "day": "2027-01-12",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "agcct9npi32lq93tmholhvsku4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "e9nhco130b37ikcg4dr9l4siis",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "gdg0vqs7smdnnd4kgsh265lj4k",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "63om6t0gnecb8d74ofbgg9qh9s",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "l037ma386v7imtu7mvqd3caf84",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "t2fj5pmh0tha865t3hjhr4kvn0",
+        "summary": "MC ⏳ Decompress — after Hotel bookings — Alan actions",
+        "day": "2027-01-13",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "chjctgtr04frq36qvaicf9pua4",
+        "summary": "MC ⏰ Hotel decision — Angel Inn Wangford (£2,231) 1-day cancel window",
+        "day": "2027-01-14",
+        "action": "leave_protected",
+        "reason": "not safe to auto-delete"
+      },
+      {
+        "id": "326kovnrr0fqp3r4u4obaqp0m0",
+        "summary": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+        "day": "2027-01-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "9ueuos4251vuj1qb7inb9jll54",
+        "summary": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+        "day": "2027-01-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "ao2kn5as5bvbh80l30t7khi42g",
+        "summary": "MC ⏳ Decompress — after Check Artfully Walls Sales",
+        "day": "2027-01-14",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "jn1dbccvkilvjmsaijnnkprf8o",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2027-01-20",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "reefp561mbj6ubetktif1uf400",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2027-01-20",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "sla22e5ut34asugbc1qjms501o",
+        "summary": "MC ⏳ Decompress — after Send Out Joining Details",
+        "day": "2027-01-20",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      },
+      {
+        "id": "4n4qms4rfa139ogj6q513kfio4",
+        "summary": "MC ⏳ Decompress — after Hotel bookings check (Claude)",
+        "day": "2027-01-20",
+        "action": "buffer_no_db_fk",
+        "reason": "Prep/Decompress — leave for gap sync; not deleted"
+      }
+    ]
+  },
+  "root_c": {
+    "duplicate_logs_deleted": [
+      {
+        "deleted": "f52fa1fe-be5d-4a2f-a3f4-6badd2d0c336",
+        "kept": "a95ded23-740d-49e9-8d96-fd836767c2b6",
+        "event_dropped": "371910gpeppb1fr2dvugav4p8k",
+        "day": "2026-07-26"
+      },
+      {
+        "deleted": "3efb3c56-3b5e-4b36-9881-8193efc4f0bb",
+        "kept": "b477bd52-7b4d-4598-9f36-48d57cf0fa1c",
+        "event_dropped": "te3fd5m9kb8smgpui1ub9onc6g",
+        "day": "2026-10-06"
+      }
+    ],
+    "hotels_reminders_created": [
+      {
+        "hotel_id": "7971872b-e226-4213-841b-c598d2b24065",
+        "name": "Norfolk Overstrand",
+        "event_id": "oprkctnu7lunqg547q07gm13i8",
+        "remindDay": "2026-11-14",
+        "cancelDay": "2026-11-17"
+      },
+      {
+        "hotel_id": "6d16edec-4604-425e-be3d-4db7fa1cd5cc",
+        "name": "Lowick",
+        "event_id": "lm1td0qutjvojkpmdmnk7sva1o",
+        "remindDay": "2027-03-12",
+        "cancelDay": "2027-03-15"
+      },
+      {
+        "hotel_id": "963d73b8-7664-44fe-a6c9-9d53aedb7b4e",
+        "name": "Dartmoor",
+        "event_id": "ml9nke1m2d513pc7vod9s45n2g",
+        "remindDay": "2027-03-27",
+        "cancelDay": "2027-03-30"
+      },
+      {
+        "hotel_id": "2fd69b0f-9f11-4120-ae3f-28d8e4365b2a",
+        "name": "Suffolk Long Exposure",
+        "event_id": "mqqgn6gu9m5pd0a0ifok3taf2g",
+        "remindDay": "2027-01-31",
+        "cancelDay": "2027-02-03"
+      },
+      {
+        "hotel_id": "3a55c4c2-e42e-47f8-85bd-c78f1ac48458",
+        "name": "Lake District Spring (Mar 2027)",
+        "event_id": "ue66sr9j4ojq7htqv9sckvibbg",
+        "remindDay": "2027-03-06",
+        "cancelDay": "2027-03-09"
+      },
+      {
+        "hotel_id": "96898676-d532-4092-9182-65d3cf2511ac",
+        "name": "Lake District Winter",
+        "event_id": "2k1v8rpjffvemk4ikf493pg0bg",
+        "remindDay": "2027-01-05",
+        "cancelDay": "2027-01-08"
+      },
+      {
+        "hotel_id": "aa90eaea-3d93-483e-8e48-8491fd8990d8",
+        "name": "Lake District Winter — Thu extra night",
+        "event_id": "7hvu3t3gv6k3enhoeg9h63j7bg",
+        "remindDay": "2027-01-04",
+        "cancelDay": "2027-01-07"
+      },
+      {
+        "hotel_id": "415458a6-68ec-4cf7-81f6-cdfa37278e41",
+        "name": "Exmoor Lynton",
+        "event_id": "vb8aks6dnp7lmmslnv9k039k4g",
+        "remindDay": "2027-04-19",
+        "cancelDay": "2027-04-22"
+      },
+      {
+        "hotel_id": "150df277-a389-49bf-a503-bb555c879867",
+        "name": "Hartland Quay Feb 2027",
+        "event_id": "riqeict9t1264cm93bfdt0akqs",
+        "remindDay": "2027-02-01",
+        "cancelDay": "2027-02-04"
+      }
+    ],
+    "hotels_skipped": [
+      {
+        "id": "2f970b67-5333-4aa5-8879-d83a365a5f32",
+        "name": "Gower",
+        "reason": "no_free_cancel_until"
+      },
+      {
+        "id": "ffcd6851-65af-4609-b72b-b8e3c75aeead",
+        "name": "David Ward workshop (Alan ATTENDING)",
+        "reason": "remind_day_past",
+        "remindDay": "2026-07-25"
+      },
+      {
+        "id": "042f3976-9c45-4897-a1b5-a66ae2646c0a",
+        "name": "Yorkshire — The Forge (2nd hotel)",
+        "reason": "no_free_cancel_until"
+      }
+    ]
+  },
+  "travel_checkable": {
+    "checked": 32,
+    "violations": []
+  },
+  "placer": {
+    "proof_ok": true,
+    "proof_fails": [],
+    "amendment_counts": {
+      "CREATE": 87,
+      "KEEP": 42,
+      "MOVE": 3,
+      "DELETE": 2
+    },
+    "habit_db_applied": 92,
+    "task_db_applied": 0,
+    "blocked_day_cleared": [],
+    "unplaced": 39
+  },
+  "flush": {
+    "planned": 92,
+    "applied": 92,
+    "failed": 0
+  },
+  "reconcile": {
+    "status_line": "Google matches DB: ✓",
+    "mismatch_count": 0,
+    "google_matches_db": true
+  }
+}

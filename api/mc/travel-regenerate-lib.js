@@ -92,7 +92,27 @@ function pairTravelBlocks(blocks) {
   return pairs;
 }
 
+function gcalIdFromRowKey(key) {
+  const m = String(key || '').match(/^gcal:(.+)$/i);
+  return m ? m[1] : null;
+}
+
+/**
+ * Find the live workshop for a travel pair.
+ * Prefer workshop_row_key (same GCal id after Squarespace moves the event);
+ * title match allows long reschedules when the score is strong.
+ */
 function pickWorkshop(pair, workshops) {
+  const keyId = gcalIdFromRowKey(pair.out.workshop_row_key)
+    || gcalIdFromRowKey(pair.back.workshop_row_key);
+  if (keyId) {
+    const byId = (workshops || []).find((w) => w && w.id === keyId);
+    const b = byId ? eventBounds(byId) : null;
+    if (b) return { event: byId, bounds: b, score: 100 };
+    // Keyed to a missing/cancelled parent — do NOT fuzzy-match another year's instance.
+    return null;
+  }
+
   const title = pair.out.workshop_title || pair.back.workshop_title;
   const anchorDay = londonDay(pair.out.workshop_start || pair.out.starts_at);
   const outDay = londonDay(pair.out.starts_at);
@@ -106,8 +126,9 @@ function pickWorkshop(pair, workshops) {
     const evDay = londonDay(b.startIso);
     const dayDist = Math.abs(Date.parse(`${evDay}T12:00:00Z`) - Date.parse(`${anchorDay}T12:00:00Z`)) / 86400000;
     const outDist = Math.abs(Date.parse(`${evDay}T12:00:00Z`) - Date.parse(`${outDay}T12:00:00Z`)) / 86400000;
-    // Prefer events near stamped workshop_start / travel_out day (max 4 days).
-    if (Math.min(dayDist, outDist) > 4) continue;
+    // Unkeyed title match: allow short reschedules only (not next-year same product).
+    const maxDay = ts >= 70 ? 14 : 4;
+    if (Math.min(dayDist, outDist) > maxDay) continue;
     const score = ts - Math.min(dayDist, outDist) * 8;
     if (score > bestScore) {
       bestScore = score;
@@ -402,7 +423,7 @@ function overnightChainEndBounds(pair, blocks, workshops) {
   return best;
 }
 
-function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
+function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = [], opts = {}) {
   const arriveMin = Number(ruleMap.arrive_before_start_min || 30);
   const workshops = (gcalEvents || []).filter(isTravelWorkshopEvent);
   const { buildBusyIntervals } = require('./habit-placer-lib');
@@ -413,6 +434,8 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
   const unmatched = [];
   const overnight_chains = [];
   const skipped_multileg = [];
+  // Do not rewrite history — only follow live for trips still ahead.
+  const todayYmd = opts.today || null;
 
   for (const pair of pairs) {
     if (pair.out?.manual_lock || pair.back?.manual_lock) {
@@ -424,6 +447,19 @@ function planTravelRegenerate(blocks, gcalEvents, ruleMap = {}, venues = []) {
         reason: 'manual_lock',
       });
       continue;
+    }
+    if (todayYmd) {
+      const tripDay = londonDay(pair.out.workshop_start || pair.out.starts_at);
+      if (tripDay && tripDay < todayYmd) {
+        skipped_multileg.push({
+          venue: pair.out.venue_name,
+          title: pair.out.workshop_title,
+          out_id: pair.out.id,
+          back_id: pair.back.id,
+          reason: 'past_trip',
+        });
+        continue;
+      }
     }
     const match = pickWorkshop(pair, workshops);
     if (!match) {
@@ -585,4 +621,8 @@ module.exports = {
   pickWorkshop,
   otherTeachingEndOnDay,
   normTitle,
+  titleScore,
+  eventBounds,
+  londonDay,
+  gcalIdFromRowKey,
 };

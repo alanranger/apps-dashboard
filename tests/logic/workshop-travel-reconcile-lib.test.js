@@ -15,7 +15,7 @@ test('isOrphanAgainstParent when parent missing', () => {
   assert.equal(isOrphanAgainstParent({ starts_at: '2026-08-15T14:00:00Z' }, null), true);
 });
 
-test('isOrphanAgainstParent when parent moved beyond drift', () => {
+test('isOrphanAgainstParent keeps linked parent even after large date move', () => {
   const row = {
     starts_at: '2026-08-15T14:00:00Z',
     workshop_start: '2026-08-15T18:00:00Z',
@@ -24,7 +24,8 @@ test('isOrphanAgainstParent when parent moved beyond drift', () => {
     status: 'confirmed',
     start: { dateTime: '2027-08-14T18:00:00Z' },
   };
-  assert.equal(isOrphanAgainstParent(row, parent), true);
+  // Drift is a regenerate/move job — not an orphan delete.
+  assert.equal(isOrphanAgainstParent(row, parent), false);
   assert.ok(ORPHAN_DRIFT_DAYS >= 7);
 });
 

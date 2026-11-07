@@ -1,0 +1,1749 @@
+{
+  "summary": {
+    "total": 193,
+    "KEEP": 159,
+    "MOVE": 26,
+    "DELETE": 2,
+    "UNMATCHED": 6,
+    "moveOrDeletePct": 15
+  },
+  "rows": [
+    {
+      "action": "KEEP",
+      "id": "obfndn91bbjnroga8ce4n4dpj4",
+      "title": "MC 🚗 Travel out — Burnham on Sea (Long Exposure)",
+      "start": "2026-08-01T16:00:00+01:00",
+      "end": "2026-08-01T18:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "c9rkjl19l9cr63h6549l4hm3j4",
+      "title": "MC 🚗 Travel back — Burnham on Sea → home",
+      "start": "2026-08-01T21:15:00+01:00",
+      "end": "2026-08-01T23:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "sasau987alu59kiosk82cpf2rc",
+      "title": "MC ⏳ Prep — Woodland Masterclass",
+      "start": "2026-08-02T09:30:00+01:00",
+      "end": "2026-08-02T10:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "9ok34fgmqcbhcoec0besf96geg",
+      "title": "MC ⏳ Decompress — Woodland Masterclass",
+      "start": "2026-08-02T16:00:00+01:00",
+      "end": "2026-08-02T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "i1jske3agrviuati04eh1huk00",
+      "title": "MC 🚗 Travel out — Rosedale Abbey (David Ward workshop)",
+      "start": "2026-08-03T09:00:00+01:00",
+      "end": "2026-08-03T12:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "DELETE",
+      "id": "bhcc8qenibs36v2lvlio1ua7fo",
+      "title": "P1 · MC-52 · Hotel register — fill 6 missing deadlines",
+      "start": "2026-08-05T11:30:00+01:00",
+      "end": "2026-08-05T13:00:00+01:00",
+      "tied": true,
+      "note": "MC-52 done; was wrongly placed during David Ward workshop. Calendar residue — remove."
+    },
+    {
+      "action": "KEEP",
+      "id": "m2svuf0fekgo1lpnnl7pfijok4",
+      "title": "MC 🚗 Travel back — Rosedale Abbey → home",
+      "start": "2026-08-06T14:00:00+01:00",
+      "end": "2026-08-06T17:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "MOVE",
+      "id": "1r5lf78cg1qulelc0dd5h767kk",
+      "title": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-08-07T10:00:00+01:00",
+      "end": "2026-08-07T11:30:00+01:00",
+      "tied": true,
+      "note": "day cap 330m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "ko8up50cr0u69s27udgau3c4es",
+      "title": "P0 · MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-08-07T12:00:00+01:00",
+      "end": "2026-08-07T13:00:00+01:00",
+      "tied": true,
+      "note": "day cap 330m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "691p6nukbf05p9u7fjupapchl4",
+      "title": "P3 · MC-14 · Sign-off: Traditional SEO",
+      "start": "2026-08-07T13:30:00+01:00",
+      "end": "2026-08-07T14:15:00+01:00",
+      "tied": true,
+      "note": "day cap 330m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "enh2ofbqif2o4ehovqke8o0kjk",
+      "title": "P3 · MC-2 · Walkthrough: Money rebuild",
+      "start": "2026-08-07T14:45:00+01:00",
+      "end": "2026-08-07T15:30:00+01:00",
+      "tied": true,
+      "note": "overlap 30m with P3 · MC-13 · Sign-off: URL Money Pages; day cap 330m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "m2mgpecbvtjcpr7doovievthlg",
+      "title": "P3 · MC-13 · Sign-off: URL Money Pages",
+      "start": "2026-08-07T14:45:00+01:00",
+      "end": "2026-08-07T15:15:00+01:00",
+      "tied": true,
+      "note": "overlap 30m with P3 · MC-2 · Walkthrough: Money rebuild; day cap 330m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "remc39e9mdat616al5lrmgg51g",
+      "title": "P3 · MC-1 · Walkthrough: integrity checker",
+      "start": "2026-08-07T15:45:00+01:00",
+      "end": "2026-08-07T16:45:00+01:00",
+      "tied": true,
+      "note": "day cap 330m > 240"
+    },
+    {
+      "action": "KEEP",
+      "id": "7mg7okt6soem77fvb7u15qmr9o",
+      "title": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-08-09T11:00:00+01:00",
+      "end": "2026-08-09T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "0l009dm0de40t0h66dudej75ig",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-08-09T14:30:00+01:00",
+      "end": "2026-08-09T15:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "MOVE",
+      "id": "dkaj83c91t9b5ovhvnoba8h8uk",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-08-10T10:00:00+01:00",
+      "end": "2026-08-10T12:00:00+01:00",
+      "tied": true,
+      "note": "day cap 360m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "skthnamhog1ug4s51hhip39it4",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-08-10T12:30:00+01:00",
+      "end": "2026-08-10T14:30:00+01:00",
+      "tied": true,
+      "note": "zero gap before P1 · MC 🔁 Hotel bookings check (Claude); day cap 360m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "g89h2cj849r1nas8ibdok3h56c",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-10T14:30:00+01:00",
+      "end": "2026-08-10T15:15:00+01:00",
+      "tied": true,
+      "note": "overlap 45m with P3 · MC-3 · Walkthrough: weekend page fixes; zero gap after P1 · MC 🔁 Review/Amend Course and Workshop Dates; day cap 360m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "ls20gle8ucqqgvsstlhjn4hf9s",
+      "title": "P3 · MC-3 · Walkthrough: weekend page fixes",
+      "start": "2026-08-10T14:30:00+01:00",
+      "end": "2026-08-10T15:15:00+01:00",
+      "tied": true,
+      "note": "overlap 45m with P1 · MC 🔁 Hotel bookings check (Claude); day cap 360m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "aak7c7a4ll22ku78tg4er4mkl0",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-10T15:45:00+01:00",
+      "end": "2026-08-10T16:15:00+01:00",
+      "tied": true,
+      "note": "day cap 360m > 240"
+    },
+    {
+      "action": "KEEP",
+      "id": "4sq0o5qtgldfq6der6u0bpdo2g",
+      "title": "P3 · MC-15 · Sign-off: Backlinks",
+      "start": "2026-08-11T10:00:00+01:00",
+      "end": "2026-08-11T10:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "607hc8286v9cu2umhe5jfaitc4",
+      "title": "P3 · MC-16 · Sign-off: Portfolio",
+      "start": "2026-08-11T11:15:00+01:00",
+      "end": "2026-08-11T11:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "g2cgddgsoimun70k8oa2mfff8s",
+      "title": "P3 · MC-17 · Sign-off: Authority",
+      "start": "2026-08-11T12:15:00+01:00",
+      "end": "2026-08-11T12:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "132no8hi86rupn564ho1l8kiq4",
+      "title": "P3 · MC-18 · Sign-off: Local and Reviews",
+      "start": "2026-08-11T13:15:00+01:00",
+      "end": "2026-08-11T13:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "a6fbk73lulilk1hamojbr78s38",
+      "title": "P3 · MC-19 · Sign-off: Revenue Truth re-review",
+      "start": "2026-08-11T14:15:00+01:00",
+      "end": "2026-08-11T14:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "he91671tj90c2dml3s46r2j9u4",
+      "title": "P3 · MC-20 · Sign-off: History",
+      "start": "2026-08-12T10:00:00+01:00",
+      "end": "2026-08-12T10:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "7q08te3bvss0dump9i7qjupt6k",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-12T11:00:00+01:00",
+      "end": "2026-08-12T11:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "ggua02nc0i4d9maogu1kkto41k",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-12T12:15:00+01:00",
+      "end": "2026-08-12T12:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "92jcn3mnta2cdj9pkhg6i1d2mc",
+      "title": "MC ⏳ Prep — Jo Galloway 1-2-1",
+      "start": "2026-08-12T15:00:00+01:00",
+      "end": "2026-08-12T15:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "7cd42td21emg6ljnc9g50pvieg",
+      "title": "MC ⏳ Decompress — Jo Galloway 1-2-1",
+      "start": "2026-08-12T16:30:00+01:00",
+      "end": "2026-08-12T17:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "quh8ta3i1ess9iubk10mjfica0",
+      "title": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-08-13T10:00:00+01:00",
+      "end": "2026-08-13T10:05:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "gm6fv4pe5iqhen9g4kc1t8kq9k",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-08-13T10:35:00+01:00",
+      "end": "2026-08-13T12:35:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "MOVE",
+      "id": "1rlpfjag61ocf5ctrtm1hroa10",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-08-14T13:30:00+01:00",
+      "end": "2026-08-14T14:30:00+01:00",
+      "tied": true,
+      "note": "zero gap before P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027"
+    },
+    {
+      "action": "MOVE",
+      "id": "ne08s5tg9bv7jpum571iqog840",
+      "title": "P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027",
+      "start": "2026-08-14T14:30:00+01:00",
+      "end": "2026-08-14T15:30:00+01:00",
+      "tied": true,
+      "note": "overlap 30m with P1 · MC 🔁 Review/Amend Course and Workshop Dates; zero gap after P0 · MC 🔁 Send Out Joining Details"
+    },
+    {
+      "action": "MOVE",
+      "id": "biefgku8s4bpja7phl4mqj16c0",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-08-14T15:00:00+01:00",
+      "end": "2026-08-14T17:00:00+01:00",
+      "tied": true,
+      "note": "overlap 30m with P1 · MC-50/51 · Book hotels — Yorkshire Dales + Anglesey 2027"
+    },
+    {
+      "action": "KEEP",
+      "id": "7lh4746ljiir8tneaguer1b07c",
+      "title": "MC 🚗 Travel out — Peak Heathers Sunset (Hathersage)",
+      "start": "2026-08-15T15:45:00+01:00",
+      "end": "2026-08-15T17:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "01t95ske39e9f33m49d10rvab0",
+      "title": "MC 🚗 Travel — Surprise View → Hotel Rudyard",
+      "start": "2026-08-15T21:15:00+01:00",
+      "end": "2026-08-15T22:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "ebhdaj6m7g6emu285092gvug1g",
+      "title": "MC 🚗 Travel — Hotel Rudyard → The Roaches",
+      "start": "2026-08-16T05:00:00+01:00",
+      "end": "2026-08-16T05:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "eu5gdtcobi6nrjkebb4nidfjo8",
+      "title": "MC 🚗 Travel back — The Roaches → home",
+      "start": "2026-08-16T08:45:00+01:00",
+      "end": "2026-08-16T10:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "muvt8rclrlfo99sd3icfr4jc70",
+      "title": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2026-08-16T11:00:00+01:00",
+      "end": "2026-08-16T15:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "efuvkao5vtbbjhhiebibeg1e18",
+      "title": "P1 · MC 🔁 BAU global refresh — Day 1",
+      "start": "2026-08-17T10:00:00+01:00",
+      "end": "2026-08-17T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "uvbqrfbomvbggea2rbk88gn6v8",
+      "title": "P1 · MC 🔁 BAU global refresh — Day 2",
+      "start": "2026-08-18T10:00:00+01:00",
+      "end": "2026-08-18T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "5ae8f2uso61po2s1anusfa3jd8",
+      "title": "P1 · MC 🔁 Upload sites",
+      "start": "2026-08-19T10:00:00+01:00",
+      "end": "2026-08-19T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "MOVE",
+      "id": "svdhdk3f5eee9t9a4tpqkkrdn8",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-08-20T10:00:00+01:00",
+      "end": "2026-08-20T12:00:00+01:00",
+      "tied": true,
+      "note": "overlap 60m with P0 · MC-42 · Gower: reschedule dates then book hotel; day cap 255m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "9f8a7gqhl57qbm39hkgqeprlt4",
+      "title": "P0 · MC-42 · Gower: reschedule dates then book hotel",
+      "start": "2026-08-20T10:45:00+01:00",
+      "end": "2026-08-20T11:45:00+01:00",
+      "tied": true,
+      "note": "overlap 60m with P1 · MC 🔁 Publish Blog Post; day cap 255m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "jnbpn33p9dav8hv9gfc3ovngm4",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-20T12:30:00+01:00",
+      "end": "2026-08-20T13:15:00+01:00",
+      "tied": true,
+      "note": "day cap 255m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "clv9ovbrrp3a9grdsq3ko63o88",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-20T13:45:00+01:00",
+      "end": "2026-08-20T14:15:00+01:00",
+      "tied": true,
+      "note": "day cap 255m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "jnk10hibaa3q05ihrg8k9se0gk",
+      "title": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+      "start": "2026-08-21T09:00:00+01:00",
+      "end": "2026-08-21T09:20:00+01:00",
+      "tied": true,
+      "note": "starts before window (10:00–17:00)"
+    },
+    {
+      "action": "KEEP",
+      "id": "pfm7j4en28bvv0vgmcba36as8g",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-08-21T10:00:00+01:00",
+      "end": "2026-08-21T11:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "9n20dbkf202roa3ert3s2fsajo",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-08-21T11:30:00+01:00",
+      "end": "2026-08-21T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "bvv4j3aell7hj2hljttj76qpu0",
+      "title": "MC ⏳ Prep — Abstract and Macro Workshop",
+      "start": "2026-08-23T10:00:00+01:00",
+      "end": "2026-08-23T10:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "c3fmdj7ur043ojpaknuasgnq30",
+      "title": "MC ⏳ Decompress — Abstract and Macro Workshop",
+      "start": "2026-08-23T12:30:00+01:00",
+      "end": "2026-08-23T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "bhd2nu234c39h2sb5ebetlubjk",
+      "title": "P2 · MC 🔁 Update Event Schema",
+      "start": "2026-08-24T10:00:00+01:00",
+      "end": "2026-08-24T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "56ic13gbcl6mogaofi20euqui8",
+      "title": "P3 · MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-08-24T12:30:00+01:00",
+      "end": "2026-08-24T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "93l0e5k41s6k1vld4h6dpuh450",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-26T10:00:00+01:00",
+      "end": "2026-08-26T10:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "pcthhhor3n83trqqal386ina28",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-26T11:15:00+01:00",
+      "end": "2026-08-26T11:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "bn078esenvt2jpfnmetoucdhoo",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-08-27T10:00:00+01:00",
+      "end": "2026-08-27T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "24skah3i9tr6eie5145oi4okdo",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-08-28T13:30:00+01:00",
+      "end": "2026-08-28T14:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "6g617rk7vk0etlrpnq7f41qvk4",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-08-28T15:00:00+01:00",
+      "end": "2026-08-28T17:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "53q73k1i7nh6lcsp3sjniv5dqc",
+      "title": "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy",
+      "start": "2026-09-01T09:00:00+01:00",
+      "end": "2026-09-01T09:20:00+01:00",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "KEEP",
+      "id": "q2pr801t3i2se9c7mjcg5qe0c8",
+      "title": "P0 · MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-09-01T10:00:00+01:00",
+      "end": "2026-09-01T11:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "ukfmq5ltmhr5f8ena601fo66cs",
+      "title": "P2 · MC-11 · Money review (monthly)",
+      "start": "2026-09-01T11:30:00+01:00",
+      "end": "2026-09-01T12:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "df5v37g6rphnu136vd46h4r6ec",
+      "title": "MC 🚗 Travel out — Kenilworth Castle (Long Exposure)",
+      "start": "2026-09-01T17:30:00+01:00",
+      "end": "2026-09-01T17:50:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "lrfepqe8jm1h01pk8tj3tu1mqg",
+      "title": "MC 🚗 Travel back — Kenilworth → home",
+      "start": "2026-09-01T20:00:00+01:00",
+      "end": "2026-09-01T20:20:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "ju35jpe0ubc06uc5tij60u48b0",
+      "title": "MC ⏰ Hotel deadline — Ellerby Country Inn cancel by 5 Sep",
+      "start": "2026-09-02T09:00:00+01:00",
+      "end": "2026-09-02T09:15:00+01:00",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "KEEP",
+      "id": "mbg1f3k2coga0jtq8df1jhl00o",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-09-02T10:00:00+01:00",
+      "end": "2026-09-02T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "pg197jgnqqvp5nqqk8oo8bnpig",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-02T12:30:00+01:00",
+      "end": "2026-09-02T13:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "09hjv91atb9qgkd1tn66rdgijg",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-02T13:45:00+01:00",
+      "end": "2026-09-02T14:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "47h1fd84t6okfuh2k1r4c7efok",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-09-03T10:00:00+01:00",
+      "end": "2026-09-03T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "2ebfv6pogu9kinek55rvgdtafg",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-03T12:30:00+01:00",
+      "end": "2026-09-03T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "f9mcf4ej13nhoercgb4vc9d8b4",
+      "title": "MC 🚗 Travel out — Hartland Quay Hotel (Devon)",
+      "start": "2026-09-04T08:00:00+01:00",
+      "end": "2026-09-04T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "ltn1fumetasvgqv4ke44vmbqu4",
+      "title": "MC 🚗 Travel back — Hartland Quay → home",
+      "start": "2026-09-06T12:30:00+01:00",
+      "end": "2026-09-06T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "p1raalp6p23c59cqhl05fbqk0g",
+      "title": "MC ⏳ Prep — Lightroom Wk1",
+      "start": "2026-09-07T18:30:00+01:00",
+      "end": "2026-09-07T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "ip7p6tmeuu5q86tdji222of4do",
+      "title": "MC ⏳ Decompress — Lightroom Wk1",
+      "start": "2026-09-07T21:00:00+01:00",
+      "end": "2026-09-07T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "gvb8nps0ka9ikkdodrie5ndo4s",
+      "title": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-09-08T10:00:00+01:00",
+      "end": "2026-09-08T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "rm0s9co00m6mcvgolai31pin4s",
+      "title": "MC ⏳ Prep — Abstract and Macro Workshop",
+      "start": "2026-09-08T17:30:00+01:00",
+      "end": "2026-09-08T18:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "d2nc5dp4e1i4rb49aeksnr27ro",
+      "title": "MC ⏳ Decompress — Abstract and Macro Workshop",
+      "start": "2026-09-08T20:00:00+01:00",
+      "end": "2026-09-08T20:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "q24uruh2qkckdpbdd9irf8olik",
+      "title": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-09-09T10:00:00+01:00",
+      "end": "2026-09-09T11:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "qgobv8npb34asccqeqmos50vgs",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-09T12:00:00+01:00",
+      "end": "2026-09-09T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "89ukqh3nq8cjv5q4rdi5c7f4t8",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-09T13:30:00+01:00",
+      "end": "2026-09-09T14:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "fgnb006pd970bkl1nhah1sct38",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-09T14:45:00+01:00",
+      "end": "2026-09-09T15:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "547k16l0u92gbna0hm41ghgdsc",
+      "title": "MC 🚗 Travel out — Coventry Urban Architecture",
+      "start": "2026-09-09T17:30:00+01:00",
+      "end": "2026-09-09T17:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "1q9pnm2n69midodatftt5mu52o",
+      "title": "MC 🚗 Travel back — Coventry Urban → home",
+      "start": "2026-09-09T20:15:00+01:00",
+      "end": "2026-09-09T20:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "igsl4u7plj8kaa49qqmiegu5kc",
+      "title": "MC 🚗 Travel out — Yorkshire Coast (Ellerby Country Inn)",
+      "start": "2026-09-10T10:00:00+01:00",
+      "end": "2026-09-10T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "dfk6me8s7l76evpgj4cnlk11lc",
+      "title": "MC 🚗 Travel back — Yorkshire Coast → home",
+      "start": "2026-09-13T13:00:00+01:00",
+      "end": "2026-09-13T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "fmj3rff5ilb5pkns2oi447l0bk",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-09-14T10:00:00+01:00",
+      "end": "2026-09-14T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "4p59a26ekolgipb733sem84fn0",
+      "title": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-09-14T12:30:00+01:00",
+      "end": "2026-09-14T12:35:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "7m7cn4akmtq4fj0jr4521um2r0",
+      "title": "MC ⏳ Prep — Lightroom Wk2",
+      "start": "2026-09-14T18:30:00+01:00",
+      "end": "2026-09-14T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "o7l1jm290fe99802ca9h86o0rg",
+      "title": "MC ⏳ Decompress — Lightroom Wk2",
+      "start": "2026-09-14T21:00:00+01:00",
+      "end": "2026-09-14T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "MOVE",
+      "id": "lp9ar8hesvf99q7un81poa0q88",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-09-15T10:00:00+01:00",
+      "end": "2026-09-15T12:00:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "DELETE",
+      "id": "0np73n7k18621lhm2qo093j3nk",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-09-15T12:30:00+01:00",
+      "end": "2026-09-15T14:30:00+01:00",
+      "tied": true,
+      "note": "Duplicate Review/Amend (ideal 18 Sep rolled onto 15 Sep which already has the 11 Sep roll-forward). Keep lp9ar8hesvf99q7un81poa0q88."
+    },
+    {
+      "action": "MOVE",
+      "id": "2l9gkru81sdrd9dff4rqqj62o0",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-15T15:00:00+01:00",
+      "end": "2026-09-15T15:45:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "hve43mrq26rv6grnj6nu5912t4",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-15T16:15:00+01:00",
+      "end": "2026-09-15T16:45:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "KEEP",
+      "id": "f5i0273od0jt4hscbbp0i567qo",
+      "title": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2026-09-16T10:00:00+01:00",
+      "end": "2026-09-16T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "2s9t45mc597ks8onsl5gjkikbs",
+      "title": "MC 🚗 Travel out — Chesterton Windmill",
+      "start": "2026-09-16T17:00:00+01:00",
+      "end": "2026-09-16T17:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "sp7l28r2jq51nd2dk40b8pmqjk",
+      "title": "MC 🚗 Travel back — Chesterton Windmill → home",
+      "start": "2026-09-16T20:00:00+01:00",
+      "end": "2026-09-16T20:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "ebnqh5b7mmic6gj8pej0q9chh8",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-09-17T10:00:00+01:00",
+      "end": "2026-09-17T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "ke9m270v5i91bkj65ttquoetuo",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-17T12:30:00+01:00",
+      "end": "2026-09-17T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "r5vumeo1od3klkmru521o6o2rg",
+      "title": "MC ⏳ Prep — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T18:30:00+01:00",
+      "end": "2026-09-17T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "jkajtrqu9i991iulsbtcjt4sv0",
+      "title": "MC ⏳ Decompress — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T21:00:00+01:00",
+      "end": "2026-09-17T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "MOVE",
+      "id": "27r2vdvq01d02slslp9dtf0b2k",
+      "title": "MC 🚗 Travel out — Ravenstone Manor (Lake District)",
+      "start": "2026-09-18T05:15:00+01:00",
+      "end": "2026-09-18T09:00:00+01:00",
+      "tied": true,
+      "note": "zero gap before MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking"
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "title": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "start": "2026-09-18T09:00:00+01:00",
+      "end": "2026-09-18T09:20:00+01:00",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "title": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "start": "2026-09-20T09:00:00+01:00",
+      "end": "2026-09-20T09:15:00+01:00",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "KEEP",
+      "id": "q1oakaskp9qpq25gjpkukvoij8",
+      "title": "MC 🚗 Travel back — Ravenstone Manor → home",
+      "start": "2026-09-20T13:30:00+01:00",
+      "end": "2026-09-20T17:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "o1juqoe6iunemtbu8ah684qa50",
+      "title": "P1 · MC 🔁 BAU global refresh — Day 1",
+      "start": "2026-09-21T10:00:00+01:00",
+      "end": "2026-09-21T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "8ihdg0p47livbdeotgm0su4mjk",
+      "title": "MC ⏳ Prep — Lightroom Wk3",
+      "start": "2026-09-21T18:30:00+01:00",
+      "end": "2026-09-21T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "b6226mpm63vjru2teplbtdpjhs",
+      "title": "MC ⏳ Decompress — Lightroom Wk3",
+      "start": "2026-09-21T21:00:00+01:00",
+      "end": "2026-09-21T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "MOVE",
+      "id": "8vqiohta3i33gc4nkb3jkd2hlk",
+      "title": "P1 · MC 🔁 BAU global refresh — Day 2",
+      "start": "2026-09-22T10:00:00+01:00",
+      "end": "2026-09-22T14:00:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "p1abn90ci0jst37geoo530jp3c",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-22T14:30:00+01:00",
+      "end": "2026-09-22T15:15:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "MOVE",
+      "id": "q96bs6mj8316c5kplkset61ve4",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-22T15:45:00+01:00",
+      "end": "2026-09-22T16:15:00+01:00",
+      "tied": true,
+      "note": "day cap 315m > 240"
+    },
+    {
+      "action": "KEEP",
+      "id": "qr6s3ssesuru6igenm2h9o7rsc",
+      "title": "MC ⏳ Prep — Camera Course Wk1 (Tue cohort)",
+      "start": "2026-09-22T18:30:00+01:00",
+      "end": "2026-09-22T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "il2s9lki5lm4n58b3b9u8uet5c",
+      "title": "MC ⏳ Decompress — Camera Course Wk1 (Tue cohort)",
+      "start": "2026-09-22T21:00:00+01:00",
+      "end": "2026-09-22T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "m5ik6ar7ck0pplladeuij6b1ss",
+      "title": "P1 · MC 🔁 Upload sites",
+      "start": "2026-09-23T10:00:00+01:00",
+      "end": "2026-09-23T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "8v6m8ih14iuf85ehh293qhvcn8",
+      "title": "MC 🚗 Travel out — Kenilworth (Long Exposure Sunset)",
+      "start": "2026-09-23T16:55:00+01:00",
+      "end": "2026-09-23T17:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "sm70ri9322kog1i7o8l1rogk0o",
+      "title": "MC 🚗 Travel back — Kenilworth → home",
+      "start": "2026-09-23T19:45:00+01:00",
+      "end": "2026-09-23T20:05:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "s153tmtj4bkg1q4ur64ct5duog",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-09-24T10:00:00+01:00",
+      "end": "2026-09-24T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "jugne0bsl55mpg4s8q3g928m4s",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-24T12:30:00+01:00",
+      "end": "2026-09-24T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "lpdvl2cq4p0rjriecl37ektc58",
+      "title": "MC ⏳ Prep — Camera Course Wk2 (Thu cohort)",
+      "start": "2026-09-24T18:30:00+01:00",
+      "end": "2026-09-24T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "qophi0r4e2166vsu54dcftejik",
+      "title": "MC ⏳ Decompress — Camera Course Wk2 (Thu cohort)",
+      "start": "2026-09-24T21:00:00+01:00",
+      "end": "2026-09-24T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "m0e0leubsog581ue73tn170hjg",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-09-25T13:30:00+01:00",
+      "end": "2026-09-25T15:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "k81nml1orn9iunmtbfacva326k",
+      "title": "MC 🚗 Travel out — Snowdonia (Eagles Hotel, Llanrwst)",
+      "start": "2026-09-26T06:30:00+01:00",
+      "end": "2026-09-26T09:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "o35r74eqhn9hr6fg4gpkm827og",
+      "title": "MC 🚗 Travel back — Snowdonia → home",
+      "start": "2026-09-27T16:00:00+01:00",
+      "end": "2026-09-27T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "8csca43c5mtmfj0u6av8iopmgs",
+      "title": "MC ⏳ Prep — Camera Course Wk2 (Tue cohort)",
+      "start": "2026-09-29T18:30:00+01:00",
+      "end": "2026-09-29T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "t7of28qdast9pvrh4tl8c1upik",
+      "title": "MC ⏳ Decompress — Camera Course Wk2 (Tue cohort)",
+      "start": "2026-09-29T21:00:00+01:00",
+      "end": "2026-09-29T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "cnh3hjg0qivel09avr8508ocuc",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-30T10:00:00+01:00",
+      "end": "2026-09-30T10:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "r6qguiu5449eij3qnor6d7os2s",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-30T11:15:00+01:00",
+      "end": "2026-09-30T11:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "dik9s3s9qb0689mm819vnsd10g",
+      "title": "P0 · MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-10-01T10:00:00+01:00",
+      "end": "2026-10-01T11:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "2dkgfgqq7frk7a0mltl76tgb0s",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-01T11:30:00+01:00",
+      "end": "2026-10-01T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "javb92m7ha8mtsdjckjd5cqvho",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-01T14:00:00+01:00",
+      "end": "2026-10-01T15:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "g4kk445v4epa7540133tasg6bc",
+      "title": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+      "start": "2026-10-02T09:00:00+01:00",
+      "end": "2026-10-02T09:15:00+01:00",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "KEEP",
+      "id": "7hl07hc769qpjd28tf7nv66pd0",
+      "title": "MC 🚗 Travel out — Dorset Jurassic Coast (Kingston)",
+      "start": "2026-10-02T10:30:00+01:00",
+      "end": "2026-10-02T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "qu3p97gua1lutfu6h71ib0c2v0",
+      "title": "MC 🚗 Travel back — Dorset → home",
+      "start": "2026-10-04T14:00:00+01:00",
+      "end": "2026-10-04T17:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "bqo66ia9nkl4dmtgr5pv2keem0",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-05T10:00:00+01:00",
+      "end": "2026-10-05T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "rekpqrk3o1tuole39jeeajcepc",
+      "title": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-10-05T12:30:00+01:00",
+      "end": "2026-10-05T14:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "ooogv7rb35g20trae449boaeks",
+      "title": "MC 🚗 Travel out — Chesterton Windmill",
+      "start": "2026-10-05T16:30:00+01:00",
+      "end": "2026-10-05T17:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "ej5420dvi34khnt6u25uphkup0",
+      "title": "MC 🚗 Travel back — Chesterton Windmill → home",
+      "start": "2026-10-05T19:30:00+01:00",
+      "end": "2026-10-05T20:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "f8r93m06lodefh83h8bf9vnh5s",
+      "title": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-10-06T10:00:00+01:00",
+      "end": "2026-10-06T13:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "00mpb9j678jclf4pg6ubtbji58",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-07T10:00:00+01:00",
+      "end": "2026-10-07T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "q9ev8abg8tcbvleor52nreqo2k",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-07T12:30:00+01:00",
+      "end": "2026-10-07T13:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "5o7u4unsms01lvdnb90at4qr7k",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-07T13:45:00+01:00",
+      "end": "2026-10-07T14:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "nen5eu3riflb8j76jr9dcrbtu0",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-08T10:00:00+01:00",
+      "end": "2026-10-08T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "mljis4osjtfq90t42k5vssupjc",
+      "title": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-10-08T12:30:00+01:00",
+      "end": "2026-10-08T12:35:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "hnbuov59i2buktkk33lbrgue3k",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-08T13:05:00+01:00",
+      "end": "2026-10-08T14:05:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "phu3hgslksfemno987e7f6onas",
+      "title": "MC 🚗 Travel out — Lake Vyrnwy (Wales)",
+      "start": "2026-10-10T06:45:00+01:00",
+      "end": "2026-10-10T09:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "s9ii3iorl2mk67m67bbpfth8as",
+      "title": "MC 🚗 Travel back — Lake Vyrnwy → home",
+      "start": "2026-10-11T15:00:00+01:00",
+      "end": "2026-10-11T17:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "l8tll94017ijq4lpe10t18n5qo",
+      "title": "MC ⏳ Prep — Camera Course Wk1",
+      "start": "2026-10-12T18:30:00+01:00",
+      "end": "2026-10-12T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "9137562u4eb1gli8hrn1fa1gsc",
+      "title": "MC ⏳ Decompress — Camera Course Wk1",
+      "start": "2026-10-12T21:00:00+01:00",
+      "end": "2026-10-12T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "tm5umkf73jgqeti4jn4d3ha0fs",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-14T10:00:00+01:00",
+      "end": "2026-10-14T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "vr9tg4rucsurpqmcr4b4hbd3ho",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-14T12:30:00+01:00",
+      "end": "2026-10-14T13:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "0v57ocfgsbgqduu1jprf3io0u4",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-14T13:45:00+01:00",
+      "end": "2026-10-14T14:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "0k23i8v6tb643535fabee1rvfg",
+      "title": "MC ⏳ Prep — Camera Course Wk1 (2nd cohort)",
+      "start": "2026-10-14T18:30:00+01:00",
+      "end": "2026-10-14T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "hv5s99g9kdjath03k8d82aapgo",
+      "title": "MC ⏳ Decompress — Camera Course Wk1 (2nd cohort)",
+      "start": "2026-10-14T21:00:00+01:00",
+      "end": "2026-10-14T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "3bc4g7ev8hq9ogthub6h9itjjg",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-15T10:00:00+01:00",
+      "end": "2026-10-15T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "gqrt8niist5qgbn7fmernt8hf8",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-15T12:30:00+01:00",
+      "end": "2026-10-15T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "5lm9nuocr6c5bukm2q95pn5a7k",
+      "title": "MC 🚗 Travel out — Woodland Walk (Piles Coppice)",
+      "start": "2026-10-16T08:30:00+01:00",
+      "end": "2026-10-16T09:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "95tq100b2lhnndigqvsdtrpang",
+      "title": "MC 🚗 Travel back — Woodland Walk → home",
+      "start": "2026-10-16T11:30:00+01:00",
+      "end": "2026-10-16T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "0rlqvqnjnq89rtp45a8fg4nk7g",
+      "title": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2026-10-16T12:30:00+01:00",
+      "end": "2026-10-16T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "k4dqfqf1hi90gru2aramtt1cm0",
+      "title": "MC 🚗 Travel out — Padley Gorge (Peak District)",
+      "start": "2026-10-17T07:00:00+01:00",
+      "end": "2026-10-17T09:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "g7b24ukritug4srvorhn7sgoe8",
+      "title": "MC 🚗 Travel back — Padley Gorge → home",
+      "start": "2026-10-17T16:00:00+01:00",
+      "end": "2026-10-17T18:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "lsteqg0f4oja0dfcvdbbkhun6o",
+      "title": "MC ⏳ Prep — Woodland Masterclass (Autumn)",
+      "start": "2026-10-18T09:30:00+01:00",
+      "end": "2026-10-18T10:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "vptnjjj83s3tats7oug0eonga4",
+      "title": "MC ⏳ Decompress — Woodland Masterclass (Autumn)",
+      "start": "2026-10-18T16:00:00+01:00",
+      "end": "2026-10-18T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "4ibj02t47of3944a8el9hdauv8",
+      "title": "MC ⏳ Prep — Camera Course Wk2",
+      "start": "2026-10-19T18:30:00+01:00",
+      "end": "2026-10-19T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "4la74k88kovon5v541e1imjmhg",
+      "title": "MC ⏳ Decompress — Camera Course Wk2",
+      "start": "2026-10-19T21:00:00+01:00",
+      "end": "2026-10-19T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "b78m4pcq29qnvbh6b7a61hvhs4",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-21T10:00:00+01:00",
+      "end": "2026-10-21T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "90d9mv3qd36s215kjcgd1av074",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-21T12:30:00+01:00",
+      "end": "2026-10-21T13:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "5k56g9uip997d7r5k7chbl4k14",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-21T13:45:00+01:00",
+      "end": "2026-10-21T14:15:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "aug0t7pgr6mgde5brnara37a3g",
+      "title": "MC ⏳ Prep — Camera Course Wk2 (2nd cohort)",
+      "start": "2026-10-21T18:30:00+01:00",
+      "end": "2026-10-21T19:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "vfifjr4qvk80jstu75mfh85i6k",
+      "title": "MC ⏳ Decompress — Camera Course Wk2 (2nd cohort)",
+      "start": "2026-10-21T21:00:00+01:00",
+      "end": "2026-10-21T21:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "9t48j1l0cijmmnio64htssfg08",
+      "title": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-22T10:00:00+01:00",
+      "end": "2026-10-22T12:00:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "6eoan8me3iof6i8ogipmbphtp0",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-22T12:30:00+01:00",
+      "end": "2026-10-22T13:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "shp5a4c8eqdk5eklvf6ng9g2nk",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (1 of 6)",
+      "start": "2026-10-23T06:45:00+01:00",
+      "end": "2026-10-23T07:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "f96n77sq2fah5324cruup4codo",
+      "title": "MC 🚗 Travel back — Batsford → home (1 of 6)",
+      "start": "2026-10-23T15:30:00+01:00",
+      "end": "2026-10-23T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "43c0nt0g8gqimlcomqlikiclc0",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (2 of 6)",
+      "start": "2026-10-24T06:45:00+01:00",
+      "end": "2026-10-24T07:45:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "7ug6mmfjt5q799ho9hp68vl2js",
+      "title": "MC 🚗 Travel back — Batsford → home (2 of 6)",
+      "start": "2026-10-24T15:30:00+01:00",
+      "end": "2026-10-24T16:30:00+01:00",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "a0p8i0tqdbp2u92bf6hi1b1oc4",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (3 of 6)",
+      "start": "2026-10-25T06:45:00Z",
+      "end": "2026-10-25T07:45:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "tiuu70g6kq0749m807md7kns50",
+      "title": "MC 🚗 Travel back — Batsford → home (3 of 6)",
+      "start": "2026-10-25T15:30:00Z",
+      "end": "2026-10-25T16:30:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "UNMATCHED",
+      "id": "kofm1s8bjb5rdpjtgig9ereuok",
+      "title": "MC ⏰ Hotel deadline — Ravenstone Nov (£1,804) cancel by 29 Oct",
+      "start": "2026-10-26T09:00:00Z",
+      "end": "2026-10-26T09:15:00Z",
+      "tied": false,
+      "note": "colorId=10 with no tasks/recurring_log/travel_blocks tie-back — flag only, do not classify further"
+    },
+    {
+      "action": "KEEP",
+      "id": "blbsmg3d3eep409q1a43i62poo",
+      "title": "P2 · MC 🔁 Update Event Schema",
+      "start": "2026-10-26T10:00:00Z",
+      "end": "2026-10-26T12:00:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "2t56irif3nu6r4vmk0kb6v9rf0",
+      "title": "P3 · MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-10-26T12:30:00Z",
+      "end": "2026-10-26T13:30:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "ub9loha451nmepid6kk12878p4",
+      "title": "MC ⏳ Prep — Camera Course Wk3",
+      "start": "2026-10-26T18:30:00Z",
+      "end": "2026-10-26T19:00:00Z",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "vodbds307ff4gpchf8vunqp124",
+      "title": "MC ⏳ Decompress — Camera Course Wk3",
+      "start": "2026-10-26T21:00:00Z",
+      "end": "2026-10-26T21:30:00Z",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "t5g8r4ijfeg1uvr2l8o2fi1t9o",
+      "title": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-27T10:00:00Z",
+      "end": "2026-10-27T10:45:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "u5sbh8sdnokj8bfi0rlej58brc",
+      "title": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-27T11:15:00Z",
+      "end": "2026-10-27T11:45:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "4td48abfdcb0gmb036e5p05ois",
+      "title": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-28T10:00:00Z",
+      "end": "2026-10-28T11:00:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "6fnp1r7g8hr5iii4f79ku280uk",
+      "title": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-28T11:30:00Z",
+      "end": "2026-10-28T13:30:00Z",
+      "tied": true,
+      "note": "KEEP — no independent overlap/gap/cap/window breach found in Aug–Oct sweep; still subject to full re-lay if Alan chooses wipe."
+    },
+    {
+      "action": "KEEP",
+      "id": "7itjc9rjh94nphtuj9f3jt3li4",
+      "title": "MC ⏳ Prep — Camera Course Wk3 (2nd cohort)",
+      "start": "2026-10-28T18:30:00Z",
+      "end": "2026-10-28T19:00:00Z",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "hbq6l451vdjp83cvs1ugnb0fqk",
+      "title": "MC ⏳ Decompress — Camera Course Wk3 (2nd cohort)",
+      "start": "2026-10-28T21:00:00Z",
+      "end": "2026-10-28T21:30:00Z",
+      "tied": true,
+      "note": "KEEP — home prep/decompress buffer (buffer_scope=home_only)."
+    },
+    {
+      "action": "KEEP",
+      "id": "o5g6nv1a4enm7aivhaoeheubmg",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (4 of 6)",
+      "start": "2026-10-29T06:45:00Z",
+      "end": "2026-10-29T07:45:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "kbus9uclgkfukjl6ai44rvrggs",
+      "title": "MC 🚗 Travel back — Batsford → home (4 of 6)",
+      "start": "2026-10-29T15:30:00Z",
+      "end": "2026-10-29T16:30:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "p72rms55vqvd9g0fgil67mfdqc",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (5 of 6)",
+      "start": "2026-10-30T06:45:00Z",
+      "end": "2026-10-30T07:45:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "pjblkh40pn27qiib5hglp8ohck",
+      "title": "MC 🚗 Travel back — Batsford → home (5 of 6)",
+      "start": "2026-10-30T15:30:00Z",
+      "end": "2026-10-30T16:30:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "unkvrv1tstrev3dvt5jlgj73bk",
+      "title": "MC 🚗 Travel out — Batsford Arboretum (6 of 6)",
+      "start": "2026-10-31T06:45:00Z",
+      "end": "2026-10-31T07:45:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    },
+    {
+      "action": "KEEP",
+      "id": "hmqcdeaqqdo3i79sml5rpjnk84",
+      "title": "MC 🚗 Travel back — Batsford → home (6 of 6)",
+      "start": "2026-10-31T15:30:00Z",
+      "end": "2026-10-31T16:30:00Z",
+      "tied": true,
+      "note": "KEEP — travel block tied to workshop CSV / travel_blocks; depart-at-end + arrive-30 rules."
+    }
+  ]
+}

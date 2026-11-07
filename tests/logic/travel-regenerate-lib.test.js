@@ -49,4 +49,38 @@ const plan = planTravelRegenerate(
 assert(plan.changed_count === 1, `changed ${plan.changed_count}`);
 assert(plan.changes[0].out.times_changed === true, 'out times');
 assert(plan.changes[0].workshop_row_key === 'gcal:ws1', 'row key');
+
+// Same GCal id after a week+ reschedule must still link (Hartland-class move).
+const moved = planTravelRegenerate(
+  [
+    {
+      id: 'h1', block_type: 'travel_out', starts_at: '2027-02-18T08:30:00.000Z',
+      ends_at: '2027-02-18T12:30:00.000Z', venue_name: 'Devon',
+      workshop_title: 'Hartland Quay, Devon Seascape Photography Workshop',
+      workshop_start: '2027-02-18T12:30:00.000Z', drive_minutes_used: 240,
+      calendar_event_id: 'outH',
+      workshop_row_key: 'gcal:_hartland_live_id',
+    },
+    {
+      id: 'h2', block_type: 'travel_back', starts_at: '2027-02-21T12:30:00.000Z',
+      ends_at: '2027-02-21T16:30:00.000Z', venue_name: 'Devon',
+      workshop_title: 'Hartland Quay, Devon Seascape Photography Workshop',
+      workshop_start: '2027-02-18T12:30:00.000Z', drive_minutes_used: 240,
+      calendar_event_id: 'backH',
+      workshop_row_key: 'gcal:_hartland_live_id',
+    },
+  ],
+  [{
+    id: '_hartland_live_id',
+    summary: 'Hartland Quay, Devon Seascape Photography Workshop',
+    start: { dateTime: '2027-02-25T12:30:00.000Z' },
+    end: { dateTime: '2027-02-28T12:30:00.000Z' },
+    _calendarId: 'ic364d06u5bjt60d91q0nrqps6ulk7b2@import.calendar.google.com',
+  }],
+  { arrive_before_start_min: 30 },
+  [{ venue_name: 'Hartland Quay', minutes_from_home: 240 }],
+);
+assert(moved.unmatched.length === 0, `unmatched ${JSON.stringify(moved.unmatched)}`);
+assert(moved.changed_count >= 1, `moved changed ${moved.changed_count}`);
+assert(String(moved.changes[0].out.to.starts_at).startsWith('2027-02-25'), `out follows live ${moved.changes[0].out.to.starts_at}`);
 console.log('travel-regenerate-lib ok');

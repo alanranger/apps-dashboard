@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-07-27T18:59:47.260Z",
+  "flags": {
+    "auto_sync_enabled": true,
+    "auto_sync_signed_off": true,
+    "cursor_writes_available": true
+  },
+  "status_line": "Google matches DB: ✓",
+  "mismatch_count": 0,
+  "google_matches_db": true
+}

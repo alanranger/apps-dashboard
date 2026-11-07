@@ -1,0 +1,1782 @@
+{
+  "from": "2026-08-10",
+  "to": "2026-11-02",
+  "weeks": 12,
+  "calendar_writes": 0,
+  "busy_source": "gcal",
+  "write_pending": true,
+  "blog_rrule": "FREQ=WEEKLY;INTERVAL=2;BYDAY=TH",
+  "blog_cadence": "Every other Thursday",
+  "admin_gap_min": "15",
+  "decompress_after_task_min": "30",
+  "placements": [
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-08-14",
+      "day": "2026-08-13",
+      "startIso": "2026-08-13T09:00:00.000Z",
+      "endIso": "2026-08-13T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "priority": "p0",
+      "ideal_date": "2026-08-15",
+      "day": "2026-08-18",
+      "startIso": "2026-08-18T09:00:00.000Z",
+      "endIso": "2026-08-18T13:00:00.000Z",
+      "duration_min": 240
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-08-21",
+      "day": "2026-08-21",
+      "startIso": "2026-08-21T09:00:00.000Z",
+      "endIso": "2026-08-21T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-08-28",
+      "day": "2026-08-27",
+      "startIso": "2026-08-27T09:00:00.000Z",
+      "endIso": "2026-08-27T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "priority": "p0",
+      "ideal_date": "2026-09-01",
+      "day": "2026-09-01",
+      "startIso": "2026-09-01T09:00:00.000Z",
+      "endIso": "2026-09-01T10:00:00.000Z",
+      "duration_min": 60
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-09-04",
+      "day": "2026-09-03",
+      "startIso": "2026-09-03T09:00:00.000Z",
+      "endIso": "2026-09-03T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "priority": "p0",
+      "ideal_date": "2026-09-15",
+      "day": "2026-09-15",
+      "startIso": "2026-09-15T09:00:00.000Z",
+      "endIso": "2026-09-15T13:00:00.000Z",
+      "duration_min": 240
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-09-18",
+      "day": "2026-09-17",
+      "startIso": "2026-09-17T09:00:00.000Z",
+      "endIso": "2026-09-17T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-09-25",
+      "day": "2026-09-24",
+      "startIso": "2026-09-24T09:00:00.000Z",
+      "endIso": "2026-09-24T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "priority": "p0",
+      "ideal_date": "2026-10-01",
+      "day": "2026-10-01",
+      "startIso": "2026-10-01T09:00:00.000Z",
+      "endIso": "2026-10-01T10:00:00.000Z",
+      "duration_min": 60
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-10-02",
+      "day": "2026-10-01",
+      "startIso": "2026-10-01T10:15:00.000Z",
+      "endIso": "2026-10-01T10:45:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-10-09",
+      "day": "2026-10-09",
+      "startIso": "2026-10-09T12:30:00.000Z",
+      "endIso": "2026-10-09T13:00:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "priority": "p0",
+      "ideal_date": "2026-10-15",
+      "day": "2026-10-15",
+      "startIso": "2026-10-15T09:00:00.000Z",
+      "endIso": "2026-10-15T13:00:00.000Z",
+      "duration_min": 240
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-10-16",
+      "day": "2026-10-16",
+      "startIso": "2026-10-16T11:00:00.000Z",
+      "endIso": "2026-10-16T11:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-10-23",
+      "day": "2026-10-22",
+      "startIso": "2026-10-22T09:00:00.000Z",
+      "endIso": "2026-10-22T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "priority": "p0",
+      "ideal_date": "2026-10-30",
+      "day": "2026-10-30",
+      "startIso": "2026-10-30T16:00:00.000Z",
+      "endIso": "2026-10-30T16:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "priority": "p0",
+      "ideal_date": "2026-11-01",
+      "day": "2026-11-02",
+      "startIso": "2026-11-02T10:00:00.000Z",
+      "endIso": "2026-11-02T11:00:00.000Z",
+      "duration_min": 60
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-08-10",
+      "day": "2026-08-11",
+      "startIso": "2026-08-11T09:00:00.000Z",
+      "endIso": "2026-08-11T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-08-10",
+      "day": "2026-08-11",
+      "startIso": "2026-08-11T10:00:00.000Z",
+      "endIso": "2026-08-11T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-08-13",
+      "day": "2026-08-13",
+      "startIso": "2026-08-13T12:30:00.000Z",
+      "endIso": "2026-08-13T14:30:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-08-17",
+      "day": "2026-08-20",
+      "startIso": "2026-08-20T10:00:00.000Z",
+      "endIso": "2026-08-20T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-08-24",
+      "day": "2026-08-24",
+      "startIso": "2026-08-24T09:00:00.000Z",
+      "endIso": "2026-08-24T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-08-24",
+      "day": "2026-08-24",
+      "startIso": "2026-08-24T10:00:00.000Z",
+      "endIso": "2026-08-24T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-08-27",
+      "day": "2026-08-27",
+      "startIso": "2026-08-27T10:00:00.000Z",
+      "endIso": "2026-08-27T12:00:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-08-31",
+      "day": "2026-09-01",
+      "startIso": "2026-09-01T10:15:00.000Z",
+      "endIso": "2026-09-01T10:45:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-09-07",
+      "day": "2026-09-03",
+      "startIso": "2026-09-03T10:00:00.000Z",
+      "endIso": "2026-09-03T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-09-07",
+      "day": "2026-09-03",
+      "startIso": "2026-09-03T10:45:00.000Z",
+      "endIso": "2026-09-03T11:15:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "priority": "p1",
+      "ideal_date": "2026-09-07",
+      "day": "2026-09-08",
+      "startIso": "2026-09-08T09:00:00.000Z",
+      "endIso": "2026-09-08T10:30:00.000Z",
+      "duration_min": 90
+    },
+    {
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "priority": "p1",
+      "ideal_date": "2026-09-04",
+      "day": "2026-09-08",
+      "startIso": "2026-09-08T10:45:00.000Z",
+      "endIso": "2026-09-08T13:45:00.000Z",
+      "duration_min": 180
+    },
+    {
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "priority": "p1",
+      "ideal_date": "2026-09-07",
+      "day": "2026-09-09",
+      "startIso": "2026-09-09T09:00:00.000Z",
+      "endIso": "2026-09-09T12:00:00.000Z",
+      "duration_min": 180
+    },
+    {
+      "habit_id": "65bb5023-40a3-4797-8e9c-e0b85f0581b6",
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "priority": "p1",
+      "ideal_date": "2026-09-08",
+      "day": "2026-09-09",
+      "startIso": "2026-09-09T12:15:00.000Z",
+      "endIso": "2026-09-09T14:15:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-09-10",
+      "day": "2026-09-09",
+      "startIso": "2026-09-09T14:45:00.000Z",
+      "endIso": "2026-09-09T16:45:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-09-14",
+      "day": "2026-09-16",
+      "startIso": "2026-09-16T10:00:00.000Z",
+      "endIso": "2026-09-16T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-09-21",
+      "day": "2026-09-22",
+      "startIso": "2026-09-22T09:00:00.000Z",
+      "endIso": "2026-09-22T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-09-21",
+      "day": "2026-09-22",
+      "startIso": "2026-09-22T10:00:00.000Z",
+      "endIso": "2026-09-22T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-09-24",
+      "day": "2026-09-24",
+      "startIso": "2026-09-24T10:00:00.000Z",
+      "endIso": "2026-09-24T12:00:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-09-28",
+      "day": "2026-09-29",
+      "startIso": "2026-09-29T10:00:00.000Z",
+      "endIso": "2026-09-29T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-10-05",
+      "day": "2026-09-30",
+      "startIso": "2026-09-30T09:00:00.000Z",
+      "endIso": "2026-09-30T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "priority": "p1",
+      "ideal_date": "2026-10-04",
+      "day": "2026-10-06",
+      "startIso": "2026-10-06T09:00:00.000Z",
+      "endIso": "2026-10-06T12:00:00.000Z",
+      "duration_min": 180
+    },
+    {
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "priority": "p1",
+      "ideal_date": "2026-10-05",
+      "day": "2026-10-07",
+      "startIso": "2026-10-07T09:00:00.000Z",
+      "endIso": "2026-10-07T10:30:00.000Z",
+      "duration_min": 90
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-10-05",
+      "day": "2026-10-07",
+      "startIso": "2026-10-07T10:45:00.000Z",
+      "endIso": "2026-10-07T11:15:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-10-08",
+      "day": "2026-10-08",
+      "startIso": "2026-10-08T10:30:00.000Z",
+      "endIso": "2026-10-08T12:30:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-10-12",
+      "day": "2026-10-13",
+      "startIso": "2026-10-13T10:00:00.000Z",
+      "endIso": "2026-10-13T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-10-19",
+      "day": "2026-10-19",
+      "startIso": "2026-10-19T09:00:00.000Z",
+      "endIso": "2026-10-19T09:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-10-19",
+      "day": "2026-10-19",
+      "startIso": "2026-10-19T10:00:00.000Z",
+      "endIso": "2026-10-19T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "priority": "p1",
+      "ideal_date": "2026-10-22",
+      "day": "2026-10-22",
+      "startIso": "2026-10-22T10:00:00.000Z",
+      "endIso": "2026-10-22T12:00:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-10-26",
+      "day": "2026-10-27",
+      "startIso": "2026-10-27T11:00:00.000Z",
+      "endIso": "2026-10-27T11:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "priority": "p1",
+      "ideal_date": "2026-11-02",
+      "day": "2026-10-28",
+      "startIso": "2026-10-28T10:00:00.000Z",
+      "endIso": "2026-10-28T10:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "priority": "p1",
+      "ideal_date": "2026-11-02",
+      "day": "2026-10-28",
+      "startIso": "2026-10-28T11:00:00.000Z",
+      "endIso": "2026-10-28T11:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "priority": "p1",
+      "ideal_date": "2026-11-02",
+      "day": "2026-11-02",
+      "startIso": "2026-11-02T11:15:00.000Z",
+      "endIso": "2026-11-02T14:15:00.000Z",
+      "duration_min": 180
+    },
+    {
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "priority": "p1",
+      "ideal_date": "2026-11-02",
+      "day": "2026-11-02",
+      "startIso": "2026-11-02T14:30:00.000Z",
+      "endIso": "2026-11-02T16:00:00.000Z",
+      "duration_min": 90
+    },
+    {
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "priority": "p2",
+      "ideal_date": "2026-08-13",
+      "day": "2026-08-13",
+      "startIso": "2026-08-13T09:45:00.000Z",
+      "endIso": "2026-08-13T09:50:00.000Z",
+      "duration_min": 5
+    },
+    {
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "priority": "p2",
+      "ideal_date": "2026-08-24",
+      "day": "2026-08-24",
+      "startIso": "2026-08-24T10:45:00.000Z",
+      "endIso": "2026-08-24T12:45:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "priority": "p2",
+      "ideal_date": "2026-09-01",
+      "day": "2026-09-01",
+      "startIso": "2026-09-01T11:15:00.000Z",
+      "endIso": "2026-09-01T11:45:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "priority": "p2",
+      "ideal_date": "2026-09-10",
+      "day": "2026-09-15",
+      "startIso": "2026-09-15T13:30:00.000Z",
+      "endIso": "2026-09-15T13:35:00.000Z",
+      "duration_min": 5
+    },
+    {
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "priority": "p2",
+      "ideal_date": "2026-10-01",
+      "day": "2026-10-01",
+      "startIso": "2026-10-01T14:00:00.000Z",
+      "endIso": "2026-10-01T14:30:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "priority": "p2",
+      "ideal_date": "2026-10-08",
+      "day": "2026-10-08",
+      "startIso": "2026-10-08T09:45:00.000Z",
+      "endIso": "2026-10-08T09:50:00.000Z",
+      "duration_min": 5
+    },
+    {
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "priority": "p2",
+      "ideal_date": "2026-10-26",
+      "day": "2026-10-27",
+      "startIso": "2026-10-27T11:45:00.000Z",
+      "endIso": "2026-10-27T13:45:00.000Z",
+      "duration_min": 120
+    },
+    {
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "priority": "p2",
+      "ideal_date": "2026-11-01",
+      "day": "2026-11-02",
+      "startIso": "2026-11-02T16:30:00.000Z",
+      "endIso": "2026-11-02T17:00:00.000Z",
+      "duration_min": 30
+    },
+    {
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "priority": "p3",
+      "ideal_date": "2026-08-24",
+      "day": "2026-08-25",
+      "startIso": "2026-08-25T11:15:00.000Z",
+      "endIso": "2026-08-25T12:15:00.000Z",
+      "duration_min": 60
+    },
+    {
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "priority": "p3",
+      "ideal_date": "2026-10-26",
+      "day": "2026-10-27",
+      "startIso": "2026-10-27T14:00:00.000Z",
+      "endIso": "2026-10-27T15:00:00.000Z",
+      "duration_min": 60
+    }
+  ],
+  "unplaced": [
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-11",
+      "reason": "no_slot_in_horizon"
+    },
+    {
+      "habit_id": "e6d11356-6276-48af-a5d3-58874c31ce5d",
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal_date": "2026-09-09",
+      "reason": "no_slot_in_horizon"
+    }
+  ],
+  "amendments": [
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-14",
+      "startIso": "2026-08-13T09:00:00.000Z",
+      "endIso": "2026-08-13T09:30:00.000Z",
+      "calendar_event_id": "pu97pfsd1pbu3r1btfiksg4i3g",
+      "from_startIso": "2026-08-14T12:30:00.000Z",
+      "from_endIso": "2026-08-14T13:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-08-15",
+      "startIso": "2026-08-18T09:00:00.000Z",
+      "endIso": "2026-08-18T13:00:00.000Z",
+      "calendar_event_id": "akifdhv0b8435mtgmoc0p9llis"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-21",
+      "startIso": "2026-08-21T09:00:00.000Z",
+      "endIso": "2026-08-21T09:30:00.000Z",
+      "calendar_event_id": "nam69uos7cv0h23r1tectsctio"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-28",
+      "startIso": "2026-08-27T09:00:00.000Z",
+      "endIso": "2026-08-27T09:30:00.000Z",
+      "calendar_event_id": "vsrhoqvtaqv49h9jsea8ffns9o"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-09-01",
+      "startIso": "2026-09-01T09:00:00.000Z",
+      "endIso": "2026-09-01T10:00:00.000Z",
+      "calendar_event_id": "dolf2che0egmcmeo62qtat215g",
+      "from_startIso": "2026-09-02T09:00:00.000Z",
+      "from_endIso": "2026-09-02T10:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-04",
+      "startIso": "2026-09-03T09:00:00.000Z",
+      "endIso": "2026-09-03T09:30:00.000Z",
+      "calendar_event_id": "8321am7dp35dv9gpgrupcerld0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-09-15",
+      "startIso": "2026-09-15T09:00:00.000Z",
+      "endIso": "2026-09-15T13:00:00.000Z",
+      "calendar_event_id": "5ij99sf8aeb5cgt5arv3abpmks"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-18",
+      "startIso": "2026-09-17T09:00:00.000Z",
+      "endIso": "2026-09-17T09:30:00.000Z",
+      "calendar_event_id": "mar7o7e84sfmts1uee03ue9qgs"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-25",
+      "startIso": "2026-09-24T09:00:00.000Z",
+      "endIso": "2026-09-24T09:30:00.000Z",
+      "calendar_event_id": "gahi947j4i4co77nv8k5omlmc4",
+      "from_startIso": "2026-09-25T12:30:00.000Z",
+      "from_endIso": "2026-09-25T13:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-10-01",
+      "startIso": "2026-10-01T09:00:00.000Z",
+      "endIso": "2026-10-01T10:00:00.000Z",
+      "calendar_event_id": "fn8sgetu82h0klmji8gnmc2bqc"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-02",
+      "startIso": "2026-10-01T10:15:00.000Z",
+      "endIso": "2026-10-01T10:45:00.000Z",
+      "calendar_event_id": "p21tf3u6bo23b4qdrao7heca90"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-09",
+      "startIso": "2026-10-09T12:30:00.000Z",
+      "endIso": "2026-10-09T13:00:00.000Z",
+      "calendar_event_id": "ndrtogforpc3mee00drgnuthg4",
+      "from_startIso": "2026-10-08T09:00:00.000Z",
+      "from_endIso": "2026-10-08T09:30:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-10-15",
+      "startIso": "2026-10-15T09:00:00.000Z",
+      "endIso": "2026-10-15T13:00:00.000Z",
+      "calendar_event_id": "cldjiibu8ncvo1t50odfcrg0gg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-16",
+      "startIso": "2026-10-16T11:00:00.000Z",
+      "endIso": "2026-10-16T11:30:00.000Z",
+      "calendar_event_id": "j18c28u5mglu6m01al87gn5qb0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-23",
+      "startIso": "2026-10-22T09:00:00.000Z",
+      "endIso": "2026-10-22T09:30:00.000Z",
+      "calendar_event_id": "8b0gvsb2n685vlschmffti5rcc"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-30",
+      "startIso": "2026-10-30T16:00:00.000Z",
+      "endIso": "2026-10-30T16:30:00.000Z",
+      "calendar_event_id": "2ajaill0kcb0m1hu378hb6quog"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-11-01",
+      "startIso": "2026-11-02T10:00:00.000Z",
+      "endIso": "2026-11-02T11:00:00.000Z",
+      "calendar_event_id": "k4rm0gq53s0i76p7di6rov6fgc"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-08-10",
+      "startIso": "2026-08-11T09:00:00.000Z",
+      "endIso": "2026-08-11T09:30:00.000Z",
+      "calendar_event_id": "7o0mlkaivdg8168k25bqofcthg",
+      "from_startIso": "2026-08-11T14:00:00.000Z",
+      "from_endIso": "2026-08-11T14:30:00.000Z"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-10",
+      "startIso": "2026-08-11T10:00:00.000Z",
+      "endIso": "2026-08-11T10:30:00.000Z",
+      "calendar_event_id": "j42us78qngnpuaqg4b1laqc5o0",
+      "from_startIso": "2026-08-11T14:45:00.000Z",
+      "from_endIso": "2026-08-11T15:15:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-08-13",
+      "startIso": "2026-08-13T12:30:00.000Z",
+      "endIso": "2026-08-13T14:30:00.000Z",
+      "calendar_event_id": "l82hjdijjtcb7mr7aonbu4sso0"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-17",
+      "startIso": "2026-08-20T10:00:00.000Z",
+      "endIso": "2026-08-20T10:30:00.000Z",
+      "calendar_event_id": "uibifkdada70hrv2k6dthfkt6c",
+      "from_startIso": "2026-08-21T10:00:00.000Z",
+      "from_endIso": "2026-08-21T10:30:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-24T09:00:00.000Z",
+      "endIso": "2026-08-24T09:30:00.000Z",
+      "calendar_event_id": "tpli4mbdfqqheqo9rffn0gpmsk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-24T10:00:00.000Z",
+      "endIso": "2026-08-24T10:30:00.000Z",
+      "calendar_event_id": "mipr31i5b44hajds1unbun7tqk"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-08-27",
+      "startIso": "2026-08-27T10:00:00.000Z",
+      "endIso": "2026-08-27T12:00:00.000Z",
+      "calendar_event_id": "b2lntlskh9dke1glu32fk4ukmg",
+      "from_startIso": "2026-08-26T10:00:00.000Z",
+      "from_endIso": "2026-08-26T12:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-31",
+      "startIso": "2026-09-01T10:15:00.000Z",
+      "endIso": "2026-09-01T10:45:00.000Z",
+      "calendar_event_id": "ot22p2qag4gq7dm88t7ue07ml0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-03T10:00:00.000Z",
+      "endIso": "2026-09-03T10:30:00.000Z",
+      "calendar_event_id": "bllatsrpk510ogeumkgbpe4bjo"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-03T10:45:00.000Z",
+      "endIso": "2026-09-03T11:15:00.000Z",
+      "calendar_event_id": "e69uu4v4d0ekn40o515db4ks8s"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-08T09:00:00.000Z",
+      "endIso": "2026-09-08T10:30:00.000Z",
+      "calendar_event_id": "t2km44a4fie5f4qbdlaico3opg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "ideal_date": "2026-09-04",
+      "startIso": "2026-09-08T10:45:00.000Z",
+      "endIso": "2026-09-08T13:45:00.000Z",
+      "calendar_event_id": "7lk3be1msg095k38hcftofb0lk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-09T09:00:00.000Z",
+      "endIso": "2026-09-09T12:00:00.000Z",
+      "calendar_event_id": "ikq520nej9svh62qhuslb39s1s"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "65bb5023-40a3-4797-8e9c-e0b85f0581b6",
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal_date": "2026-09-08",
+      "startIso": "2026-09-09T12:15:00.000Z",
+      "endIso": "2026-09-09T14:15:00.000Z",
+      "calendar_event_id": "ejik51u6cpvgjav3lm330gs0r4"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-09-10",
+      "startIso": "2026-09-09T14:45:00.000Z",
+      "endIso": "2026-09-09T16:45:00.000Z",
+      "calendar_event_id": "b67jiebi4j69qqns37khsej7pg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-09-14",
+      "startIso": "2026-09-16T10:00:00.000Z",
+      "endIso": "2026-09-16T10:30:00.000Z",
+      "calendar_event_id": "pp3v2uldgsnes84jg2ba8mskos"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-09-21",
+      "startIso": "2026-09-22T09:00:00.000Z",
+      "endIso": "2026-09-22T09:30:00.000Z",
+      "calendar_event_id": "6nf083396njf8m0jj4g4vd2d6k"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-09-21",
+      "startIso": "2026-09-22T10:00:00.000Z",
+      "endIso": "2026-09-22T10:30:00.000Z",
+      "calendar_event_id": "f4k1pto8umdvvvb77bmpa6eoh8"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-09-24",
+      "startIso": "2026-09-24T10:00:00.000Z",
+      "endIso": "2026-09-24T12:00:00.000Z",
+      "calendar_event_id": "ine35o88h3npdf0jgi8hoq3ctc",
+      "from_startIso": "2026-09-23T10:00:00.000Z",
+      "from_endIso": "2026-09-23T12:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-09-28",
+      "startIso": "2026-09-29T10:00:00.000Z",
+      "endIso": "2026-09-29T10:30:00.000Z",
+      "calendar_event_id": "hj8ddfra80lcm17ihr0b16738o"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-10-05",
+      "startIso": "2026-09-30T09:00:00.000Z",
+      "endIso": "2026-09-30T09:30:00.000Z",
+      "calendar_event_id": "srf8ihhsbl46jcvbit7020o0m4",
+      "from_startIso": "2026-10-07T11:30:00.000Z",
+      "from_endIso": "2026-10-07T12:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "ideal_date": "2026-10-04",
+      "startIso": "2026-10-06T09:00:00.000Z",
+      "endIso": "2026-10-06T12:00:00.000Z",
+      "calendar_event_id": "3n88vel9lrjk3pgqok2i4a4hrg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal_date": "2026-10-05",
+      "startIso": "2026-10-07T09:00:00.000Z",
+      "endIso": "2026-10-07T10:30:00.000Z",
+      "calendar_event_id": "sota6fqa820ph157h75sml81fo"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-10-05",
+      "startIso": "2026-10-07T10:45:00.000Z",
+      "endIso": "2026-10-07T11:15:00.000Z",
+      "calendar_event_id": "dmre6ti7l89ip9im87tkttjjic"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-10-08",
+      "startIso": "2026-10-08T10:30:00.000Z",
+      "endIso": "2026-10-08T12:30:00.000Z",
+      "calendar_event_id": "8nnrh039jvbeahjrc5teifrgb4"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-10-12",
+      "startIso": "2026-10-13T10:00:00.000Z",
+      "endIso": "2026-10-13T10:30:00.000Z",
+      "calendar_event_id": "dpevtgs8n22ovk6r3a7bn5q6d8"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-10-19",
+      "startIso": "2026-10-19T09:00:00.000Z",
+      "endIso": "2026-10-19T09:30:00.000Z",
+      "calendar_event_id": "nrjn5ftkn63o423u96bjgi0v3g"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-10-19",
+      "startIso": "2026-10-19T10:00:00.000Z",
+      "endIso": "2026-10-19T10:30:00.000Z",
+      "calendar_event_id": "1cupeebeaj97blbmbn2o3cp75g"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-10-22",
+      "startIso": "2026-10-22T10:00:00.000Z",
+      "endIso": "2026-10-22T12:00:00.000Z",
+      "calendar_event_id": "3bertfkn0k58o67piab6m9tid8",
+      "from_startIso": "2026-10-21T10:00:00.000Z",
+      "from_endIso": "2026-10-21T12:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-10-26",
+      "startIso": "2026-10-27T11:00:00.000Z",
+      "endIso": "2026-10-27T11:30:00.000Z",
+      "calendar_event_id": "44rsl8tmmsd3kfkmc03arsk4bk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-11-02",
+      "startIso": "2026-10-28T10:00:00.000Z",
+      "endIso": "2026-10-28T10:30:00.000Z",
+      "calendar_event_id": "h1if3ebn5tua3686f6a1h5qbqk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-11-02",
+      "startIso": "2026-10-28T11:00:00.000Z",
+      "endIso": "2026-10-28T11:30:00.000Z",
+      "calendar_event_id": "l4rvku16fvbic6kn5t7bo8nfho"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal_date": "2026-11-02",
+      "startIso": "2026-11-02T11:15:00.000Z",
+      "endIso": "2026-11-02T14:15:00.000Z",
+      "calendar_event_id": "tssihm2lhttm3f8c9uv9lobun4"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal_date": "2026-11-02",
+      "startIso": "2026-11-02T14:30:00.000Z",
+      "endIso": "2026-11-02T16:00:00.000Z",
+      "calendar_event_id": "f9i0v85o7nq20lkc4gs779ouqs"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "ideal_date": "2026-08-13",
+      "startIso": "2026-08-13T09:45:00.000Z",
+      "endIso": "2026-08-13T09:50:00.000Z",
+      "calendar_event_id": "e1e96rgcg72vjfi7rud1mjdv7c"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-24T10:45:00.000Z",
+      "endIso": "2026-08-24T12:45:00.000Z",
+      "calendar_event_id": "pqgdf036ab8lu44eccrbi74lv0",
+      "from_startIso": "2026-08-25T09:00:00.000Z",
+      "from_endIso": "2026-08-25T11:00:00.000Z"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "ideal_date": "2026-09-01",
+      "startIso": "2026-09-01T11:15:00.000Z",
+      "endIso": "2026-09-01T11:45:00.000Z",
+      "calendar_event_id": "bum8jm1063ti2u0324haer8bm4",
+      "from_startIso": "2026-09-02T10:30:00.000Z",
+      "from_endIso": "2026-09-02T11:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "ideal_date": "2026-09-10",
+      "startIso": "2026-09-15T13:30:00.000Z",
+      "endIso": "2026-09-15T13:35:00.000Z",
+      "calendar_event_id": "ebpkae12n223h3dgv6gf5u74m0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "ideal_date": "2026-10-01",
+      "startIso": "2026-10-01T14:00:00.000Z",
+      "endIso": "2026-10-01T14:30:00.000Z",
+      "calendar_event_id": "g71erkg6b62vrre6dbfkg1urm0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "75c54300-e8ef-434f-af4a-51bb546b3496",
+      "title": "Check Artfully Walls Sales",
+      "ideal_date": "2026-10-08",
+      "startIso": "2026-10-08T09:45:00.000Z",
+      "endIso": "2026-10-08T09:50:00.000Z",
+      "calendar_event_id": "21pv2ok3fqgl7hvp5ibkhpca5s"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal_date": "2026-10-26",
+      "startIso": "2026-10-27T11:45:00.000Z",
+      "endIso": "2026-10-27T13:45:00.000Z",
+      "calendar_event_id": "lenrlbrn0ng7qhbta0dl0hb3l8",
+      "from_startIso": "2026-10-26T11:45:00.000Z",
+      "from_endIso": "2026-10-26T13:45:00.000Z"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "ideal_date": "2026-11-01",
+      "startIso": "2026-11-02T16:30:00.000Z",
+      "endIso": "2026-11-02T17:00:00.000Z",
+      "calendar_event_id": "up4hf8sn2kc0gsqkkk34e5teao",
+      "from_startIso": "2026-11-01T16:30:00.000Z",
+      "from_endIso": "2026-11-01T17:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-25T11:15:00.000Z",
+      "endIso": "2026-08-25T12:15:00.000Z",
+      "calendar_event_id": "9fhmk0h6jvt3e5to3lj6l0ip6c"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "ideal_date": "2026-10-26",
+      "startIso": "2026-10-27T14:00:00.000Z",
+      "endIso": "2026-10-27T15:00:00.000Z",
+      "calendar_event_id": "ld39ueebgpc40iiuip2nt0h22g",
+      "from_startIso": "2026-10-26T14:00:00.000Z",
+      "from_endIso": "2026-10-26T15:00:00.000Z"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-07-27",
+      "startIso": "2026-08-11T14:00:00.000Z",
+      "endIso": "2026-08-11T14:30:00.000Z",
+      "calendar_event_id": "2dbjb2g8g9ndtkceb4i8bc1ndk"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-03",
+      "startIso": "2026-08-11T14:45:00.000Z",
+      "endIso": "2026-08-11T15:15:00.000Z",
+      "calendar_event_id": "sosrcougkb60kuvhh03cu3re18"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "2f1a0317-aa3a-4b4a-90a6-d2b8986fe5ee",
+      "title": "Claude monthly hotel scan (instruct Claude)",
+      "ideal_date": "2026-08-01",
+      "startIso": "2026-08-12T13:15:00.000Z",
+      "endIso": "2026-08-12T13:45:00.000Z",
+      "calendar_event_id": "l8h49dashbseccm02dorivo6ns"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "38fe0fbd-3eb6-41df-9480-a862d5104cef",
+      "title": "Backup Photos to Portable Drive",
+      "ideal_date": "2026-09-28",
+      "startIso": "2026-09-30T12:00:00.000Z",
+      "endIso": "2026-09-30T13:00:00.000Z",
+      "calendar_event_id": "66lmeapgq28879kh7oli4cssmc"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "755f6aa0-3daa-470b-a4d8-c4f301ba1235",
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal_date": "2026-09-28",
+      "startIso": "2026-10-01T11:30:00.000Z",
+      "endIso": "2026-10-01T13:30:00.000Z",
+      "calendar_event_id": "g0ohugujarogfkema3ae3oa690"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "65bb5023-40a3-4797-8e9c-e0b85f0581b6",
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal_date": "2026-09-29",
+      "startIso": "2026-10-20T09:00:00.000Z",
+      "endIso": "2026-10-20T13:00:00.000Z",
+      "calendar_event_id": "n3ibveqvd1mtqsc04ddkp1bdt0"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal_date": "2026-08-03",
+      "startIso": "2026-08-21T10:45:00.000Z",
+      "endIso": "2026-08-21T13:45:00.000Z",
+      "calendar_event_id": "svvjfgm6j1547n0puvreh4ghh4"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal_date": "2026-09-28",
+      "startIso": "2026-10-14T10:45:00.000Z",
+      "endIso": "2026-10-14T14:45:00.000Z",
+      "calendar_event_id": "l61ti4979pgpcspavu89frnso8"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "ideal_date": "2026-08-04",
+      "startIso": "2026-08-19T10:45:00.000Z",
+      "endIso": "2026-08-19T13:45:00.000Z",
+      "calendar_event_id": "120gqkjb5vtl6aulsodfm3ce3s"
+    },
+    {
+      "action": "DELETE",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal_date": "2026-08-03",
+      "startIso": "2026-08-19T14:00:00.000Z",
+      "endIso": "2026-08-19T15:30:00.000Z",
+      "calendar_event_id": "cjdsgalagdrgq9t15llj67hgd4"
+    }
+  ],
+  "amendment_counts": {
+    "MOVE": 16,
+    "KEEP": 45,
+    "DELETE": 10
+  },
+  "existing_matched": 71,
+  "dated_tasks_seen": 0,
+  "pinned_busy": 0,
+  "soft_tasks": 0,
+  "auto_schedule_project_tasks": false,
+  "tasks_cleared_from_diary": 0,
+  "away_spans": [
+    {
+      "startDay": "2026-08-28",
+      "endDay": "2026-08-30",
+      "restDay": null,
+      "summary": "away:wales - Gower Peninsular"
+    },
+    {
+      "startDay": "2026-09-04",
+      "endDay": "2026-09-06",
+      "restDay": null,
+      "summary": "away:Hartland Quay"
+    },
+    {
+      "startDay": "2026-09-10",
+      "endDay": "2026-09-13",
+      "restDay": null,
+      "summary": "away:Saltburn / Ellerby"
+    },
+    {
+      "startDay": "2026-09-18",
+      "endDay": "2026-09-20",
+      "restDay": null,
+      "summary": "away:Bassenthwaite / Ravenstone"
+    },
+    {
+      "startDay": "2026-09-26",
+      "endDay": "2026-09-27",
+      "restDay": null,
+      "summary": "away:Capel Curig"
+    },
+    {
+      "startDay": "2026-10-02",
+      "endDay": "2026-10-04",
+      "restDay": null,
+      "summary": "away:Wareham / Kingston"
+    },
+    {
+      "startDay": "2026-10-10",
+      "endDay": "2026-10-11",
+      "restDay": null,
+      "summary": "away:Lake Vyrnwy"
+    }
+  ],
+  "away_span_count": 7,
+  "rest_days": [
+    {
+      "restDay": "2026-08-31",
+      "firstDay": "2026-08-28",
+      "lastDay": "2026-08-30",
+      "workshop_title": "Gower Peninsula Photo Workshop - Landscape Photography Wales",
+      "summary": "rest after multi-day: Gower Peninsula Photo Workshop - Landscape Photography Wales"
+    },
+    {
+      "restDay": "2026-09-07",
+      "firstDay": "2026-09-04",
+      "lastDay": "2026-09-06",
+      "workshop_title": "Hartland Quay, Devon Seascape Photography Workshops",
+      "summary": "rest after multi-day: Hartland Quay, Devon Seascape Photography Workshops"
+    },
+    {
+      "restDay": "2026-09-14",
+      "firstDay": "2026-09-10",
+      "lastDay": "2026-09-13",
+      "workshop_title": "Landscape Photography Workshops Yorkshire | Coast and Moors",
+      "summary": "rest after multi-day: Landscape Photography Workshops Yorkshire | Coast and Moors"
+    },
+    {
+      "restDay": "2026-09-21",
+      "firstDay": "2026-09-18",
+      "lastDay": "2026-09-20",
+      "workshop_title": "Lake District Photography Workshop Late Summer in Cumbria",
+      "summary": "rest after multi-day: Lake District Photography Workshop Late Summer in Cumbria"
+    },
+    {
+      "restDay": "2026-09-28",
+      "firstDay": "2026-09-26",
+      "lastDay": "2026-09-27",
+      "workshop_title": "Landscape Photography Snowdonia Photography Workshop",
+      "summary": "rest after multi-day: Landscape Photography Snowdonia Photography Workshop"
+    },
+    {
+      "restDay": "2026-10-05",
+      "firstDay": "2026-10-02",
+      "lastDay": "2026-10-04",
+      "workshop_title": " Dorset Photography Workshop | Jurassic Coast Photography",
+      "summary": "rest after multi-day:  Dorset Photography Workshop | Jurassic Coast Photography"
+    },
+    {
+      "restDay": "2026-10-12",
+      "firstDay": "2026-10-10",
+      "lastDay": "2026-10-11",
+      "workshop_title": "Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy ",
+      "summary": "rest after multi-day: Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy "
+    },
+    {
+      "restDay": "2026-09-14",
+      "workshop_title": "Landscape Photography Workshops Yorkshire | Coast and Moors",
+      "summary": "rest after multi-day: Landscape Photography Workshops Yorkshire | Coast and Moors"
+    },
+    {
+      "restDay": "2026-09-21",
+      "workshop_title": "Lake District Photography Workshop Late Summer in Cumbria",
+      "summary": "rest after multi-day: Lake District Photography Workshop Late Summer in Cumbria"
+    },
+    {
+      "restDay": "2026-09-28",
+      "workshop_title": "Landscape Photography Snowdonia Photography Workshop",
+      "summary": "rest after multi-day: Landscape Photography Snowdonia Photography Workshop"
+    },
+    {
+      "restDay": "2026-08-31",
+      "workshop_title": "Gower Peninsula Photo Workshop - Landscape Photography Wales",
+      "summary": "rest after multi-day: Gower Peninsula Photo Workshop - Landscape Photography Wales"
+    },
+    {
+      "restDay": "2026-09-07",
+      "workshop_title": "Hartland Quay, Devon Seascape Photography Workshops",
+      "summary": "rest after multi-day: Hartland Quay, Devon Seascape Photography Workshops"
+    },
+    {
+      "restDay": "2026-10-05",
+      "workshop_title": " Dorset Photography Workshop | Jurassic Coast Photography",
+      "summary": "rest after multi-day:  Dorset Photography Workshop | Jurassic Coast Photography"
+    },
+    {
+      "restDay": "2026-10-12",
+      "workshop_title": "Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy ",
+      "summary": "rest after multi-day: Wales Photography Workshop Pistyll Rhaeadr and Lake Vyrnwy "
+    }
+  ],
+  "rest_day_count": 14,
+  "teaching_days": [],
+  "teaching_day_count": 0,
+  "task_bumps": [],
+  "task_bump_count": 0,
+  "task_bump_scheduled": 0,
+  "task_bump_unplaced": 0,
+  "task_db_applied": 0,
+  "habit_db_applied": 26,
+  "blocked_day_cleared": [],
+  "habit_rolls": {
+    "rolled": 5,
+    "rehomed": 2,
+    "orphans_retired": 7
+  },
+  "unplaced_alerts": 0,
+  "shared_calendar_flags": [],
+  "skipped_past": 0,
+  "proof": {
+    "ok": true,
+    "fails": [],
+    "bumps": []
+  },
+  "proof_ok": true,
+  "proof_writes_blocked": false,
+  "pending_wrote": 26,
+  "sample_unplaced": [
+    {
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-11",
+      "reason": "no_slot_in_horizon"
+    },
+    {
+      "habit_id": "e6d11356-6276-48af-a5d3-58874c31ce5d",
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal_date": "2026-09-09",
+      "reason": "no_slot_in_horizon"
+    }
+  ],
+  "sample_amendments": [
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-14",
+      "startIso": "2026-08-13T09:00:00.000Z",
+      "endIso": "2026-08-13T09:30:00.000Z",
+      "calendar_event_id": "pu97pfsd1pbu3r1btfiksg4i3g",
+      "from_startIso": "2026-08-14T12:30:00.000Z",
+      "from_endIso": "2026-08-14T13:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-08-15",
+      "startIso": "2026-08-18T09:00:00.000Z",
+      "endIso": "2026-08-18T13:00:00.000Z",
+      "calendar_event_id": "akifdhv0b8435mtgmoc0p9llis"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-21",
+      "startIso": "2026-08-21T09:00:00.000Z",
+      "endIso": "2026-08-21T09:30:00.000Z",
+      "calendar_event_id": "nam69uos7cv0h23r1tectsctio"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-08-28",
+      "startIso": "2026-08-27T09:00:00.000Z",
+      "endIso": "2026-08-27T09:30:00.000Z",
+      "calendar_event_id": "vsrhoqvtaqv49h9jsea8ffns9o"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-09-01",
+      "startIso": "2026-09-01T09:00:00.000Z",
+      "endIso": "2026-09-01T10:00:00.000Z",
+      "calendar_event_id": "dolf2che0egmcmeo62qtat215g",
+      "from_startIso": "2026-09-02T09:00:00.000Z",
+      "from_endIso": "2026-09-02T10:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-04",
+      "startIso": "2026-09-03T09:00:00.000Z",
+      "endIso": "2026-09-03T09:30:00.000Z",
+      "calendar_event_id": "8321am7dp35dv9gpgrupcerld0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-09-15",
+      "startIso": "2026-09-15T09:00:00.000Z",
+      "endIso": "2026-09-15T13:00:00.000Z",
+      "calendar_event_id": "5ij99sf8aeb5cgt5arv3abpmks"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-18",
+      "startIso": "2026-09-17T09:00:00.000Z",
+      "endIso": "2026-09-17T09:30:00.000Z",
+      "calendar_event_id": "mar7o7e84sfmts1uee03ue9qgs"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-09-25",
+      "startIso": "2026-09-24T09:00:00.000Z",
+      "endIso": "2026-09-24T09:30:00.000Z",
+      "calendar_event_id": "gahi947j4i4co77nv8k5omlmc4",
+      "from_startIso": "2026-09-25T12:30:00.000Z",
+      "from_endIso": "2026-09-25T13:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-10-01",
+      "startIso": "2026-10-01T09:00:00.000Z",
+      "endIso": "2026-10-01T10:00:00.000Z",
+      "calendar_event_id": "fn8sgetu82h0klmji8gnmc2bqc"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-02",
+      "startIso": "2026-10-01T10:15:00.000Z",
+      "endIso": "2026-10-01T10:45:00.000Z",
+      "calendar_event_id": "p21tf3u6bo23b4qdrao7heca90"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-09",
+      "startIso": "2026-10-09T12:30:00.000Z",
+      "endIso": "2026-10-09T13:00:00.000Z",
+      "calendar_event_id": "ndrtogforpc3mee00drgnuthg4",
+      "from_startIso": "2026-10-08T09:00:00.000Z",
+      "from_endIso": "2026-10-08T09:30:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "c2f135c9-7146-415d-8231-c2460a064e94",
+      "title": "Light & Logic newsletter issue",
+      "ideal_date": "2026-10-15",
+      "startIso": "2026-10-15T09:00:00.000Z",
+      "endIso": "2026-10-15T13:00:00.000Z",
+      "calendar_event_id": "cldjiibu8ncvo1t50odfcrg0gg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-16",
+      "startIso": "2026-10-16T11:00:00.000Z",
+      "endIso": "2026-10-16T11:30:00.000Z",
+      "calendar_event_id": "j18c28u5mglu6m01al87gn5qb0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-23",
+      "startIso": "2026-10-22T09:00:00.000Z",
+      "endIso": "2026-10-22T09:30:00.000Z",
+      "calendar_event_id": "8b0gvsb2n685vlschmffti5rcc"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "dd4c3659-93a2-49ae-affe-152d350a914f",
+      "title": "Send Out Joining Details",
+      "ideal_date": "2026-10-30",
+      "startIso": "2026-10-30T16:00:00.000Z",
+      "endIso": "2026-10-30T16:30:00.000Z",
+      "calendar_event_id": "2ajaill0kcb0m1hu378hb6quog"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "e1423beb-0c21-42c4-ae8d-77a14f78e7e6",
+      "title": "Booking Sheet, Month End Update",
+      "ideal_date": "2026-11-01",
+      "startIso": "2026-11-02T10:00:00.000Z",
+      "endIso": "2026-11-02T11:00:00.000Z",
+      "calendar_event_id": "k4rm0gq53s0i76p7di6rov6fgc"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-08-10",
+      "startIso": "2026-08-11T09:00:00.000Z",
+      "endIso": "2026-08-11T09:30:00.000Z",
+      "calendar_event_id": "7o0mlkaivdg8168k25bqofcthg",
+      "from_startIso": "2026-08-11T14:00:00.000Z",
+      "from_endIso": "2026-08-11T14:30:00.000Z"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-10",
+      "startIso": "2026-08-11T10:00:00.000Z",
+      "endIso": "2026-08-11T10:30:00.000Z",
+      "calendar_event_id": "j42us78qngnpuaqg4b1laqc5o0",
+      "from_startIso": "2026-08-11T14:45:00.000Z",
+      "from_endIso": "2026-08-11T15:15:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-08-13",
+      "startIso": "2026-08-13T12:30:00.000Z",
+      "endIso": "2026-08-13T14:30:00.000Z",
+      "calendar_event_id": "l82hjdijjtcb7mr7aonbu4sso0"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-17",
+      "startIso": "2026-08-20T10:00:00.000Z",
+      "endIso": "2026-08-20T10:30:00.000Z",
+      "calendar_event_id": "uibifkdada70hrv2k6dthfkt6c",
+      "from_startIso": "2026-08-21T10:00:00.000Z",
+      "from_endIso": "2026-08-21T10:30:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-24T09:00:00.000Z",
+      "endIso": "2026-08-24T09:30:00.000Z",
+      "calendar_event_id": "tpli4mbdfqqheqo9rffn0gpmsk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-24",
+      "startIso": "2026-08-24T10:00:00.000Z",
+      "endIso": "2026-08-24T10:30:00.000Z",
+      "calendar_event_id": "mipr31i5b44hajds1unbun7tqk"
+    },
+    {
+      "action": "MOVE",
+      "habit_id": "2d5898bd-fa64-42d7-9649-d16fa771e945",
+      "title": "Publish Blog Post",
+      "ideal_date": "2026-08-27",
+      "startIso": "2026-08-27T10:00:00.000Z",
+      "endIso": "2026-08-27T12:00:00.000Z",
+      "calendar_event_id": "b2lntlskh9dke1glu32fk4ukmg",
+      "from_startIso": "2026-08-26T10:00:00.000Z",
+      "from_endIso": "2026-08-26T12:00:00.000Z"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-08-31",
+      "startIso": "2026-09-01T10:15:00.000Z",
+      "endIso": "2026-09-01T10:45:00.000Z",
+      "calendar_event_id": "ot22p2qag4gq7dm88t7ue07ml0"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "fc32dffb-6b5d-434b-86b9-d484ce434127",
+      "title": "Hotel bookings — Alan actions",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-03T10:00:00.000Z",
+      "endIso": "2026-09-03T10:30:00.000Z",
+      "calendar_event_id": "bllatsrpk510ogeumkgbpe4bjo"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "0a7aa275-b148-4364-a184-fc14daea8edb",
+      "title": "Review/Amend Course & Workshop Dates",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-03T10:45:00.000Z",
+      "endIso": "2026-09-03T11:15:00.000Z",
+      "calendar_event_id": "e69uu4v4d0ekn40o515db4ks8s"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-08T09:00:00.000Z",
+      "endIso": "2026-09-08T10:30:00.000Z",
+      "calendar_event_id": "t2km44a4fie5f4qbdlaico3opg"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "6ec9689d-5426-4276-9e17-824cb4ea4fc1",
+      "title": "SEO Performance Review",
+      "ideal_date": "2026-09-04",
+      "startIso": "2026-09-08T10:45:00.000Z",
+      "endIso": "2026-09-08T13:45:00.000Z",
+      "calendar_event_id": "7lk3be1msg095k38hcftofb0lk"
+    },
+    {
+      "action": "KEEP",
+      "habit_id": "b002933c-0068-4dca-8661-f4098ccd714d",
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal_date": "2026-09-07",
+      "startIso": "2026-09-09T09:00:00.000Z",
+      "endIso": "2026-09-09T12:00:00.000Z",
+      "calendar_event_id": "ikq520nej9svh62qhuslb39s1s"
+    }
+  ],
+  "cleaner_on_primary": true
+}

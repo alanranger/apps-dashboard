@@ -1,0 +1,131 @@
+{
+  "range": {
+    "from": "2026-07-27",
+    "to": "2026-09-20",
+    "weeks": 8
+  },
+  "drift_count": 15,
+  "fixture_dupe_days": [],
+  "awaiting_or_out_of_sync": [
+    {
+      "day": "2026-08-22",
+      "title": "MC ⚽ Before: Ipswich Town vs Sunderland",
+      "when": "13:00–16:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-08-22",
+      "title": "MC ⚽ After: Ipswich Town vs Sunderland",
+      "when": "16:00–19:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-08-30",
+      "title": "MC ⚽ Before: Manchester United vs Ipswich Town",
+      "when": "14:30–17:30",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-08-30",
+      "title": "MC ⚽ After: Manchester United vs Ipswich Town",
+      "when": "17:30–20:30",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-04",
+      "title": "MC ⚽ Before: Ipswich Town vs Liverpool",
+      "when": "18:00–21:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-04",
+      "title": "MC ⚽ After: Ipswich Town vs Liverpool",
+      "when": "21:00–00:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-12",
+      "title": "MC ⚽ Before: Crystal Palace vs Ipswich Town",
+      "when": "13:00–16:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-12",
+      "title": "MC ⚽ After: Crystal Palace vs Ipswich Town",
+      "when": "16:00–19:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-19",
+      "title": "MC ⚽ Before: Everton vs Ipswich Town",
+      "when": "13:00–16:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-19",
+      "title": "MC ⚽ After: Everton vs Ipswich Town",
+      "when": "16:00–19:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-08-22",
+      "title": "⚽️ Ipswich Town vs Sunderland",
+      "when": "14:00–18:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-08-30",
+      "title": "⚽️ Manchester United vs Ipswich Town",
+      "when": "15:30–19:30",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-04",
+      "title": "⚽️ Ipswich Town vs Liverpool",
+      "when": "19:00–23:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-12",
+      "title": "⚽️ Crystal Palace vs Ipswich Town",
+      "when": "14:00–18:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    },
+    {
+      "day": "2026-09-19",
+      "title": "⚽️ Everton vs Ipswich Town",
+      "when": "14:00–18:00",
+      "awaiting_push": false,
+      "out_of_sync": true,
+      "gcal": null
+    }
+  ]
+}

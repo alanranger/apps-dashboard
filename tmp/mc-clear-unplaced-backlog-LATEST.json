@@ -1,0 +1,612 @@
+{
+  "apply": true,
+  "stuck_before": 57,
+  "created": 51,
+  "adopted": 0,
+  "failed": 0,
+  "still_unplaced": 6,
+  "still": [
+    {
+      "title": "Send Out Joining Details",
+      "ideal": "2027-01-01",
+      "reason": "no_slot"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-12-30",
+      "reason": "no_slot"
+    },
+    {
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-12-30",
+      "reason": "no_slot"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2026-07-28",
+      "reason": "past_no_forward_slot"
+    },
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2026-11-18",
+      "reason": "no_slot"
+    },
+    {
+      "title": "BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "ideal": "2026-09-21",
+      "reason": "no_slot"
+    }
+  ],
+  "written_sample": [
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2027-01-13",
+      "day": "2027-01-13",
+      "how": "create",
+      "id": "fkv7nvu4o3l2a065889223h348"
+    },
+    {
+      "title": "Light & Logic newsletter issue",
+      "ideal": "2026-08-15",
+      "day": "2026-08-17",
+      "how": "create",
+      "id": "e8vra3lipu2jj97qlnn3tsh3cs"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-10-04",
+      "day": "2026-10-06",
+      "how": "create",
+      "id": "j0dg23ns5qp0r5h2mdgkcr6168"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-12-31",
+      "day": "2027-01-06",
+      "how": "create",
+      "id": "j818hhd40mm5tb8bkcrr4gg008"
+    },
+    {
+      "title": "Light & Logic newsletter issue",
+      "ideal": "2026-12-15",
+      "day": "2026-12-15",
+      "how": "create",
+      "id": "7pjcldbfrgpa0f0dmk37r7d51k"
+    },
+    {
+      "title": "Send Out Joining Details",
+      "ideal": "2026-12-25",
+      "day": "2026-12-22",
+      "how": "create",
+      "id": "hb3u7qdbpfnd2nfet293f964f8"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-12-04",
+      "day": "2026-12-04",
+      "how": "create",
+      "id": "m4einkprq7vthmtpqpbjffvk7s"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2027-01-12",
+      "day": "2027-01-07",
+      "how": "create",
+      "id": "vhrivq5ij4sgtebjcskfssv2ks"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2027-01-15",
+      "day": "2027-01-15",
+      "how": "create",
+      "id": "00oi41g9kse53cp7i2isiij06g"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-12-25",
+      "day": "2026-12-22",
+      "how": "create",
+      "id": "hm9u3rvip2br6necamhkr2km4k"
+    },
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2026-07-29",
+      "day": "2026-07-29",
+      "how": "create",
+      "id": "6bqoeolsio779d6l4qsvrdj7sk"
+    },
+    {
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-11-18",
+      "day": "2026-11-18",
+      "how": "create",
+      "id": "un8476k78nohgs10265umiqkjo"
+    },
+    {
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-08-05",
+      "day": "2026-07-31",
+      "how": "create",
+      "id": "a9q5cm5dorfaqgadabpcrgtmvs"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-08-05",
+      "day": "2026-07-31",
+      "how": "create",
+      "id": "4okdhb83vblpkjkv7d3i9h45pk"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-11-18",
+      "day": "2026-11-18",
+      "how": "create",
+      "id": "mnlqniu8ps71g7omb3aqoidrjk"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-07-29",
+      "day": "2026-07-29",
+      "how": "create",
+      "id": "vaiv45sr7oqfb2s2sqtt80rmug"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-29",
+      "day": "2026-10-28",
+      "how": "create",
+      "id": "lj4m40n8726lbojr08118eiapk"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-26",
+      "day": "2026-11-26",
+      "how": "create",
+      "id": "5vaqr3qqt8pj5gks5vb4th900c"
+    },
+    {
+      "title": "Check Artfully Walls Sales",
+      "ideal": "2026-11-12",
+      "day": "2026-11-17",
+      "how": "create",
+      "id": "tiosfnoq8isltu0lt69jrkn0qs"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-16",
+      "day": "2026-10-16",
+      "how": "create",
+      "id": "1billja9p250u2j9842et9ji6k"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-19",
+      "day": "2026-11-19",
+      "how": "create",
+      "id": "710vb7672khahr7m7ieheeab9o"
+    },
+    {
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal": "2026-10-26",
+      "day": "2026-10-26",
+      "how": "create",
+      "id": "8pntqnidi7hmnq8ck9fig44d04"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-30",
+      "day": "2026-11-02",
+      "how": "create",
+      "id": "jlkc5ko6vsst8gr7t7sfj4stu4"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-11-13",
+      "day": "2026-11-17",
+      "how": "create",
+      "id": "ou20e2n9s6lhga572a62qmoi2c"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-15",
+      "day": "2026-10-15",
+      "how": "create",
+      "id": "fhaj7ri1gp22rdtsgb4iec35cg"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-23",
+      "day": "2026-10-21",
+      "how": "create",
+      "id": "o879ghf8mtqjhil277r02lhv0k"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-09",
+      "day": "2026-10-09",
+      "how": "create",
+      "id": "mn7rjjcje2t8nirqh7pkitit98"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-01",
+      "day": "2026-10-01",
+      "how": "create",
+      "id": "j4ceq5sqeet6ofmvj6r0gf0424"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2026-11-17",
+      "day": "2026-11-10",
+      "how": "create",
+      "id": "k1amsd83g8njf4bvaep5u8s66g"
+    },
+    {
+      "title": "Backup Photos to Portable Drive",
+      "ideal": "2026-10-26",
+      "day": "2026-10-26",
+      "how": "create",
+      "id": "phlhmmociuf68arsd1fohib61c"
+    }
+  ],
+  "written_total": 51,
+  "written": [
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2027-01-13",
+      "day": "2027-01-13",
+      "how": "create",
+      "id": "fkv7nvu4o3l2a065889223h348"
+    },
+    {
+      "title": "Light & Logic newsletter issue",
+      "ideal": "2026-08-15",
+      "day": "2026-08-17",
+      "how": "create",
+      "id": "e8vra3lipu2jj97qlnn3tsh3cs"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-10-04",
+      "day": "2026-10-06",
+      "how": "create",
+      "id": "j0dg23ns5qp0r5h2mdgkcr6168"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-12-31",
+      "day": "2027-01-06",
+      "how": "create",
+      "id": "j818hhd40mm5tb8bkcrr4gg008"
+    },
+    {
+      "title": "Light & Logic newsletter issue",
+      "ideal": "2026-12-15",
+      "day": "2026-12-15",
+      "how": "create",
+      "id": "7pjcldbfrgpa0f0dmk37r7d51k"
+    },
+    {
+      "title": "Send Out Joining Details",
+      "ideal": "2026-12-25",
+      "day": "2026-12-22",
+      "how": "create",
+      "id": "hb3u7qdbpfnd2nfet293f964f8"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-12-04",
+      "day": "2026-12-04",
+      "how": "create",
+      "id": "m4einkprq7vthmtpqpbjffvk7s"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2027-01-12",
+      "day": "2027-01-07",
+      "how": "create",
+      "id": "vhrivq5ij4sgtebjcskfssv2ks"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2027-01-15",
+      "day": "2027-01-15",
+      "how": "create",
+      "id": "00oi41g9kse53cp7i2isiij06g"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-12-25",
+      "day": "2026-12-22",
+      "how": "create",
+      "id": "hm9u3rvip2br6necamhkr2km4k"
+    },
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2026-07-29",
+      "day": "2026-07-29",
+      "how": "create",
+      "id": "6bqoeolsio779d6l4qsvrdj7sk"
+    },
+    {
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-11-18",
+      "day": "2026-11-18",
+      "how": "create",
+      "id": "un8476k78nohgs10265umiqkjo"
+    },
+    {
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-08-05",
+      "day": "2026-07-31",
+      "how": "create",
+      "id": "a9q5cm5dorfaqgadabpcrgtmvs"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-08-05",
+      "day": "2026-07-31",
+      "how": "create",
+      "id": "4okdhb83vblpkjkv7d3i9h45pk"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-11-18",
+      "day": "2026-11-18",
+      "how": "create",
+      "id": "mnlqniu8ps71g7omb3aqoidrjk"
+    },
+    {
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-07-29",
+      "day": "2026-07-29",
+      "how": "create",
+      "id": "vaiv45sr7oqfb2s2sqtt80rmug"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-29",
+      "day": "2026-10-28",
+      "how": "create",
+      "id": "lj4m40n8726lbojr08118eiapk"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-26",
+      "day": "2026-11-26",
+      "how": "create",
+      "id": "5vaqr3qqt8pj5gks5vb4th900c"
+    },
+    {
+      "title": "Check Artfully Walls Sales",
+      "ideal": "2026-11-12",
+      "day": "2026-11-17",
+      "how": "create",
+      "id": "tiosfnoq8isltu0lt69jrkn0qs"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-16",
+      "day": "2026-10-16",
+      "how": "create",
+      "id": "1billja9p250u2j9842et9ji6k"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-19",
+      "day": "2026-11-19",
+      "how": "create",
+      "id": "710vb7672khahr7m7ieheeab9o"
+    },
+    {
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal": "2026-10-26",
+      "day": "2026-10-26",
+      "how": "create",
+      "id": "8pntqnidi7hmnq8ck9fig44d04"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-30",
+      "day": "2026-11-02",
+      "how": "create",
+      "id": "jlkc5ko6vsst8gr7t7sfj4stu4"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-11-13",
+      "day": "2026-11-17",
+      "how": "create",
+      "id": "ou20e2n9s6lhga572a62qmoi2c"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-15",
+      "day": "2026-10-15",
+      "how": "create",
+      "id": "fhaj7ri1gp22rdtsgb4iec35cg"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-23",
+      "day": "2026-10-21",
+      "how": "create",
+      "id": "o879ghf8mtqjhil277r02lhv0k"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-09",
+      "day": "2026-10-09",
+      "how": "create",
+      "id": "mn7rjjcje2t8nirqh7pkitit98"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-10-01",
+      "day": "2026-10-01",
+      "how": "create",
+      "id": "j4ceq5sqeet6ofmvj6r0gf0424"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2026-11-17",
+      "day": "2026-11-10",
+      "how": "create",
+      "id": "k1amsd83g8njf4bvaep5u8s66g"
+    },
+    {
+      "title": "Backup Photos to Portable Drive",
+      "ideal": "2026-10-26",
+      "day": "2026-10-26",
+      "how": "create",
+      "id": "phlhmmociuf68arsd1fohib61c"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-12",
+      "day": "2026-11-09",
+      "how": "create",
+      "id": "ggilf8i8bfq0q2v8qvn9men2ko"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-11-04",
+      "day": "2026-11-06",
+      "how": "create",
+      "id": "laq7e1vhvmsod1nmo2snfoj9i8"
+    },
+    {
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2026-09-22",
+      "day": "2026-09-29",
+      "how": "create",
+      "id": "943hbo8p495um2dpn1fpa2uc0k"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-25",
+      "day": "2026-09-25",
+      "how": "create",
+      "id": "7ko25aacnq23t8s7v6ogbq5mek"
+    },
+    {
+      "title": "Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "ideal": "2026-09-23",
+      "day": "2026-09-23",
+      "how": "create",
+      "id": "5505re3a9diif3bunbt3tijuak"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-09-17",
+      "day": "2026-09-17",
+      "how": "create",
+      "id": "vbes4beqj3ltl0tiu01a8sa7g0"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-18",
+      "day": "2026-09-22",
+      "how": "create",
+      "id": "pk20tibkipaqd1r1lkogf16jb4"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-09-03",
+      "day": "2026-09-03",
+      "how": "create",
+      "id": "dd1bundcbh2kt089pe5lvj206c"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-09-04",
+      "day": "2026-09-08",
+      "how": "create",
+      "id": "oshfvnk7j2iq7iskk3bgi55q54"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-11",
+      "day": "2026-09-09",
+      "how": "create",
+      "id": "1rvjpl9fvptmgp826pv602ramg"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-09-10",
+      "day": "2026-09-16",
+      "how": "create",
+      "id": "coetm1mh1g210gihqshkq3l2a4"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-08-28",
+      "day": "2026-09-01",
+      "how": "create",
+      "id": "s25f39hnt3guj895bblie9jm0o"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-07-30",
+      "day": "2026-07-28",
+      "how": "create",
+      "id": "889lashheke425psg59afehmjs"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-08-14",
+      "day": "2026-08-14",
+      "how": "create",
+      "id": "ncm08knnal8km33h96gr02hpac"
+    },
+    {
+      "title": "Backup Photos to Portable Drive",
+      "ideal": "2026-08-24",
+      "day": "2026-08-24",
+      "how": "create",
+      "id": "q4ds38k5tsvcs4bdq2ooi6i7o8"
+    },
+    {
+      "title": "Publish Blog Post",
+      "ideal": "2026-08-20",
+      "day": "2026-08-20",
+      "how": "create",
+      "id": "1ep9vren6gt4igcth5iq8d0cvs"
+    },
+    {
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-07-31",
+      "day": "2026-07-30",
+      "how": "create",
+      "id": "fvbqtmqr22hmm5b77s9mkui4ms"
+    },
+    {
+      "title": "Send Out Joining Details",
+      "ideal": "2026-08-07",
+      "day": "2026-07-31",
+      "how": "create",
+      "id": "0fe5773n9cdvs7ih9738h1nk5g"
+    },
+    {
+      "title": "SEO Performance Review",
+      "ideal": "2026-08-04",
+      "day": "2026-08-10",
+      "how": "create",
+      "id": "7v228oj5imddftang1boe39cd0"
+    },
+    {
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal": "2026-08-24",
+      "day": "2026-08-24",
+      "how": "create",
+      "id": "8l9eaou27tqcecmk91peo8qg88"
+    },
+    {
+      "title": "Booking Sheet, Month End Update",
+      "ideal": "2026-08-01",
+      "day": "2026-08-08",
+      "how": "create",
+      "id": "tipmgdkrn9k46pkrkg6phm5u4c"
+    }
+  ]
+}

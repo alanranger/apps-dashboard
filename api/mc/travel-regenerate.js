@@ -5,60 +5,8 @@
 const {
   envReady, json, cors, readBody, requireAuth, actorFromSession, sb,
 } = require('./_lib');
-const { gcalConfigured, fetchHorizonEvents } = require('./gcal-lib');
-const { planTravelRegenerate } = require('./travel-regenerate-lib');
-const { upsertPushRow } = require('./gcal-push-lib');
-const { ruleMapFromRows } = require('./scheduling-rules-lib');
-
-async function patchBlock(id, patch) {
-  await sb(`travel_blocks?id=eq.${id}`, {
-    method: 'PATCH',
-    prefer: 'return=minimal',
-    body: patch,
-  });
-}
-
-async function queueTravelMove(actor, blockMeta, to, venue, title, prefixes) {
-  if (!blockMeta.calendar_event_id) return null;
-  const { travelGcalTitle, travelGcalLocation, travelGcalDescription } = require('./gcal-title-lib');
-  const related = `gcal:travel:${blockMeta.id}`;
-  const block = {
-    block_type: blockMeta.block_type,
-    venue_name: venue,
-    workshop_title: title,
-    leg_from: blockMeta.leg_from,
-    leg_to: blockMeta.leg_to,
-    drive_minutes_used: blockMeta.drive_minutes_used,
-  };
-  const gcalTitle = travelGcalTitle(block, prefixes || {});
-  await upsertPushRow(sb, {
-    related_id: related,
-    entity_type: 'travel',
-    change_kind: 'move',
-    summary: `Move ${blockMeta.block_type || 'travel'} ${venue || ''} → follow workshop`.trim(),
-    proposed_action: [
-      `MOVE Primary event ${blockMeta.calendar_event_id}`,
-      `to ${to.starts_at} – ${to.ends_at} (convert to Europe/London wall-clock; no Z).`,
-      `Workshop: ${title || ''}.`,
-    ].join(' '),
-    payload: {
-      calendar_event_id: blockMeta.calendar_event_id,
-      block_type: blockMeta.block_type,
-      new_start: to.starts_at,
-      new_end: to.ends_at,
-      venue,
-      workshop_title: title,
-      title: gcalTitle,
-      location: travelGcalLocation(block),
-      description: travelGcalDescription(block),
-      leg_from: blockMeta.leg_from || null,
-      leg_to: blockMeta.leg_to || null,
-      drive_minutes_used: blockMeta.drive_minutes_used ?? null,
-      actor,
-    },
-  });
-  return related;
-}
+const { gcalConfigured } = require('./gcal-lib');
+const { runTravelFollowLive } = require('./travel-regenerate-apply-lib');
 
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;
@@ -88,91 +36,19 @@ module.exports = async function handler(req, res) {
     const actor = actorFromSession(session, body);
     const apply = body.apply === true || body.dry_run === false;
     const weeks = Math.min(104, Math.max(4, Number(body.weeks) || 52));
-    const now = Date.now();
-    const timeMin = new Date(now - 7 * 86400000).toISOString();
-    const timeMax = new Date(now + weeks * 7 * 86400000).toISOString();
-
-    const [blocks, rules, venues, gcal] = await Promise.all([
-      sb('travel_blocks?select=*&order=starts_at.asc'),
-      sb('scheduling_rules?select=key,value'),
-      sb('venue_drive_times?select=venue_name,postcode,minutes_from_home,verified_at'),
-      fetchHorizonEvents(timeMin, timeMax),
-    ]);
-    const ruleMap = ruleMapFromRows(rules);
-    const plan = planTravelRegenerate(blocks || [], gcal.events || [], ruleMap, venues || []);
-
-    const applied = [];
-    if (apply) {
-      for (const row of plan.linked || []) {
-        const outPatch = {
-          workshop_start: row.workshop_live_start,
-          workshop_row_key: row.workshop_row_key,
-          workshop_title: row.title,
-          drive_minutes_used: row.drive_minutes,
-        };
-        const backPatch = { ...outPatch };
-        if (row.out.changed) {
-          outPatch.starts_at = row.out.to.starts_at;
-          outPatch.ends_at = row.out.to.ends_at;
-        }
-        if (row.back.changed) {
-          backPatch.starts_at = row.back.to.starts_at;
-          backPatch.ends_at = row.back.to.ends_at;
-        }
-        await patchBlock(row.out.id, outPatch);
-        await patchBlock(row.back.id, backPatch);
-        if (row.out.times_changed) {
-          const outRow = (blocks || []).find((b) => b.id === row.out.id) || {};
-          await queueTravelMove(actor, {
-            id: row.out.id,
-            calendar_event_id: row.out.calendar_event_id,
-            block_type: 'travel_out',
-            leg_from: outRow.leg_from,
-            leg_to: outRow.leg_to,
-            drive_minutes_used: row.drive_minutes ?? outRow.drive_minutes_used,
-          }, row.out.to, row.venue, row.title);
-        }
-        if (row.back.times_changed) {
-          const backRow = (blocks || []).find((b) => b.id === row.back.id) || {};
-          await queueTravelMove(actor, {
-            id: row.back.id,
-            calendar_event_id: row.back.calendar_event_id,
-            block_type: 'travel_back',
-            leg_from: backRow.leg_from,
-            leg_to: backRow.leg_to,
-            drive_minutes_used: row.drive_minutes ?? backRow.drive_minutes_used,
-          }, row.back.to, row.venue, row.title);
-        }
-        if (row.out.times_changed || row.back.times_changed || row.out.changed || row.back.changed) {
-          applied.push({
-            title: row.title,
-            venue: row.venue,
-            workshop_row_key: row.workshop_row_key,
-            out_changed: row.out.times_changed,
-            back_changed: row.back.times_changed,
-            linked_only: !row.out.times_changed && !row.back.times_changed,
-            out_to: row.out.to,
-            back_to: row.back.to,
-          });
-        }
-      }
-      // Re-derive away + rest masters when trips move (fixtures unchanged here).
-      try {
-        const { runRuleEventMasterSync } = require('./rule-event-masters-lib');
-        await runRuleEventMasterSync(sb, { writeGcal: true, weeks });
-      } catch (e) {
-        applied.push({ rule_master_sync_error: e.message });
-      }
-    }
-
+    const notes = [];
+    const result = await runTravelFollowLive({
+      sb, actor, weeks, apply, notes,
+    });
+    const plan = result.plan || {};
     return json(res, 200, {
       ok: true,
       dry_run: !apply,
-      applied_count: applied.length,
-      applied,
+      applied_count: (result.applied || []).length,
+      applied: result.applied || [],
       linked_count: (plan.linked || []).length,
       calendar_writes: 0,
-      gcal_health: gcal.assessment || null,
+      notes,
       ...plan,
     });
   } catch (e) {

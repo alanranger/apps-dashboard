@@ -1,0 +1,514 @@
+{
+  "ok": true,
+  "calendar_writes": 0,
+  "proof_ok": true,
+  "away_span_count": 11,
+  "amendment_counts": {
+    "KEEP": 131,
+    "MOVE": 28,
+    "DELETE": 1
+  },
+  "habit_amendments_non_keep": 29,
+  "task_bumps": 3,
+  "travel_back_fix": 1,
+  "pending_wrote_new": 18,
+  "pending_already_present": 15,
+  "pending_total_in_set": 33,
+  "related": [
+    {
+      "type": "habit_placement",
+      "id": "habit_place:c2f135c9-7146-415d-8231-c2460a064e94:2026-08-15",
+      "summary": "Move habit: Light & Logic newsletter issue → 2026-08-14 13:00–17:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-08-03",
+      "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-08-07 10:00–11:30",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:02d10c2d-15bf-4684-8b1a-ff65aaa6cd3b:2026-09-07",
+      "summary": "Move habit: Monthly Accounts — Bank Genie → 2026-09-09 10:00–11:30"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-08-07",
+      "summary": "Move habit: Send Out Joining Details → 2026-08-07 11:45–12:45",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-04",
+      "summary": "Move habit: Send Out Joining Details → 2026-09-03 10:00–11:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-11",
+      "summary": "Move habit: Send Out Joining Details → 2026-09-09 11:45–12:45"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-09-18",
+      "summary": "Move habit: Send Out Joining Details → 2026-09-17 10:00–11:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-10-02",
+      "summary": "Move habit: Send Out Joining Details → 2026-10-01 10:00–11:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:dd4c3659-93a2-49ae-affe-152d350a914f:2026-11-20",
+      "summary": "Move habit: Send Out Joining Details → 2026-11-19 10:00–11:00",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:65bb5023-40a3-4797-8e9c-e0b85f0581b6:2026-11-17",
+      "summary": "Move habit: BAU global refresh — Day 2: schemas + final ingest + verify → 2026-11-18 10:00–14:00",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-08-05",
+      "summary": "Move habit: Hotel bookings check (Claude) → 2026-08-07 13:00–13:45",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-09-09",
+      "summary": "Move habit: Hotel bookings check (Claude) → 2026-09-09 13:00–13:45"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:4dd47c23-92a2-4d03-8474-4f557775e3a9:2026-11-18",
+      "summary": "Move habit: Hotel bookings check (Claude) → 2026-11-19 11:15–12:00",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-08-05",
+      "summary": "Move habit: Hotel bookings — Alan actions → 2026-08-07 14:00–14:30",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-09-09",
+      "summary": "Move habit: Hotel bookings — Alan actions → 2026-09-09 14:00–14:30"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:fc32dffb-6b5d-434b-86b9-d484ce434127:2026-11-18",
+      "summary": "Move habit: Hotel bookings — Alan actions → 2026-11-19 12:15–12:45",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-09-10",
+      "summary": "Move habit: Publish Blog Post → 2026-09-14 12:00–14:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:2d5898bd-fa64-42d7-9649-d16fa771e945:2026-11-19",
+      "summary": "Move habit: Publish Blog Post → 2026-11-19 13:15–15:15",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-08-07",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-08-08 11:00–13:00",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-08-14",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-08-13 13:30–15:30"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-09-04",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-09-03 11:15–13:15"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-09-18",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-09-17 11:15–13:15"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-10-02",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-10-01 11:15–13:15"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-11-20",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2026-11-23 11:45–13:45",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2027-01-22",
+      "summary": "Move habit: Review/Amend Course & Workshop Dates + check Hotel Bookings → 2027-01-20 11:15–13:15",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:6ec9689d-5426-4276-9e17-824cb4ea4fc1:2026-09-04",
+      "summary": "Move habit: SEO Performance Review → 2026-09-02 10:00–13:00"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:75c54300-e8ef-434f-af4a-51bb546b3496:2026-09-10",
+      "summary": "Move habit: Check Artfully Walls Sales → 2026-09-09 14:45–14:50"
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:755f6aa0-3daa-470b-a4d8-c4f301ba1235:2026-11-23",
+      "summary": "Move habit: Update Event Schema for Classes & Workshops → 2026-11-24 10:00–12:00",
+      "already": true
+    },
+    {
+      "type": "habit_placement",
+      "id": "habit_place:0a7aa275-b148-4364-a184-fc14daea8edb:2026-09-11",
+      "summary": "Remove habit block: Review/Amend Course & Workshop Dates + check Hotel Bookings (2026-09-11)"
+    },
+    {
+      "type": "task_bump",
+      "id": "task_bump:MC-8:2026-08-08",
+      "summary": "Bump MC-8 → 2026-08-08 13:30–16:00",
+      "already": true
+    },
+    {
+      "type": "task_bump",
+      "id": "task_bump:MC-14:2026-08-07",
+      "summary": "Bump MC-14 → 2026-08-09 13:30–14:15",
+      "already": true
+    },
+    {
+      "type": "task_bump",
+      "id": "task_bump:MC-50:2026-08-14",
+      "summary": "Bump MC-50 → 2026-08-17 15:30–16:30"
+    },
+    {
+      "type": "missing_travel_block",
+      "id": "travel_back_fix:rosedale:2026-08-06",
+      "summary": "FIX travel_back David Ward / Rosedale — depart 17:00 not 14:00"
+    }
+  ],
+  "trips_touched": [
+    {
+      "span": "away:Rosedale Abbey",
+      "days": "2026-08-03→2026-08-06",
+      "amendment_count": 5,
+      "titles": [
+        "Monthly Accounts — Bank Genie",
+        "Send Out Joining Details",
+        "Hotel bookings check (Claude)",
+        "Hotel bookings — Alan actions",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    },
+    {
+      "span": "away:Surprise View / Hathersage",
+      "days": "2026-08-15→2026-08-16",
+      "amendment_count": 2,
+      "titles": [
+        "Light & Logic newsletter issue",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    },
+    {
+      "span": "away:Hartland Quay",
+      "days": "2026-09-04→2026-09-06",
+      "amendment_count": 4,
+      "titles": [
+        "Monthly Accounts — Bank Genie",
+        "Send Out Joining Details",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "SEO Performance Review"
+      ]
+    },
+    {
+      "span": "away:Saltburn / Ellerby",
+      "days": "2026-09-10→2026-09-13",
+      "amendment_count": 7,
+      "titles": [
+        "Monthly Accounts — Bank Genie",
+        "Send Out Joining Details",
+        "Hotel bookings check (Claude)",
+        "Hotel bookings — Alan actions",
+        "Publish Blog Post",
+        "Check Artfully Walls Sales",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    },
+    {
+      "span": "away:Bassenthwaite / Ravenstone",
+      "days": "2026-09-18→2026-09-20",
+      "amendment_count": 2,
+      "titles": [
+        "Send Out Joining Details",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    },
+    {
+      "span": "away:Wareham / Kingston",
+      "days": "2026-10-02→2026-10-04",
+      "amendment_count": 2,
+      "titles": [
+        "Send Out Joining Details",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    },
+    {
+      "span": "away:Lake District",
+      "days": "2026-11-13→2026-11-15",
+      "amendment_count": 1,
+      "titles": [
+        "BAU global refresh — Day 2: schemas + final ingest + verify"
+      ]
+    },
+    {
+      "span": "away:Blakeney Norfolk",
+      "days": "2026-11-20→2026-11-22",
+      "amendment_count": 7,
+      "titles": [
+        "Send Out Joining Details",
+        "BAU global refresh — Day 2: schemas + final ingest + verify",
+        "Hotel bookings check (Claude)",
+        "Hotel bookings — Alan actions",
+        "Publish Blog Post",
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+        "Update Event Schema for Classes & Workshops"
+      ]
+    },
+    {
+      "span": "away:Lake District B5291",
+      "days": "2027-01-21→2027-01-24",
+      "amendment_count": 1,
+      "titles": [
+        "Review/Amend Course & Workshop Dates + check Hotel Bookings"
+      ]
+    }
+  ],
+  "trips_untouched": [
+    {
+      "span": "away:Capel Curig",
+      "days": "2026-09-26→2026-09-27",
+      "amendment_count": 0,
+      "titles": []
+    },
+    {
+      "span": "away:Lake Vyrnwy",
+      "days": "2026-10-10→2026-10-11",
+      "amendment_count": 0,
+      "titles": []
+    }
+  ],
+  "sample_moves": [
+    {
+      "action": "MOVE",
+      "title": "Light & Logic newsletter issue",
+      "ideal": "2026-08-15",
+      "from": "2026-08-15 11:00",
+      "to": "2026-08-14 13:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal": "2026-08-03",
+      "from": "2026-08-03 10:00",
+      "to": "2026-08-07 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Monthly Accounts — Bank Genie",
+      "ideal": "2026-09-07",
+      "from": "2026-09-06 12:30",
+      "to": "2026-09-09 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-08-07",
+      "from": "2026-08-07 10:00",
+      "to": "2026-08-07 11:45"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-09-04",
+      "from": "2026-09-02 10:00",
+      "to": "2026-09-03 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-09-11",
+      "from": "2026-09-09 10:00",
+      "to": "2026-09-09 11:45"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-09-18",
+      "from": "2026-09-16 10:00",
+      "to": "2026-09-17 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-10-02",
+      "from": "2026-09-30 10:00",
+      "to": "2026-10-01 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Send Out Joining Details",
+      "ideal": "2026-11-20",
+      "from": "2026-11-18 10:00",
+      "to": "2026-11-19 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "BAU global refresh — Day 2: schemas + final ingest + verify",
+      "ideal": "2026-11-17",
+      "from": "2026-11-19 10:00",
+      "to": "2026-11-18 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-08-05",
+      "from": "2026-08-03 11:45",
+      "to": "2026-08-07 13:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-09-09",
+      "from": "2026-09-09 11:15",
+      "to": "2026-09-09 13:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings check (Claude)",
+      "ideal": "2026-11-18",
+      "from": "2026-11-18 11:15",
+      "to": "2026-11-19 11:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-08-05",
+      "from": "2026-08-03 12:45",
+      "to": "2026-08-07 14:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-09-09",
+      "from": "2026-09-09 12:15",
+      "to": "2026-09-09 14:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Hotel bookings — Alan actions",
+      "ideal": "2026-11-18",
+      "from": "2026-11-18 12:15",
+      "to": "2026-11-19 12:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Publish Blog Post",
+      "ideal": "2026-09-10",
+      "from": "2026-09-10 11:00",
+      "to": "2026-09-14 12:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Publish Blog Post",
+      "ideal": "2026-11-19",
+      "from": "2026-11-18 13:15",
+      "to": "2026-11-19 13:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-08-07",
+      "from": "2026-08-07 11:15",
+      "to": "2026-08-08 11:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-08-14",
+      "from": "2026-08-14 13:00",
+      "to": "2026-08-13 13:30"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-04",
+      "from": "2026-09-04 10:00",
+      "to": "2026-09-03 11:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-18",
+      "from": "2026-09-17 10:00",
+      "to": "2026-09-17 11:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-10-02",
+      "from": "2026-10-02 10:00",
+      "to": "2026-10-01 11:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-11-20",
+      "from": "2026-11-22 14:00",
+      "to": "2026-11-23 11:45"
+    },
+    {
+      "action": "MOVE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2027-01-22",
+      "from": "2027-01-21 10:00",
+      "to": "2027-01-20 11:15"
+    },
+    {
+      "action": "MOVE",
+      "title": "SEO Performance Review",
+      "ideal": "2026-09-04",
+      "from": "2026-09-03 10:00",
+      "to": "2026-09-02 10:00"
+    },
+    {
+      "action": "MOVE",
+      "title": "Check Artfully Walls Sales",
+      "ideal": "2026-09-10",
+      "from": "2026-09-10 10:00",
+      "to": "2026-09-09 14:45"
+    },
+    {
+      "action": "MOVE",
+      "title": "Update Event Schema for Classes & Workshops",
+      "ideal": "2026-11-23",
+      "from": "2026-11-23 11:45",
+      "to": "2026-11-24 10:00"
+    },
+    {
+      "action": "DELETE",
+      "title": "Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "ideal": "2026-09-11",
+      "from": null,
+      "to": "2026-09-13 13:00"
+    }
+  ]
+}

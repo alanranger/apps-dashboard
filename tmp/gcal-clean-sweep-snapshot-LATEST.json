@@ -1,0 +1,3888 @@
+{
+  "mode": "apply",
+  "horizon": {
+    "from": "2026-07-20",
+    "to": "2027-07-18",
+    "timeMin": "2026-07-20T00:00:00.000Z",
+    "timeMax": "2027-07-19T00:00:00.000Z"
+  },
+  "masters_count": 335,
+  "masters_by_kind": {
+    "task": 24,
+    "habit": 171,
+    "travel": 140
+  },
+  "snapshot": {
+    "primary_events": 483,
+    "to_delete": 321,
+    "left_protected": 94,
+    "left_uncertain": [],
+    "left_other": 68
+  },
+  "snapshot_rows": [
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g60o3gghh8ko3ee2560qk8h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6ksjcc9n8ooj2c1o64q32d1k6914cea48p2j4h2560okada18grg",
+      "summary": "Landscapes with water - Photocrowd",
+      "start": "2026-07-17",
+      "end": "2026-07-21",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_6dj3cp1m6thj2bb6c4rj2b9kcpj68b9p75hj0b9jcgsm4ohk75i3cc9l6o",
+      "summary": "Ocado Delivery (Order 1071210839732)",
+      "start": "2026-07-20T19:30:00+01:00",
+      "end": "2026-07-20T20:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ko46hi68gsj0dho64q48h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6133eg9j74rj0c1p88skadpk6h0j0da58cqj2ca28l13ccpl8l1g",
+      "summary": "Booked: Further Evidence on Tuesday 21 July 2026 at 9:30am in a jobcentre",
+      "start": "2026-07-21T09:30:00+01:00",
+      "end": "2026-07-21T11:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "p3u546gr78spugmjbrrnqalklg",
+      "summary": "SEO re-measure: internal-linking + rebuild GSC check (4-week)",
+      "start": "2026-07-22T07:00:00+01:00",
+      "end": "2026-07-22T07:30:00+01:00",
+      "colorId": "7",
+      "action": "leave_other"
+    },
+    {
+      "id": "hkbr1h51hrf3f5ca10c7ieobho",
+      "summary": "MC-47 — Constantin: bridge viewpoint sheet + check the workbook",
+      "start": "2026-07-22T09:00:00+01:00",
+      "end": "2026-07-22T10:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "vp56gb6oo0f74bft9trprrfsqk",
+      "summary": "MC-31 · Review: Recurring tab (Reclaim replacement) · IN PROGRESS",
+      "start": "2026-07-23T11:00:00+01:00",
+      "end": "2026-07-23T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6so44e9l6kq42cq68gsk8g9g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g710jggph8d242g9l6123ee1k70s44dho8oq3id9i84pkchhm8gs0_20260724T060000Z",
+      "summary": "Mums birthday",
+      "start": "2026-07-24T07:00:00+01:00",
+      "end": "2026-07-24T08:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "dai2npv5iie7k5n8nsrkiisve8",
+      "summary": "MC 🚗 Travel out — Warwick University (Malek shoot)",
+      "start": "2026-07-24T08:15:00+01:00",
+      "end": "2026-07-24T08:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "h7e630jv1ak3kchupgjnbcqf3o",
+      "summary": "Malek Almousa: Portraits - 2 hr - Taking Photos (Alan Ranger Photography)",
+      "start": "2026-07-24T09:00:00+01:00",
+      "end": "2026-07-24T11:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "76to8u23g3po1gm20aa1r5noko",
+      "summary": "MC 🚗 Travel back — Warwick University → home",
+      "start": "2026-07-24T11:00:00+01:00",
+      "end": "2026-07-24T11:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4aglol1084narr3k3qm88u5qe8",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-07-24T11:45:00+01:00",
+      "end": "2026-07-24T12:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g68o30ca46t33ghhm650k8h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g70oj4hi188p3cdq36coj0d1k7513gcho6p2j4h1n8co3cc1p8gr0",
+      "summary": "Post processing and follow up for grad shoot malek",
+      "start": "2026-07-24T13:30:00+01:00",
+      "end": "2026-07-24T15:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "blaikjk3f4l6g4ijr2mk73g0fo",
+      "summary": "MC ⏳ Prep — Constantin 1-2-1",
+      "start": "2026-07-25T09:00:00+01:00",
+      "end": "2026-07-25T09:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "arrn44f2prpckm489pu5sbaa6g",
+      "summary": "Constantin Xiao: Online 1-2-1 Tuition - Zoom - Evenings or weekend (9 am to 9 pm) (Alan Ranger Photography)",
+      "start": "2026-07-25T09:30:00+01:00",
+      "end": "2026-07-25T10:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "7lv2u8oka7h7dec3crs249hvj8",
+      "summary": "MC ⏳ Decompress — Constantin 1-2-1",
+      "start": "2026-07-25T10:30:00+01:00",
+      "end": "2026-07-25T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_chhm4chnc9h38b9h6lh38b9k70r34b9p6srm2bb2cosj8cj4ccom6ob264",
+      "summary": "Ocado Delivery (Order 1056646703001)",
+      "start": "2026-07-26T11:00:00+01:00",
+      "end": "2026-07-26T12:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "18r99ka642bsa80brl4p03ev1s",
+      "summary": "MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-07-26T11:30:00+01:00",
+      "end": "2026-07-26T12:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "efuvkao5vtbbjhhiebibeg1e18",
+      "summary": "MC 🔁 BAU global refresh — Day 1: CSVs + preliminary ingest",
+      "start": "2026-07-27T10:00:00+01:00",
+      "end": "2026-07-27T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7gp9udivme2kemep8b1075p8v8",
+      "summary": "Mon recrawl reviews",
+      "start": "2026-07-27T14:00:00+01:00",
+      "end": "2026-07-27T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6co3gchj6l0k2gph65248h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6gs44ha268qk4ga46os3edpk750j4cpg6opj0hi46p1jadph6krg",
+      "summary": "Composition class prep and powerpoint and class book",
+      "start": "2026-07-27T16:00:00+01:00",
+      "end": "2026-07-27T18:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_74q48hi3610jaba374r30b9k6kr4aba18933gba4712j0ci26so44cpo60",
+      "summary": "Appointment: Telephone Assessment",
+      "start": "2026-07-28T11:00:00+01:00",
+      "end": "2026-07-28T12:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "bcruqqfttt88gi667v7unr8jg8",
+      "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+      "start": "2026-07-28T16:00:00+01:00",
+      "end": "2026-07-28T18:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "087dk3mqq19r9ie80r1aa1g0rc",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-07-29T10:00:00+01:00",
+      "end": "2026-07-29T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7hq6ltu135rajl4rqf0lfqbbpg",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-07-29T11:00:00+01:00",
+      "end": "2026-07-29T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "tg21360khatnirft34g5d2lalk",
+      "summary": "P3 · MC-12 · Sign-off: Page-3 competitor pack",
+      "start": "2026-07-29T13:30:00+01:00",
+      "end": "2026-07-29T14:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rgqhviqp1n6lnbjhm1mbtuqsvk",
+      "summary": "P0 · MC-21 · Admiral £15,000 — check funds landed",
+      "start": "2026-07-29T14:15:00+01:00",
+      "end": "2026-07-29T14:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8dp5juqnam0rcaa5d1t0cebmao",
+      "summary": "P2 · MC-9 · AI-citation scoping session",
+      "start": "2026-07-29T14:45:00+01:00",
+      "end": "2026-07-29T16:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "42a5ajb5kt5knccdt0c1tkahfk",
+      "summary": "Card move",
+      "start": "2026-07-29T19:00:00+01:00",
+      "end": "2026-07-29T19:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "40vfrkq7tkbn6611nr11svle74",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-07-30T09:00:00+01:00",
+      "end": "2026-07-30T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "tgcj34kb42acorl8t82ei0dmj8",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-07-30T10:00:00+01:00",
+      "end": "2026-07-30T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sjtaqjj8tlhg14jhu6s0hnng94",
+      "summary": "P0 · MC-32 · Rosedale trip prep (David Ward workshop)",
+      "start": "2026-07-30T14:00:00+01:00",
+      "end": "2026-07-30T14:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rd53318m8u1hopt94b7mdebebc",
+      "summary": "P2 · MC-25 · Scoping agenda prep (AI citations)",
+      "start": "2026-07-30T14:30:00+01:00",
+      "end": "2026-07-30T15:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sdku9588l6mb2cfkqp28ndopko",
+      "summary": "P0 · MC-23 · Pay off providers + update cashflow",
+      "start": "2026-07-30T15:15:00+01:00",
+      "end": "2026-07-30T16:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "m43itbubk59mck5uig3ovfdus0",
+      "summary": "MC ⏳ Prep — Composition Class",
+      "start": "2026-07-30T18:30:00+01:00",
+      "end": "2026-07-30T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g70o32h268d1kcd9m64qk8h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g84rk6ghk8gsj0dq46p0j6ghk8cs30da584q42ci674s3edpl6l1g",
+      "summary": "Photo Composition Class x 3",
+      "start": "2026-07-30T19:00:00+01:00",
+      "end": "2026-07-30T21:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "7ov9tcuku7i0677b9065l5vfsg",
+      "summary": "MC ⏳ Decompress — Composition Class",
+      "start": "2026-07-30T21:00:00+01:00",
+      "end": "2026-07-30T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20260731T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-07-31T09:00:00+01:00",
+      "end": "2026-07-31T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g60o3ici160pjggi265248h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8h236cq48ooj4c1m88rk8e9k7513ch9p74s4cca66gr4aga168q0",
+      "summary": "Haircut",
+      "start": "2026-07-31T10:00:00+01:00",
+      "end": "2026-07-31T11:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ec9p8513ad1k64qk8h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8op42c9p8cok8c2270rk8cpk64skac236os3ida16oo3ac9p8d10",
+      "summary": "Ruby Moving",
+      "start": "2026-08-01",
+      "end": "2026-08-03",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "obfndn91bbjnroga8ce4n4dpj4",
+      "summary": "MC 🚗 Move travel_out Burnham to follow workshop 19:00",
+      "start": "2026-08-01T16:15:00+01:00",
+      "end": "2026-08-01T18:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "c9rkjl19l9cr63h6549l4hm3j4",
+      "summary": "MC 🚗 Move travel_back Burnham to follow workshop 21:30 end",
+      "start": "2026-08-01T21:30:00+01:00",
+      "end": "2026-08-01T23:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sasau987alu59kiosk82cpf2rc",
+      "summary": "MC ⏳ Prep — Woodland Masterclass",
+      "start": "2026-08-02T09:30:00+01:00",
+      "end": "2026-08-02T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "jgbri46q3bb2nr63cbad2k6600",
+      "summary": "MC ⏰ Cancel Hotel Rudyard (Peak Heathers) by 8 Aug if numbers short — ref 2OQO",
+      "start": "2026-08-02T11:00:00+01:00",
+      "end": "2026-08-02T11:20:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "9ok34fgmqcbhcoec0besf96geg",
+      "summary": "MC ⏳ Decompress — Woodland Masterclass",
+      "start": "2026-08-02T16:00:00+01:00",
+      "end": "2026-08-02T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "i1jske3agrviuati04eh1huk00",
+      "summary": "MC 🚗 travel_out · Rosedale Abbey",
+      "start": "2026-08-03T09:00:00+01:00",
+      "end": "2026-08-03T12:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ko8up50cr0u69s27udgau3c4es",
+      "summary": "MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-08-03T09:00:00+01:00",
+      "end": "2026-08-03T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g64o4cd266h1jcgi170pk8gpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6go4aghn68o4ad1g68o38gpk610kch9n71230dhj8gsj4h1o6kr0",
+      "summary": "Post Processing Masterclass - David Ward",
+      "start": "2026-08-04T09:00:00+01:00",
+      "end": "2026-08-06T17:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "bhcc8qenibs36v2lvlio1ua7fo",
+      "summary": "P1 · MC-52 · Hotel register — fill 6 missing deadlines",
+      "start": "2026-08-05T11:30:00+01:00",
+      "end": "2026-08-05T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "m2svuf0fekgo1lpnnl7pfijok4",
+      "summary": "MC 🚗 travel_back · Rosedale Abbey",
+      "start": "2026-08-06T17:00:00+01:00",
+      "end": "2026-08-06T20:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "1r5lf78cg1qulelc0dd5h767kk",
+      "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-08-08T09:00:00+01:00",
+      "end": "2026-08-08T10:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "enh2ofbqif2o4ehovqke8o0kjk",
+      "summary": "Scheduler bump MC-2 → 2026-08-08",
+      "start": "2026-08-08T11:15:00+01:00",
+      "end": "2026-08-08T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "remc39e9mdat616al5lrmgg51g",
+      "summary": "Scheduler bump MC-1 → 2026-08-08",
+      "start": "2026-08-08T12:30:00+01:00",
+      "end": "2026-08-08T13:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "47qmhlqo3eksv2dqmcgi8vc5gk",
+      "summary": "Scheduler bump MC-8 → 2026-08-08",
+      "start": "2026-08-08T13:30:00+01:00",
+      "end": "2026-08-08T16:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0l009dm0de40t0h66dudej75ig",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-08-09T09:00:00+01:00",
+      "end": "2026-08-09T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "91cld0f34hcpj96qohlnumhmck",
+      "summary": "MC 🔁 SEO Performance Review",
+      "start": "2026-08-09T10:00:00+01:00",
+      "end": "2026-08-09T13:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "691p6nukbf05p9u7fjupapchl4",
+      "summary": "Scheduler bump MC-14 → 2026-08-09",
+      "start": "2026-08-09T13:30:00+01:00",
+      "end": "2026-08-09T14:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "m2mgpecbvtjcpr7doovievthlg",
+      "summary": "Scheduler bump MC-13 → 2026-08-09",
+      "start": "2026-08-09T14:45:00+01:00",
+      "end": "2026-08-09T15:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "g89h2cj849r1nas8ibdok3h56c",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-10T10:00:00+01:00",
+      "end": "2026-08-10T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "skthnamhog1ug4s51hhip39it4",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-08-10T11:15:00+01:00",
+      "end": "2026-08-10T13:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "aak7c7a4ll22ku78tg4er4mkl0",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-10T13:45:00+01:00",
+      "end": "2026-08-10T14:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ls20gle8ucqqgvsstlhjn4hf9s",
+      "summary": "P3 · MC-3 · Walkthrough: weekend page fixes",
+      "start": "2026-08-10T14:30:00+01:00",
+      "end": "2026-08-10T15:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "gm6fv4pe5iqhen9g4kc1t8kq9k",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-08-10T17:15:00+01:00",
+      "end": "2026-08-10T19:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "g2cgddgsoimun70k8oa2mfff8s",
+      "summary": "P3 · MC-17 · Sign-off: Authority",
+      "start": "2026-08-11T12:15:00+01:00",
+      "end": "2026-08-11T12:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "607hc8286v9cu2umhe5jfaitc4",
+      "summary": "Scheduler bump MC-16 → 2026-08-11",
+      "start": "2026-08-11T12:45:00+01:00",
+      "end": "2026-08-11T13:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "132no8hi86rupn564ho1l8kiq4",
+      "summary": "P3 · MC-18 · Sign-off: Local and Reviews",
+      "start": "2026-08-11T13:15:00+01:00",
+      "end": "2026-08-11T13:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "a6fbk73lulilk1hamojbr78s38",
+      "summary": "P3 · MC-19 · Sign-off: Revenue Truth re-review",
+      "start": "2026-08-11T14:15:00+01:00",
+      "end": "2026-08-11T14:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4sq0o5qtgldfq6der6u0bpdo2g",
+      "summary": "Scheduler bump MC-15 → 2026-08-11",
+      "start": "2026-08-11T14:45:00+01:00",
+      "end": "2026-08-11T15:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7q08te3bvss0dump9i7qjupt6k",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-12T10:00:00+01:00",
+      "end": "2026-08-12T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ggua02nc0i4d9maogu1kkto41k",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-12T11:00:00+01:00",
+      "end": "2026-08-12T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "he91671tj90c2dml3s46r2j9u4",
+      "summary": "P3 · MC-20 · Sign-off: History",
+      "start": "2026-08-12T11:30:00+01:00",
+      "end": "2026-08-12T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "92jcn3mnta2cdj9pkhg6i1d2mc",
+      "summary": "MC ⏳ Prep — Jo Galloway 1-2-1",
+      "start": "2026-08-12T15:00:00+01:00",
+      "end": "2026-08-12T15:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ob3pposk2rp3rrpo0l4p6u7hog",
+      "summary": "Jo Galloway: Online 1-2-1 Tuition - Zoom - Weekdays - 9am to 5pm (Alan Ranger Photography)",
+      "start": "2026-08-12T15:30:00+01:00",
+      "end": "2026-08-12T16:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "7cd42td21emg6ljnc9g50pvieg",
+      "summary": "MC ⏳ Decompress — Jo Galloway 1-2-1",
+      "start": "2026-08-12T16:30:00+01:00",
+      "end": "2026-08-12T17:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "quh8ta3i1ess9iubk10mjfica0",
+      "summary": "MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-08-13T09:00:00+01:00",
+      "end": "2026-08-13T09:05:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20260814T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-08-14T09:00:00+01:00",
+      "end": "2026-08-14T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "1rlpfjag61ocf5ctrtm1hroa10",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-08-14T14:00:00+01:00",
+      "end": "2026-08-14T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "biefgku8s4bpja7phl4mqj16c0",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-08-14T15:00:00+01:00",
+      "end": "2026-08-14T17:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7lh4746ljiir8tneaguer1b07c",
+      "summary": "MC 🚗 Travel out — Peak Heathers Sunset (Hathersage)",
+      "start": "2026-08-15T15:45:00+01:00",
+      "end": "2026-08-15T17:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "01t95ske39e9f33m49d10rvab0",
+      "summary": "MC 🚗 Travel — Surprise View → Hotel Rudyard",
+      "start": "2026-08-15T21:15:00+01:00",
+      "end": "2026-08-15T22:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g84q32d1n6d1k6c9o64sk8h1g64o30c1g60o30c1g60o30c1g60o32d1g60o30c1g6d346d9h8h334c9n6d0j8da3652k2d1o6l1j8d1o8cok8h1g8ooj8ha5612jgd9g",
+      "summary": "Reservation Ref: 2OQO",
+      "start": "2026-08-15T22:30:00+01:00",
+      "end": "2026-08-16T04:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ebhdaj6m7g6emu285092gvug1g",
+      "summary": "MC 🚗 Travel — Hotel Rudyard → The Roaches",
+      "start": "2026-08-16T05:00:00+01:00",
+      "end": "2026-08-16T05:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "eu5gdtcobi6nrjkebb4nidfjo8",
+      "summary": "MC 🚗 Travel back — The Roaches → home",
+      "start": "2026-08-16T08:45:00+01:00",
+      "end": "2026-08-16T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "muvt8rclrlfo99sd3icfr4jc70",
+      "summary": "MC 🔁 Light & Logic newsletter issue",
+      "start": "2026-08-16T10:00:00+01:00",
+      "end": "2026-08-16T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mis1jfuc6i9ctvqfkbbm5p3lhg",
+      "summary": "Scheduler bump MC-51 → 2026-08-17",
+      "start": "2026-08-17T14:30:00+01:00",
+      "end": "2026-08-17T15:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ne08s5tg9bv7jpum571iqog840",
+      "summary": "Scheduler bump MC-50 → 2026-08-17",
+      "start": "2026-08-17T15:30:00+01:00",
+      "end": "2026-08-17T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8rj091ta0dn9j1el1ancp65p3k",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-08-17T20:00:00+01:00",
+      "end": "2026-08-17T22:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "uvbqrfbomvbggea2rbk88gn6v8",
+      "summary": "MC 🔁 BAU global refresh — Day 2: schemas + final ingest + verify",
+      "start": "2026-08-18T10:00:00+01:00",
+      "end": "2026-08-18T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "t5hv58ck57q5cf4gt25779l3kk",
+      "summary": "MC 🔁 Upload sites — LocalViking, TOGDays, Where Can We Go",
+      "start": "2026-08-19T10:00:00+01:00",
+      "end": "2026-08-19T13:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "jnbpn33p9dav8hv9gfc3ovngm4",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-20T10:00:00+01:00",
+      "end": "2026-08-20T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "9f8a7gqhl57qbm39hkgqeprlt4",
+      "summary": "P0 · MC-42 · Gower: reschedule dates then book hotel",
+      "start": "2026-08-20T10:45:00+01:00",
+      "end": "2026-08-20T11:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "clv9ovbrrp3a9grdsq3ko63o88",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-20T14:00:00+01:00",
+      "end": "2026-08-20T14:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "jnk10hibaa3q05ihrg8k9se0gk",
+      "summary": "MC ⏰ Room release — Hartland Quay (Donal) 2 weeks out",
+      "start": "2026-08-21T09:00:00+01:00",
+      "end": "2026-08-21T09:20:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "pfm7j4en28bvv0vgmcba36as8g",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-08-21T09:00:00+01:00",
+      "end": "2026-08-21T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6g617rk7vk0etlrpnq7f41qvk4",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-08-21T20:30:00+01:00",
+      "end": "2026-08-21T22:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "lajma28erc1qi7uaosq3sdm73g",
+      "summary": "MC ⚽ Before: Ipswich Town vs Sunderland",
+      "start": "2026-08-22T14:00:00+01:00",
+      "end": "2026-08-22T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "a9ktoe3m9en03b2vllvc76h7vs",
+      "summary": "MC ⚽ After: Ipswich Town vs Sunderland",
+      "start": "2026-08-22T17:00:00+01:00",
+      "end": "2026-08-22T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "bvv4j3aell7hj2hljttj76qpu0",
+      "summary": "MC ⏳ Prep — Abstract and Macro Workshop",
+      "start": "2026-08-23T10:00:00+01:00",
+      "end": "2026-08-23T10:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "c3fmdj7ur043ojpaknuasgnq30",
+      "summary": "MC ⏳ Decompress — Abstract and Macro Workshop",
+      "start": "2026-08-23T12:30:00+01:00",
+      "end": "2026-08-23T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "l86qo32adh5ls02eec3aictpto",
+      "summary": "MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-08-24T09:00:00+01:00",
+      "end": "2026-08-24T10:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "gvaoqb3vspj6r5gqefrtl6b1cs",
+      "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+      "start": "2026-08-24T11:30:00+01:00",
+      "end": "2026-08-24T13:30:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "93l0e5k41s6k1vld4h6dpuh450",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-08-26T10:00:00+01:00",
+      "end": "2026-08-26T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "pcthhhor3n83trqqal386ina28",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-08-26T11:00:00+01:00",
+      "end": "2026-08-26T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "bn078esenvt2jpfnmetoucdhoo",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-08-27T11:00:00+01:00",
+      "end": "2026-08-27T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "24skah3i9tr6eie5145oi4okdo",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-08-27T16:30:00+01:00",
+      "end": "2026-08-27T17:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20260828T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-08-28T09:00:00+01:00",
+      "end": "2026-08-28T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "aaqg0mduh8h28nvtq37b15hqqk",
+      "summary": "MC ⚽ Before: Manchester United vs Ipswich Town",
+      "start": "2026-08-30T15:30:00+01:00",
+      "end": "2026-08-30T16:30:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "0tjnkvj4vpl9mh5f2lmhnl08ug",
+      "summary": "MC ⚽ After: Manchester United vs Ipswich Town",
+      "start": "2026-08-30T18:30:00+01:00",
+      "end": "2026-08-30T19:30:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g64o48di488qj2g9h6srk8dhg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g851jag9i75246c22712jchhk8p132hi56ss44chp6d2k6c1l70rg_20260901",
+      "summary": "Josh Birthday",
+      "start": "2026-09-01",
+      "end": "2026-09-02",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "53q73k1i7nh6lcsp3sjniv5dqc",
+      "summary": "MC ⏰ Hotel decision — Ravenstone Sep (£2,097) CONFIRM cancel policy",
+      "start": "2026-09-01T09:00:00+01:00",
+      "end": "2026-09-01T09:20:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "q2pr801t3i2se9c7mjcg5qe0c8",
+      "summary": "MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-09-01T09:00:00+01:00",
+      "end": "2026-09-01T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ukfmq5ltmhr5f8ena601fo66cs",
+      "summary": "P2 · MC-11 · Money review (monthly)",
+      "start": "2026-09-01T11:30:00+01:00",
+      "end": "2026-09-01T12:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "df5v37g6rphnu136vd46h4r6ec",
+      "summary": "MC 🚗 Move travel_out Kenilworth Castle → follow workshop",
+      "start": "2026-09-01T17:10:00+01:00",
+      "end": "2026-09-01T17:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "lrfepqe8jm1h01pk8tj3tu1mqg",
+      "summary": "MC 🚗 Travel back — Kenilworth → home",
+      "start": "2026-09-01T20:00:00+01:00",
+      "end": "2026-09-01T20:20:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ju35jpe0ubc06uc5tij60u48b0",
+      "summary": "MC ⏰ Hotel deadline — Ellerby Country Inn cancel by 5 Sep",
+      "start": "2026-09-02T09:00:00+01:00",
+      "end": "2026-09-02T09:15:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "pg197jgnqqvp5nqqk8oo8bnpig",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-02T10:00:00+01:00",
+      "end": "2026-09-02T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "09hjv91atb9qgkd1tn66rdgijg",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-02T11:00:00+01:00",
+      "end": "2026-09-02T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mbg1f3k2coga0jtq8df1jhl00o",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-09-02T13:00:00+01:00",
+      "end": "2026-09-02T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2ebfv6pogu9kinek55rvgdtafg",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-09-03T09:00:00+01:00",
+      "end": "2026-09-03T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "3ll1or4ou6lsb83o63eq4cqr8c",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-09-03T11:00:00+01:00",
+      "end": "2026-09-03T13:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "f9mcf4ej13nhoercgb4vc9d8b4",
+      "summary": "MC 🚗 Travel out — Hartland Quay Hotel (Devon)",
+      "start": "2026-09-04T08:00:00+01:00",
+      "end": "2026-09-04T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mr8kijbblfis9b83qgkvm13dl0",
+      "summary": "MC ⚽ Before: Ipswich Town vs Liverpool",
+      "start": "2026-09-04T19:00:00+01:00",
+      "end": "2026-09-04T20:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "cvng6k535jbr39tr803s4bhc4g",
+      "summary": "MC ⚽ After: Ipswich Town vs Liverpool",
+      "start": "2026-09-04T22:00:00+01:00",
+      "end": "2026-09-04T23:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ge21jp95ug9kb9f9fouil9pj78_20260905",
+      "summary": "Happy birthday!",
+      "start": "2026-09-05",
+      "end": "2026-09-06",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ltn1fumetasvgqv4ke44vmbqu4",
+      "summary": "MC 🚗 Travel back — Hartland Quay → home",
+      "start": "2026-09-06T12:30:00+01:00",
+      "end": "2026-09-06T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g8go44h1h650k6hi58kqk8gpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6goj4h1g74qj8ha66ks32h9k70sj8ha56go46c1p6crk8hhp70sg",
+      "summary": "Block Out",
+      "start": "2026-09-07",
+      "end": "2026-09-09",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "p1raalp6p23c59cqhl05fbqk0g",
+      "summary": "MC ⏳ Prep — Lightroom Wk1",
+      "start": "2026-09-07T18:30:00+01:00",
+      "end": "2026-09-07T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ip7p6tmeuu5q86tdji222of4do",
+      "summary": "MC ⏳ Decompress — Lightroom Wk1",
+      "start": "2026-09-07T21:00:00+01:00",
+      "end": "2026-09-07T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "gvb8nps0ka9ikkdodrie5ndo4s",
+      "summary": "MC 🔁 SEO Performance Review",
+      "start": "2026-09-08T10:00:00+01:00",
+      "end": "2026-09-08T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "q24uruh2qkckdpbdd9irf8olik",
+      "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-09-08T14:00:00+01:00",
+      "end": "2026-09-08T15:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rm0s9co00m6mcvgolai31pin4s",
+      "summary": "MC ⏳ Prep — Abstract and Macro Workshop",
+      "start": "2026-09-08T17:30:00+01:00",
+      "end": "2026-09-08T18:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "d2nc5dp4e1i4rb49aeksnr27ro",
+      "summary": "MC ⏳ Decompress — Abstract and Macro Workshop",
+      "start": "2026-09-08T20:00:00+01:00",
+      "end": "2026-09-08T20:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qgobv8npb34asccqeqmos50vgs",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-09-09T09:00:00+01:00",
+      "end": "2026-09-09T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "89ukqh3nq8cjv5q4rdi5c7f4t8",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-09T10:00:00+01:00",
+      "end": "2026-09-09T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fgnb006pd970bkl1nhah1sct38",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-09T11:00:00+01:00",
+      "end": "2026-09-09T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fmj3rff5ilb5pkns2oi447l0bk",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-09-09T12:00:00+01:00",
+      "end": "2026-09-09T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "547k16l0u92gbna0hm41ghgdsc",
+      "summary": "MC 🚗 Travel out — Coventry Urban Architecture",
+      "start": "2026-09-09T17:30:00+01:00",
+      "end": "2026-09-09T17:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "1q9pnm2n69midodatftt5mu52o",
+      "summary": "MC 🚗 Travel back — Coventry Urban → home",
+      "start": "2026-09-09T20:15:00+01:00",
+      "end": "2026-09-09T20:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8g11jfaenqpgnamb8b3somccis",
+      "summary": "Stay at Ellerby Country Inn",
+      "start": "2026-09-10",
+      "end": "2026-09-14",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "igsl4u7plj8kaa49qqmiegu5kc",
+      "summary": "MC 🚗 Travel out — Yorkshire Coast (Ellerby Country Inn)",
+      "start": "2026-09-10T10:00:00+01:00",
+      "end": "2026-09-10T13:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20260911T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-09-11T09:00:00+01:00",
+      "end": "2026-09-11T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "t9ha5ml25g95b1v3puuiq19ghs",
+      "summary": "MC ⚽ Before: Crystal Palace vs Ipswich Town",
+      "start": "2026-09-12T14:00:00+01:00",
+      "end": "2026-09-12T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "c9v0kmsbpsdpjsc679e9cmbrts",
+      "summary": "MC ⚽ After: Crystal Palace vs Ipswich Town",
+      "start": "2026-09-12T17:00:00+01:00",
+      "end": "2026-09-12T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "dfk6me8s7l76evpgj4cnlk11lc",
+      "summary": "MC 🚗 Travel back — Yorkshire Coast → home",
+      "start": "2026-09-13T13:00:00+01:00",
+      "end": "2026-09-13T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7m7cn4akmtq4fj0jr4521um2r0",
+      "summary": "MC ⏳ Prep — Lightroom Wk2",
+      "start": "2026-09-14T18:30:00+01:00",
+      "end": "2026-09-14T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "o7l1jm290fe99802ca9h86o0rg",
+      "summary": "MC ⏳ Decompress — Lightroom Wk2",
+      "start": "2026-09-14T21:00:00+01:00",
+      "end": "2026-09-14T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mb8pcs22f5cnac7g61v8uf4250",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-15T10:00:00+01:00",
+      "end": "2026-09-15T10:45:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "957kg2kg6rp4bvfbjor8sh6t74",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-15T11:00:00+01:00",
+      "end": "2026-09-15T11:30:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fn3n7ieieiln3noqq36tsqlecg",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-09-15T13:30:00+01:00",
+      "end": "2026-09-15T15:30:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "f5i0273od0jt4hscbbp0i567qo",
+      "summary": "MC 🔁 Light & Logic newsletter issue",
+      "start": "2026-09-16T10:00:00+01:00",
+      "end": "2026-09-16T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4p59a26ekolgipb733sem84fn0",
+      "summary": "MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-09-16T14:30:00+01:00",
+      "end": "2026-09-16T14:35:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2s9t45mc597ks8onsl5gjkikbs",
+      "summary": "MC 🚗 Travel out — Chesterton Windmill",
+      "start": "2026-09-16T17:00:00+01:00",
+      "end": "2026-09-16T17:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sp7l28r2jq51nd2dk40b8pmqjk",
+      "summary": "MC 🚗 Travel back — Chesterton Windmill → home",
+      "start": "2026-09-16T20:00:00+01:00",
+      "end": "2026-09-16T20:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ko4cc22690jgchg64sk8h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8d248cpi70r3ghi284oj2cpk68sk4cpi892kcd9i6h2j0ea58d20",
+      "summary": "Guest Confirmation for Ravenstone Manor Hotel Booking Reference 1999acddafc",
+      "start": "2026-09-17",
+      "end": "2026-09-21",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ke9m270v5i91bkj65ttquoetuo",
+      "summary": "MC 🔁 Send Out Joining Details",
+      "start": "2026-09-17T09:00:00+01:00",
+      "end": "2026-09-17T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "5rmhqccq5gd08l4ekds6d5jbc8",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-09-17T11:00:00+01:00",
+      "end": "2026-09-17T13:00:00+01:00",
+      "colorId": null,
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "r5vumeo1od3klkmru521o6o2rg",
+      "summary": "MC ⏳ Prep — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T18:30:00+01:00",
+      "end": "2026-09-17T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "jkajtrqu9i991iulsbtcjt4sv0",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1 (Thu cohort)",
+      "start": "2026-09-17T21:00:00+01:00",
+      "end": "2026-09-17T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "27r2vdvq01d02slslp9dtf0b2k",
+      "summary": "MC 🚗 Travel out — Ravenstone Manor (Lake District)",
+      "start": "2026-09-18T05:15:00+01:00",
+      "end": "2026-09-18T09:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "12v0odkh7a3obfo1gpkohmamas",
+      "summary": "MC ⏰ Room release — Kingston Dorset (Tony) 2 weeks out + CONFIRM booking",
+      "start": "2026-09-18T09:00:00+01:00",
+      "end": "2026-09-18T09:20:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "i0cp0mje97rv6r6pgpsk71hr1o",
+      "summary": "MC ⚽ Before: Everton vs Ipswich Town",
+      "start": "2026-09-19T14:00:00+01:00",
+      "end": "2026-09-19T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "h5aea5fl74vvdnidhavg5jvano",
+      "summary": "MC ⚽ After: Everton vs Ipswich Town",
+      "start": "2026-09-19T17:00:00+01:00",
+      "end": "2026-09-19T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "aqrbdgkvvn3oe6n2snddvnv898",
+      "summary": "MC ⏰ Hotel deadline — Eagles Llanrwst (£425) cancel by 23 Sep",
+      "start": "2026-09-20T09:00:00+01:00",
+      "end": "2026-09-20T09:15:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "q1oakaskp9qpq25gjpkukvoij8",
+      "summary": "MC 🚗 Travel back — Ravenstone Manor → home",
+      "start": "2026-09-20T13:30:00+01:00",
+      "end": "2026-09-20T17:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8ihdg0p47livbdeotgm0su4mjk",
+      "summary": "MC ⏳ Prep — Lightroom Wk3",
+      "start": "2026-09-21T18:30:00+01:00",
+      "end": "2026-09-21T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "b6226mpm63vjru2teplbtdpjhs",
+      "summary": "MC ⏳ Decompress — Lightroom Wk3",
+      "start": "2026-09-21T21:00:00+01:00",
+      "end": "2026-09-21T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qr6s3ssesuru6igenm2h9o7rsc",
+      "summary": "MC ⏳ Prep — Camera Course Wk1 (Tue cohort)",
+      "start": "2026-09-22T18:30:00+01:00",
+      "end": "2026-09-22T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "il2s9lki5lm4n58b3b9u8uet5c",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1 (Tue cohort)",
+      "start": "2026-09-22T21:00:00+01:00",
+      "end": "2026-09-22T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "jugne0bsl55mpg4s8q3g928m4s",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-23T10:00:00+01:00",
+      "end": "2026-09-23T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "p1abn90ci0jst37geoo530jp3c",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-23T11:15:00+01:00",
+      "end": "2026-09-23T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "q96bs6mj8316c5kplkset61ve4",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-23T12:15:00+01:00",
+      "end": "2026-09-23T12:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8v6m8ih14iuf85ehh293qhvcn8",
+      "summary": "MC 🚗 Travel out — Kenilworth (Long Exposure Sunset)",
+      "start": "2026-09-23T16:55:00+01:00",
+      "end": "2026-09-23T17:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sm70ri9322kog1i7o8l1rogk0o",
+      "summary": "MC 🚗 Travel back — Kenilworth → home",
+      "start": "2026-09-23T19:45:00+01:00",
+      "end": "2026-09-23T20:05:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "lpdvl2cq4p0rjriecl37ektc58",
+      "summary": "MC ⏳ Prep — Camera Course Wk2 (Thu cohort)",
+      "start": "2026-09-24T18:30:00+01:00",
+      "end": "2026-09-24T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qophi0r4e2166vsu54dcftejik",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2 (Thu cohort)",
+      "start": "2026-09-24T21:00:00+01:00",
+      "end": "2026-09-24T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20260925T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-09-25T09:00:00+01:00",
+      "end": "2026-09-25T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "bqo66ia9nkl4dmtgr5pv2keem0",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-09-25T13:00:00+01:00",
+      "end": "2026-09-25T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "dedu1k6un2mtqf5jhjcnesggf8",
+      "summary": "Stay at The Eagles Hotel",
+      "start": "2026-09-26",
+      "end": "2026-09-28",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "k81nml1orn9iunmtbfacva326k",
+      "summary": "MC 🚗 Travel out — Snowdonia (Eagles Hotel, Llanrwst)",
+      "start": "2026-09-26T06:30:00+01:00",
+      "end": "2026-09-26T09:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "o35r74eqhn9hr6fg4gpkm827og",
+      "summary": "MC 🚗 Travel back — Snowdonia → home",
+      "start": "2026-09-27T16:00:00+01:00",
+      "end": "2026-09-27T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "cnh3hjg0qivel09avr8508ocuc",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-09-28T10:00:00+01:00",
+      "end": "2026-09-28T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "r6qguiu5449eij3qnor6d7os2s",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-09-28T11:00:00+01:00",
+      "end": "2026-09-28T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "dik9s3s9qb0689mm819vnsd10g",
+      "summary": "P0 · MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-09-29T10:00:00+01:00",
+      "end": "2026-09-29T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8csca43c5mtmfj0u6av8iopmgs",
+      "summary": "MC ⏳ Prep — Camera Course Wk2 (Tue cohort)",
+      "start": "2026-09-29T18:30:00+01:00",
+      "end": "2026-09-29T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "t7of28qdast9pvrh4tl8c1upik",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2 (Tue cohort)",
+      "start": "2026-09-29T21:00:00+01:00",
+      "end": "2026-09-29T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "javb92m7ha8mtsdjckjd5cqvho",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-09-30T10:00:00+01:00",
+      "end": "2026-09-30T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "btcc1n757b5c50opk9ica9jkg0",
+      "summary": "MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-09-30T14:00:00+01:00",
+      "end": "2026-09-30T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "g4kk445v4epa7540133tasg6bc",
+      "summary": "MC ⏰ Hotel deadline — Lake Vyrnwy (£331.20) cancel by 5 Oct",
+      "start": "2026-10-02T09:00:00+01:00",
+      "end": "2026-10-02T09:15:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "7hl07hc769qpjd28tf7nv66pd0",
+      "summary": "MC 🚗 Travel out — Dorset Jurassic Coast (Kingston)",
+      "start": "2026-10-02T10:30:00+01:00",
+      "end": "2026-10-02T13:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qu3p97gua1lutfu6h71ib0c2v0",
+      "summary": "MC 🚗 Travel back — Dorset → home",
+      "start": "2026-10-04T14:00:00+01:00",
+      "end": "2026-10-04T17:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rekpqrk3o1tuole39jeeajcepc",
+      "summary": "MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-10-05T09:00:00+01:00",
+      "end": "2026-10-05T10:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "q9ev8abg8tcbvleor52nreqo2k",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-05T11:45:00+01:00",
+      "end": "2026-10-05T12:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "5o7u4unsms01lvdnb90at4qr7k",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-05T12:45:00+01:00",
+      "end": "2026-10-05T13:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ooogv7rb35g20trae449boaeks",
+      "summary": "MC 🚗 Travel out — Chesterton Windmill",
+      "start": "2026-10-05T16:30:00+01:00",
+      "end": "2026-10-05T17:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ej5420dvi34khnt6u25uphkup0",
+      "summary": "MC 🚗 Travel back — Chesterton Windmill → home",
+      "start": "2026-10-05T19:30:00+01:00",
+      "end": "2026-10-05T20:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "hnbuov59i2buktkk33lbrgue3k",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-07T10:00:00+01:00",
+      "end": "2026-10-07T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mljis4osjtfq90t42k5vssupjc",
+      "summary": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-10-08T10:00:00+01:00",
+      "end": "2026-10-08T10:05:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "nen5eu3riflb8j76jr9dcrbtu0",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-08T11:00:00+01:00",
+      "end": "2026-10-08T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "dkmq0j8vu345ttpoto5ejk4u8k",
+      "summary": "Stay at Lake Vyrnwy Hotel & Spa",
+      "start": "2026-10-09",
+      "end": "2026-10-11",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261009T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-10-09T09:00:00+01:00",
+      "end": "2026-10-09T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "00mpb9j678jclf4pg6ubtbji58",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-10-09T13:00:00+01:00",
+      "end": "2026-10-09T15:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "phu3hgslksfemno987e7f6onas",
+      "summary": "MC 🚗 Travel out — Lake Vyrnwy (Wales)",
+      "start": "2026-10-10T06:45:00+01:00",
+      "end": "2026-10-10T09:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "tmihk9qk9in6mjd7n7jm2as8p8",
+      "summary": "MC ⚽ Before: Ipswich Town vs Fulham",
+      "start": "2026-10-10T14:00:00+01:00",
+      "end": "2026-10-10T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "3auk651nmcgdjusrilso7m9hss",
+      "summary": "MC ⚽ After: Ipswich Town vs Fulham",
+      "start": "2026-10-10T17:00:00+01:00",
+      "end": "2026-10-10T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "s9ii3iorl2mk67m67bbpfth8as",
+      "summary": "MC 🚗 Travel back — Lake Vyrnwy → home",
+      "start": "2026-10-11T15:00:00+01:00",
+      "end": "2026-10-11T17:15:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vr9tg4rucsurpqmcr4b4hbd3ho",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-12T10:00:00+01:00",
+      "end": "2026-10-12T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0v57ocfgsbgqduu1jprf3io0u4",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-12T11:00:00+01:00",
+      "end": "2026-10-12T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "l8tll94017ijq4lpe10t18n5qo",
+      "summary": "MC ⏳ Prep — Camera Course Wk1",
+      "start": "2026-10-12T18:30:00+01:00",
+      "end": "2026-10-12T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "9137562u4eb1gli8hrn1fa1gsc",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1",
+      "start": "2026-10-12T21:00:00+01:00",
+      "end": "2026-10-12T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0k23i8v6tb643535fabee1rvfg",
+      "summary": "MC ⏳ Prep — Camera Course Wk1 (2nd cohort)",
+      "start": "2026-10-14T18:30:00+01:00",
+      "end": "2026-10-14T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "hv5s99g9kdjath03k8d82aapgo",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1 (2nd cohort)",
+      "start": "2026-10-14T21:00:00+01:00",
+      "end": "2026-10-14T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0rlqvqnjnq89rtp45a8fg4nk7g",
+      "summary": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2026-10-15T10:00:00+01:00",
+      "end": "2026-10-15T14:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "5lm9nuocr6c5bukm2q95pn5a7k",
+      "summary": "MC 🚗 Travel out — Woodland Walk (Piles Coppice)",
+      "start": "2026-10-16T08:30:00+01:00",
+      "end": "2026-10-16T09:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "95tq100b2lhnndigqvsdtrpang",
+      "summary": "MC 🚗 Travel back — Woodland Walk → home",
+      "start": "2026-10-16T11:30:00+01:00",
+      "end": "2026-10-16T12:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "k4dqfqf1hi90gru2aramtt1cm0",
+      "summary": "MC 🚗 Travel out — Padley Gorge (Peak District)",
+      "start": "2026-10-17T07:00:00+01:00",
+      "end": "2026-10-17T09:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kvlfbu782kketq5lto91q7qb38",
+      "summary": "MC ⚽ Before: Manchester City vs Ipswich Town",
+      "start": "2026-10-17T14:00:00+01:00",
+      "end": "2026-10-17T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "g7b24ukritug4srvorhn7sgoe8",
+      "summary": "MC 🚗 Travel back — Padley Gorge → home",
+      "start": "2026-10-17T16:00:00+01:00",
+      "end": "2026-10-17T18:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7iesc8bljvv9vqricr1hmtkulc",
+      "summary": "MC ⚽ After: Manchester City vs Ipswich Town",
+      "start": "2026-10-17T17:00:00+01:00",
+      "end": "2026-10-17T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "lsteqg0f4oja0dfcvdbbkhun6o",
+      "summary": "MC ⏳ Prep — Woodland Masterclass (Autumn)",
+      "start": "2026-10-18T09:30:00+01:00",
+      "end": "2026-10-18T10:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vptnjjj83s3tats7oug0eonga4",
+      "summary": "MC ⏳ Decompress — Woodland Masterclass (Autumn)",
+      "start": "2026-10-18T16:00:00+01:00",
+      "end": "2026-10-18T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "90d9mv3qd36s215kjcgd1av074",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-19T10:00:00+01:00",
+      "end": "2026-10-19T10:45:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "5k56g9uip997d7r5k7chbl4k14",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-19T11:00:00+01:00",
+      "end": "2026-10-19T11:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4ibj02t47of3944a8el9hdauv8",
+      "summary": "MC ⏳ Prep — Camera Course Wk2",
+      "start": "2026-10-19T18:30:00+01:00",
+      "end": "2026-10-19T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4la74k88kovon5v541e1imjmhg",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2",
+      "start": "2026-10-19T21:00:00+01:00",
+      "end": "2026-10-19T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6eoan8me3iof6i8ogipmbphtp0",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-10-21T10:00:00+01:00",
+      "end": "2026-10-21T11:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "aug0t7pgr6mgde5brnara37a3g",
+      "summary": "MC ⏳ Prep — Camera Course Wk2 (2nd cohort)",
+      "start": "2026-10-21T18:30:00+01:00",
+      "end": "2026-10-21T19:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vfifjr4qvk80jstu75mfh85i6k",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2 (2nd cohort)",
+      "start": "2026-10-21T21:00:00+01:00",
+      "end": "2026-10-21T21:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "9t48j1l0cijmmnio64htssfg08",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-10-22T11:00:00+01:00",
+      "end": "2026-10-22T13:00:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "shp5a4c8eqdk5eklvf6ng9g2nk",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-23T06:30:00+01:00",
+      "end": "2026-10-23T07:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261023T080000Z",
+      "summary": "Cleaner",
+      "start": "2026-10-23T09:00:00+01:00",
+      "end": "2026-10-23T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "f96n77sq2fah5324cruup4codo",
+      "summary": "MC 🚗 Travel back — Batsford → home (1 of 6)",
+      "start": "2026-10-23T15:30:00+01:00",
+      "end": "2026-10-23T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "43c0nt0g8gqimlcomqlikiclc0",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-24T06:30:00+01:00",
+      "end": "2026-10-24T07:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0m5uvb7peae6gdut21koik7t14",
+      "summary": "MC ⚽ Before: Ipswich Town vs Nottingham Forest",
+      "start": "2026-10-24T14:00:00+01:00",
+      "end": "2026-10-24T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "7ug6mmfjt5q799ho9hp68vl2js",
+      "summary": "MC 🚗 Travel back — Batsford → home (2 of 6)",
+      "start": "2026-10-24T15:30:00+01:00",
+      "end": "2026-10-24T16:30:00+01:00",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0qdi6i49vchvo1r4029qv56peo",
+      "summary": "MC ⚽ After: Ipswich Town vs Nottingham Forest",
+      "start": "2026-10-24T17:00:00+01:00",
+      "end": "2026-10-24T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "a0p8i0tqdbp2u92bf6hi1b1oc4",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-25T06:30:00Z",
+      "end": "2026-10-25T07:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "tiuu70g6kq0749m807md7kns50",
+      "summary": "MC 🚗 Travel back — Batsford → home (3 of 6)",
+      "start": "2026-10-25T15:30:00Z",
+      "end": "2026-10-25T16:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kofm1s8bjb5rdpjtgig9ereuok",
+      "summary": "MC ⏰ Hotel deadline — Ravenstone Nov (£1,804) cancel by 29 Oct",
+      "start": "2026-10-26T09:00:00Z",
+      "end": "2026-10-26T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "t5g8r4ijfeg1uvr2l8o2fi1t9o",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-10-26T10:00:00Z",
+      "end": "2026-10-26T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "u5sbh8sdnokj8bfi0rlej58brc",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-10-26T11:00:00Z",
+      "end": "2026-10-26T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ub9loha451nmepid6kk12878p4",
+      "summary": "MC ⏳ Prep — Camera Course Wk3",
+      "start": "2026-10-26T18:30:00Z",
+      "end": "2026-10-26T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vodbds307ff4gpchf8vunqp124",
+      "summary": "MC ⏳ Decompress — Camera Course Wk3",
+      "start": "2026-10-26T21:00:00Z",
+      "end": "2026-10-26T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7itjc9rjh94nphtuj9f3jt3li4",
+      "summary": "MC ⏳ Prep — Camera Course Wk3 (2nd cohort)",
+      "start": "2026-10-28T18:30:00Z",
+      "end": "2026-10-28T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "hbq6l451vdjp83cvs1ugnb0fqk",
+      "summary": "MC ⏳ Decompress — Camera Course Wk3 (2nd cohort)",
+      "start": "2026-10-28T21:00:00Z",
+      "end": "2026-10-28T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "o5g6nv1a4enm7aivhaoeheubmg",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-29T06:30:00Z",
+      "end": "2026-10-29T07:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kbus9uclgkfukjl6ai44rvrggs",
+      "summary": "MC 🚗 Travel back — Batsford → home (4 of 6)",
+      "start": "2026-10-29T15:30:00Z",
+      "end": "2026-10-29T16:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "p72rms55vqvd9g0fgil67mfdqc",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-30T06:30:00Z",
+      "end": "2026-10-30T07:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "pjblkh40pn27qiib5hglp8ohck",
+      "summary": "MC 🚗 Travel back — Batsford → home (5 of 6)",
+      "start": "2026-10-30T15:30:00Z",
+      "end": "2026-10-30T16:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "unkvrv1tstrev3dvt5jlgj73bk",
+      "summary": "MC 🚗 Move travel_out Batsford Arboretum → follow workshop",
+      "start": "2026-10-31T06:30:00Z",
+      "end": "2026-10-31T07:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "319vqc4erpva89kgbt8ukbd0e4",
+      "summary": "MC ⚽ Before: Hull City vs Ipswich Town",
+      "start": "2026-10-31T14:00:00Z",
+      "end": "2026-10-31T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "hmqcdeaqqdo3i79sml5rpjnk84",
+      "summary": "MC 🚗 Travel back — Batsford → home (6 of 6)",
+      "start": "2026-10-31T15:30:00Z",
+      "end": "2026-10-31T16:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "frtagdmng8kfn89chdfunbleqk",
+      "summary": "MC ⚽ After: Hull City vs Ipswich Town",
+      "start": "2026-10-31T17:00:00Z",
+      "end": "2026-10-31T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "jousfmant5g98829r2effnrb5k",
+      "summary": "MC 🚗 Travel out — Padley Gorge (Autumn)",
+      "start": "2026-11-01T07:00:00Z",
+      "end": "2026-11-01T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0lsi9tfs7q13jhf6uufeqih4e8",
+      "summary": "MC 🚗 Travel back — Padley Gorge → home",
+      "start": "2026-11-01T16:00:00Z",
+      "end": "2026-11-01T18:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "iok420726vkdatj4kr50f4gh24",
+      "summary": "MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-11-02T09:00:00Z",
+      "end": "2026-11-02T10:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0anj21rpbte304c2eraqg5hnh0",
+      "summary": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-11-02T10:00:00Z",
+      "end": "2026-11-02T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4kvhten9sje71qch0hu58b59qk",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-11-02T11:45:00Z",
+      "end": "2026-11-02T12:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0ehuh6t77kj3oetef6ag4pe5bs",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-11-02T12:45:00Z",
+      "end": "2026-11-02T13:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "e9qts2sqh9unoq1em8du5uii14",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-11-04T10:00:00Z",
+      "end": "2026-11-04T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kuncoe7aoqfptimnco3qd6sbus",
+      "summary": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-11-04T11:15:00Z",
+      "end": "2026-11-04T14:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vkonfmno1ar61rhs4n0asns12k",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-11-05T11:00:00Z",
+      "end": "2026-11-05T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "eg5l0qfgl26kt7lbu1v1c6j40k",
+      "summary": "MC 🚗 Travel out — Woodland Walk (Crackley Woods)",
+      "start": "2026-11-06T08:40:00Z",
+      "end": "2026-11-06T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261106T090000Z",
+      "summary": "Cleaner",
+      "start": "2026-11-06T09:00:00Z",
+      "end": "2026-11-06T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "klt4qrenqc3047cgovthiuav8s",
+      "summary": "MC 🚗 Travel back — Crackley Woods → home",
+      "start": "2026-11-06T11:30:00Z",
+      "end": "2026-11-06T11:50:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ku6g6si2hn8sde144ao17cjlao",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-11-06T13:00:00Z",
+      "end": "2026-11-06T15:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "3rldl6fa47uqu2hi3i05ri4bu4",
+      "summary": "MC 🚗 Travel out — Padley Gorge (Autumn)",
+      "start": "2026-11-07T07:00:00Z",
+      "end": "2026-11-07T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ga8iua36j5antv5s5knkdghpro",
+      "summary": "MC ⚽ Before: Ipswich Town vs Bournemouth",
+      "start": "2026-11-07T14:00:00Z",
+      "end": "2026-11-07T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "klqcdb3mif5njnf6vrc04qieu8",
+      "summary": "MC 🚗 Travel back — Padley Gorge → home",
+      "start": "2026-11-07T16:00:00Z",
+      "end": "2026-11-07T18:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "pbh7jenho7sasqd4bmdnn92r40",
+      "summary": "MC ⚽ After: Ipswich Town vs Bournemouth",
+      "start": "2026-11-07T17:00:00Z",
+      "end": "2026-11-07T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "237q1s88d1aell69d7fmpmsks4",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-11-09T10:00:00Z",
+      "end": "2026-11-09T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kqdsiqi6k732vs6infp4hqo31k",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-11-09T11:00:00Z",
+      "end": "2026-11-09T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "nfttmr4et93o9pjnb7gcc3kvr4",
+      "summary": "MC ⏳ Prep — Camera Course Wk1",
+      "start": "2026-11-09T18:30:00Z",
+      "end": "2026-11-09T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "v5cc479ogdrj5vsu7q0ma99kfk",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1",
+      "start": "2026-11-09T21:00:00Z",
+      "end": "2026-11-09T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2v4k1ovuc8k9sg491h42srgdfk",
+      "summary": "MC ⏰ Hotel deadline — White Horse OVERSTRAND (£940) cancel by 17 Nov",
+      "start": "2026-11-11T09:00:00Z",
+      "end": "2026-11-11T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "g1uu6qmi0t45s89r5negn6gbhk",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-11-11T10:00:00Z",
+      "end": "2026-11-11T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8toikbdfp0gjnel3hrepi74jug",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-11-11T11:15:00Z",
+      "end": "2026-11-11T13:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "bedevrmuq3pat4cl6unr6cpsg0",
+      "summary": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-11-11T13:30:00Z",
+      "end": "2026-11-11T13:35:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g8co46e2288pj6gi26h248gpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6ork6gq468oj2ga26l334h9k8d142h1m8d0kagpk8d242e24691g",
+      "summary": "Guest Confirmation for Ravenstone Manor Hotel Booking Reference 19a501c39e5",
+      "start": "2026-11-12",
+      "end": "2026-11-16",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "kg0cfj5lh82tpc60pa270j7s38",
+      "summary": "MC ⏳ Prep — Lightroom Wk1",
+      "start": "2026-11-12T18:30:00Z",
+      "end": "2026-11-12T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "15ur7lndhu9dvjdvqa6hgm9mmc",
+      "summary": "MC ⏳ Decompress — Lightroom Wk1",
+      "start": "2026-11-12T21:00:00Z",
+      "end": "2026-11-12T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "p510afd7504b8d0fh6j2uqvb5g",
+      "summary": "MC 🚗 Travel out — Lake District (Autumn in Cumbria)",
+      "start": "2026-11-13T05:15:00Z",
+      "end": "2026-11-13T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "c7tgga26ipn1l6nsnknnsdddrk",
+      "summary": "MC 🚗 Travel back — Lake District → home",
+      "start": "2026-11-15T14:30:00Z",
+      "end": "2026-11-15T18:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7rk59artu51u5l0g7b0ib4qj1g",
+      "summary": "MC ⏳ Prep — Camera Course Wk2",
+      "start": "2026-11-16T18:30:00Z",
+      "end": "2026-11-16T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "h446tkcvh3l3l2n96umblrd8i0",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2",
+      "start": "2026-11-16T21:00:00Z",
+      "end": "2026-11-16T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0k26pl9arva7jlrulcn5ib63ak",
+      "summary": "P1 · MC 🔁 BAU global refresh — Day 1",
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "krt0gvqkfds419fqhsnn7gsd74",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-11-18T10:00:00Z",
+      "end": "2026-11-18T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0gd2a19slpuldqbq8ee0mmhc6c",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-11-18T11:15:00Z",
+      "end": "2026-11-18T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "g9urvtl3trp989dmdssl33uoio",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-11-18T12:15:00Z",
+      "end": "2026-11-18T12:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vu6s8cripigqiagqecr4522m34",
+      "summary": "P1 · MC 🔁 BAU global refresh — Day 2",
+      "start": "2026-11-19T10:00:00Z",
+      "end": "2026-11-19T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "03crusln1mgafh3gmn2vd6j87o",
+      "summary": "MC ⏳ Prep — Lightroom Wk2",
+      "start": "2026-11-19T18:30:00Z",
+      "end": "2026-11-19T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "gutv3an9j86v3ecic1v6d8rit8",
+      "summary": "MC ⏳ Decompress — Lightroom Wk2",
+      "start": "2026-11-19T21:00:00Z",
+      "end": "2026-11-19T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "s3jt382j87aetpk078fifrbb1g",
+      "summary": "MC 🚗 Travel out — Norfolk (Blakeney)",
+      "start": "2026-11-20T05:30:00Z",
+      "end": "2026-11-20T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261120T090000Z",
+      "summary": "Cleaner",
+      "start": "2026-11-20T09:00:00Z",
+      "end": "2026-11-20T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "nfrv84hqvtis2t2926pebgvlk8",
+      "summary": "MC ⚽ Before: Tottenham Hotspur vs Ipswich Town",
+      "start": "2026-11-21T14:00:00Z",
+      "end": "2026-11-21T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ukq2kitgi9henf4r9dsear04g4",
+      "summary": "MC ⚽ After: Tottenham Hotspur vs Ipswich Town",
+      "start": "2026-11-21T17:00:00Z",
+      "end": "2026-11-21T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g68o36gq36ksk6chj74p48d9g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g74ojcc9g64q4ad1l6kpkadpk69130gpg8cp3chhn74ok4h1h6p10_20261122",
+      "summary": "Agnes Birthday",
+      "start": "2026-11-22",
+      "end": "2026-11-23",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g8oo3ie9h88rjcci46p246hhg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8or36h9h6h244h9o6113icpk6csjgdhi6sqk2d1l8ook8cq47520_20261122",
+      "summary": "Georgina Catalinotto's Birthday",
+      "start": "2026-11-22",
+      "end": "2026-11-23",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "4lca0qbsfh1d7s2g2btrepi04k",
+      "summary": "MC 🚗 Travel back — Norfolk → home",
+      "start": "2026-11-22T14:00:00Z",
+      "end": "2026-11-22T17:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "uepg4joo9v52tlr4jri3tv0ch8",
+      "summary": "MC ⏳ Prep — Camera Course Wk3",
+      "start": "2026-11-23T18:30:00Z",
+      "end": "2026-11-23T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8kbavoerb3p1aqepr0qkr0ll70",
+      "summary": "MC ⏳ Decompress — Camera Course Wk3",
+      "start": "2026-11-23T21:00:00Z",
+      "end": "2026-11-23T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "lq5jrbpqvbn7a82hsv5bqm2bck",
+      "summary": "MC 🔁 Publish Blog Post",
+      "start": "2026-11-24T12:00:00Z",
+      "end": "2026-11-24T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2ormhln4uemvbfn0dt8reao2hg",
+      "summary": "MC 🔁 Backup Photos to Portable Drive",
+      "start": "2026-11-24T14:30:00Z",
+      "end": "2026-11-24T15:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4ss2n9leh8dmpsobiullg1ql8k",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-11-25T10:00:00Z",
+      "end": "2026-11-25T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "mhtig2nqv59jpj7bqfvmccun30",
+      "summary": "MC 🔁 Review/Amend Course & Workshop Dates + check Hotel Bookings",
+      "start": "2026-11-25T12:15:00Z",
+      "end": "2026-11-25T14:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "tn6esmlad2o4vakrmsuukn4s8s",
+      "summary": "MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-11-25T14:30:00Z",
+      "end": "2026-11-25T15:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "v9ma918v91kcqabdjrqm69ukr4",
+      "summary": "MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-11-25T15:15:00Z",
+      "end": "2026-11-25T16:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "dtqunmim259cqtv7mthm9goqdg",
+      "summary": "MC ⏳ Prep — Lightroom Wk3",
+      "start": "2026-11-26T18:30:00Z",
+      "end": "2026-11-26T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rccil4ils0uh758g3lcom1gnic",
+      "summary": "MC ⏳ Decompress — Lightroom Wk3",
+      "start": "2026-11-26T21:00:00Z",
+      "end": "2026-11-26T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "d1qsc23r4aru3subpigvcfb89c",
+      "summary": "MC 🔁 Light & Logic newsletter issue",
+      "start": "2026-11-27T10:00:00Z",
+      "end": "2026-11-27T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qs7h94oq4m1op05upq9k238kbc",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-11-27T10:00:00Z",
+      "end": "2026-11-27T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_pattern"
+    },
+    {
+      "id": "jus7gbocfkksn3otl27oh1e92k",
+      "summary": "MC 🔁 Update Event Schema for Classes & Workshops",
+      "start": "2026-11-28T11:00:00Z",
+      "end": "2026-11-28T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "u2vv0jhn7v7rlnnh82sq7ljncc",
+      "summary": "MC ⚽ Before: Ipswich Town vs Aston Villa",
+      "start": "2026-11-28T14:00:00Z",
+      "end": "2026-11-28T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "3i77j0uh3d01gif6n6scigl7ug",
+      "summary": "MC ⚽ After: Ipswich Town vs Aston Villa",
+      "start": "2026-11-28T17:00:00Z",
+      "end": "2026-11-28T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ko46h1k8os42gpm60pk8cpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g611j4cpg8l142ea160r4ch1k68sk2c1n6123gcpk6p33ccpn6csg",
+      "summary": "St. Andrew's Day (Scotland)",
+      "start": "2026-11-30",
+      "end": "2026-12-01",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "83tc6qmbf5b9arsjbtfc71r1oc",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-11-30T10:00:00Z",
+      "end": "2026-11-30T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "86jt1577vf69f7fh38c2v84us0",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-11-30T11:00:00Z",
+      "end": "2026-11-30T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2nnsr3adiqrfog2c34r33jce6k",
+      "summary": "MC 🔁 Booking Sheet, Month End Update",
+      "start": "2026-12-01T09:00:00Z",
+      "end": "2026-12-01T10:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "furl3o2h9uq8renngf0sdv554k",
+      "summary": "MC ⏳ Prep — Camera Course Wk1",
+      "start": "2026-12-01T18:30:00Z",
+      "end": "2026-12-01T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6e5djeqgfn6iabde5mrgevikgo",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1",
+      "start": "2026-12-01T21:00:00Z",
+      "end": "2026-12-01T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6rgufm0l99molojq02fl8r5oig",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-12-02T10:00:00Z",
+      "end": "2026-12-02T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "aifsqskmktj7m8nmlj7nfv7igg",
+      "summary": "MC ⚽ Before: Coventry City vs Ipswich Town",
+      "start": "2026-12-02T19:00:00Z",
+      "end": "2026-12-02T20:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "g7rho4agnptqedg1hdns2jqg9o",
+      "summary": "MC ⚽ After: Coventry City vs Ipswich Town",
+      "start": "2026-12-02T22:00:00Z",
+      "end": "2026-12-02T23:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "4np01rjrr4m6rb4lcml91lcd6k",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-12-03T11:00:00Z",
+      "end": "2026-12-03T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "c4604a2a8i7kdctgti9rcpj54o",
+      "summary": "MC 🚗 Travel out — Hay Woods (Woodland Walk)",
+      "start": "2026-12-04T08:42:00Z",
+      "end": "2026-12-04T09:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261204T090000Z",
+      "summary": "Cleaner",
+      "start": "2026-12-04T09:00:00Z",
+      "end": "2026-12-04T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ovb2ao7mpbd4uojgpmqk4hm5jc",
+      "summary": "MC 🚗 Travel back — Hay Woods → home",
+      "start": "2026-12-04T11:30:00Z",
+      "end": "2026-12-04T11:48:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "66u9inc7jgi8oljjefecn568ms",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-12-04T13:00:00Z",
+      "end": "2026-12-04T15:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ljqksh4c7npcj4fdvv38bvgcmk",
+      "summary": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2026-12-05T11:00:00Z",
+      "end": "2026-12-05T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "756jp3las606pqpa391366iikg",
+      "summary": "MC ⚽ Before: Leeds United vs Ipswich Town",
+      "start": "2026-12-05T14:00:00Z",
+      "end": "2026-12-05T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "qrc1h66lh7corqrjsrcu20nia4",
+      "summary": "MC ⚽ After: Leeds United vs Ipswich Town",
+      "start": "2026-12-05T17:00:00Z",
+      "end": "2026-12-05T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "pfdo2pb02u347tk8n0cp8jtpac",
+      "summary": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2026-12-07T10:00:00Z",
+      "end": "2026-12-07T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7pmkbpidqrekq9djv60l2g9q8g",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-12-07T11:45:00Z",
+      "end": "2026-12-07T12:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ludgdgkndti3cjp79esc69d8ak",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-12-07T12:45:00Z",
+      "end": "2026-12-07T13:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8hhs61ci3bpgkm84v75anic1rs",
+      "summary": "MC ⏳ Prep — Camera Course Wk2",
+      "start": "2026-12-08T18:30:00Z",
+      "end": "2026-12-08T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "16gag5663v0scs0a0u10nd6d40",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2",
+      "start": "2026-12-08T21:00:00Z",
+      "end": "2026-12-08T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "0fo91i1b7dti3r2fe20or318rc",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-12-09T10:00:00Z",
+      "end": "2026-12-09T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ei66h0udloniq1jheaplfpegh4",
+      "summary": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2026-12-10T10:00:00Z",
+      "end": "2026-12-10T10:05:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "shvsg3mpi09pnotntragb3pg90",
+      "summary": "MC 🚗 Travel out — Leamington Spa (Christmas Evening)",
+      "start": "2026-12-10T17:40:00Z",
+      "end": "2026-12-10T18:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "vh7rqugsor477tbr89l8k46348",
+      "summary": "MC 🚗 Travel back — Leamington Spa → home",
+      "start": "2026-12-10T20:30:00Z",
+      "end": "2026-12-10T21:05:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4hq4t9no34h3cce8nn9rgsgc74",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-12-11T10:00:00Z",
+      "end": "2026-12-11T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qo3h0n3frfkmcb4fq56i1vsjao",
+      "summary": "MC ⚽ Before: Ipswich Town vs Newcastle United",
+      "start": "2026-12-12T14:00:00Z",
+      "end": "2026-12-12T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "hi5tn92lgopnj90u5eaok195mk",
+      "summary": "MC ⚽ After: Ipswich Town vs Newcastle United",
+      "start": "2026-12-12T17:00:00Z",
+      "end": "2026-12-12T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "cfrj4dh54pd69ltmm20i2kivas",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-12-14T10:00:00Z",
+      "end": "2026-12-14T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "iuhfb5vc8ef9p5bjlu1dvvuc3c",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-12-14T11:00:00Z",
+      "end": "2026-12-14T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "t7dbekrj41idvqikufkab78tnc",
+      "summary": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2026-12-15T10:00:00Z",
+      "end": "2026-12-15T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4qo86a66826l77ohsl6s4qihh4",
+      "summary": "MC ⏳ Prep — Camera Course Wk3",
+      "start": "2026-12-15T18:30:00Z",
+      "end": "2026-12-15T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "njkgbfa6mkr2chbkdne6obltqg",
+      "summary": "MC ⏳ Decompress — Camera Course Wk3",
+      "start": "2026-12-15T21:00:00Z",
+      "end": "2026-12-15T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "l2hlc46ja49lsjgoltuofjjvas",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-12-16T10:00:00Z",
+      "end": "2026-12-16T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "10pdkplb16d5mhkt1ogr7kte7c",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-12-17T11:00:00Z",
+      "end": "2026-12-17T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20261218T090000Z",
+      "summary": "Cleaner",
+      "start": "2026-12-18T09:00:00Z",
+      "end": "2026-12-18T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "h5dojh5q6flijai8isavoqrsng",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-12-18T13:00:00Z",
+      "end": "2026-12-18T15:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "k93h0gblcjdfqd43ta7bi1mrkg",
+      "summary": "MC ⚽ Before: Brighton and Hove Albion vs Ipswich Town",
+      "start": "2026-12-19T14:00:00Z",
+      "end": "2026-12-19T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "h66rk3kqae6gpar6tmaq50iimo",
+      "summary": "MC ⚽ After: Brighton and Hove Albion vs Ipswich Town",
+      "start": "2026-12-19T17:00:00Z",
+      "end": "2026-12-19T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ra33paoh3odgvrrreoph2rs2fo",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-12-21T10:00:00Z",
+      "end": "2026-12-21T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "f33ddhorooqgkrdrhlfjcki1jo",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-12-21T11:00:00Z",
+      "end": "2026-12-21T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fb261urk7mgflf8ocv9ndbrmi8",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-12-23T10:00:00Z",
+      "end": "2026-12-23T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7gs1pqu3e738brv83c4k25t2b4",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2026-12-24T10:00:00Z",
+      "end": "2026-12-24T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6go48e9g70s42gpm60pk8cpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g74qk6ca38l33ae1o8ooj8dpk74s3cc216l148gq58cpjch226d1g",
+      "summary": "Christmas Day",
+      "start": "2026-12-25",
+      "end": "2026-12-26",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo38d9g6gs42gpm60pk8cpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6so3ah9i6oq4ccpj60s3acpk8cs4cea26133gca274oj0ea58org",
+      "summary": "Boxing Day",
+      "start": "2026-12-26",
+      "end": "2026-12-27",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "q74grqch0nn80iktg8kstq0a5c",
+      "summary": "MC ⚽ Before: Ipswich Town vs Brentford",
+      "start": "2026-12-26T14:00:00Z",
+      "end": "2026-12-26T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "krgp668amnds3mkthovblvjggc",
+      "summary": "MC ⚽ After: Ipswich Town vs Brentford",
+      "start": "2026-12-26T17:00:00Z",
+      "end": "2026-12-26T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "m0qno3sbhn4jpk0b4v8ubv3a6c",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2026-12-28T10:00:00Z",
+      "end": "2026-12-28T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ljp06tll18b8o844mjh8tecgvg",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2026-12-28T11:00:00Z",
+      "end": "2026-12-28T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "pje88ccndrhf4srhip9rp52ut4",
+      "summary": "MC 🚗 Travel out — Lapworth (Christmas Walk)",
+      "start": "2026-12-29T08:06:00Z",
+      "end": "2026-12-29T08:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "7e2p5d41m6ofbg4rhupnp3k3n8",
+      "summary": "MC 🚗 Travel back — Lapworth → home",
+      "start": "2026-12-29T15:00:00Z",
+      "end": "2026-12-29T15:24:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "of7gj0v3erfuqq1ehd2pv17kmc",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2026-12-30T11:15:00Z",
+      "end": "2026-12-30T12:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "3kqgkp3d5pbm9rv8euq9mn7ff8",
+      "summary": "MC ⚽ Before: Ipswich Town vs Chelsea",
+      "start": "2026-12-30T19:00:00Z",
+      "end": "2026-12-30T20:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "4fmghcvf0e6pobmid0jek8fsic",
+      "summary": "MC ⚽ After: Ipswich Town vs Chelsea",
+      "start": "2026-12-30T22:00:00Z",
+      "end": "2026-12-30T23:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "u9v242kech58gtdmikujkinksg",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2026-12-31T11:00:00Z",
+      "end": "2026-12-31T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270101T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-01-01T09:00:00Z",
+      "end": "2027-01-01T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "u4s893l7qi5tio3l0kvoth7jlo",
+      "summary": "MC 🔁 Booking Sheet, Month End Update",
+      "start": "2027-01-01T09:00:00Z",
+      "end": "2027-01-01T10:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "kmkhojkdcq2lvglg52c86bup4g",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2027-01-02T11:00:00Z",
+      "end": "2027-01-02T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2upvv4qlegs76grv39r2g2kens",
+      "summary": "MC ⚽ Before: Arsenal vs Ipswich Town",
+      "start": "2027-01-02T14:00:00Z",
+      "end": "2027-01-02T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "n0a7s420ufufg1jq40iug3teh4",
+      "summary": "MC ⚽ After: Arsenal vs Ipswich Town",
+      "start": "2027-01-02T17:00:00Z",
+      "end": "2027-01-02T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "26hbd2k9svv7uho7jtoh4kdgno",
+      "summary": "MC ⏰ Hotel deadline — Ravenstone Jan (£2,211) cancel by 7-8 Jan",
+      "start": "2027-01-04T09:00:00Z",
+      "end": "2027-01-04T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "24etdcs2miftvbrl4jkhdo5a4c",
+      "summary": "P0 · MC 🔁 Monthly Accounts — Bank Genie",
+      "start": "2027-01-04T10:00:00Z",
+      "end": "2027-01-04T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "75cmbkfiecltd9n9te11opncu8",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2027-01-04T11:45:00Z",
+      "end": "2027-01-04T12:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "1jl4roa54g850busghk5svfegk",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2027-01-04T12:45:00Z",
+      "end": "2027-01-04T13:15:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "lt0068gsr6vi3f0q561niph4ak",
+      "summary": "P1 · MC 🔁 SEO Performance Review",
+      "start": "2027-01-05T10:00:00Z",
+      "end": "2027-01-05T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "4cpa1j9vh36vpvnqqv9vdsf774",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2027-01-06T10:00:00Z",
+      "end": "2027-01-06T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "sjbdnhrh12gsdkjqhgbi3qdnos",
+      "summary": "MC ⚽ Before: Ipswich Town vs Coventry City",
+      "start": "2027-01-06T19:00:00Z",
+      "end": "2027-01-06T20:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "3hsa4j4psnt3d4j0bdhvmtc0a8",
+      "summary": "MC ⚽ After: Ipswich Town vs Coventry City",
+      "start": "2027-01-06T22:00:00Z",
+      "end": "2027-01-06T23:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "pll9ertv7o253g738vo798une8",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2027-01-08T10:00:00Z",
+      "end": "2027-01-08T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fqgr96q8dfjr4ar5nd4a5laijg",
+      "summary": "MC ⏳ Prep — Woodland Masterclass (Winter)",
+      "start": "2027-01-10T09:30:00Z",
+      "end": "2027-01-10T10:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "1gpmidd3aoqvp2r9m1rpln8kks",
+      "summary": "MC ⏳ Decompress — Woodland Masterclass (Winter)",
+      "start": "2027-01-10T16:00:00Z",
+      "end": "2027-01-10T16:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "f1ceigbl48r8qjem0p5vsjem3c",
+      "summary": "P1 · MC 🔁 BAU global refresh — Day 1",
+      "start": "2027-01-11T10:00:00Z",
+      "end": "2027-01-11T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "j849k1qos9e55ob9vbe3br5vsk",
+      "summary": "P1 · MC 🔁 BAU global refresh — Day 2",
+      "start": "2027-01-12T10:00:00Z",
+      "end": "2027-01-12T14:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6g3jb4l63i87ac8upsh2a1e478",
+      "summary": "MC ⏳ Prep — Lightroom Wk1",
+      "start": "2027-01-12T18:30:00Z",
+      "end": "2027-01-12T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "fapgh997vkgt3f0q1528vkhqvo",
+      "summary": "MC ⏳ Decompress — Lightroom Wk1",
+      "start": "2027-01-12T21:00:00Z",
+      "end": "2027-01-12T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "k9ad8r6de7bt37sivcgni6b9f8",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2027-01-13T10:00:00Z",
+      "end": "2027-01-13T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "qqt3cvane3gfopfisg55eeld38",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2027-01-13T11:15:00Z",
+      "end": "2027-01-13T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "i4jirkqglgb8c7chsascc0k03o",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2027-01-13T12:15:00Z",
+      "end": "2027-01-13T12:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "hlnfvpt5h2rn90l71uk1temgpc",
+      "summary": "MC ⏳ Prep — Camera Course Wk1",
+      "start": "2027-01-13T18:30:00Z",
+      "end": "2027-01-13T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "bl87jqiqsicglcvukhj6dj70ko",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1",
+      "start": "2027-01-13T21:00:00Z",
+      "end": "2027-01-13T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "chjctgtr04frq36qvaicf9pua4",
+      "summary": "MC ⏰ Hotel decision — Angel Inn Wangford (£2,231) 1-day cancel window",
+      "start": "2027-01-14T09:00:00Z",
+      "end": "2027-01-14T09:20:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "i7jd02b2c0tla1grtlhuc8uju4",
+      "summary": "P2 · MC 🔁 Check Artfully Walls Sales",
+      "start": "2027-01-14T10:00:00Z",
+      "end": "2027-01-14T10:05:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "hdiooacdbhqnlic391i0885njs",
+      "summary": "P1 · MC 🔁 Publish Blog Post",
+      "start": "2027-01-14T11:00:00Z",
+      "end": "2027-01-14T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270115T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-01-15T09:00:00Z",
+      "end": "2027-01-15T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ab1tnj1jrjqafe1qg6iu6s7lfo",
+      "summary": "P0 · MC 🔁 Light and Logic newsletter issue",
+      "start": "2027-01-15T13:00:00Z",
+      "end": "2027-01-15T17:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "rh98pfrm5hk00lhdpk140js99c",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2027-01-16T11:00:00Z",
+      "end": "2027-01-16T13:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "g0o2oqusg0gookkr0ekd0nn7f8",
+      "summary": "MC ⚽ Before: Bournemouth vs Ipswich Town",
+      "start": "2027-01-16T14:00:00Z",
+      "end": "2027-01-16T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "0n26ng1gvmms27fcua9klenqo4",
+      "summary": "MC ⚽ After: Bournemouth vs Ipswich Town",
+      "start": "2027-01-16T17:00:00Z",
+      "end": "2027-01-16T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "7rkvt2stieojt89heknlucaoo4",
+      "summary": "P1 · MC 🔁 Hotel bookings check (Claude)",
+      "start": "2027-01-18T10:00:00Z",
+      "end": "2027-01-18T10:45:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "89kir0fl13rmepbr7phgas9iu8",
+      "summary": "P1 · MC 🔁 Hotel bookings — Alan actions",
+      "start": "2027-01-18T11:00:00Z",
+      "end": "2027-01-18T11:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "skm3o2kmmhrj2r54vff0rn0hsk",
+      "summary": "MC ⏳ Prep — Lightroom Wk2",
+      "start": "2027-01-19T18:30:00Z",
+      "end": "2027-01-19T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "id0sd4p5spldv1l6jomjeau8cs",
+      "summary": "MC ⏳ Decompress — Lightroom Wk2",
+      "start": "2027-01-19T21:00:00Z",
+      "end": "2027-01-19T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "1nko2qq32va97ugis6vjvp3v7k",
+      "summary": "P0 · MC 🔁 Send Out Joining Details",
+      "start": "2027-01-20T10:00:00Z",
+      "end": "2027-01-20T11:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "5l1lu0k1e3pt1an14b9r7fi0cc",
+      "summary": "MC ⏳ Prep — Camera Course Wk2",
+      "start": "2027-01-20T18:30:00Z",
+      "end": "2027-01-20T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "8ldfs0u2j291uvqmp2g3i7tfms",
+      "summary": "MC ⏳ Decompress — Camera Course Wk2",
+      "start": "2027-01-20T21:00:00Z",
+      "end": "2027-01-20T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g60o36dq66d0jgdpo65148h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g74q4agpm651k8d218gp42cpk6514cc9k8oo42cq38cp3ad1k8kp0",
+      "summary": "Guest Confirmation for Ravenstone Manor Hotel Booking Reference BDC5217647499",
+      "start": "2027-01-21",
+      "end": "2027-01-25",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g8co42ga46p1jgdpo65148h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6kqk2cho8oo32dq66kpj4gpk6h142d1i8kq30hhg6133gchj8l30",
+      "summary": "You have a message from Ravenstone Manor",
+      "start": "2027-01-21",
+      "end": "2027-01-25",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "guq1u0ul0i7a4ptf4tea3h6bsk",
+      "summary": "Stay at Ravenstone Manor",
+      "start": "2027-01-21",
+      "end": "2027-01-23",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "gu0rpeavot108lu1ignfb3kgjk",
+      "summary": "P1 · MC 🔁 Review/Amend Course and Workshop Dates",
+      "start": "2027-01-21T10:00:00Z",
+      "end": "2027-01-21T12:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "ai3ged3umsuh9vh253pl4bbkos",
+      "summary": "MC 🚗 Travel out — Ravenstone Manor (Winter in Cumbria)",
+      "start": "2027-01-21T14:00:00Z",
+      "end": "2027-01-21T18:21:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "891mlbvnbjobktcjav96icduf4",
+      "summary": "Stay at Ravenstone Manor",
+      "start": "2027-01-22",
+      "end": "2027-01-25",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g68o4ac9p8523edpo65148h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8cs4acq5691kchhp8krkcc1k6d0k6da484s32c1g88s32dpk652g",
+      "summary": "Guest Confirmation for Ravenstone Manor Hotel Booking Reference BDC5941997469",
+      "start": "2027-01-22",
+      "end": "2027-01-25",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ct2uqetqrgjns2tdkbhs2rv6vs",
+      "summary": "MC ⚽ Before: Ipswich Town vs Hull City",
+      "start": "2027-01-23T14:00:00Z",
+      "end": "2027-01-23T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "dgrhmklmj88t4tiv6jatiksqi4",
+      "summary": "MC ⚽ After: Ipswich Town vs Hull City",
+      "start": "2027-01-23T17:00:00Z",
+      "end": "2027-01-23T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "rvli6260h6dhlc6bas5jtf3qd0",
+      "summary": "MC 🚗 Travel back — Ravenstone Manor → home",
+      "start": "2027-01-24T14:30:00Z",
+      "end": "2027-01-24T18:51:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "p8tqi2a2fb9mmmtbv03kuhaqd0",
+      "summary": "MC ⏳ Prep — Lightroom Wk3",
+      "start": "2027-01-26T18:30:00Z",
+      "end": "2027-01-26T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "pgoigo3fkhlp52vrj6lumrp9h4",
+      "summary": "MC ⏳ Decompress — Lightroom Wk3",
+      "start": "2027-01-26T21:00:00Z",
+      "end": "2027-01-26T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "6v3f7f4vrb6m6kl8l2dcg2s8m0",
+      "summary": "MC ⏳ Prep — Camera Course Wk1 (new cohort)",
+      "start": "2027-01-27T18:30:00Z",
+      "end": "2027-01-27T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "82d9mggsnvhtiu8njihqk1jnb0",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1 (new cohort)",
+      "start": "2027-01-27T21:00:00Z",
+      "end": "2027-01-27T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "2c1vuecsl507h776kknaosaud4",
+      "summary": "MC ⏳ Prep — Camera Course Wk1 (2nd cohort)",
+      "start": "2027-01-28T18:30:00Z",
+      "end": "2027-01-28T19:00:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "o2teqturqsl38kt7spcs1d4pmc",
+      "summary": "MC ⏳ Decompress — Camera Course Wk1 (2nd cohort)",
+      "start": "2027-01-28T21:00:00Z",
+      "end": "2027-01-28T21:30:00Z",
+      "colorId": "10",
+      "action": "delete_db_ref"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270129T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-01-29T09:00:00Z",
+      "end": "2027-01-29T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "snuemlnq0b8do2p5187icvig7s",
+      "summary": "MC ⚽ Before: Aston Villa vs Ipswich Town",
+      "start": "2027-01-30T14:00:00Z",
+      "end": "2027-01-30T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "2b2se8bg1b17qrpcc3e17jujrk",
+      "summary": "MC ⚽ After: Aston Villa vs Ipswich Town",
+      "start": "2027-01-30T17:00:00Z",
+      "end": "2027-01-30T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ko36cpn60ok6gi46spk8ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g612jig9j6osj6e266t0jigpk8ksjah1p6d0j2di28crkagph8os0_20270131",
+      "summary": "Kathryn Lee Birthday",
+      "start": "2027-01-31",
+      "end": "2027-02-01",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "pbp68kd66u5jbclcrka9c7df04",
+      "summary": "MC ⏰ Room release — Hartland Feb 2027 (Donal) + CONFIRM dates held",
+      "start": "2027-02-04T09:00:00Z",
+      "end": "2027-02-04T09:20:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ip50jkuvchf9q2i78rfs16sa7o",
+      "summary": "MC ⚽ Before: Ipswich Town vs Tottenham Hotspur",
+      "start": "2027-02-06T14:00:00Z",
+      "end": "2027-02-06T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ann3lt7hli0gin2lp7nkcuk9jg",
+      "summary": "MC ⚽ After: Ipswich Town vs Tottenham Hotspur",
+      "start": "2027-02-06T17:00:00Z",
+      "end": "2027-02-06T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "brua2a5n724q2p7sb11p5uvvlc",
+      "summary": "MC ⚽ Before: Ipswich Town vs Arsenal",
+      "start": "2027-02-10T19:00:00Z",
+      "end": "2027-02-10T20:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "t9hce7po8cl2n9lm5p0c2bbig8",
+      "summary": "MC ⚽ After: Ipswich Town vs Arsenal",
+      "start": "2027-02-10T22:00:00Z",
+      "end": "2027-02-10T23:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270212T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-02-12T09:00:00Z",
+      "end": "2027-02-12T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g8oo44ghj8gpjiga674sk8cpg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8gskaca188r4achn852j4d1k6t13ie1h6h0j2cpk6or4chhl6cq0_20270213",
+      "summary": "Jacks Birthday",
+      "start": "2027-02-13",
+      "end": "2027-02-14",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "0c7gm74r2sdfnu4hdctivhgql8",
+      "summary": "MC ⚽ Before: Chelsea vs Ipswich Town",
+      "start": "2027-02-20T14:00:00Z",
+      "end": "2027-02-20T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "krla6496l2fhc83r33igfhjer4",
+      "summary": "MC ⚽ After: Chelsea vs Ipswich Town",
+      "start": "2027-02-20T17:00:00Z",
+      "end": "2027-02-20T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270226T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-02-26T09:00:00Z",
+      "end": "2027-02-26T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "siab607f7h9bjr6hfitl37hpv8",
+      "summary": "MC ⚽ Before: Ipswich Town vs Brighton and Hove Albion",
+      "start": "2027-02-27T14:00:00Z",
+      "end": "2027-02-27T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "lnlpkrd60tsfrnbnf16kjvbnhs",
+      "summary": "MC ⚽ After: Ipswich Town vs Brighton and Hove Albion",
+      "start": "2027-02-27T17:00:00Z",
+      "end": "2027-02-27T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6co46chl7533eh9j6h248e9g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g74ojida58osk6dq26t33cg9k8h0jcd1m8h248e9p6csjgd236d0g_20270302",
+      "summary": "MOT Due",
+      "start": "2027-03-02",
+      "end": "2027-03-03",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "q8b50evmd7fk5hg6lgtaagea1s",
+      "summary": "MC ⚽ Before: Brentford vs Ipswich Town",
+      "start": "2027-03-03T19:00:00Z",
+      "end": "2027-03-03T20:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "adc3suv096v52efvf4tl23eq2k",
+      "summary": "MC ⚽ After: Brentford vs Ipswich Town",
+      "start": "2027-03-03T22:00:00Z",
+      "end": "2027-03-03T23:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "eojv8084ovtj7g5dso16sghmvs",
+      "summary": "MC ⏰ Hotel deadline — Ravenstone Mar (£2,160) cancel by 9 Mar 3pm",
+      "start": "2027-03-04T09:00:00Z",
+      "end": "2027-03-04T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270312T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-03-12T09:00:00Z",
+      "end": "2027-03-12T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "a4bofjep2rkmaldnq152fa8o9o",
+      "summary": "MC ⏰ Hotel deadline — Black Bull Lowick (£1,440) cancel by 15 Mar",
+      "start": "2027-03-12T09:00:00Z",
+      "end": "2027-03-12T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "fff3gpskll7evathevl4r6re28",
+      "summary": "MC ⏰ Black Bull Lowick — free cancel ends Mon 15 Mar 27 (£1,440)",
+      "start": "2027-03-12T09:00:00Z",
+      "end": "2027-03-12T09:30:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "lsd6bk3n97njr4f2s7ielbpgu0",
+      "summary": "MC ⚽ Before: Liverpool vs Ipswich Town",
+      "start": "2027-03-13T14:00:00Z",
+      "end": "2027-03-13T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "8jfmfnag3ki0aner1kp3hkntrg",
+      "summary": "MC ⚽ After: Liverpool vs Ipswich Town",
+      "start": "2027-03-13T17:00:00Z",
+      "end": "2027-03-13T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "dm3090hgbvbot2m2fc4mt3rrko",
+      "summary": "Stay at The Black Bull Inn",
+      "start": "2027-03-18",
+      "end": "2027-03-22",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "tsm95k6sd8htgv90t2eknic0s0",
+      "summary": "MC ⚽ Before: Ipswich Town vs Crystal Palace",
+      "start": "2027-03-20T14:00:00Z",
+      "end": "2027-03-20T15:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "g1l4gn9798ej2scolrlqpdbolc",
+      "summary": "MC ⚽ After: Ipswich Town vs Crystal Palace",
+      "start": "2027-03-20T17:00:00Z",
+      "end": "2027-03-20T18:00:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270326T090000Z",
+      "summary": "Cleaner",
+      "start": "2027-03-26T09:00:00Z",
+      "end": "2027-03-26T13:00:00Z",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "ibd28him3ct1mqcug6b93t5d5o",
+      "summary": "MC ⏰ Cromwell Arms — free cancel ends Tue 30 Mar 27 (£765)",
+      "start": "2027-03-27T09:00:00Z",
+      "end": "2027-03-27T09:30:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "o84hhc0tco1jagru8ffobvfuhk",
+      "summary": "MC ⏰ Hotel deadline — Cromwell Arms (£765) cancel by 30 Mar",
+      "start": "2027-03-27T09:00:00Z",
+      "end": "2027-03-27T09:15:00Z",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270409T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-04-09T09:00:00+01:00",
+      "end": "2027-04-09T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "qg0v6man0hcd2fuotctk4oqb8c",
+      "summary": "MC ⚽ Before: Sunderland vs Ipswich Town",
+      "start": "2027-04-10T14:00:00+01:00",
+      "end": "2027-04-10T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "idos2erdmvk0cfe8t3lnq86ceg",
+      "summary": "MC ⚽ After: Sunderland vs Ipswich Town",
+      "start": "2027-04-10T17:00:00+01:00",
+      "end": "2027-04-10T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "h0jtr8m58hp3pnggucfqvor76o",
+      "summary": "MC ⚽ Before: Ipswich Town vs Manchester United",
+      "start": "2027-04-17T14:00:00+01:00",
+      "end": "2027-04-17T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "gt6e03v84t4n2astsd7hdjogbk",
+      "summary": "MC ⚽ After: Ipswich Town vs Manchester United",
+      "start": "2027-04-17T17:00:00+01:00",
+      "end": "2027-04-17T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "dphi8ujik11odc2i7d07u04580",
+      "summary": "MC ⏰ Hotel deadline — Exmoor Manor (£1,016) cancel by 22 Apr",
+      "start": "2027-04-19T09:00:00+01:00",
+      "end": "2027-04-19T09:15:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270423T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-04-23T09:00:00+01:00",
+      "end": "2027-04-23T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "jq8ra9j347dboa8hamvfa7p4dk",
+      "summary": "MC ⚽ Before: Newcastle United vs Ipswich Town",
+      "start": "2027-04-24T14:00:00+01:00",
+      "end": "2027-04-24T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "91e8e40l6175b8f4ruk84ivm34",
+      "summary": "MC ⚽ After: Newcastle United vs Ipswich Town",
+      "start": "2027-04-24T17:00:00+01:00",
+      "end": "2027-04-24T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "slg45uhiovhp0i6f25gkth69sc",
+      "summary": "MC ⚽ Before: Ipswich Town vs Leeds United",
+      "start": "2027-05-01T14:00:00+01:00",
+      "end": "2027-05-01T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "k52b07olinbif3185bvtipetk8",
+      "summary": "MC ⚽ After: Ipswich Town vs Leeds United",
+      "start": "2027-05-01T17:00:00+01:00",
+      "end": "2027-05-01T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "ea14p6ej8s1iftki89nq5tj4gg",
+      "summary": "Stay at Exmoor Manor Guest House",
+      "start": "2027-05-07",
+      "end": "2027-05-09",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270507T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-05-07T09:00:00+01:00",
+      "end": "2027-05-07T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "6i0j8m37r6ivh0fqre1d52hfd8",
+      "summary": "Stay at Exmoor Manor Guest House",
+      "start": "2027-05-08",
+      "end": "2027-05-10",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "bs31lo1ii5e3cf7qq9oab1gq94",
+      "summary": "MC ⚽ Before: Fulham vs Ipswich Town",
+      "start": "2027-05-08T14:00:00+01:00",
+      "end": "2027-05-08T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "a77pp7v6t6j4dmcgufo9kjga84",
+      "summary": "MC ⚽ After: Fulham vs Ipswich Town",
+      "start": "2027-05-08T17:00:00+01:00",
+      "end": "2027-05-08T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "e1d80tchvlm38p7cb40n0ktres",
+      "summary": "MC ⚽ Before: Ipswich Town vs Manchester City",
+      "start": "2027-05-15T14:00:00+01:00",
+      "end": "2027-05-15T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "m3avuvm804uh9sj4qm9kqpr9cc",
+      "summary": "MC ⚽ After: Ipswich Town vs Manchester City",
+      "start": "2027-05-15T17:00:00+01:00",
+      "end": "2027-05-15T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270521T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-05-21T09:00:00+01:00",
+      "end": "2027-05-21T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "g2fh866fd76gfvj2l1k2u7lni4",
+      "summary": "MC ⚽ Before: Nottingham Forest vs Ipswich Town",
+      "start": "2027-05-23T14:00:00+01:00",
+      "end": "2027-05-23T15:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "slkk2l92d5sr11mfcc099tv3fg",
+      "summary": "MC ⚽ After: Nottingham Forest vs Ipswich Town",
+      "start": "2027-05-23T17:00:00+01:00",
+      "end": "2027-05-23T18:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "1md3psob2h1hvufd1lds2e31ik",
+      "summary": "MC ⚽ Before: Ipswich Town vs Everton",
+      "start": "2027-05-30T15:00:00+01:00",
+      "end": "2027-05-30T16:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "oq6up8bfk53uv169u35gqjphc4",
+      "summary": "MC ⚽ After: Ipswich Town vs Everton",
+      "start": "2027-05-30T18:00:00+01:00",
+      "end": "2027-05-30T19:00:00+01:00",
+      "colorId": "10",
+      "action": "leave_protected"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270604T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-06-04T09:00:00+01:00",
+      "end": "2027-06-04T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g70o34e9l8gp3eh1n74rk8e9g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g8gp3icpj8h334e1l8cqjgc1k8h13ah1p60oj0hi36t2jacpg64q0_20270610T040000Z",
+      "summary": "Renata Birthday",
+      "start": "2027-06-10T05:00:00+01:00",
+      "end": "2027-06-10T05:30:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270618T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-06-18T09:00:00+01:00",
+      "end": "2027-06-18T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270702T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-07-02T09:00:00+01:00",
+      "end": "2027-07-02T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    },
+    {
+      "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6oo3ce9h610jichi75148ghg64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6p13aci38opj6di38krjgc9k71138ea58p138h228l1jch2260s0_20270716T080000Z",
+      "summary": "Cleaner",
+      "start": "2027-07-16T09:00:00+01:00",
+      "end": "2027-07-16T13:00:00+01:00",
+      "colorId": null,
+      "action": "leave_other"
+    }
+  ]
+}
