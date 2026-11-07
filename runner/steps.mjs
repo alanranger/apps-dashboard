@@ -655,12 +655,18 @@ const sha = (s) => crypto.createHash('sha256').update(String(s ?? '')).digest('h
  * A post body without Squarespace's own platform markup, which changes on every post when Squarespace releases a
  * component (4 Nov: code-block component _1074 → _1080 and new image-lightbox styles flagged all 322 posts as changed):
  * versioned component asset URLs, data-block-css / data-block-scripts, and its generated image-lightbox <style>.
+ * Also whitespace (7 Nov: a Squarespace re-render changed only line breaks / indentation on 277 posts) and summary
+ * blocks, which list other posts' excerpts and upcoming events rather than this post's own content.
  */
 export const blogBodyKey = (body) => String(body || '')
+  .replace(/<div class="sqs-block [^"]*summary-v2-block[^"]*"[\s\S]*?(?=<div class="sqs-block |$)/g, '')
   .replace(/<style[^>]*>(?:(?!<\/style>)[\s\S])*?cdk-image-lightbox[\s\S]*?<\/style>/g, '')
   .replace(/\sdata-block-(css|scripts)="[^"]*"/g, '')
-  .replace(/https:\/\/definitions\.sqspcdn\.com\/website-component-definition\/[^"'\s&]+/g, '');
-export const BLOG_HASH_VERSION = 2;
+  .replace(/https:\/\/definitions\.sqspcdn\.com\/website-component-definition\/[^"'\s&]+/g, '')
+  .replace(/\s+/g, ' ')
+  .replace(/> </g, '><')
+  .trim();
+export const BLOG_HASH_VERSION = 3;
 
 export function blogManifest(feedItems, rows01) {
   const meta = new Map(rows01.map((r) => [r['Full Url'], sha(JSON.stringify(r))]));
@@ -670,13 +676,17 @@ export function blogManifest(feedItems, rows01) {
   }));
 }
 
-/** A post regenerates only when it is new or its body / 01 row hash changed; an updatedOn bump alone is held by the gate. */
-export function postsToRegenerate(current, baseline) {
+/**
+ * A post regenerates only when it is new or its body / 01 row hash changed; an updatedOn bump alone is held by the gate.
+ * Body hashes from another BLOG_HASH_VERSION can't be compared, so that run treats an updatedOn bump as the body change.
+ */
+export function postsToRegenerate(current, baseline, { bodyComparable = true } = {}) {
+  const bodyChanged = (b, c) => (bodyComparable ? b.bodyHash !== c.bodyHash : b.updatedOn !== c.updatedOn);
   const out = { fresh: [], changed: [], touchedOnly: [] };
   for (const [url, c] of Object.entries(current)) {
     const b = baseline[url];
     if (!b) out.fresh.push(url);
-    else if (b.bodyHash !== c.bodyHash || b.metaHash !== c.metaHash) out.changed.push(url);
+    else if (bodyChanged(b, c) || b.metaHash !== c.metaHash) out.changed.push(url);
     else if (b.updatedOn !== c.updatedOn) out.touchedOnly.push(url);
   }
   return out;
@@ -689,6 +699,12 @@ function exportBaseline(current) {
   return Object.fromEntries(Object.entries(current).filter(([url]) => meta.has(url)).map(([url, c]) => [url, { ...c, metaHash: meta.get(url) }]));
 }
 
+export function loadBlogBaseline(liveFile, current) {
+  if (!fs.existsSync(liveFile)) return { posts: exportBaseline(current), firstRun: true, bodyComparable: true };
+  const saved = JSON.parse(fs.readFileSync(liveFile, 'utf8'));
+  return { posts: saved.posts || {}, firstRun: false, bodyComparable: saved.hashVersion === BLOG_HASH_VERSION };
+}
+
 async function blogPosts(ctx) {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
@@ -696,9 +712,9 @@ async function blogPosts(ctx) {
   const live = `${SHARED}/outputs/schema/blogs-manifest.json`;
   const feed = JSON.parse(fs.readFileSync(path.join(sb.root, 'feeds', 'blog-on-photography.json'), 'utf8')).items || [];
   const current = blogManifest(feed, readCsvObjects(path.join(sb.shared, 'csv', '01-blog-posts.csv')).rows);
-  const firstRun = !fs.existsSync(live);
-  const baseline = firstRun ? exportBaseline(current) : JSON.parse(fs.readFileSync(live, 'utf8')).posts || {};
-  const r = postsToRegenerate(current, baseline);
+  const base = loadBlogBaseline(live, current);
+  const { firstRun } = base;
+  const r = postsToRegenerate(current, base.posts, base);
   const list = [...r.fresh, ...r.changed];
   fs.mkdirSync(path.dirname(manifestFile), { recursive: true });
   fs.writeFileSync(manifestFile, JSON.stringify({ generatedAt: new Date().toISOString(), hashVersion: BLOG_HASH_VERSION, posts: current }, null, 2));
@@ -721,6 +737,7 @@ async function blogPosts(ctx) {
     files_changed: regen.changed.length, deleted_posts: gone.slugs.length, baseline: firstRun ? 'last 01 export (no blogs-manifest.json yet)' : 'blogs-manifest.json' },
     notes, plain: blogPostsPlain(ctx, slugs, empty.gone.length),
     details: [`${r.touchedOnly.length} posts only had their "updated" date bumped (held by the body check)`, `baseline: ${firstRun ? 'last 01 export (blogs-manifest.json is written by the first live run)' : 'blogs-manifest.json'}`,
+      ...(base.bodyComparable ? [] : ['the saved fingerprints are from an older version of the body check, so this run used the Squarespace "updated" date instead; the next live run saves new ones']),
       ...regen.posts.map((p) => `${p.slug}: ${p.files.join(', ')}`)],
     needsAlan: gone.plan.needsAlan.length ? [{ kind: 'deleted_blog_posts_over_limit', count: gone.plan.needsAlan.length, file: gone.plan.needsAlan.join('; ') }] : [],
     outputs: [`${manifestFile} (sandbox)`, listFile, regen.out].filter(Boolean) };

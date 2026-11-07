@@ -14,6 +14,16 @@ test('blog body key ignores Squarespace platform markup (component asset version
   assert.notEqual(blogBodyKey(v1), blogBodyKey(v1.replace('.ar-x{color:red}', '.ar-x{color:blue}')));
 });
 
+test('blog body key ignores whitespace re-renders and summary blocks (other posts / upcoming events), not content', () => {
+  const block = (cls, inner) => `<div class="sqs-block ${cls}" data-block-type="1337"><div class="sqs-block-content">${inner}</div></div>`;
+  const page = (text, summary, gap = '') => `<div class="row sqs-row">${gap}${block('html-block', `<p>${text}</p>`)}${gap}`
+    + `${block('website-component-block summary-v2-block', summary)}${block('html-block', '<p>Footer</p>')}</div>`;
+  const v1 = page('Light matters', '<p>Old excerpt</p><div data-upcoming-event-end="1">Event</div>');
+  assert.equal(blogBodyKey(v1), blogBodyKey(page('Light matters', '<p>New excerpt</p>', '\n\n    ')));
+  assert.notEqual(blogBodyKey(v1), blogBodyKey(page('Light really matters', '<p>Old excerpt</p>')));
+  assert.notEqual(blogBodyKey(v1), blogBodyKey(v1.replace('Footer', 'New footer')));
+});
+
 function project() {
   const web = fs.mkdtempSync(path.join(os.tmpdir(), 'imports-'));
   const dir = path.join(web, 'Tool');

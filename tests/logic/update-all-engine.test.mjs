@@ -260,3 +260,13 @@ test('blog body-hash gate: new and changed posts regenerate, an updatedOn bump a
   assert.deepEqual(slugs(r.changed), ['b', 'd']);
   assert.deepEqual(slugs(r.touchedOnly), ['c']);
 });
+
+test('blog gate across a hash-version change: body hashes are not compared, an updatedOn bump counts as the change', () => {
+  const item = (slug, body, updatedOn) => ({ fullUrl: `/blog-on-photography/${slug}`, body, updatedOn });
+  const baseline = { ...blogManifest([item('a', 'A', 1), item('b', 'B', 1)], []) };
+  for (const p of Object.values(baseline)) p.bodyHash = 'older-version-hash';
+  const current = blogManifest([item('a', 'A', 1), item('b', 'B2', 2)], []);
+  const slugs = (list) => list.map((u) => u.split('/').pop());
+  assert.deepEqual(slugs(postsToRegenerate(current, baseline).changed), ['a', 'b']);
+  assert.deepEqual(slugs(postsToRegenerate(current, baseline, { bodyComparable: false }).changed), ['b']);
+});
