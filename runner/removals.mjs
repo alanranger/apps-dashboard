@@ -3,6 +3,8 @@
  * offers / price / priceSpecification, aggregateRating, reviews, or an @type — on ANY node. A removal counts as
  * explained only when a known rule covers it; any unexplained removal blocks Live for that stage.
  */
+import { goneFromSource } from './source-gone.mjs';
+
 const KEY_PROPS = ['offers', 'price', 'priceSpecification', 'aggregateRating', 'review'];
 const BUSINESS = /^(LocalBusiness|Organization|ProfessionalService)$/;
 /** Types that only exist inside a counted property (their loss is reported through that property). */
@@ -34,13 +36,27 @@ function propCount(node, prop) {
 
 const nodeKey = (n, i) => n['@id'] || `${typesOf(n).join('+') || 'node'}#${i}`;
 
+/** Types that exist only inside an Offer (their loss follows the offers being rebuilt). */
+const OFFER_TYPES = new Set(['Offer', 'AggregateOffer', 'OfferShippingDetails', 'DefinedRegion', 'MerchantReturnPolicy', 'MonetaryAmount', 'UnitPriceSpecification', 'PriceSpecification']);
+const OFFER_PROPS = new Set(['offers', 'price', 'priceSpecification']);
+
+/** SKUs of the Offers under a node ('' for an Offer with no SKU, so its loss can never be looked up). */
+function offerSkus(node) {
+  const out = new Set();
+  walk(node, (o) => { if (typesOf(o).includes('Offer')) out.add(String(o.sku || '')); });
+  return out;
+}
+const lostSkus = (b, a) => { const after = offerSkus(a); return [...offerSkus(b)].filter((s) => !after.has(s)); };
+
 function nodeRemovals(nb, na, key) {
   const out = [];
   const types = typesOf(nb);
+  const lost = lostSkus(nb, na);
   for (const prop of KEY_PROPS) {
     const b = propCount(nb, prop);
     const a = propCount(na, prop);
-    if (a < b) out.push({ node: key, nodeTypes: types, prop, from: b, to: a, what: prop === 'review' ? `reviews ${b} → ${a}` : a ? `${prop} ${b} → ${a}` : `${prop} removed` });
+    const offer = OFFER_PROPS.has(prop) ? { lostSkus: lost } : {};
+    if (a < b) out.push({ node: key, nodeTypes: types, prop, from: b, to: a, ...offer, what: prop === 'review' ? `reviews ${b} → ${a}` : a ? `${prop} ${b} → ${a}` : `${prop} removed` });
   }
   for (const t of types.filter((x) => !typesOf(na).includes(x))) out.push({ node: key, nodeTypes: types, type: t, what: `@type ${t} dropped from the node` });
   return out;
@@ -48,7 +64,7 @@ function nodeRemovals(nb, na, key) {
 
 function removedNode(nb, key) {
   const start = Date.parse(nb.startDate || '');
-  return { node: key, nodeTypes: typesOf(nb), what: 'node removed', pastEvent: Number.isFinite(start) && start < Date.now() };
+  return { node: key, nodeTypes: typesOf(nb), url: nb.url || key, what: 'node removed', pastEvent: Number.isFinite(start) && start < Date.now() };
 }
 
 /** Every removal from `before` to `after` (one published file). */
@@ -66,15 +82,14 @@ export function findRemovals(before, after) {
   });
   const tb = typeCounts(before);
   const ta = typeCounts(after);
-  for (const [t] of tb) if (!ta.has(t) && !NESTED_ONLY.has(t)) out.push({ node: '(file)', type: t, what: `@type ${t} no longer anywhere in the file` });
+  const fileLost = { offerType: true, lostSkus: lostSkus(before, after) };
+  for (const [t] of tb) if (!ta.has(t) && !NESTED_ONLY.has(t)) out.push({ node: '(file)', type: t, ...(OFFER_TYPES.has(t) ? fileLost : {}), what: `@type ${t} no longer anywhere in the file` });
   return out;
 }
 
 const isBusiness = (r) => (r.nodeTypes || []).some((t) => BUSINESS.test(t));
 const isItemList = (r) => r.type === 'ItemList' || (r.nodeTypes || []).includes('ItemList');
 
-/** Types that exist only inside an Offer (their loss follows the offers being rebuilt). */
-const OFFER_TYPES = new Set(['Offer', 'AggregateOffer', 'OfferShippingDetails', 'DefinedRegion', 'MerchantReturnPolicy', 'MonetaryAmount', 'UnitPriceSpecification', 'PriceSpecification']);
 const sellingSource = (c, field) => (String(c.sellingNote || '').match(new RegExp(`${field} = ([^|]+)`)) || [])[1]?.trim() || null;
 const live = (src) => src && !/missing|carried forward/.test(src);
 
@@ -86,7 +101,9 @@ const RULES = [
   ['G', (r) => isBusiness(r) && ['aggregateRating', 'review'].includes(r.prop), 'P23: no business rating on landing pages'],
   ['G', (r, c) => isItemList(r) && /ItemList removed/.test(c.landingNote || ''), 'page shows no list of pages (landing explainer)'],
   ['DE', reviewsMatch04, 'review re-homing (31 Oct / 2 Nov): same review set as the published product schema (04)'],
-  ['E', (r) => r.what === 'node removed' && r.pastEvent, 'past-dated event dropped']
+  ['E', (r) => r.what === 'node removed' && r.pastEvent, 'past-dated event dropped'],
+  // Alan 8 Nov: an offer (SKU) or event (URL) no longer in Squarespace's own export for this run was removed on the site.
+  ['DE', (r, c) => !!goneFromSource(r, c.source), (r, c) => goneFromSource(r, c.source)]
 ];
 
 /** Shared D/E rule (Claude 3 Nov, 9.1): fewer reviews, and the new count equals the product's published 04 review set. */
@@ -96,9 +113,10 @@ function reviewsMatch04(r, c) {
   return want != null && Number(want) === r.to;
 }
 
-/** The rule that explains a removal, or null. ctx: { stage, landingNote, reviews04(nodeId) } for this file. */
+/** The rule that explains a removal, or null. ctx: { stage, landingNote, reviews04(nodeId), source } for this file. */
 export function explainRemoval(r, ctx = {}) {
-  return RULES.find(([stages, test]) => stages.includes(ctx.stage) && test(r, ctx))?.[2] || null;
+  const why = RULES.find(([stages, test]) => stages.includes(ctx.stage) && test(r, ctx))?.[2];
+  return (typeof why === 'function' ? why(r, ctx) : why) || null;
 }
 
 /** Removals for a publish set: [{ file, what, node, explained_by }] + counts. */

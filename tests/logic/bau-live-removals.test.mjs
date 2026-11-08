@@ -41,6 +41,25 @@ test('removals: explanations — P23 business rating, landing "no list", D revie
   assert.equal(explainRemoval({ type: 'Organization', what: '@type Organization no longer anywhere in the file' }, { stage: 'E' }), null);
 });
 
+test('removals: an offer or event gone from the Squarespace export is explained with evidence; one still listed is not', () => {
+  const source = { has: (id) => ['SQ1', '/lessons/still-on'].includes(id), label: 'export.csv, 8 Nov 2026, 18:31' };
+  const offer = (sku) => ({ '@type': 'Offer', sku, price: '150' });
+  const before = g({ '@id': 'https://x/p#product', '@type': 'Product', offers: [offer('SQ1'), offer('SQ2')] });
+  const [lost] = findRemovals(before, g({ '@id': 'https://x/p#product', '@type': 'Product', offers: [offer('SQ1')] }));
+  assert.deepEqual(lost.lostSkus, ['SQ2']);
+  assert.match(explainRemoval(lost, { stage: 'D', source }), /removed from Squarespace: SKU SQ2 is not in its export \(export\.csv, 8 Nov 2026/);
+  const [kept] = findRemovals(before, g({ '@id': 'https://x/p#product', '@type': 'Product', offers: [offer('SQ2')] }));
+  assert.equal(explainRemoval(kept, { stage: 'D', source }), null, 'SQ1 is still in the export: stays unexplained');
+  const [priceOnly] = findRemovals(before, g({ '@id': 'https://x/p#product', '@type': 'Product', offers: [offer('SQ1'), { '@type': 'Offer', sku: 'SQ2' }] }));
+  assert.equal(explainRemoval(priceOnly, { stage: 'D', source }), null, 'a price lost while the offer stays is not a removal on the site');
+  assert.equal(explainRemoval(lost, { stage: 'D', source: null }), null, 'no (or a broken) export explains nothing');
+  assert.equal(explainRemoval({ prop: 'price', from: 2, to: 1, lostSkus: [''] }, { stage: 'D', source }), null, 'an offer with no SKU stays unexplained');
+  const ev = (slug) => ({ what: 'node removed', url: `https://www.alanranger.com/lessons/${slug}`, pastEvent: false });
+  assert.match(explainRemoval(ev('gone'), { stage: 'E', source }), /removed from Squarespace: https:\/\/www\.alanranger\.com\/lessons\/gone/);
+  assert.equal(explainRemoval(ev('still-on'), { stage: 'E', source }), null);
+  assert.equal(explainRemoval(ev('gone'), { stage: 'G', source }), null, 'only D and E');
+});
+
 test('removals: checkPublishSet lists the files with unexplained removals', () => {
   const docs = { 'a.json': [g({ '@id': 'a', '@type': 'Product', offers: {} }), g({ '@id': 'a', '@type': 'Product' })], 'b.json': [g({ '@id': 'b', '@type': 'Thing' }), g({ '@id': 'b', '@type': 'Thing' })] };
   const r = checkPublishSet(Object.keys(docs), { readBefore: (f) => docs[f][0], readAfter: (f) => docs[f][1], contextFor: () => ({ stage: 'G' }) });

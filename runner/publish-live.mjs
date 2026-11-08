@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { checkPublishSet } from './removals.mjs';
+import { sourceExports } from './source-gone.mjs';
 import { committedBlobs, servedCheck, servedText } from './served-check.mjs';
 
 const SCHEMA_TOOLS = 'G:/Dropbox/alan ranger photography/Website Code/Schema Tools';
@@ -48,11 +49,12 @@ export async function publishRemovals(def, sb, ctx, files, repo) {
   const landing = def.stage === 'G' ? readJson(path.join(sb.root, 'app-cli', 'landings', 'landing-diff-explain.json'))?.rows || [] : [];
   const selling = def.stage === 'G' ? landingSellingReport(sb) : {};
   const reviews04 = ['D', 'E'].includes(def.stage) ? reviews04Lookup(sb) : null;
+  const source = sourceExports(path.join(sb.shared, 'csv'), def.stage);
   const src = (f) => def.sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
   return checkPublishSet(files, {
     readBefore: (f) => readJson(path.join(repo, f)),
     readAfter: (f) => readJson(src(f)),
-    contextFor: (f) => ({ stage: def.stage, reviews04,
+    contextFor: (f) => ({ stage: def.stage, reviews04, source,
       landingNote: (landing.find((r) => `${r.file}_landing_schema.json` === f)?.notes || []).join(' | '),
       sellingNote: (selling[f.replace(/_landing_schema\.json$/, '')] || []).map((x) => `${x.field} = ${x.source}`).join(' | ') })
   });
