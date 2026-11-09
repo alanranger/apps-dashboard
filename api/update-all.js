@@ -7,6 +7,7 @@
  *        stale is refused with 409 { error: 'Run A and B first', plan: { chain, chainLabel } } — never forced.
  *        Live refused until UPDATE_ALL_LIVE_ENABLED=1 and role alan.
  *   POST { action: 'resume', run_id }        → re-request a failed run from its failed step
+ *        (+ wait_for_refresh: true = "Run when it finishes": held while the Monday full refresh is running)
  *   POST { action: 'cancel', run_id }
  *   POST { action: 'page_choice', url, choice: service|landing|exclude, suggested } → P16: Alan's choice for a new 06 page
  *   GET  ?page_choices=1 → every saved choice; POST { action: 'page_choice_clear_test' } → removes simulated test rows only
@@ -127,17 +128,21 @@ async function start(session, body) {
   return [200, { run }];
 }
 
-/** Resume re-runs from the failed step; a live run passes the same live gate as starting one. */
+/**
+ * Resume re-runs from the failed step; a live run passes the same live gate as starting one.
+ * wait_for_refresh ("Run when it finishes"): the runner holds the run while the Monday full refresh is running.
+ */
 async function resume(session, body) {
-  const [target] = await sb(`update_all_runs?id=eq.${encodeURIComponent(body.run_id)}&select=mode,stages`);
+  const [target] = await sb(`update_all_runs?id=eq.${encodeURIComponent(body.run_id)}&select=mode,stages,options`);
   if (!target) return [404, { error: 'run not found' }];
   const gate = await liveGate(session, { stages: target.stages }, target.mode);
   if (gate) return gate;
   const steps = await sb(`update_all_steps?run_id=eq.${encodeURIComponent(body.run_id)}&order=ord.asc`);
   const failed = steps.find((s) => s.status === 'fail' || s.status === 'running');
   if (!failed) return [400, { error: 'nothing to resume' }];
+  const queued = body.wait_for_refresh === true ? { options: { ...(target.options || {}), wait_for_refresh: true }, cooldown_until: null } : {};
   const run = (await sb(`update_all_runs?id=eq.${encodeURIComponent(body.run_id)}`, { method: 'PATCH',
-    body: { status: 'requested', resume_from: failed.step_id, error: null, finished_at: null } }))[0];
+    body: { status: 'requested', resume_from: failed.step_id, error: null, finished_at: null, ...queued } }))[0];
   return [200, { run, resume_from: failed.step_id }];
 }
 

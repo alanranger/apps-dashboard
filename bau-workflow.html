@@ -451,7 +451,7 @@
 
     /** What each stage does, in Alan's words (no counts: the live counts are in the Last runs lines). */
     const WHAT_IT_DOES = {
-      A: ['Safety checks: not a Monday, nothing else running, site up', 'Rebuilds all 7 CSVs from Squarespace (blogs, products, lessons, workshops, services, landing pages)', "Publishes only the CSVs that changed, and holds any new landing pages for Alan's decision"],
+      A: ['Safety checks: the Monday full refresh is not running, nothing else running, site up', 'Rebuilds all 7 CSVs from Squarespace (blogs, products, lessons, workshops, services, landing pages)', "Publishes only the CSVs that changed, and holds any new landing pages for Alan's decision"],
       B: ['Backs up the chat database tables first', 'Imports the CSVs into the chat database', 'Re-reads only the pages that changed', 'Links each event date to its product, and updates the 05 file'],
       C: ['Fetches Google reviews and merges them with the saved Trustpilot reviews', 'Applies the review decisions made on this page', "Holds any new reviews it can't match for a decision"],
       D: ["Builds each product's schema: prices, dates, titles and review totals", "Updates the chat assistant's product file (07)", 'Publishes only the product files that changed'],
@@ -797,8 +797,13 @@
     }
 
     const coolingUntil = (run) => run?.status === 'requested' && run.cooldown_until && Date.parse(run.cooldown_until) > Date.now() ? run.cooldown_until : null;
+    /** "Run when it finishes": the runner's last look at the Monday full refresh while this run waits behind it. */
+    const refreshWait = (run) => (coolingUntil(run) && run.options?.wait_for_refresh ? run.options.refresh_wait || {} : null);
+    const refreshWaitText = (w) => `Queued behind the Monday full refresh${w.step ? ` (step ${w.step} of ${w.steps}, about ${hm(w.eta)})` : ''}`;
     /** One short line next to the buttons; the status box above holds the detail. */
     function renderStatusText(run) {
+      const wait = refreshWait(run);
+      if (wait) { $('actionMsg').textContent = refreshWaitText(wait); return; }
       const until = coolingUntil(run);
       if (until) { $('actionMsg').textContent = `Waiting for Squarespace cool-down until ${clock(until)}`; return; }
       if (run?.status === 'requested') $('actionMsg').textContent = 'Queued for the PC runner (checks every minute)';
@@ -821,6 +826,8 @@
       : HEADLINE[isUndo(run) ? 'undo' : run.mode === 'live' ? 'live' : 'dry'][run.status] || run.status);
 
     function queuedParts(run) {
+      const wait = refreshWait(run);
+      if (wait) return { head: `<h3 data-testid="run-status-queued">${modeBadge(run)}<b>${esc(refreshWaitText(wait))} — ${esc(scopeText(run))}</b></h3>`, body: '<div class="muted" data-testid="run-status-refresh-wait">It starts by itself once the refresh has finished (the PC runner re-checks every 10 minutes).</div>' };
       const until = coolingUntil(run);
       if (until) return { head: `<h3 data-testid="run-status-queued">${modeBadge(run)}<b>Waiting for the Squarespace cool-down — ${esc(scopeText(run))}</b></h3>`, body: `<div class="muted">Starts automatically after ${clock(until)}.</div>` };
       const by = Date.parse(run.requested_at) + 65000;
@@ -893,6 +900,11 @@
         <div class="note"><strong>What to do next:</strong> ${esc(next)}</div>`;
     }
 
+    /** A pre-flight stopped by the running Monday full refresh offers to queue the run behind it. */
+    const canQueueBehindRefresh = (run, steps) => run.status === 'failed' && steps.some((s) => s.step_id === 'preflight' && s.status === 'fail' && s.counts?.monday_refresh?.queue_option);
+    const queueButton = (run, steps) => (canQueueBehindRefresh(run, steps)
+      ? '<div class="rs-btns"><button class="bb bb-secondary" style="width:190px" id="runWhenDone" data-testid="run-when-finishes" data-tip="Queues this run behind the Monday full refresh. It starts by itself once the refresh has finished.">Run when it finishes</button></div>' : '');
+
     const RUN_PILL = { succeeded: 'ok', warned: 'warn', failed: 'fail', cancelled: 'cancelled' };
     const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }) : '-');
     /** "· run 36aecfaa · 4 Nov, 09:22 → 09:24 · no files to publish" */
@@ -906,7 +918,7 @@
       const plain = plainStage(run);
       const stages = plain ? '' : Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
       return { done: true, head: `<h3 data-testid="run-status-finished" data-status="${esc(run.status)}">${pill(RUN_PILL[run.status] || run.status)}${modeBadge(run)}<b>${esc(headline(run))} — ${esc(scopeText(run))}</b> ${runSpan(run, plain)}</h3>`,
-        body: `${stages}${failureHtml(run, steps)}` };
+        body: `${stages}${failureHtml(run, steps)}${queueButton(run, steps)}` };
     }
 
     function runStatusParts(run, steps) {
@@ -926,6 +938,7 @@
       box.innerHTML = p ? `<div class="rs-top"><div>${p.head}</div><div class="rs-btns"><button class="bb bb-secondary" style="width:150px" id="openProgress" data-testid="open-progress" data-tip="Opens the progress window for this run.">Open progress</button>${dismiss}</div></div>${p.body}` : '';
       if ($('runStatusClose')) $('runStatusClose').onclick = () => { localStorage.setItem(DISMISS_KEY, run.id); renderRunStatus(run, steps); };
       if ($('openProgress')) $('openProgress').onclick = () => window.BauProgress?.open();
+      if ($('runWhenDone')) $('runWhenDone').onclick = () => act({ action: 'resume', run_id: run.id, wait_for_refresh: true }, 'Queued behind the Monday full refresh');
     }
 
     function renderRun(data) {

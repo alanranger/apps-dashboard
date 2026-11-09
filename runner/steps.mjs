@@ -17,6 +17,7 @@ import { liveIngestSteps } from './ingest-live.mjs';
 import { checkPages, knownPageUrls, loadFingerprints, planSummary } from './content-check.mjs';
 import { EMPTY_COMPARE, parseCompare, emptyPosts, emptyPostNotes, feedsNote, goneCountText } from './blog-gone.mjs';
 import { landingReviewNotes } from './landing-reviews.mjs';
+import { refreshPreflight } from './monday-refresh.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -136,10 +137,19 @@ async function query(ctx, pathAndQuery) {
   return ctx.store?.query ? ctx.store.query(pathAndQuery) : [];
 }
 
+/** A problem stops the run, a check warns; an info note is only shown (returned). */
+function fileNote(note, failures, checks) {
+  if (note?.level === 'problem') failures.push(note);
+  else if (note?.level === 'check') checks.push(note);
+  return note?.level === 'info' ? [note] : [];
+}
+
 async function preflight(ctx) {
   const checks = []; const failures = []; const counts = {};
   const softOrHard = (msg, todo) => (ctx.mode === 'dry' ? checks.push(check(msg, todo)) : failures.push(problem(msg, todo)));
-  if (new Date().getUTCDay() === 1) softOrHard('It is Monday (UTC): the Monday full refresh is running', 'run on another day');
+  const refresh = await refreshPreflight(ctx.store, ctx.mode);
+  counts.monday_refresh = refresh.counts;
+  const infos = fileNote(refresh.note, failures, checks);
   const running = await query(ctx, 'fault_monitor_runs?select=id,status,last_tick_at&status=in.(running,started)&order=last_tick_at.desc&limit=1');
   if (running?.length) softOrHard(`① audit run ${running[0].id} is in progress`, 'wait for ① to finish');
   const lock = path.join(SHARED, 'csv', '.update-all.lock');
@@ -153,8 +163,8 @@ async function preflight(ctx) {
   counts.code_libraries = codeLibraries(failures, checks);
   counts.site_status = await siteChecks(ctx, softOrHard, failures);
   const bad = failures.length || checks.length;
-  return { counts, notes: [...failures, ...checks],
-    plain: bad ? 'Pre-flight found something to look at (below).' : 'Pre-flight passed: not Monday, no ① running, auto-sync paused, FAQ gate passed, keys present, code libraries present, site up.',
+  return { counts, notes: [...failures, ...checks, ...infos],
+    plain: bad ? 'Pre-flight found something to look at (below).' : 'Pre-flight passed: Monday full refresh not running, no ① running, auto-sync paused, FAQ gate passed, keys present, code libraries present, site up.',
     details: [`site status ${counts.site_status}`, `FAQ fixture gate ${counts.faq_fixture_gate}`, `auto-sync ${counts.auto_sync}`, `code libraries ${counts.code_libraries}`] };
 }
 

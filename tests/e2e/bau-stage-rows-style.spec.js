@@ -116,7 +116,7 @@ test('timing chips: no "Typical:" text; A–H one Check + one Live chip on one l
 test('What it does: header, A first item exact, no digits except 05 / 07 / 09 and "7 CSVs"; stages sentence', async ({ page }) => {
   await openPage(page);
   await expect(page.locator('[data-testid="stages-table"] th').nth(1)).toHaveText('What it does');
-  await expect(page.getByTestId('what-it-does-A').locator('li').first()).toHaveText('Safety checks: not a Monday, nothing else running, site up');
+  await expect(page.getByTestId('what-it-does-A').locator('li').first()).toHaveText('Safety checks: the Monday full refresh is not running, nothing else running, site up');
   const items = await page.locator('ol.does li').allTextContents();
   expect(items.length).toBe(27);
   for (const t of items) expect(t.replace(/\b0[579]\b/g, '').replace('7 CSVs', ''), t).not.toMatch(/\d/);

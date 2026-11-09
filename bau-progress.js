@@ -144,6 +144,8 @@
 
   function queuedHtml(run, runner) {
     const until = ms(run.cooldown_until);
+    const w = run.options?.wait_for_refresh && until > now() ? run.options.refresh_wait : null;
+    if (w) return `<p class="pg-big" data-testid="pg-queued">Queued behind the Monday full refresh (step ${esc(w.step)} of ${esc(w.steps)}, about ${esc(clock(w.eta).slice(0, 5))})</p><div class="muted">It starts by itself once the refresh has finished (re-checked every 10 minutes).</div>`;
     if (until && until > now()) return `<p class="pg-big" data-testid="pg-queued">Waiting for the Squarespace cool-down — starts after ${esc(clock(run.cooldown_until))}</p>`;
     const next = ms(runner?.checked_at) ? ms(runner.checked_at) + CHECK_MS : null;
     let line = 'Waiting for the PC runner — it checks every minute';
@@ -188,9 +190,13 @@
       ${aliveHtml(run, list)}${runAll ? stageListHtml(rows) : ''}`;
   }
 
-  function actionButtons(run) {
+  /** Pre-flight stopped by the running Monday full refresh (its counts say a queue is possible). */
+  const refreshBlocked = (run, list) => run.status === 'failed' && list.some((s) => s.step_id === 'preflight' && s.status === 'fail' && s.counts?.monday_refresh?.queue_option);
+
+  function actionButtons(run, list) {
     const id = run.stages?.length === 1 ? run.stages[0] : null;
     const b = [];
+    if (refreshBlocked(run, list)) b.push('<button class="small" data-pg-act="queue" data-testid="pg-run-when-finishes" data-tip="Queues this run behind the Monday full refresh. It starts by itself once the refresh has finished.">Run when it finishes</button>');
     if (run.status === 'failed') b.push('<button class="small" data-pg-act="resume" data-testid="pg-resume" data-tip="Carries on this failed run from the step that failed.">Resume</button>');
     if (id && run.mode === 'live' && !isUndo(run) && run.status === 'failed') b.push('<button class="small live" data-pg-act="again" data-testid="pg-again" data-tip="Opens the publish confirmation for this stage again. Nothing happens until you confirm.">Publish live again…</button>');
     if (id && run.mode === 'live' && !isUndo(run) && ['succeeded', 'warned'].includes(run.status) && latestLiveIs(id, run.id)) b.push(`<button class="small undo" data-pg-act="undo" data-testid="pg-undo" data-tip="${esc(undoTip(id))}">Undo last live…</button>`);
@@ -217,7 +223,7 @@
     const stages = Object.entries(run.stage_results || {}).map(([id, r]) => stageResultHtml(id, r, run)).join('');
     const ticks = !(run.stages?.length) ? stageListHtml(stageRows(list, run, {})) : '';
     return `<p class="pg-result pg-${cls}" data-testid="pg-result" data-status="${esc(run.status)}">${icon} ${esc(headline(run))}</p>
-      <div class="muted">Finished ${esc(clock(run.finished_at))} · took ${esc(took)}</div>${ticks}${stages}${failureHtml(run, run.status === 'failed' ? list : [])}${actionButtons(run)}`;
+      <div class="muted">Finished ${esc(clock(run.finished_at))} · took ${esc(took)}</div>${ticks}${stages}${failureHtml(run, run.status === 'failed' ? list : [])}${actionButtons(run, list)}`;
   }
 
   function bodyHtml(data) {
@@ -258,6 +264,7 @@
   function runAction(kind, run) {
     const stage = run.stages?.[0];
     if (kind === 'resume') act({ action: 'resume', run_id: run.id }, 'Resume requested');
+    if (kind === 'queue') act({ action: 'resume', run_id: run.id, wait_for_refresh: true }, 'Queued behind the Monday full refresh');
     if (kind === 'again') { close(); openLiveConfirm(stage); }
     if (kind === 'undo') { close(); openUndoConfirm(stage); }
   }

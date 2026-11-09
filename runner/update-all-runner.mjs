@@ -27,6 +27,7 @@ import { LIVE_STAGES, DB_ONLY_STAGES } from './publish-live.mjs';
 import { undoStage, undoRefusal } from './undo-live.mjs';
 import { progressReporter, loggingStore, recordRunnerCheck } from './progress.mjs';
 import { retentionPlan, applyRetention } from './bau-retention.mjs';
+import { RECHECK_MS, readRefresh, refreshState, ukClock } from './monday-refresh.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
@@ -134,6 +135,20 @@ async function liveCooldown(store, run) {
   return true;
 }
 
+/**
+ * "Run when it finishes": a run queued behind the Monday full refresh goes back to requested (re-checked every
+ * 10 min) while the refresh is running; once it has finished, is stuck or can't be read, the pre-flight decides.
+ * Returns the log line when the run was held, else null.
+ */
+export async function refreshWait(store, run, nowMs = Date.now()) {
+  if (!run.options?.wait_for_refresh) return null;
+  const st = refreshState(await readRefresh(store).catch(() => null), nowMs);
+  if (st.state !== 'running') return null;
+  const wait = { started_at: st.started_at, step: st.step, steps: st.steps, eta: st.eta };
+  await store.updateRun(run.id, { status: 'requested', cooldown_until: new Date(nowMs + RECHECK_MS).toISOString(), options: { ...run.options, refresh_wait: wait } });
+  return `[update-all] run ${run.id} (${run.mode}): queued behind the Monday full refresh (step ${st.step} of ${st.steps}, about ${ukClock(st.eta)})`;
+}
+
 /** Step context for one run: stage runs include ① only when stage I is chosen; Run all follows the tick-box. */
 /** Test aids carried by a run (dry only): injected failure, simulated new 08 pages / held reviews, fewer retries. */
 function testOptions(run) {
@@ -192,6 +207,8 @@ async function process1(store, run) {
     return 'cancelled';
   }
   if (run.options?.undo_of) return processUndo(store, run);
+  const held = await refreshWait(store, run);
+  if (held) { say(held); return 'waiting'; }
   const live = await prepareLiveRun(store, run);
   if (live.blocked) {
     await store.updateRun(run.id, { status: 'failed', error: live.blocked, finished_at: new Date().toISOString() });
