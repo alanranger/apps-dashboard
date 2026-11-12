@@ -104,6 +104,9 @@ export function csvRows(text) {
 }
 const lines = (file) => csvRows(fs.readFileSync(file, 'utf8'));
 
+/** What a stage run's sandbox was seeded with (seedSandbox): [{ stage, run_id, rel, published }]. */
+const SEEDED_FILE = 'seeded.json';
+
 /** Sandbox mirror: <root>/Schema Tools/scripts and <root>/alan-shared-resources/{csv,csv processed,outputs/...}. */
 export function sandboxFor(ctx) {
   // Live promotes a dry run: its sandbox IS that dry run's sandbox (the files the dry run reported).
@@ -589,6 +592,28 @@ export function sellingNotes(report) {
 /** Files a generator step changed against alanranger-schema (the publish set for its stage). */
 export const changedFiles = (diff) => [...new Set([...diff.differing.map((d) => String(d.file || d).split(' — ')[0]), ...diff.new_files])];
 
+/** What the events read from other stages' live publishes: [stage, what, where it comes from when published]. */
+const EVENT_READS = [['B', 'event-product links (05)', "live B's export"], ['D', 'reviews (04)', "D's live publish"]];
+
+/**
+ * Where the events took their product links and review sets from: this run's own stage, that stage's latest live
+ * publish (seeded), or otherwise a copy that may be out of date (a check: new events unlinked, replies missing).
+ */
+export function eventInputSources(ctx) {
+  const seeded = readJson(path.join(sandboxFor(ctx).root, SEEDED_FILE), []);
+  const lines = []; const notes = [];
+  for (const [stage, what, live] of EVENT_READS) {
+    const seed = seeded.find((s) => s.stage === stage && s.published);
+    if (!ctx.stages || ctx.stages.includes(stage)) lines.push(`${what} from: this run's stage ${stage}`);
+    else if (seed) lines.push(`${what} from: ${live} (run ${String(seed.run_id).slice(0, 8)})`);
+    else {
+      lines.push(`${what} from: a copy that may be out of date`);
+      notes.push(check(`Events took their ${what} from a copy that may be out of date, not ${live} (none found)`, `publish stage ${stage} live, then click 1. Build & check on stage E again`));
+    }
+  }
+  return { lines, notes };
+}
+
 /** Event Index: per file, events listed, past-dated events dropped and whether the hosted file would change. */
 function eventIndexReport(ctx, out, report, diff) {
   const runs = JSON.parse(report.log || '[]');
@@ -597,9 +622,11 @@ function eventIndexReport(ctx, out, report, diff) {
   const listed = runs.reduce((n, r) => n + (r.events_listed || 0), 0);
   const notes = runs.length === 2 ? [] : [problem('The Event Index did not produce both list files', 'resume the run; tell Claude if it fails again')];
   if (changed.size) notes.push(info(`${plural(changed.size, 'event list file')} changed (events added or past events dropped); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`));
-  return { counts: { ...counts, would_change: changed.size, seconds: report.seconds }, notes,
+  const inputs = eventInputSources(ctx);
+  notes.push(...inputs.notes);
+  return { counts: { ...counts, would_change: changed.size, seconds: report.seconds, inputs_from: inputs.lines }, notes,
     plain: `${verb(ctx, 'Would rebuild', 'Rebuilt')} the lessons and workshops event lists: ${listed} upcoming events listed.`,
-    details: Object.entries(counts).map(([f, v]) => `${f}: ${v}`), outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
+    details: [...Object.entries(counts).map(([f, v]) => `${f}: ${v}`), ...inputs.lines], outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 }
 
 /** P5: landings were report-only in LIVE until the difference list was approved (Claude, batch 5: switched on). */
@@ -1117,12 +1144,17 @@ export function seedSandbox(ctx, sources) {
   const sb = buildSandbox(ctx);
   const seeded = [];
   for (const src of sources) {
-    for (const rel of src.seeds) {
-      const from = path.join(src.sandbox || '', rel);
-      if (!src.sandbox || !fs.existsSync(from)) return { missing: `stage ${src.stage} (run ${String(src.run_id).slice(0, 8)}): ${rel}` };
+    for (const seed of src.seeds) {
+      // A seed is a path, or [path in the source sandbox, path in this one] (live B's 05 export).
+      const [fromRel, rel] = Array.isArray(seed) ? seed : [seed, seed];
+      const from = path.join(src.sandbox || '', fromRel);
+      const have = !!src.sandbox && fs.existsSync(from);
+      if (!have && src.optional) continue;
+      if (!have) return { missing: `stage ${src.stage} (run ${String(src.run_id).slice(0, 8)}): ${fromRel}` };
       copyInto(from, path.join(sb.root, rel));
-      seeded.push(`${src.stage}: ${rel}`);
+      seeded.push({ stage: src.stage, run_id: src.run_id, rel, from: fromRel, published: !!src.optional });
     }
   }
-  return { seeded, root: sb.root };
+  fs.writeFileSync(path.join(sb.root, SEEDED_FILE), JSON.stringify(seeded, null, 2));
+  return { seeded: seeded.map((s) => `${s.stage}: ${s.rel}`), root: sb.root };
 }

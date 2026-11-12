@@ -31,7 +31,7 @@ import { RECHECK_MS, readRefresh, refreshState, ukClock } from './monday-refresh
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REGISTRY = JSON.parse(fs.readFileSync(path.join(HERE, 'steps.json'), 'utf8'));
-const { planStage, seedSources, stageHistory, liveDoneHistory, stepsFor } = createRequire(import.meta.url)('./stages.cjs');
+const { planStage, seedSources, publishedReads, stageHistory, liveDoneHistory, stepsFor } = createRequire(import.meta.url)('./stages.cjs');
 
 /** Run all = every step; a stage run = pre-flight + its stages' steps + summary. */
 export const registryFor = (stages) => { const ids = stepsFor(stages); return ids ? REGISTRY.filter((d) => ids.includes(d.id)) : REGISTRY; };
@@ -46,7 +46,7 @@ export async function prepareStageRun(store, run, ctx) {
   const history = stageHistory(runs, run.mode);
   const plan = planStage(run.stages, history);
   if (!plan.ok) return `${plan.message} (${Object.entries(plan.reasons).map(([s, r]) => `${s}: ${r}`).join('; ')}) — ${plan.chainLabel}`;
-  const seeded = seedSandbox(ctx, seedSources(run.stages, history));
+  const seeded = seedSandbox(ctx, [...seedSources(run.stages, history), ...publishedReads(run.stages, liveDoneHistory(runs))]);
   return seeded.missing ? `saved inputs are gone from this PC: ${seeded.missing} — run that stage again` : null;
 }
 /** Why a stage's latest dry run can't be promoted to Live, or null. */

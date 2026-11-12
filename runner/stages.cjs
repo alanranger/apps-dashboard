@@ -5,20 +5,30 @@
  */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const DONE = new Set(['ok', 'warn']);
+const P04 = 'alan-shared-resources/csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv';
+const P05 = 'alan-shared-resources/csv processed/05-event-product-mappings-latest.csv';
 
-/** seeds: what a later stage reads from this stage's saved output (dry: paths inside that run's sandbox). */
+/**
+ * seeds: what a later stage reads from this stage's saved output (dry: paths inside that run's sandbox).
+ * reads: what a stage reads from another stage's latest LIVE publish, when that stage is not in the run (optional:
+ * no publish yet keeps the seeded / shared copy). A path, or [path in that sandbox, path in this one].
+ * D's 04 is never published to alan-shared-resources (its shared copy is stale), and a dry B's 05 predates the
+ * ingest: live B writes the 05 that matches the database to live-05-export.csv.
+ */
 const STAGES = [
   { id: 'A', name: 'Refresh data', steps: ['preflight', 'build_csvs'], needs: [],
     seeds: ['alan-shared-resources/csv', 'feeds'] },
   { id: 'B', name: 'Ingest + links', steps: ['ingest_preliminary'], needs: ['A'],
-    seeds: ['alan-shared-resources/csv processed/05-event-product-mappings-latest.csv'] },
+    seeds: [P05] },
   { id: 'C', name: 'Reviews', steps: ['reviews'], needs: ['A'],
     seeds: ['alan-shared-resources/csv processed/03 – combined_product_reviews.csv', 'alan-shared-resources/csv processed/03b-google-pending-alan-review.csv',
       'alan-shared-resources/csv processed/03b_google_matched.csv', 'alan-shared-resources/csv/raw-03b-google-reviews.csv'] },
   { id: 'D', name: 'Products', steps: ['product_schema', 'publish_products'], needs: ['A', 'C'],
     seeds: ['alan-shared-resources/outputs/schema/products', 'alan-shared-resources/csv/07-product-schema-with-review-ratings.csv',
-      'alan-shared-resources/csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv', 'alan-shared-resources/csv processed/02 – products_cleaned.xlsx'] },
-  { id: 'E', name: 'Events', steps: ['event_posts', 'event_index', 'publish_events'], needs: ['A', 'B'], seeds: ['app-cli/event-posts', 'app-cli/event-index'] },
+      P04, 'alan-shared-resources/csv processed/02 – products_cleaned.xlsx'] },
+  // Events map to products with the 05 live B exported, and list each product's published review set (D's live 04).
+  { id: 'E', name: 'Events', steps: ['event_posts', 'event_index', 'publish_events'], needs: ['A', 'B'], seeds: ['app-cli/event-posts', 'app-cli/event-index'],
+    reads: { B: [['live-05-export.csv', P05]], D: [P04] } },
   { id: 'F', name: 'Blogs', steps: ['blog_index', 'blog_posts', 'publish_blogs'], needs: ['A'], seeds: ['app-cli/blog-index', 'app-cli/blog-posts'] },
   { id: 'G', name: 'Landing pages', steps: ['landing_pages', 'blocks_css', 'publish_landings'], needs: ['A'], seeds: ['app-cli/landings', 'app-cli/blocks-css'] },
   { id: 'H', name: 'Final ingest + keywords', steps: ['final_ingest', 'export_09'], needs: ['A'], needsAny: ['D', 'E', 'F', 'G'], seeds: [] },
@@ -115,4 +125,16 @@ function seedSources(targets, history) {
   return sortStages(used).filter((id) => history[id]).map((id) => ({ stage: id, run_id: history[id].run_id, sandbox: history[id].sandbox, seeds: BY_ID[id].seeds }));
 }
 
-module.exports = { STAGES, BY_ID, MAX_AGE_MS, sortStages, stepsFor, stageHistory, liveDoneHistory, staleReason, planStage, seedSources };
+/**
+ * Optional seeds from other stages' latest live publish (liveDone = liveDoneHistory): a stage in the run is never
+ * read (the run makes its own), and a publish with no sandbox (an undo) gives nothing.
+ */
+function publishedReads(targets, liveDone) {
+  if (!targets || !targets.length) return [];
+  const want = sortStages(targets);
+  return want.flatMap((t) => Object.entries(BY_ID[t].reads || {}))
+    .filter(([id]) => !want.includes(id) && liveDone[id]?.sandbox)
+    .map(([id, seeds]) => ({ stage: id, run_id: liveDone[id].promoted_from || liveDone[id].run_id, sandbox: liveDone[id].sandbox, seeds, optional: true }));
+}
+
+module.exports = { STAGES, BY_ID, MAX_AGE_MS, P04, P05, sortStages, stepsFor, stageHistory, liveDoneHistory, staleReason, planStage, seedSources, publishedReads };
