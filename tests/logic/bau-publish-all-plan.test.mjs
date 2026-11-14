@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { isCheckAllRun, latestCheckAll, publishAllPlan, stagePublishable } from '../../runner/publish-all-plan.mjs';
+
+const ok = (extra = {}) => ({ status: 'ok', removals_unexplained: 0, run_id: 'aaaaaaaa-1111', ...extra });
+const checkAll = (results, status = 'succeeded') => ({
+  id: 'checkall-0000', mode: 'dry', stages: null, status, stage_results: results, finished_at: '2026-11-14T12:00:00Z'
+});
+
+test('isCheckAllRun: dry finished with stages omitted', () => {
+  assert.equal(isCheckAllRun({ mode: 'dry', stages: null, status: 'succeeded' }), true);
+  assert.equal(isCheckAllRun({ mode: 'dry', stages: [], status: 'warned' }), true);
+  assert.equal(isCheckAllRun({ mode: 'dry', stages: ['E'], status: 'succeeded' }), false);
+  assert.equal(isCheckAllRun({ mode: 'live', stages: null, status: 'succeeded' }), false);
+  assert.equal(isCheckAllRun({ mode: 'dry', stages: null, status: 'running' }), false);
+});
+
+test('latestCheckAll picks the newest finished check-all', () => {
+  const runs = [
+    { id: '1', mode: 'dry', stages: ['E'], status: 'succeeded' },
+    checkAll({ A: ok() }),
+    { id: '3', mode: 'dry', stages: null, status: 'running' }
+  ];
+  assert.equal(latestCheckAll(runs).id, 'checkall-0000');
+});
+
+test('stagePublishable: ok only; warn/fail/removals blocked', () => {
+  assert.equal(stagePublishable(ok(), 'D').ok, true);
+  assert.equal(stagePublishable({ status: 'warn', removals_unexplained: 0 }, 'D').ok, false);
+  assert.equal(stagePublishable({ status: 'ok', removals_unexplained: 2 }, 'E').ok, false);
+  assert.equal(stagePublishable({ status: 'ok' }, 'B').ok, true); // B has no file removals
+});
+
+test('publishAllPlan: disabled with no check-all; all-OK; partial with WARN at D and removals at E', () => {
+  assert.equal(publishAllPlan(null).ready, false);
+  const all = Object.fromEntries('ABCDEFGH'.split('').map((id) => [id, ok()]));
+  const full = publishAllPlan(checkAll(all));
+  assert.equal(full.ready, true);
+  assert.equal(full.label, 'Publish all');
+  assert.deepEqual(full.publish, 'ABCDEFGH'.split(''));
+
+  const partial = publishAllPlan(checkAll({
+    ...all,
+    D: { status: 'warn', removals_unexplained: 0 },
+    E: { status: 'ok', removals_unexplained: 3 }
+  }));
+  assert.equal(partial.ready, true);
+  assert.match(partial.label, /6 of 8/);
+  assert.deepEqual(partial.publish, ['A', 'B', 'C', 'F', 'G', 'H']);
+  assert.deepEqual(partial.skip.map((s) => s.id).sort(), ['D', 'E']);
+});

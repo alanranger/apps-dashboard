@@ -226,15 +226,11 @@
       <h2>Run</h2>
       <div class="run-status" id="runStatus" data-testid="run-status-box" hidden></div>
       <div class="controls">
-        <span class="run-all-mode">
-          <span class="mode" role="radiogroup" aria-label="Run all mode">
-            <label data-testid="run-all-check-label" data-tip="Run all will build and check every stage. Nothing changes on the live site or database."><input type="radio" name="mode" value="dry" checked><span>Check</span></label>
-            <label class="disabled" id="liveRadioLabel" data-testid="run-all-live-label" data-tip="Live Run all isn't available. Run all builds and checks every stage; then publish each stage with its own Publish live… button."><input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled><span>Live</span></label>
-          </span></span>
-        <label class="tick" data-testid="include-audit-label" data-tip="Adds stage I to Run all. In a check the full audit is only simulated; start the real one with Start full audit ①…, or it runs every Monday.">
+        <label class="tick" data-testid="include-audit-label" data-tip="Adds stage I to Check all. In a check the full audit is only simulated; after Publish all it starts in the background, or use Start full audit ①… / Monday.">
           <input type="checkbox" id="includeAudit" data-testid="include-audit" checked> Include full audit ①
         </label>
-        <span class="tipwrap" data-tip="Builds and checks stages A–H in order (and I, simulated, if Include full audit ① is ticked). Nothing goes live. Afterwards, publish each stage with its own 2. Publish live… button."><button class="bb bb-primary" style="width:150px" id="startBtn" data-testid="update-all-start">Run all</button></span>
+        <span class="tipwrap" data-tip="Builds and checks stages A–H in order (and I, simulated, if Include full audit ① is ticked). Each stage waits for the previous. Nothing goes live."><button class="bb bb-primary" style="width:150px" id="startBtn" data-testid="update-all-start">Check all stages</button></span>
+        <span class="tipwrap" id="publishAllWrap" data-tip="Run Check all stages first. Publish all stays off until that check finishes."><button class="bb bb-primary" style="width:150px" id="publishAllBtn" data-testid="publish-all" disabled>Publish all</button></span>
         <span class="tipwrap" data-tip="Carries on the last failed run from the step that failed."><button class="bb bb-secondary" style="width:110px" id="resumeBtn" data-testid="update-all-resume" disabled>Resume</button></span>
         <span class="tipwrap" data-tip="Cancels a run that is still queued, before the PC runner picks it up. It can't stop a run that has already started: that run carries on to the end."><button class="bb bb-secondary" style="width:110px" id="cancelBtn" data-testid="update-all-cancel" disabled>Cancel</button></span>
         <span class="muted" id="actionMsg" data-testid="action-msg"></span>
@@ -244,7 +240,11 @@
         <button class="small" id="prereqChain" data-testid="prereq-chain" data-tip="Runs the listed stages as checks, one after another. Nothing goes live."></button>
       </div>
       <div class="run-meta" id="runMeta" hidden></div>
-      <div class="lastline" id="runAllLiveNote" data-testid="run-all-live-note" title="A check builds everything in a sandbox copy and changes nothing live (no live CSV, schema repo, database or Squarespace changes). The PC runner (Windows task AlanUpdateAllRunner) checks every minute and picks up a requested run.">Run all builds and checks every stage (nothing changes live). Then publish each stage with its own <b>2. Publish live…</b> button below.</div>
+      <div class="lastline" id="runAllLiveNote" data-testid="run-all-live-note" title="Check all builds everything in a sandbox and changes nothing live. Publish all then promotes each checked-OK stage in order A–H (exact checked build; no rebuild). Per-stage buttons stay available.">Check all builds and checks every stage (nothing changes live). Then use <b>Publish all</b> for checked-OK stages, or each stage's own <b>2. Publish live…</b>.</div>
+      <!-- hidden: live radio kept for older tests / modeValue() -->
+      <input type="radio" name="mode" value="dry" checked hidden id="modeDry">
+      <input type="radio" name="mode" value="live" id="liveRadio" data-testid="run-all-live" disabled hidden>
+      <span id="liveRadioLabel" data-testid="run-all-live-label" hidden></span>
     </div>
 
     <div class="grid2" id="needsSummaryRow" data-testid="needs-summary-row">
@@ -789,11 +789,34 @@
       $('summaryInfo').innerHTML = info.map((line) => `<li data-testid="summary-info-item">${esc(line)}</li>`).join('');
     }
 
+    let publishAllInfo = null;
+    const PA_KEY = 'bau_publish_all';
+    const paState = () => { try { return JSON.parse(sessionStorage.getItem(PA_KEY) || 'null'); } catch { return null; } };
+    const setPaState = (s) => { if (s) sessionStorage.setItem(PA_KEY, JSON.stringify(s)); else sessionStorage.removeItem(PA_KEY); };
+
+    function renderPublishAll(plan, run, runner) {
+      publishAllInfo = plan || null;
+      const btn = $('publishAllBtn');
+      const wrap = $('publishAllWrap');
+      const active = ['requested', 'running'].includes(run?.status) || !!paState()?.queue?.length;
+      const refreshBusy = !!(runner?.refresh_running || runner?.monday_refresh_running);
+      const ready = !!(plan?.ready && plan.publish?.length && !active && !refreshBusy && liveInfo?.can_publish);
+      btn.disabled = !ready;
+      btn.textContent = plan?.label || 'Publish all';
+      btn.classList.toggle('bb-disabled', !ready);
+      const why = refreshBusy ? 'The Monday refresh is running — wait until it finishes.'
+        : active ? 'A run or Publish all is already in progress.'
+        : !liveInfo?.can_publish ? 'Live is switched off (Alan only).'
+        : (plan?.tip || 'Run Check all stages first.');
+      wrap.dataset.tip = why;
+      wrap.setAttribute('data-tip', why);
+    }
+
     function renderButtons(run) {
-      const active = ['requested', 'running'].includes(run?.status);
+      const active = ['requested', 'running'].includes(run?.status) || !!paState()?.queue?.length;
       $('startBtn').disabled = active;
-      $('cancelBtn').disabled = !active;
-      $('resumeBtn').disabled = run?.status !== 'failed';
+      $('cancelBtn').disabled = !['requested', 'running'].includes(run?.status);
+      $('resumeBtn').disabled = run?.status !== 'failed' || !!paState()?.queue?.length;
     }
 
     const coolingUntil = (run) => run?.status === 'requested' && run.cooldown_until && Date.parse(run.cooldown_until) > Date.now() ? run.cooldown_until : null;
@@ -948,12 +971,14 @@
       renderErrors(run, steps);
       renderNeeds(run, data.page_choices || [], data.review_choices || [], steps);
       renderSummary(run, steps);
+      renderLiveRadio(data.live);
       renderButtons(run);
+      renderPublishAll(data.publish_all, run, data.runner);
       renderStatusText(run);
       renderStages(data.stages, run);
-      renderLiveRadio(data.live);
       renderRunStatus(run, steps);
       syncTipWraps();
+      tickPublishAll(run);
     }
 
     async function refresh() {
@@ -967,8 +992,8 @@
       } catch (e) { $('actionMsg').textContent = e.message; }
     }
 
-    const modeValue = () => document.querySelector('input[name=mode]:checked').value;
-    /** Actions that start or restart a run (Run all, Resume, Undo) open the progress window. */
+    const modeValue = () => 'dry';
+    /** Actions that start or restart a run (Check all, Resume, Undo) open the progress window. */
     const OPENS_PROGRESS = new Set(['start', 'resume', 'undo']);
     async function act(body, msg) {
       $('actionMsg').textContent = msg;
@@ -979,7 +1004,85 @@
       } catch (e) { $('actionMsg').textContent = e.message; }
     }
 
-    $('startBtn').addEventListener('click', () => act({ action: 'start', mode: modeValue(), include_audit: $('includeAudit').checked }, 'Run requested'));
+    /** Publish all: sequential single-stage live publishes of the checked-OK list (never WARN/FAIL/removals). */
+    function openPublishAllConfirm() {
+      const plan = publishAllInfo;
+      if (!plan?.ready || !plan.publish?.length) return;
+      const skips = (plan.skip || []).map((s) => `${s.id}: ${s.reason}`);
+      openModal(`<h3 data-testid="publish-all-title">${esc(plan.label)}</h3>
+        <p>Publishes the <strong>exact checked builds</strong> from Check all <code>${esc(String(plan.checkAll?.id || '').slice(0, 8))}</code>, stage by stage in order. Nothing is rebuilt between check and publish.</p>
+        ${listBlock('Will publish', plan.publish, 'publish-all-will')}
+        ${skips.length ? listBlock('Not published (keep per-stage buttons)', skips, 'publish-all-skip') : ''}
+        <div class="actions"><button class="secondary" data-testid="publish-all-cancel" id="paCancel" data-tip="Closes this box. Nothing is published.">Cancel</button>
+        <button data-testid="publish-all-confirm" id="paGo" class="bb bb-primary">Start Publish all</button></div>`);
+      $('paCancel').onclick = closeModal;
+      $('paGo').onclick = () => {
+        closeModal();
+        setPaState({ queue: [...plan.publish], skip: plan.skip || [], index: 0, results: [], checkAllId: plan.checkAll?.id || null });
+        $('actionMsg').textContent = `Publish all: starting stage ${plan.publish[0]}…`;
+        window.BauProgress?.expect();
+        tickPublishAll(current);
+      };
+    }
+
+    async function tickPublishAll(run) {
+      const st = paState();
+      if (!st?.queue?.length || st.busy) return;
+      const id = st.queue[st.index];
+      if (!id) { setPaState(null); return; }
+
+      if (['requested', 'running'].includes(run?.status)) {
+        if (run.mode === 'live' && run.stages?.[0] === id) { st.lastRunId = run.id; setPaState(st); }
+        return;
+      }
+
+      if (st.lastRunId && run?.id === st.lastRunId && ['succeeded', 'warned', 'failed', 'cancelled'].includes(run?.status)) {
+        st.results.push({ id, status: run.status, commit: run.stage_results?.[id]?.commit || null, error: run.error || null });
+        if (run.status === 'failed' || run.status === 'cancelled') {
+          setPaState(st);
+          openModal(`<h3 data-testid="publish-all-failed">Publish all stopped at stage ${esc(id)}</h3>
+            <p class="refusal">${esc(run.error || run.status)}</p>
+            <p>Later stages were not published.</p>
+            <div class="actions">
+              <button class="secondary" id="paStop" data-testid="publish-all-stop">Stop here</button>
+              <button id="paRetry" data-testid="publish-all-retry">Retry this stage</button>
+            </div>`);
+          $('paStop').onclick = () => { setPaState(null); closeModal(); refresh(); };
+          $('paRetry').onclick = () => { st.lastRunId = null; setPaState(st); closeModal(); startStages([id], 'live'); };
+          return;
+        }
+        st.index += 1;
+        st.lastRunId = null;
+        if (st.index >= st.queue.length) {
+          setPaState(null);
+          $('actionMsg').textContent = `Publish all finished: ${st.results.map((r) => r.id).join(', ')} published.`;
+          if ($('includeAudit')?.checked) startStages(['I'], 'live');
+          return;
+        }
+        setPaState(st);
+      }
+
+      if (st.lastRunId) return;
+      st.busy = true; setPaState(st);
+      $('actionMsg').textContent = `Publish all: stage ${id} (${st.index + 1} of ${st.queue.length})…`;
+      try {
+        await api('/api/update-all', { method: 'POST', body: { action: 'start', mode: 'live', stages: [id] } });
+        st.busy = false; setPaState(st);
+        window.BauProgress?.expect();
+        refresh();
+      } catch (e) {
+        st.busy = false; setPaState(st);
+        openModal(`<h3 data-testid="publish-all-failed">Publish all could not start stage ${esc(id)}</h3>
+          <p class="refusal">${esc(e.message)}</p>
+          <div class="actions"><button id="paStop2" data-testid="publish-all-stop">Stop here</button>
+          <button id="paRetry2" data-testid="publish-all-retry">Retry this stage</button></div>`);
+        $('paStop2').onclick = () => { setPaState(null); closeModal(); };
+        $('paRetry2').onclick = () => { closeModal(); startStages([id], 'live'); };
+      }
+    }
+
+    $('startBtn').addEventListener('click', () => act({ action: 'start', mode: 'dry', include_audit: $('includeAudit').checked }, 'Check all requested'));
+    $('publishAllBtn').addEventListener('click', () => openPublishAllConfirm());
     $('resumeBtn').addEventListener('click', () => current && act({ action: 'resume', run_id: current.id }, 'Resume requested'));
     $('cancelBtn').addEventListener('click', () => current && act({ action: 'cancel', run_id: current.id }, 'Cancelled'));
     $('loginBtn').addEventListener('click', async () => {
@@ -997,12 +1100,10 @@
     const hasLivePublish = (id) => { const h = stageInfo?.history?.live_done?.[id]; return !!(h && ['ok', 'warn'].includes(h.status) && !h.undo_of); };
     const listBlock = (label, items, testid) => `<details data-testid="${testid}"><summary data-tip="Shows or hides the full list.">${esc(label)} (${items.length})</summary><ul>${items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`;
 
-    /** Live Run all isn't available (Alan 4 Nov: stage by stage): Run all always checks; each stage publishes on its own. */
+    /** Live publish capability (Alan only when switched on). Check all is always dry; Publish all uses per-stage live. */
     function renderLiveRadio(live) {
       liveInfo = live || null;
-      $('liveRadio').disabled = true;
-      $('liveRadioLabel').classList.add('disabled');
-      if ($('liveRadio').checked) document.querySelector('input[name=mode][value=dry]').checked = true;
+      if ($('liveRadio')) $('liveRadio').disabled = true;
     }
 
     function openModal(html) { $('liveModalBody').innerHTML = html; $('liveModal').hidden = false; syncTipWraps(); }
