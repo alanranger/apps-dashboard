@@ -25,7 +25,7 @@ export const WEB = 'G:/Dropbox/alan ranger photography/Website Code';
 export const SHARED = `${WEB}/alan-shared-resources`;
 const SCHEMA_TOOLS = `${WEB}/Schema Tools`;
 const { readCsvObjects, writeCsv, pathKey } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/csv-builders/lib.mjs`).href);
-const { deletedBlogPosts, planDeletedPostCleanup } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/stale-schema-cleanup.mjs`).href);
+const { deletedBlogPosts, planDeletedPostCleanup, isLikelyProductSchemaJson } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/stale-schema-cleanup.mjs`).href);
 const { SITE_UA, retryAfterMs } = await import(pathToFileURL(`${SCHEMA_TOOLS}/scripts/lib/site-identity.mjs`).href);
 export { retryAfterMs };
 const PY_ENV = { PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1', SCHEMA_TOOLS_DRY_RUN: '1', ALAN_SITE_GAP_SECONDS: '2' };
@@ -668,6 +668,20 @@ async function runAppCli(command, sb) {
   return { out, diff, report: JSON.parse(fs.readFileSync(path.join(out, 'app-cli-report.json'), 'utf8')) };
 }
 
+/** Event Posts output lists events blocked for £0 (no mapping price) — those get no per-page file. */
+function blockedEventNotes(log) {
+  const text = String(log || '');
+  const n = Number((text.match(/Events blocked \(no price found\):\s*(\d+)/) || [])[1] || 0);
+  if (!n) return { notes: [], blocked: 0 };
+  const sample = [...text.matchAll(/^\s*-\s+(.+?)\s+—\s+(https?:\/\/\S+)/gm)].slice(0, 5).map((m) => `${m[1]} (${m[2]})`);
+  return {
+    blocked: n,
+    notes: [check(`${n} event(s) blocked (no price found) — no event-page schema written. Usually the 05 mappings still have old event URLs after a rename.`,
+      're-run stage B so 05 matches the current event CSVs, then re-run stage E')],
+    details: sample.map((s) => `blocked £0: ${s}`)
+  };
+}
+
 const appCliStep = (command) => async (ctx) => {
   ensureDry(ctx);
   const sb = buildSandbox(ctx);
@@ -678,10 +692,15 @@ const appCliStep = (command) => async (ctx) => {
   if (command === 'event-index') return eventIndexReport(ctx, out, report, diff);
   const changed = changedFiles(diff);
   const [what, kind] = APP_LABEL[command];
-  return { counts: { files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, seconds: report.seconds },
-    notes: changed.length ? [info(`${plural(changed.length, `${kind} file`)} changed since the last publish (events or posts changed on the site); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`)] : [],
-    plain: `${verb(ctx, 'Would generate', 'Generated')} ${what} with the Schema Tools app's own generator: ${plural(report.files_written, 'file')}, ${changed.length} changed.`,
-    details: changed.map((f) => `changed: ${f}`), outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
+  const blocked = command === 'event-posts' ? blockedEventNotes(report.log) : { notes: [], blocked: 0, details: [] };
+  const notes = [
+    ...(changed.length ? [info(`${plural(changed.length, `${kind} file`)} changed since the last publish (events or posts changed on the site); ${verb(ctx, 'they would be published in this stage', 'published in this stage')}.`)] : []),
+    ...blocked.notes
+  ];
+  return { counts: { files_written: report.files_written, compared: diff.compared, byte_identical: diff.identical, identical_except_run_dates: diff.identical_except_run_dates || 0, would_change: changed.length, blocked_no_price: blocked.blocked || 0, seconds: report.seconds },
+    notes,
+    plain: `${verb(ctx, 'Would generate', 'Generated')} ${what} with the Schema Tools app's own generator: ${plural(report.files_written, 'file')}, ${changed.length} changed${blocked.blocked ? `, ${blocked.blocked} blocked (no price)` : ''}.`,
+    details: [...changed.map((f) => `changed: ${f}`), ...(blocked.details || [])], outputs: [`${out} (sandbox)`, path.join(out, 'compare.json')] };
 };
 
 // ---------- 8. blog posts: new or changed only (body-hash gate) ----------
@@ -837,13 +856,39 @@ const repoOf = (ctx) => ctx.schemaRepo || REPO;
 const readJson = (file, fallback) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
 const compareOf = (sb, command) => changedFiles(readJson(path.join(sb.root, 'app-cli', command, 'compare.json'), { differing: [], new_files: [] }));
 
-/** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo. */
+/** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo; retire renamed leftovers. */
 export function productPublishSet(sb, repo = REPO) {
   const src = path.join(sb.shared, 'outputs', 'schema', 'products');
   const final04 = fs.readFileSync(path.join(sb.shared, 'csv processed', '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
-  const set = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
-    .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]).filter((f) => fs.existsSync(path.join(src, f)));
-  return { publish: set.filter((f) => !fs.existsSync(path.join(repo, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8')), remove: [] };
+  const keep = new Set([...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
+    .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]).filter((f) => fs.existsSync(path.join(src, f))));
+  // Manifest-referenced files stay (same rule as removeStaleProductSchemaFiles).
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(src, 'products-manifest.json'), 'utf8'));
+    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
+  } catch { /* no sandbox manifest yet */ }
+  const publish = [...keep].filter((f) => !fs.existsSync(path.join(repo, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8'));
+  const remove = fs.readdirSync(repo)
+    .filter((n) => n.endsWith('_schema.json') && !n.endsWith('_event_schema.json') && !n.endsWith('_landing_schema.json'))
+    .filter((n) => isLikelyProductSchemaJson(path.join(repo, n)) && !keep.has(n))
+    .flatMap((n) => [n, n.replace(/_schema\.json$/, '_faq.json')].filter((f) => fs.existsSync(path.join(repo, f)) && !keep.has(f)));
+  return { publish, remove: [...new Set(remove)] };
+}
+
+/** E: changed event-posts + event-index files; retire event schemas no longer in the new events-manifest. */
+export function eventPublishSet(sb, repo = REPO) {
+  const publish = [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')];
+  const keep = new Set();
+  const manifestPath = path.join(appOut(sb, 'event-posts'), 'events-manifest.json');
+  try {
+    const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
+  } catch { return { publish, remove: [] }; }
+  for (const hub of ['beginners-photography-lessons_faq.json', 'photographic-workshops-near-me_faq.json', 'events-manifest.json']) keep.add(hub);
+  const remove = fs.readdirSync(repo)
+    .filter((n) => n.endsWith('_event_schema.json') || n.endsWith('_event_faq.json'))
+    .filter((n) => !keep.has(n) && fs.existsSync(path.join(repo, n)));
+  return { publish, remove };
 }
 const BLOG_SUFFIXES = ['_schema.json', '_blogposting.json', '_breadcrumb.json', '_image.json', '_faq.json', '_howto.json'];
 /** F: blog index + changed post files (+ blog-files.json when it changes), and the files of deleted posts (removed). */
@@ -880,7 +925,7 @@ const appOut = (sb, command) => path.join(sb.root, 'app-cli', command, 'alanrang
 /** Publish sets per stage: each lists only its own generators' files; `sources` = where those files sit in the sandbox. */
 export const PUBLISH = {
   publish_products: { stage: 'D', set: productPublishSet, sources: (sb) => [path.join(sb.shared, 'outputs', 'schema', 'products')], sample: 'products-manifest.json', what: 'product' },
-  publish_events: { stage: 'E', set: (sb) => ({ publish: [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')], remove: [] }),
+  publish_events: { stage: 'E', set: eventPublishSet,
     sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event' },
   publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
     before: (ctx) => blogBaselineBlocked(ctx), after: (sb, ctx) => blogManifestAfterPublish(sb, ctx) },
