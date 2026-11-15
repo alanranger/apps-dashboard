@@ -125,6 +125,9 @@
     .pg-log { list-style: none; max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; font-family: ui-monospace, Consolas, monospace; }
     .pg-log li { padding: 1px 0; } .pg-t { color: var(--text-muted); margin-right: 6px; }
     .pg-sound { display: inline-flex; gap: 6px; align-items: center; margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); }
+    .pg-stages li[data-status="failed"] { border-color: var(--red); color: var(--red); }
+    .pg-stages li[data-status="published"] { border-color: #1f5a37; }
+    .pg-stages li[data-status="skipped"] { opacity: 0.75; }
     .pg-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--blue); border-right-color: transparent; border-radius: 50%; animation: pgspin 0.8s linear infinite; vertical-align: -1px; }
     @keyframes pgspin { to { transform: rotate(360deg); } }
     table { width: 100%; border-collapse: collapse; font-size: 13.5px; table-layout: fixed; }
@@ -524,14 +527,14 @@
       return `<tr data-stage="I" class="optional-row"><td colspan="5" class="optional-cell"><div class="optional-box" data-testid="optional-box">${inner}</div></td></tr>`;
     }
 
-    /** 1. Build & check, 2. Publish live… (confirmation first) or 2. Already live, Undo last live… — one size.
+    /** 1. Build & check, 2. Publish live… (confirmation first) or 2. Already live / Checks out of date / Nothing to publish.
      *  Stage I has only "Start full audit ①…": a check of I only simulates, so it has no check button. */
     function stageButtons(id, active) {
       const off = active ? 'disabled' : '';
       if (id === 'I') return tipWrap(TIP.audit(), `<button class="bb bb-primary" data-testid="stage-live-I" data-stage-live="I" ${off}>Start full audit ①…</button>`);
       const live = tipWrap(TIP.publish(id), `<button class="bb bb-primary" data-testid="stage-live-${id}" data-stage-live="${id}" ${off}>2. Publish live…</button>`);
       return tipWrap(TIP.check(id), `<button class="bb bb-secondary" data-testid="stage-run-${id}" data-stage-run="${id}" ${off}>1. Build &amp; check</button>`)
-        + (alreadyLiveButton(id) || nothingToPublishButton(id) || live) + undoButton(id, off);
+        + (alreadyLiveButton(id) || staleCheckButton(id) || nothingToPublishButton(id) || live) + undoButton(id, off);
     }
 
     // ---------- hover / focus tips (Alan 4 Nov): every control says what a click really does ----------
@@ -607,6 +610,21 @@
       if (!done) return '';
       const tip = `Checked build ${String(done.promoted_from).slice(0, 8)} was published live on ${when(done.finished_at)} (${liveRef(done)}). Run 1. Build & check to make a new one.`;
       return tipWrap(tip, `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-already-live="1">2. Already live</button>`);
+    }
+
+    /** Checked build is older than a later live of a different build, or older than a newer target-repo commit. */
+    let repoHeadsInfo = null;
+    function staleCheckButton(id) {
+      const dry = stageInfo?.history?.dry?.[id];
+      const live = stageInfo?.history?.live_done?.[id];
+      if (!dry?.finished_at || !['ok', 'warn'].includes(dry.status)) return '';
+      const at = Date.parse(dry.finished_at);
+      const liveNewer = live?.finished_at && !live.undo_of && Date.parse(live.finished_at) > at && live.promoted_from !== dry.run_id;
+      const head = (SHARED_STAGES.has(id) ? repoHeadsInfo?.shared : repoHeadsInfo?.schema)?.committed_at;
+      const repoNewer = head && Date.parse(head) > at;
+      if (!liveNewer && !repoNewer) return '';
+      const tip = 'Checks are out of date: run Check all stages first.';
+      return tipWrap(tip, `<button class="bb bb-disabled" disabled data-testid="stage-live-${id}" data-stale-check="1">2. Checks out of date</button>`);
     }
 
     /** The newest ok checked build has no files to publish or remove and (B / H) no database rows to change. */
@@ -812,6 +830,99 @@
       wrap.setAttribute('data-tip', why);
     }
 
+    /** One Publish-all progress window for the whole queue (matches BauProgress style). */
+    function ensurePaModal() {
+      let el = $('paModal');
+      if (el) return el;
+      el = document.createElement('div');
+      el.className = 'modal-bg';
+      el.id = 'paModal';
+      el.hidden = true;
+      el.setAttribute('data-testid', 'publish-all-progress');
+      el.innerHTML = '<div class="modal pg-modal" id="paBody" role="dialog" aria-modal="true" aria-label="Publish all progress"></div>';
+      document.body.appendChild(el);
+      return el;
+    }
+    function paStatusOf(st, id) {
+      const done = (st.results || []).find((r) => r.id === id);
+      if (done) return done.status === 'failed' || done.status === 'cancelled' ? 'failed' : 'published';
+      const skip = (st.skip || []).find((s) => s.id === id);
+      if (skip) return 'skipped';
+      if (st.queue?.[st.index] === id) return 'publishing';
+      const qi = st.queue?.indexOf(id);
+      if (qi >= 0 && qi < st.index) return 'published';
+      if (qi > st.index) return 'waiting';
+      return 'waiting';
+    }
+    function paLabel(status, id, st) {
+      if (status === 'published') {
+        const r = (st.results || []).find((x) => x.id === id);
+        const link = r?.commit ? commitLink(r.commit, r.repo, id) : '';
+        return `published${link ? ` (${link})` : ''}`;
+      }
+      if (status === 'skipped') {
+        const s = (st.skip || []).find((x) => x.id === id);
+        return `skipped${s?.reason ? `: ${esc(s.reason)}` : ''}`;
+      }
+      if (status === 'failed') {
+        const r = (st.results || []).find((x) => x.id === id);
+        return `failed${r?.error ? `: ${esc(firstLine(r.error))}` : ''}`;
+      }
+      return status;
+    }
+    function renderPaProgress(run) {
+      const st = paState();
+      const modal = ensurePaModal();
+      if (!st?.queue?.length && !st?.finished) { modal.hidden = true; return; }
+      modal.hidden = false;
+      const allIds = [...(st.queue || []), ...(st.skip || []).map((s) => s.id)].filter((v, i, a) => a.indexOf(v) === i).sort();
+      const ids = 'ABCDEFGH'.split('').filter((id) => (st.queue || []).includes(id) || (st.skip || []).some((s) => s.id === id));
+      const doneN = (st.results || []).length;
+      const total = (st.queue || []).length || 1;
+      const pct = st.finished ? 100 : Math.min(99, Math.round((doneN / total) * 100));
+      const cur = st.finished ? null : st.queue[st.index];
+      const eta = st.finished ? 'done' : `stage ${doneN + 1} of ${total}${cur ? ` (${cur})` : ''}`;
+      const alive = ['requested', 'running'].includes(run?.status)
+        ? '<div class="pg-alive pg-green" data-testid="pa-alive">● Publish all in progress</div>'
+        : st.finished
+          ? ''
+          : '<div class="pg-alive pg-amber" data-testid="pa-alive">Waiting for the next stage…</div>';
+      const rows = ids.map((id) => {
+        const status = paStatusOf(st, id);
+        return `<li data-stage="${esc(id)}" data-status="${status}" data-testid="pa-stage-${esc(id)}">${esc(id)} · ${paLabel(status, id, st)}</li>`;
+      }).join('');
+      const fail = st.halted;
+      const summary = st.finished
+        ? `<p class="pg-result ${fail ? 'pg-fail' : 'pg-ok'}" data-testid="pa-summary">${fail ? '❌ Publish all stopped' : '✅ Publish all finished'}</p>
+           <div class="muted" data-testid="pa-audit-note">${st.auditStarted ? 'Full audit ① started in the background.' : (st.auditSkipped || 'Full audit ① not started.')}</div>
+           <div class="pg-actions"><button class="small secondary" id="paDoneClose" data-testid="pa-close">Close</button></div>`
+        : fail
+          ? `<p class="pg-result pg-fail" data-testid="pa-failed">❌ Stopped at stage ${esc(fail.id)}</p>
+             <p class="refusal">${esc(fail.error || fail.status)}</p>
+             <div class="pg-actions">
+               <button class="small secondary" id="paStopWin" data-testid="publish-all-stop">Stop here</button>
+               <button class="small" id="paRetryWin" data-testid="publish-all-retry">Retry this stage</button>
+             </div>`
+          : `<p class="pg-big" data-testid="pa-step">Publishing${cur ? ` stage ${esc(cur)}` : ''}…</p>`;
+      $('paBody').innerHTML = `<div class="pg-head"><div><span class="md md-live">LIVE</span> <strong data-testid="pa-title">Publish all</strong>
+        <span class="muted">· Check all <code>${esc(String(st.checkAllId || '').slice(0, 8))}</code></span></div>
+        <button class="small secondary" id="paClose" data-testid="pa-close-x">Close</button></div>
+        <div class="pg-overall" data-testid="pa-overall">Overall: ${esc(eta)} · ${pct}%</div>
+        <div class="pg-bar" data-testid="pa-bar" data-pct="${pct}"><div style="width:${pct}%"></div><span>${pct}%</span></div>
+        ${alive}<ul class="pg-stages" data-testid="pa-stages">${rows}</ul>${summary}`;
+      if ($('paClose')) $('paClose').onclick = () => { modal.hidden = true; };
+      if ($('paDoneClose')) $('paDoneClose').onclick = () => { setPaState(null); modal.hidden = true; refresh(); };
+      if ($('paStopWin')) $('paStopWin').onclick = () => {
+        setPaState({ ...st, finished: true, halted: fail, auditSkipped: 'Full audit ① not started (stopped early).' });
+        renderPaProgress(run);
+      };
+      if ($('paRetryWin')) $('paRetryWin').onclick = () => {
+        const next = { ...st, halted: null, lastRunId: null, busy: false };
+        setPaState(next);
+        startStages([fail.id], 'live');
+      };
+    }
+
     function renderButtons(run) {
       const active = ['requested', 'running'].includes(run?.status) || !!paState()?.queue?.length;
       $('startBtn').disabled = active;
@@ -966,6 +1077,7 @@
 
     function renderRun(data) {
       const run = data.run; const steps = data.steps || [];
+      repoHeadsInfo = data.repo_heads || null;
       window.BauProgress?.update(data);
       renderMeta(run);
       renderErrors(run, steps);
@@ -979,6 +1091,7 @@
       renderRunStatus(run, steps);
       syncTipWraps();
       tickPublishAll(run);
+      renderPaProgress(run);
     }
 
     async function refresh() {
@@ -1020,64 +1133,97 @@
         closeModal();
         setPaState({ queue: [...plan.publish], skip: plan.skip || [], index: 0, results: [], checkAllId: plan.checkAll?.id || null });
         $('actionMsg').textContent = `Publish all: starting stage ${plan.publish[0]}…`;
-        window.BauProgress?.expect();
+        renderPaProgress(current);
         tickPublishAll(current);
       };
     }
 
+    async function finishPublishAll(st, auditNote) {
+      const next = { ...st, finished: true, auditStarted: !!auditNote?.started, auditSkipped: auditNote?.skipped || null };
+      setPaState(next);
+      $('actionMsg').textContent = `Publish all finished: ${(st.results || []).map((r) => r.id).join(', ')} published.`;
+      renderPaProgress(current);
+      if ($('includeAudit')?.checked) maybeStartAuditAfterPublish();
+    }
+
+    /** If ① is already running, offer cancel+fresh start instead of stacking a second audit. */
+    function maybeStartAuditAfterPublish() {
+      const a = stageInfo?.audit;
+      if (a?.status === 'running') {
+        openModal(`<h3 data-testid="audit-already-running">Full audit ① is already running</h3>
+          <p>Run <code>${esc(String(a.id || '').slice(0, 8))}</code> started ${esc(when(a.started_at))}. Starting another would stack two audits.</p>
+          <div class="actions">
+            <button class="secondary" id="auditKeep" data-testid="audit-keep">Keep the running audit</button>
+            <button id="auditReplace" data-testid="audit-replace" class="bb bb-primary">Cancel it and start a fresh ①</button>
+          </div>`);
+        $('auditKeep').onclick = () => {
+          const st = paState();
+          if (st) setPaState({ ...st, auditSkipped: 'Kept the audit that was already running.' });
+          closeModal();
+          renderPaProgress(current);
+        };
+        $('auditReplace').onclick = async () => {
+          closeModal();
+          try {
+            await api('/api/update-all', { method: 'POST', body: { action: 'cancel_audit', reason: 'superseded: Publish all starting a fresh full audit' } });
+            startStages(['I'], 'live');
+            const st = paState();
+            if (st) setPaState({ ...st, auditStarted: true, auditSkipped: null });
+          } catch (e) { $('actionMsg').textContent = e.message; }
+        };
+        return;
+      }
+      startStages(['I'], 'live');
+      const st = paState();
+      if (st) setPaState({ ...st, auditStarted: true });
+    }
+
     async function tickPublishAll(run) {
       const st = paState();
-      if (!st?.queue?.length || st.busy) return;
+      if (!st?.queue?.length || st.busy || st.finished || st.halted) return;
       const id = st.queue[st.index];
       if (!id) { setPaState(null); return; }
 
       if (['requested', 'running'].includes(run?.status)) {
         if (run.mode === 'live' && run.stages?.[0] === id) { st.lastRunId = run.id; setPaState(st); }
+        renderPaProgress(run);
         return;
       }
 
       if (st.lastRunId && run?.id === st.lastRunId && ['succeeded', 'warned', 'failed', 'cancelled'].includes(run?.status)) {
-        st.results.push({ id, status: run.status, commit: run.stage_results?.[id]?.commit || null, error: run.error || null });
+        st.results.push({
+          id, status: run.status, commit: run.stage_results?.[id]?.commit || null,
+          repo: run.stage_results?.[id]?.repo || null, error: run.error || null
+        });
         if (run.status === 'failed' || run.status === 'cancelled') {
+          st.halted = { id, status: run.status, error: run.error || run.status };
           setPaState(st);
-          openModal(`<h3 data-testid="publish-all-failed">Publish all stopped at stage ${esc(id)}</h3>
-            <p class="refusal">${esc(run.error || run.status)}</p>
-            <p>Later stages were not published.</p>
-            <div class="actions">
-              <button class="secondary" id="paStop" data-testid="publish-all-stop">Stop here</button>
-              <button id="paRetry" data-testid="publish-all-retry">Retry this stage</button>
-            </div>`);
-          $('paStop').onclick = () => { setPaState(null); closeModal(); refresh(); };
-          $('paRetry').onclick = () => { st.lastRunId = null; setPaState(st); closeModal(); startStages([id], 'live'); };
+          renderPaProgress(run);
           return;
         }
         st.index += 1;
         st.lastRunId = null;
         if (st.index >= st.queue.length) {
-          setPaState(null);
-          $('actionMsg').textContent = `Publish all finished: ${st.results.map((r) => r.id).join(', ')} published.`;
-          if ($('includeAudit')?.checked) startStages(['I'], 'live');
+          await finishPublishAll(st, null);
           return;
         }
         setPaState(st);
+        renderPaProgress(run);
       }
 
       if (st.lastRunId) return;
       st.busy = true; setPaState(st);
       $('actionMsg').textContent = `Publish all: stage ${id} (${st.index + 1} of ${st.queue.length})…`;
+      renderPaProgress(run);
       try {
         await api('/api/update-all', { method: 'POST', body: { action: 'start', mode: 'live', stages: [id] } });
         st.busy = false; setPaState(st);
-        window.BauProgress?.expect();
         refresh();
       } catch (e) {
-        st.busy = false; setPaState(st);
-        openModal(`<h3 data-testid="publish-all-failed">Publish all could not start stage ${esc(id)}</h3>
-          <p class="refusal">${esc(e.message)}</p>
-          <div class="actions"><button id="paStop2" data-testid="publish-all-stop">Stop here</button>
-          <button id="paRetry2" data-testid="publish-all-retry">Retry this stage</button></div>`);
-        $('paStop2').onclick = () => { setPaState(null); closeModal(); };
-        $('paRetry2').onclick = () => { closeModal(); startStages([id], 'live'); };
+        st.busy = false;
+        st.halted = { id, status: 'failed', error: e.message };
+        setPaState(st);
+        renderPaProgress(run);
       }
     }
 
@@ -1130,15 +1276,27 @@
 
     /** Stage I publishes nothing: its live run starts the full audit ① (the Monday job) now. */
     function openAuditConfirm(plan, blocked) {
+      const running = stageInfo?.audit?.status === 'running' ? stageInfo.audit : null;
+      const replaceNote = running
+        ? `<p data-testid="audit-replace-note">① <code>${esc(String(running.id).slice(0, 8))}</code> is already running (since ${esc(when(running.started_at))}). Starting again will cancel that run first, then start a fresh one.</p>`
+        : '<p class="muted">Refused on a Monday (the Monday ① runs anyway). Never runs two full audits at once.</p>';
       openModal(`<h3 data-testid="live-confirm-title">Start full audit ① — stage I</h3>
         <p>Starts the full audit ① now, the same job the Monday schedule runs: render every page, check broken links, then the ② score.
         It usually takes 1–3 hours; the progress window follows it. Nothing is published and there is nothing to undo.</p>
-        <p class="muted">Refused on a Monday (the Monday ① runs anyway) and while ① is already running.</p>
+        ${replaceNote}
         ${blocked ? `<p class="refusal" data-testid="live-confirm-refusal">${esc(blocked)}</p>` : ''}
         <div class="actions"><button class="secondary" data-testid="live-confirm-cancel" id="liveCancel" data-tip="${TIP.closeBox}">Cancel</button>
-        ${tipWrap(`Starts the full site audit now. It runs in the background for ${AUDIT_TIME.words}.`, `<button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>Start full audit ①</button>`)}</div>`);
+        ${tipWrap(`Starts the full site audit now. It runs in the background for ${AUDIT_TIME.words}.`, `<button data-testid="live-confirm-publish" id="livePublish" ${blocked ? 'disabled' : ''}>${running ? 'Cancel old ① and start fresh' : 'Start full audit ①'}</button>`)}</div>`);
       $('liveCancel').onclick = closeModal;
-      $('livePublish').onclick = () => { closeModal(); startStages(['I'], 'live'); };
+      $('livePublish').onclick = async () => {
+        closeModal();
+        if (running) {
+          try {
+            await api('/api/update-all', { method: 'POST', body: { action: 'cancel_audit', reason: 'superseded: starting a fresh full audit from stage I' } });
+          } catch (e) { $('actionMsg').textContent = e.message; return; }
+        }
+        startStages(['I'], 'live');
+      };
     }
 
     async function openLiveConfirm(stage) {
@@ -1181,11 +1339,11 @@
     if (sessionStorage.getItem(TOKEN_KEY)) refresh(); else showLogin();
     /** Every 3 s while a run is queued or running (the progress window), else every 5 s. */
     (function poll() {
-      const active = ['requested', 'running'].includes(current?.status);
+      const active = ['requested', 'running'].includes(current?.status) || !!(paState()?.queue?.length && !paState()?.finished);
       setTimeout(async () => { if (sessionStorage.getItem(TOKEN_KEY)) await refresh(); poll(); }, active ? 3000 : 5000);
     })();
   </script>
-  <script src="bau-progress.js"></script>
+  <script src="bau-progress.js?v=20261115a"></script>
   <div class="modal-bg" id="liveModal" data-testid="live-modal" hidden><div class="modal" id="liveModalBody" role="dialog" aria-modal="true"></div></div>
 </body>
 </html>

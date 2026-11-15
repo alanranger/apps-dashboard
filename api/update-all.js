@@ -18,10 +18,33 @@ const REGISTRY = require('../runner/steps.json');
 const { STAGES, planStage, stageHistory, liveDoneHistory, sortStages } = require('../runner/stages.cjs');
 const { liveState, livePlan, undoRequest } = require('./_bau-live');
 const { stepEstimates, stageTypical, runnerState, latestAudit } = require('./_bau-progress');
-const { latestCheckAll, publishAllPlan } = require('../runner/publish-all-plan.cjs');
+const { latestCheckAll, publishAllPlan, stageCheckStale, STALE_TIP } = require('../runner/publish-all-plan.cjs');
 
 const ACTIVE = 'status=in.(requested,running)';
 const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
+const RENDER_API = 'https://ai-geo-audit.vercel.app/api/aigeo/traditional-seo-render';
+
+/** Latest main commit on a public GitHub repo (committed_at), or null if the lookup fails. */
+async function githubHead(repo) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const r = await fetch(`https://api.github.com/repos/alanranger/${repo}/commits/main`, {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'apps-dashboard-bau' }, signal: ctrl.signal
+    });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return { sha: j.sha || null, committed_at: j.commit?.committer?.date || j.commit?.author?.date || null };
+  } catch {
+    return null;
+  }
+}
+
+async function repoHeads() {
+  const [schema, shared] = await Promise.all([githubHead('alanranger-schema'), githubHead('alan-shared-resources')]);
+  return { schema, shared };
+}
 
 const recentRuns = () => sb('update_all_runs?select=id,mode,status,stages,stage_results,options,requested_at,started_at,finished_at&order=requested_at.desc&limit=60');
 
@@ -57,9 +80,12 @@ async function latestRun(id, session) {
   const q = id && id !== 'latest' ? `update_all_runs?id=eq.${encodeURIComponent(id)}` : 'update_all_runs?order=requested_at.desc&limit=1';
   const run = (await sb(q))[0] || null;
   const steps = run ? await sb(`update_all_steps?run_id=eq.${run.id}&order=ord.asc`) : [];
-  const [stages, estimates, runner, audit, runs] = await Promise.all([stagesInfo(), stepEstimates(run), runnerState(), latestAudit(), recentRuns()]);
+  const [stages, estimates, runner, audit, runs, heads] = await Promise.all([
+    stagesInfo(), stepEstimates(run), runnerState(), latestAudit(), recentRuns(), repoHeads()]);
+  const checkAll = latestCheckAll(runs);
+  const planOpts = { liveDone: stages.history.live_done, repoHeads: heads };
   return { run, steps, registry: REGISTRY, stages: { ...stages, audit }, live: liveState(session, stages.history), page_choices: await pageChoices(run), review_choices: await reviewChoices(run),
-    publish_all: publishAllPlan(latestCheckAll(runs)), estimates, runner, server_now: new Date().toISOString() };
+    publish_all: publishAllPlan(checkAll, planOpts), repo_heads: heads, estimates, runner, server_now: new Date().toISOString() };
 }
 
 const historyNow = async () => { const runs = await recentRuns(); return { dry: stageHistory(runs, 'dry'), live: stageHistory(runs, 'live'), live_done: liveDoneHistory(runs) }; };
@@ -76,7 +102,7 @@ function cleanStages(stages) {
 const simulated = (mode, urls) => (mode === 'dry' && Array.isArray(urls) ? urls.filter((u) => SITE.test(u)).slice(0, 5) : []);
 
 /** Live promotes the stage's latest dry run (the runner re-checks this, and that the files are unchanged). */
-function liveRefusal(stage, dry) {
+function liveRefusal(stage, dry, liveDone = {}, heads = {}) {
   // Stage I promotes nothing: live I starts the full audit ① now (the runner also refuses while ① is running).
   if (stage === 'I') return new Date().getUTCDay() === 1 ? 'Never on a Monday: the Monday cron runs ①' : null;
   if (!dry) return `Stage ${stage} has no checked build — click 1. Build & check first`;
@@ -85,6 +111,7 @@ function liveRefusal(stage, dry) {
   // B writes only the database (its safety is the automatic backup), so it has no file list to check.
   if (dry.removals_unexplained == null && stage !== 'B') return `Stage ${stage}'s checked build predates the removal check — click 1. Build & check again`;
   if (dry.removals_unexplained) return `Stage ${stage}'s checked build has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
+  if (stageCheckStale(stage, dry, liveDone[stage], heads).stale) return STALE_TIP;
   return null;
 }
 
@@ -101,9 +128,12 @@ async function liveGate(session, body, mode) {
 
 /** Dry stage runs check their prerequisites; a live stage checks the dry run it would promote. */
 async function stageRefusal(stages, mode) {
-  const history = stageHistory(await recentRuns(), 'dry');
+  const runs = await recentRuns();
+  const history = stageHistory(runs, 'dry');
   if (mode === 'live') {
-    const why = liveRefusal(stages[0], history[stages[0]]);
+    const liveDone = liveDoneHistory(runs);
+    const heads = await repoHeads();
+    const why = liveRefusal(stages[0], history[stages[0]], liveDone, heads);
     return why ? [409, { error: why }] : null;
   }
   const plan = planStage(stages, history);
@@ -153,6 +183,21 @@ async function cancel(body) {
   return run ? [200, { run }] : [400, { error: 'run is not active' }];
 }
 
+/** Cancel a running full audit ① (fault_monitor_runs trad_seo), so a fresh Check all / Publish all can start one. */
+async function cancelAudit(body) {
+  const reason = String(body.reason || 'cancelled_from_bau').slice(0, 240);
+  const res = await fetch(RENDER_API, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'cancel', runId: body.run_id || undefined })
+  }).then((r) => r.json()).catch((e) => ({ ok: false, error: String(e.message || e) }));
+  if (res?.run_id && res.cancelled) {
+    await sb(`fault_monitor_runs?id=eq.${encodeURIComponent(res.run_id)}`, {
+      method: 'PATCH', body: { error: reason, finished_at: new Date().toISOString(), status: 'cancelled' }
+    }).catch(() => null);
+  }
+  return [200, { ...res, reason }];
+}
+
 /** P16: save Alan's choice for a page new in 06 (Exclude included), so it is never asked about twice. */
 async function pageChoice(session, body) {
   if (!SITE.test(String(body.url || '')) || !['service', 'landing', 'exclude'].includes(body.choice)) return [400, { error: 'url and choice (service, landing, exclude) required' }];
@@ -194,7 +239,8 @@ async function undo(session, body) {
   return undoRequest(session, body, await historyNow(), active);
 }
 
-const ACTIONS = { start, resume, cancel: (s, b) => cancel(b), page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
+const ACTIONS = { start, resume, cancel: (s, b) => cancel(b), cancel_audit: (s, b) => cancelAudit(b),
+  page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
   review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices(), undo };
 
 module.exports = async function handler(req, res) {
@@ -208,7 +254,11 @@ module.exports = async function handler(req, res) {
       if (url.searchParams.get('page_choices')) return json(res, 200, { choices: await sb('bau_page_choices?order=url.asc') });
       if (url.searchParams.get('review_choices')) return json(res, 200, { choices: await sb('bau_review_choices?order=review_key.asc') });
       const plan = url.searchParams.get('live_plan');
-      if (plan) return json(res, 200, await livePlan(plan, await historyNow(), liveRefusal));
+      if (plan) {
+        const hist = await historyNow();
+        const heads = await repoHeads();
+        return json(res, 200, await livePlan(plan, hist, (stage, dry) => liveRefusal(stage, dry, hist.live_done, heads)));
+      }
       return json(res, 200, await latestRun(url.searchParams.get('run'), session));
     }
     if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });

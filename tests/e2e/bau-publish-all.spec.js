@@ -71,3 +71,20 @@ test('Publish all disabled before Check all; active after all-OK; partial label 
   await expect(page.getByTestId('publish-all-skip')).toContainText('E');
   await page.screenshot({ path: path.join(EVIDENCE, '3-publish-all-partial-confirm.png') });
 });
+
+test('Publish all disabled when Check all is stale vs later live or newer repo commit', async ({ page }) => {
+  const staleLive = publishAllPlan(checkAll(allOk), {
+    liveDone: { E: { finished_at: new Date(Date.now() + 60000).toISOString(), promoted_from: 'dry-ok-0000' } }
+  });
+  await openWith(page, staleLive);
+  await expect(page.getByTestId('publish-all')).toBeDisabled();
+  await expect(page.locator('#publishAllWrap')).toHaveAttribute('data-tip', /Checks are out of date/);
+  await page.screenshot({ path: path.join(EVIDENCE, '4-publish-all-stale-live.png') });
+
+  const staleRepo = publishAllPlan(checkAll(allOk), {
+    repoHeads: { schema: { committed_at: new Date(Date.now() + 60000).toISOString(), sha: '31ec86a8' } }
+  });
+  await openWith(page, staleRepo);
+  await expect(page.getByTestId('publish-all')).toBeDisabled();
+  await page.screenshot({ path: path.join(EVIDENCE, '5-publish-all-stale-repo.png') });
+});

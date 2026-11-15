@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isCheckAllRun, latestCheckAll, publishAllPlan, stagePublishable } from '../../runner/publish-all-plan.mjs';
+import {
+  isCheckAllRun, latestCheckAll, publishAllPlan, stagePublishable, checkAllStale, stageCheckStale, STALE_TIP
+} from '../../runner/publish-all-plan.mjs';
 
 const ok = (extra = {}) => ({ status: 'ok', removals_unexplained: 0, run_id: 'aaaaaaaa-1111', ...extra });
-const checkAll = (results, status = 'succeeded') => ({
-  id: 'checkall-0000', mode: 'dry', stages: null, status, stage_results: results, finished_at: '2026-11-14T12:00:00Z'
+const checkAll = (results, status = 'succeeded', finished_at = '2026-11-14T12:00:00Z') => ({
+  id: 'checkall-0000', mode: 'dry', stages: null, status, stage_results: results, finished_at
 });
 
 test('isCheckAllRun: dry finished with stages omitted', () => {
@@ -48,4 +50,32 @@ test('publishAllPlan: disabled with no check-all; all-OK; partial with WARN at D
   assert.match(partial.label, /6 of 8/);
   assert.deepEqual(partial.publish, ['A', 'B', 'C', 'F', 'G', 'H']);
   assert.deepEqual(partial.skip.map((s) => s.id).sort(), ['D', 'E']);
+});
+
+test('checkAllStale: live publish after Check all disables Publish all', () => {
+  const all = Object.fromEntries('ABCDEFGH'.split('').map((id) => [id, ok()]));
+  const check = checkAll(all, 'succeeded', '2026-11-14T22:47:00Z');
+  const liveDone = { E: { finished_at: '2026-11-14T23:01:00Z', promoted_from: 'aaaaaaaa-1111' } };
+  const stale = checkAllStale(check, { liveDone });
+  assert.equal(stale.stale, true);
+  assert.equal(stale.tip, STALE_TIP);
+  const plan = publishAllPlan(check, { liveDone });
+  assert.equal(plan.ready, false);
+  assert.equal(plan.tip, STALE_TIP);
+});
+
+test('checkAllStale: newer schema repo commit disables Publish all', () => {
+  const all = Object.fromEntries('ABCDEFGH'.split('').map((id) => [id, ok()]));
+  const check = checkAll(all, 'succeeded', '2026-11-14T22:47:00Z');
+  const repoHeads = { schema: { committed_at: '2026-11-14T23:25:54Z', sha: '31ec86a8' }, shared: null };
+  assert.equal(checkAllStale(check, { repoHeads }).stale, true);
+  assert.equal(publishAllPlan(check, { repoHeads }).ready, false);
+});
+
+test('stageCheckStale: repo newer than dry check; already-live same promote is not stale', () => {
+  const dry = { status: 'ok', finished_at: '2026-11-14T22:47:00Z', run_id: 'dry-1' };
+  const live = { finished_at: '2026-11-14T23:01:00Z', promoted_from: 'dry-1' };
+  assert.equal(stageCheckStale('E', dry, live, {}).stale, false);
+  assert.equal(stageCheckStale('E', dry, live, { schema: { committed_at: '2026-11-14T23:25:54Z' } }).stale, true);
+  assert.equal(stageCheckStale('E', dry, { finished_at: '2026-11-14T23:01:00Z', promoted_from: 'other' }, {}).stale, true);
 });
