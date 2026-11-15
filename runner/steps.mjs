@@ -896,6 +896,24 @@ export function productPublishSet(sb, repo = REPO) {
   return { publish, remove: [...new Set(remove)] };
 }
 
+const productPageId = (file) => {
+  try {
+    const nodes = JSON.parse(fs.readFileSync(file, 'utf8'))['@graph'] || [];
+    const hit = nodes.find((n) => [].concat(n?.['@type']).includes('Product') && (n.url || n['@id']));
+    return hit ? String(hit.url || hit['@id']).split('#')[0] : null;
+  } catch { return null; }
+};
+
+/** Old product filename retired because the fresh file for the same product page has a new name. */
+export function productRenameNotes(srcDir, repo, publish, remove) {
+  const published = publish.filter((f) => f.endsWith('_schema.json')).map((f) => ({ f, id: productPageId(path.join(srcDir, f)) })).filter((x) => x.id);
+  return remove.filter((f) => f.endsWith('_schema.json')).flatMap((f) => {
+    const id = productPageId(path.join(repo, f));
+    const to = published.find((p) => p.id === id);
+    return to ? [`removed (explained: renamed to ${to.f}): ${f}`] : [];
+  });
+}
+
 /** E: changed event-posts + event-index files; retire event schemas no longer in the new events-manifest. */
 export function eventPublishSet(sb, repo = REPO) {
   const publish = [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')];
@@ -942,11 +960,11 @@ const appOut = (sb, command) => path.join(sb.root, 'app-cli', command, 'alanrang
 /** Publish sets per stage: each lists only its own generators' files; `sources` = where those files sit in the sandbox. */
 export const PUBLISH = {
   publish_products: { stage: 'D', set: productPublishSet, sources: (sb) => [path.join(sb.shared, 'outputs', 'schema', 'products')], sample: 'products-manifest.json', what: 'product',
-    // Live SHARED keep-set: refuse a stale dry run that would delete today's live product files.
-    liveKeep: () => productKeepSet(SHARED) },
+    // Fresh 04 from this check, not the previously published 04 (a rename must retire the old filename).
+    liveKeep: (sb) => productKeepSet(sb.shared, { requireFilesIn: path.join(sb.shared, 'outputs', 'schema', 'products') }) },
   publish_events: { stage: 'E', set: eventPublishSet,
     sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event',
-    liveKeep: () => eventKeepSet(path.join(REPO, 'events-manifest.json')) },
+    liveKeep: (sb) => eventKeepSet(path.join(appOut(sb, 'event-posts'), 'events-manifest.json')) },
   publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
     before: (ctx) => blogBaselineBlocked(ctx), after: (sb, ctx) => blogManifestAfterPublish(sb, ctx) },
   publish_landings: { stage: 'G', set: (sb) => ({ publish: [...compareOf(sb, 'landings'), ...compareOf(sb, 'blocks-css')], remove: [] }),
@@ -1000,6 +1018,8 @@ const publishStep = (id) => async (ctx) => {
   const removals = await publishRemovals(def, sb, ctx, set.publish, repo);
   if (ctx.mode === 'live') return livePublish(def, sb, ctx, { ...set, removals, repo });
   const { publish, remove } = set;
+  const srcDir = def.sources(sb)[0];
+  const renamed = def.stage === 'D' ? productRenameNotes(srcDir, repo, publish, remove) : [];
   const cdn = await fetch(`https://schema.alanranger.com/${def.sample}?t=${Date.now()}`).then((r) => r.status).catch(() => 0);
   const notes = cdn === 200 ? [] : [check(`The schema CDN sample (${def.sample}) returned ${cdn}`, 'open schema.alanranger.com; resume the run when it answers')];
   const total = publish.length + remove.length;
@@ -1007,7 +1027,7 @@ const publishStep = (id) => async (ctx) => {
   notes.push(...removalNotes(def, removals));
   return { counts: { files: publish, removed: remove, publish_count: publish.length, remove_count: remove.length, cdn_sample: `${def.sample} ${cdn}`, commit: null, ...removalCounts(removals) },
     notes, plain: total ? `${verb(ctx, 'Would publish', 'Published')} ${plural(total, 'file')} for stage ${def.stage}, then check the CDN and a sample page.` : `Nothing to publish for stage ${def.stage}.`,
-    details: [...publish.map((f) => `${verb(ctx, 'would publish', 'published')}: ${f}`), ...remove.map((f) => `${verb(ctx, 'would remove', 'removed')}: ${f}`), `CDN sample ${def.sample}: ${cdn}`, ...removalDetails(removals)] };
+    details: [...publish.map((f) => `${verb(ctx, 'would publish', 'published')}: ${f}`), ...remove.map((f) => `${verb(ctx, 'would remove', 'removed')}: ${f}`), ...renamed, `CDN sample ${def.sample}: ${cdn}`, ...removalDetails(removals)] };
 };
 
 // ---------- 12. export 09 (dry: DB count only) ----------

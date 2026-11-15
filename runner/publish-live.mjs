@@ -105,26 +105,33 @@ function stillDiffering(files, repo, src) {
   return files.filter((f) => !fs.existsSync(path.join(repo, f)) || norm(fs.readFileSync(path.join(repo, f), 'utf8')) !== norm(fs.readFileSync(src(f), 'utf8')));
 }
 
-/** Removals that would delete files today's live keep-set still needs (stale dry sandbox / 04 / manifest). */
-function staleKeepRefusal(def, set) {
-  if (!def.liveKeep || !set.remove?.length) return null;
+/** Files a removal list would delete that this check's fresh keep-set still names. */
+export const keptRemovals = (remove, keep) => (remove || []).filter((f) => keep?.has(f));
+
+/**
+ * Removals that would delete files this check's fresh 04 / events-manifest still needs.
+ * The keep-set is the checked build (today's Squarespace export), not the previously published files —
+ * a real rename must be allowed to retire the old filename.
+ */
+function staleKeepRefusal(def, set, sb) {
+  if (!def.liveKeep || !set.remove?.length || !sb) return null;
   let keep;
-  try { keep = def.liveKeep(); } catch { return null; }
-  const clash = set.remove.filter((f) => keep.has(f));
+  try { keep = def.liveKeep(sb); } catch { return null; }
+  const clash = keptRemovals(set.remove, keep);
   if (!clash.length) return null;
-  return [`Checked build ${String(set.promoteRun || '').slice(0, 8) || 'dry'} would remove ${plural(clash.length, `${def.what} file`)} still in today's live keep-set (${clash.slice(0, 4).join(', ')}${clash.length > 4 ? ', …' : ''}) — the dry run is stale`,
+  return [`Checked build ${String(set.promoteRun || '').slice(0, 8) || 'dry'} would remove ${plural(clash.length, `${def.what} file`)} that this check's fresh keep-set still needs (${clash.slice(0, 4).join(', ')}${clash.length > 4 ? ', …' : ''})`,
     `click 1. Build & check on stage ${def.stage} again, then 2. Publish live…`];
 }
 
 /** Why this live publish must not go ahead, or null. */
-function liveRefusal(def, ctx, set) {
+function liveRefusal(def, ctx, set, sb) {
   if (!LIVE_STAGES.has(def.stage)) return [`Live publishing for stage ${def.stage} is not built yet`, 'use 1. Build & check'];
   if (!ctx.promote) return ['No checked build to publish', `click 1. Build & check on stage ${def.stage} first`];
   // Compare the recomputed publish/remove intent to the dry run (not stillDiffering — already-live files may drop out).
   if (!sameSet(set.publish, ctx.promote.published || []) || !sameSet(set.remove, ctx.promote.removed || [])) {
     return [`The schema repo changed since checked build ${String(ctx.promote.run_id).slice(0, 8)}: the publish list is different now`, `click 1. Build & check on stage ${def.stage} again, then 2. Publish live…`];
   }
-  const stale = staleKeepRefusal(def, { ...set, promoteRun: ctx.promote.run_id });
+  const stale = staleKeepRefusal(def, { ...set, promoteRun: ctx.promote.run_id }, sb);
   if (stale) return stale;
   if (set.removals.unexplained.length) return [`${plural(set.removals.unexplained.length, 'unexplained removal')} in the publish set`, 'fix or explain them, then click 1. Build & check again'];
   return null;
@@ -159,8 +166,8 @@ function nothingToPublish(def, ctx, set) {
 }
 
 /** The step result when Live stops before writing: refused, nothing new, or blocked by uncommitted changes. Else null. */
-function liveGate(def, ctx, set, publish) {
-  const refused = liveRefusal(def, ctx, set);
+function liveGate(def, ctx, set, publish, sb) {
+  const refused = liveRefusal(def, ctx, set, sb);
   if (refused) return { notes: [note('problem', refused[0], refused[1])], counts: { ...removalCounts(set.removals), commit: null } };
   if (!publish.length && !set.remove.length) return nothingToPublish(def, ctx, set);
   // Schema repo: must be clean. alan-shared-resources (A/C/H): nothing staged and the stage's own files unmodified.
@@ -184,7 +191,7 @@ export async function livePublish(def, sb, ctx, set) {
   const src = (f) => def.sources(sb).map((d) => path.join(d, f)).find((p) => fs.existsSync(p));
   // Publish exactly the list the refusal check approved (= the dry run's): a file that differs only in line endings is not a change.
   const publish = LIVE_STAGES.has(def.stage) && ctx.promote ? stillDiffering(set.publish, set.repo, src) : set.publish;
-  const stop = liveGate(def, ctx, set, publish);
+  const stop = liveGate(def, ctx, set, publish, sb);
   if (stop) return stop;
   const { repo, remove } = set;
   ctx.progress?.(`Copying ${publish.length + remove.length} files into ${path.basename(repo)}`, 0, 3);
