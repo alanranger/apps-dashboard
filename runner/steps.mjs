@@ -856,18 +856,39 @@ const repoOf = (ctx) => ctx.schemaRepo || REPO;
 const readJson = (file, fallback) => (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : fallback);
 const compareOf = (sb, command) => changedFiles(readJson(path.join(sb.root, 'app-cli', command, 'compare.json'), { differing: [], new_files: [] }));
 
+const normText = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+
+/** Product keep-set from a shared-resources tree (04 filenames + optional products-manifest). */
+export function productKeepSet(sharedRoot, { requireFilesIn } = {}) {
+  const final04 = path.join(sharedRoot, 'csv processed', '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv');
+  if (!fs.existsSync(final04)) return new Set();
+  const keep = new Set([...new Set([...fs.readFileSync(final04, 'utf8').matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
+    .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]));
+  if (requireFilesIn) {
+    for (const f of [...keep]) if (!fs.existsSync(path.join(requireFilesIn, f))) keep.delete(f);
+  }
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(requireFilesIn || path.join(sharedRoot, 'outputs', 'schema', 'products'), 'products-manifest.json'), 'utf8'));
+    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
+  } catch { /* no manifest yet */ }
+  return keep;
+}
+
+/** Event keep-set from an events-manifest.json (+ hub FAQ files). */
+export function eventKeepSet(manifestPath) {
+  const keep = new Set(['beginners-photography-lessons_faq.json', 'photographic-workshops-near-me_faq.json', 'events-manifest.json']);
+  try {
+    const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
+  } catch { /* missing manifest */ }
+  return keep;
+}
+
 /** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo; retire renamed leftovers. */
 export function productPublishSet(sb, repo = REPO) {
   const src = path.join(sb.shared, 'outputs', 'schema', 'products');
-  const final04 = fs.readFileSync(path.join(sb.shared, 'csv processed', '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
-  const keep = new Set([...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))]
-    .flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]).filter((f) => fs.existsSync(path.join(src, f))));
-  // Manifest-referenced files stay (same rule as removeStaleProductSchemaFiles).
-  try {
-    const m = JSON.parse(fs.readFileSync(path.join(src, 'products-manifest.json'), 'utf8'));
-    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
-  } catch { /* no sandbox manifest yet */ }
-  const publish = [...keep].filter((f) => !fs.existsSync(path.join(repo, f)) || fs.readFileSync(path.join(src, f), 'utf8') !== fs.readFileSync(path.join(repo, f), 'utf8'));
+  const keep = productKeepSet(sb.shared, { requireFilesIn: src });
+  const publish = [...keep].filter((f) => !fs.existsSync(path.join(repo, f)) || normText(path.join(src, f)) !== normText(path.join(repo, f)));
   const remove = fs.readdirSync(repo)
     .filter((n) => n.endsWith('_schema.json') && !n.endsWith('_event_schema.json') && !n.endsWith('_landing_schema.json'))
     .filter((n) => isLikelyProductSchemaJson(path.join(repo, n)) && !keep.has(n))
@@ -878,13 +899,9 @@ export function productPublishSet(sb, repo = REPO) {
 /** E: changed event-posts + event-index files; retire event schemas no longer in the new events-manifest. */
 export function eventPublishSet(sb, repo = REPO) {
   const publish = [...compareOf(sb, 'event-posts'), ...compareOf(sb, 'event-index')];
-  const keep = new Set();
   const manifestPath = path.join(appOut(sb, 'event-posts'), 'events-manifest.json');
-  try {
-    const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    for (const e of m.entries || []) [e.schemaFileName, e.faqFileName].filter(Boolean).forEach((f) => keep.add(f));
-  } catch { return { publish, remove: [] }; }
-  for (const hub of ['beginners-photography-lessons_faq.json', 'photographic-workshops-near-me_faq.json', 'events-manifest.json']) keep.add(hub);
+  if (!fs.existsSync(manifestPath)) return { publish, remove: [] };
+  const keep = eventKeepSet(manifestPath);
   const remove = fs.readdirSync(repo)
     .filter((n) => n.endsWith('_event_schema.json') || n.endsWith('_event_faq.json'))
     .filter((n) => !keep.has(n) && fs.existsSync(path.join(repo, n)));
@@ -924,9 +941,12 @@ function writeBlogFilesManifest(sb, repo, publish, remove) {
 const appOut = (sb, command) => path.join(sb.root, 'app-cli', command, 'alanranger-schema');
 /** Publish sets per stage: each lists only its own generators' files; `sources` = where those files sit in the sandbox. */
 export const PUBLISH = {
-  publish_products: { stage: 'D', set: productPublishSet, sources: (sb) => [path.join(sb.shared, 'outputs', 'schema', 'products')], sample: 'products-manifest.json', what: 'product' },
+  publish_products: { stage: 'D', set: productPublishSet, sources: (sb) => [path.join(sb.shared, 'outputs', 'schema', 'products')], sample: 'products-manifest.json', what: 'product',
+    // Live SHARED keep-set: refuse a stale dry run that would delete today's live product files.
+    liveKeep: () => productKeepSet(SHARED) },
   publish_events: { stage: 'E', set: eventPublishSet,
-    sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event' },
+    sources: (sb) => [appOut(sb, 'event-posts'), appOut(sb, 'event-index')], sample: 'events-manifest.json', what: 'event',
+    liveKeep: () => eventKeepSet(path.join(REPO, 'events-manifest.json')) },
   publish_blogs: { stage: 'F', set: blogPublishSet, sources: (sb) => [appOut(sb, 'blog-index'), appOut(sb, 'blog-posts')], sample: 'blog-schema.json', what: 'blog',
     before: (ctx) => blogBaselineBlocked(ctx), after: (sb, ctx) => blogManifestAfterPublish(sb, ctx) },
   publish_landings: { stage: 'G', set: (sb) => ({ publish: [...compareOf(sb, 'landings'), ...compareOf(sb, 'blocks-css')], remove: [] }),
@@ -1102,7 +1122,6 @@ async function summary(ctx) {
 
 // ---------- A / C: the stage's CSVs in alan-shared-resources (Claude 9.2: same deploy path, exact files, own commit) ----------
 const sharedRepoOf = (ctx) => ctx.sharedRepo || SHARED;
-const normText = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 export const SHARED_PUBLISH = {
   build_csvs: { stage: 'A', what: 'CSV', files: () => [...BUILT, 'raw-01-products-sqsp-export.csv'].map((f) => `csv/${f}`) },
   reviews: { stage: 'C', what: 'review file', files: () => ['csv processed/03 – combined_product_reviews.csv', 'csv processed/03b-google-pending-alan-review.csv',

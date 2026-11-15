@@ -105,13 +105,27 @@ function stillDiffering(files, repo, src) {
   return files.filter((f) => !fs.existsSync(path.join(repo, f)) || norm(fs.readFileSync(path.join(repo, f), 'utf8')) !== norm(fs.readFileSync(src(f), 'utf8')));
 }
 
+/** Removals that would delete files today's live keep-set still needs (stale dry sandbox / 04 / manifest). */
+function staleKeepRefusal(def, set) {
+  if (!def.liveKeep || !set.remove?.length) return null;
+  let keep;
+  try { keep = def.liveKeep(); } catch { return null; }
+  const clash = set.remove.filter((f) => keep.has(f));
+  if (!clash.length) return null;
+  return [`Checked build ${String(set.promoteRun || '').slice(0, 8) || 'dry'} would remove ${plural(clash.length, `${def.what} file`)} still in today's live keep-set (${clash.slice(0, 4).join(', ')}${clash.length > 4 ? ', …' : ''}) — the dry run is stale`,
+    `click 1. Build & check on stage ${def.stage} again, then 2. Publish live…`];
+}
+
 /** Why this live publish must not go ahead, or null. */
-function liveRefusal(def, ctx, set, current) {
+function liveRefusal(def, ctx, set) {
   if (!LIVE_STAGES.has(def.stage)) return [`Live publishing for stage ${def.stage} is not built yet`, 'use 1. Build & check'];
   if (!ctx.promote) return ['No checked build to publish', `click 1. Build & check on stage ${def.stage} first`];
-  if (!sameSet(current, ctx.promote.published || []) || !sameSet(set.remove, ctx.promote.removed || [])) {
+  // Compare the recomputed publish/remove intent to the dry run (not stillDiffering — already-live files may drop out).
+  if (!sameSet(set.publish, ctx.promote.published || []) || !sameSet(set.remove, ctx.promote.removed || [])) {
     return [`The schema repo changed since checked build ${String(ctx.promote.run_id).slice(0, 8)}: the publish list is different now`, `click 1. Build & check on stage ${def.stage} again, then 2. Publish live…`];
   }
+  const stale = staleKeepRefusal(def, { ...set, promoteRun: ctx.promote.run_id });
+  if (stale) return stale;
   if (set.removals.unexplained.length) return [`${plural(set.removals.unexplained.length, 'unexplained removal')} in the publish set`, 'fix or explain them, then click 1. Build & check again'];
   return null;
 }
@@ -146,7 +160,7 @@ function nothingToPublish(def, ctx, set) {
 
 /** The step result when Live stops before writing: refused, nothing new, or blocked by uncommitted changes. Else null. */
 function liveGate(def, ctx, set, publish) {
-  const refused = liveRefusal(def, ctx, set, publish);
+  const refused = liveRefusal(def, ctx, set);
   if (refused) return { notes: [note('problem', refused[0], refused[1])], counts: { ...removalCounts(set.removals), commit: null } };
   if (!publish.length && !set.remove.length) return nothingToPublish(def, ctx, set);
   // Schema repo: must be clean. alan-shared-resources (A/C/H): nothing staged and the stage's own files unmodified.
@@ -175,7 +189,15 @@ export async function livePublish(def, sb, ctx, set) {
   const { repo, remove } = set;
   ctx.progress?.(`Copying ${publish.length + remove.length} files into ${path.basename(repo)}`, 0, 3);
   for (const f of publish) fs.copyFileSync(src(f), path.join(repo, f));
-  for (const f of remove) fs.rmSync(path.join(repo, f), { force: true });
+  for (const f of remove) {
+    const p = path.join(repo, f);
+    fs.rmSync(p, { force: true });
+    if (fs.existsSync(p)) {
+      return { notes: [note('problem', `Could not remove ${f} from ${path.basename(repo)} (still on disk after delete — often Dropbox restoring the file)`,
+        `pause sync on alanranger-schema, delete ${f} if it reappears, then click 2. Publish live… on stage ${def.stage} again`)],
+        counts: { ...removalCounts(set.removals), commit: null } };
+    }
+  }
   const message = `BAU ${def.stage} live from dry run ${String(ctx.promote.run_id).slice(0, 8)}: ${plural(publish.length, `${def.what} file`)}${remove.length ? `, ${remove.length} removed` : ''}`;
   ctx.progress?.('Committing and pushing', 1, 3);
   const r = commitAndPush({ repo, files: [...publish, ...remove], message, expectExact: true, restoreOnAbort: true });
