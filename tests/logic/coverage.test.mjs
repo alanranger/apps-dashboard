@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { coverage, coverageLine } from '../../runner/coverage.mjs';
+import { coverage, coverageLine, productSchemaNamesFromTitles } from '../../runner/coverage.mjs';
 
 function repo(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cov-'));
@@ -26,6 +26,26 @@ test('coverage maps every schema repo file to its producing step; loaders/, Assi
   assert.deepEqual(c.byStep, { product_schema: 3, event_index: 2, event_posts: 4, blog_index: 1, blog_posts: 6, landing_pages: 2, blocks_css: 3 });
   assert.deepEqual(c.uncoveredTabs, []);
   assert.equal(coverageLine(c), 'Coverage: 21 files, all produced by a step');
+});
+
+test('a renamed product is not an orphan when the live title slugs to the file and the stale list still has the old name', () => {
+  const files = [
+    'sezincote-garden-photography-workshop-gloucs-june_schema.json',
+    'sezincote-garden-photography-workshop-gloucs-june_faq.json',
+    'the-art-of-garden-photography-coventry-may-jun-jul_schema.json',
+    'the-art-of-garden-photography-coventry-may-jun-jul_faq.json',
+    'products-manifest.json'
+  ];
+  const dir = repo(files);
+  const stale = ['the-art-of-garden-photography-coventry-may-and-july_schema.json', 'the-art-of-garden-photography-coventry-may-and-july_faq.json'];
+  const live = productSchemaNamesFromTitles([
+    'The Art of GARDEN PHOTOGRAPHY  - Coventry -  May Jun Jul',
+    'SEZINCOTE Garden Photography Workshop - Gloucs June'
+  ]);
+  const c = coverage(dir, new Set([...stale, ...live]), new Set());
+  assert.deepEqual(c.orphans, []);
+  assert.equal(c.byStep.product_schema, 5);
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test('a file no step produces is named as an orphan; a tab with no files is reported', () => {

@@ -86,23 +86,24 @@ test('productPublishSet: unchanged keep-set file is not in publish (no mismatch 
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test('productPublishSet: a stale 04 that still names may-and-july would delete the current may-jun-jul file', () => {
+test('productPublishSet: a stale 04 does not delete the current file when its product URL is still on the live export', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'bau-d-rm-'));
   const shared = path.join(root, 'shared');
   const repo = path.join(root, 'repo');
   const products = path.join(shared, 'outputs', 'schema', 'products');
   const proc = path.join(shared, 'csv processed');
+  const page = 'https://www.alanranger.com/photo-workshops-uk/garden-photography-workshop';
+  const doc = (name) => `${JSON.stringify({ '@graph': [{ '@type': 'Product', name, url: page, offers: { price: '1' } }] })}\n`;
   write(proc, '04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv',
     'f,the-art-of-garden-photography-coventry-may-and-july_schema.json\n');
-  write(products, 'the-art-of-garden-photography-coventry-may-and-july_schema.json', productDoc('Old name'));
+  write(path.join(shared, 'csv'), 'raw-01-products-sqsp-export.csv',
+    'Product Page,Product URL,Title\nphoto-workshops-uk,garden-photography-workshop,The Art of GARDEN PHOTOGRAPHY - Coventry - May Jun Jul\n');
+  write(products, 'the-art-of-garden-photography-coventry-may-and-july_schema.json', doc('Old name'));
   write(products, 'the-art-of-garden-photography-coventry-may-and-july_faq.json', '{"@type":"FAQPage"}');
-  write(repo, 'the-art-of-garden-photography-coventry-may-jun-jul_schema.json', productDoc('Current'));
+  write(repo, 'the-art-of-garden-photography-coventry-may-jun-jul_schema.json', doc('Current'));
   write(repo, 'the-art-of-garden-photography-coventry-may-jun-jul_faq.json', '{"@type":"FAQPage"}');
   const set = productPublishSet({ shared, root }, repo);
-  const freshKeep = productKeepSet(shared, { requireFilesIn: products });
-  assert.ok(set.remove.includes('the-art-of-garden-photography-coventry-may-jun-jul_schema.json'));
-  assert.equal(keptRemovals(set.remove, freshKeep).length, 0);
-  const currentKeep = new Set(['the-art-of-garden-photography-coventry-may-jun-jul_schema.json', 'the-art-of-garden-photography-coventry-may-jun-jul_faq.json']);
-  assert.equal(keptRemovals(set.remove, currentKeep).length, 2);
+  assert.equal(set.remove.includes('the-art-of-garden-photography-coventry-may-jun-jul_schema.json'), false);
+  assert.equal(set.remove.includes('the-art-of-garden-photography-coventry-may-jun-jul_faq.json'), false);
   fs.rmSync(root, { recursive: true, force: true });
 });

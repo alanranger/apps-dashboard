@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { coverage, coverageLine, TABS } from './coverage.mjs';
+import { coverage, coverageLine, productSchemaNamesFromTitles, TABS } from './coverage.mjs';
 import { checkImports, missingMessage } from './import-check.mjs';
 import { diff07 } from './diff-07.mjs';
 import { applyChoices, heldItems, simulatedHeld } from './held-reviews.mjs';
@@ -884,6 +884,22 @@ export function eventKeepSet(manifestPath) {
   return keep;
 }
 
+/** Filenames D would write for the current Squarespace titles, or null when that export is not in this tree. */
+export function liveProductSchemaNames(sharedRoot) {
+  const file = path.join(sharedRoot, 'csv', 'raw-01-products-sqsp-export.csv');
+  if (!fs.existsSync(file)) return null;
+  return productSchemaNamesFromTitles(readCsvObjects(file).rows.map((r) => r.Title).filter(Boolean));
+}
+
+/** A file named for a current product stays, even when a stale 04 would call it an orphan. */
+export function protectLiveProductFiles(remove, names) {
+  if (!names) return remove;
+  return remove.filter((f) => {
+    const schema = f.endsWith('_faq.json') ? f.replace(/_faq\.json$/, '_schema.json') : f;
+    return !names.has(schema);
+  });
+}
+
 /** D: product *_schema.json / *_faq.json named in the new 04 that differ from the schema repo; retire renamed leftovers. */
 export function productPublishSet(sb, repo = REPO) {
   const src = path.join(sb.shared, 'outputs', 'schema', 'products');
@@ -893,7 +909,7 @@ export function productPublishSet(sb, repo = REPO) {
     .filter((n) => n.endsWith('_schema.json') && !n.endsWith('_event_schema.json') && !n.endsWith('_landing_schema.json'))
     .filter((n) => isLikelyProductSchemaJson(path.join(repo, n)) && !keep.has(n))
     .flatMap((n) => [n, n.replace(/_schema\.json$/, '_faq.json')].filter((f) => fs.existsSync(path.join(repo, f)) && !keep.has(f)));
-  return { publish, remove: [...new Set(remove)] };
+  return { publish, remove: protectLiveProductFiles([...new Set(remove)], liveProductSchemaNames(sb.shared)) };
 }
 
 const productPageId = (file) => {
@@ -1098,13 +1114,22 @@ async function audit(ctx) {
   return liveAudit(ctx);
 }
 
-/** Product *_schema.json names (+ _faq.json) from 04, and blog url ids from 01 (sandbox copies when the run made them). */
+/** Product filenames from 04 plus the live Squarespace titles (the same slug D writes), and blog url ids from 01. */
 function producerInputs(ctx) {
   const sb = sandboxFor(ctx);
   const pick = (rel) => [path.join(sb.shared, rel), `${SHARED}/${rel}`].find((p) => fs.existsSync(p));
   const final04 = fs.readFileSync(pick('csv processed/04 – alanranger_product_schema_FINAL_WITH_REVIEW_RATINGS.csv'), 'utf8');
   const schemas = [...new Set([...final04.matchAll(/[\w-]+_schema\.json/g)].map((m) => m[0]))];
   const productFiles = new Set(schemas.flatMap((f) => [f, f.replace('_schema.json', '_faq.json')]));
+  const raw = pick('csv/raw-01-products-sqsp-export.csv');
+  if (raw) {
+    const titles = readCsvObjects(raw).rows.map((r) => r.Title).filter(Boolean);
+    for (const name of productSchemaNamesFromTitles(titles)) productFiles.add(name);
+  }
+  const built = path.join(sb.shared, 'outputs', 'schema', 'products');
+  if (fs.existsSync(built)) {
+    for (const n of fs.readdirSync(built)) if (n.endsWith('_schema.json') || n.endsWith('_faq.json')) productFiles.add(n);
+  }
   const blogSlugs = new Set(readCsvObjects(pick('csv/01-blog-posts.csv')).rows.map((r) => r['Url Id']).filter(Boolean));
   return { productFiles, blogSlugs };
 }

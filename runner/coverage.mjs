@@ -35,6 +35,23 @@ function repoFiles(repo, dir = '') {
   });
 }
 
+/** Same slug D's generator uses: lowercase, non-alphanumerics become one hyphen. */
+export function slugifyProduct(text) {
+  return String(text || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/** Product schema + FAQ filenames for the current Squarespace titles. */
+export function productSchemaNamesFromTitles(titles) {
+  const out = new Set();
+  for (const title of titles) {
+    const slug = slugifyProduct(title);
+    if (!slug) continue;
+    out.add(`${slug}_schema.json`);
+    out.add(`${slug}_faq.json`);
+  }
+  return out;
+}
+
 /** productFiles: product *_schema.json names (+ their _faq.json); blogSlugs: blog post url ids. */
 export function coverage(repo, productFiles, blogSlugs) {
   const ordered = rules(productFiles, blogSlugs);
