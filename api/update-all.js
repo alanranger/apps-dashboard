@@ -18,7 +18,7 @@ const REGISTRY = require('../runner/steps.json');
 const { STAGES, planStage, stageHistory, liveDoneHistory, sortStages } = require('../runner/stages.cjs');
 const { liveState, livePlan, undoRequest } = require('./_bau-live');
 const { stepEstimates, stageTypical, runnerState, latestAudit } = require('./_bau-progress');
-const { latestCheckAll, publishAllPlan, stageCheckStale, STALE_TIP } = require('../runner/publish-all-plan.cjs');
+const { latestCheckAll, publishAllPlan, stageCheckStale, ownPublishShas, STALE_TIP } = require('../runner/publish-all-plan.cjs');
 
 const ACTIVE = 'status=in.(requested,running)';
 const SITE = /^https:\/\/www\.alanranger\.com\/[a-z0-9\-/]+$/;
@@ -102,7 +102,7 @@ function cleanStages(stages) {
 const simulated = (mode, urls) => (mode === 'dry' && Array.isArray(urls) ? urls.filter((u) => SITE.test(u)).slice(0, 5) : []);
 
 /** Live promotes the stage's latest dry run (the runner re-checks this, and that the files are unchanged). */
-function liveRefusal(stage, dry, liveDone = {}, heads = {}) {
+function liveRefusal(stage, dry, liveDone = {}, heads = {}, ownShas = null) {
   // Stage I promotes nothing: live I starts the full audit ① now (the runner also refuses while ① is running).
   if (stage === 'I') return new Date().getUTCDay() === 1 ? 'Never on a Monday: the Monday cron runs ①' : null;
   if (!dry) return `Stage ${stage} has no checked build — click 1. Build & check first`;
@@ -111,7 +111,7 @@ function liveRefusal(stage, dry, liveDone = {}, heads = {}) {
   // B writes only the database (its safety is the automatic backup), so it has no file list to check.
   if (dry.removals_unexplained == null && stage !== 'B') return `Stage ${stage}'s checked build predates the removal check — click 1. Build & check again`;
   if (dry.removals_unexplained) return `Stage ${stage}'s checked build has ${dry.removals_unexplained} unexplained removals — Live is blocked until they are fixed or explained`;
-  if (stageCheckStale(stage, dry, liveDone[stage], heads).stale) return STALE_TIP;
+  if (stageCheckStale(stage, dry, liveDone[stage], heads, ownShas).stale) return STALE_TIP;
   return null;
 }
 
@@ -127,13 +127,20 @@ async function liveGate(session, body, mode) {
 }
 
 /** Dry stage runs check their prerequisites; a live stage checks the dry run it would promote. */
-async function stageRefusal(stages, mode) {
+async function stageRefusal(stages, mode, body) {
   const runs = await recentRuns();
   const history = stageHistory(runs, 'dry');
   if (mode === 'live') {
     const liveDone = liveDoneHistory(runs);
     const heads = await repoHeads();
-    const why = liveRefusal(stages[0], history[stages[0]], liveDone, heads);
+    const stage = stages[0];
+    const dry = history[stage];
+    const pinned = typeof body?.checked_build === 'string' ? body.checked_build : '';
+    if (pinned && dry?.run_id !== pinned) {
+      return [409, { error: 'A newer Check all replaced this checked build. Stop and run Check all stages again.' }];
+    }
+    const own = pinned ? ownPublishShas(pinned, runs) : null;
+    const why = liveRefusal(stage, dry, liveDone, heads, own);
     return why ? [409, { error: why }] : null;
   }
   const plan = planStage(stages, history);
@@ -147,7 +154,7 @@ async function start(session, body) {
   const active = await sb(`update_all_runs?${ACTIVE}&limit=1`);
   if (active.length) return [409, { error: 'a run is already requested or running', run: active[0] }];
   const stages = cleanStages(body.stages);
-  const refused = stages ? await stageRefusal(stages, mode) : null;
+  const refused = stages ? await stageRefusal(stages, mode, body) : null;
   if (refused) return refused;
   const sim = simulated(mode, body.simulate_new_08);
   const held = mode === 'dry' ? Math.min(4, Math.max(0, Number(body.simulate_held_reviews) || 0)) : 0;

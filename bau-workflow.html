@@ -844,10 +844,12 @@
       return el;
     }
     function paStatusOf(st, id) {
+      if (st.halted?.id === id) return 'failed';
       const done = (st.results || []).find((r) => r.id === id);
       if (done) return done.status === 'failed' || done.status === 'cancelled' ? 'failed' : 'published';
       const skip = (st.skip || []).find((s) => s.id === id);
       if (skip) return 'skipped';
+      if (st.halted) return 'waiting';
       if (st.queue?.[st.index] === id) return 'publishing';
       const qi = st.queue?.indexOf(id);
       if (qi >= 0 && qi < st.index) return 'published';
@@ -880,18 +882,20 @@
       const doneN = (st.results || []).length;
       const total = (st.queue || []).length || 1;
       const pct = st.finished ? 100 : Math.min(99, Math.round((doneN / total) * 100));
-      const cur = st.finished ? null : st.queue[st.index];
-      const eta = st.finished ? 'done' : `stage ${doneN + 1} of ${total}${cur ? ` (${cur})` : ''}`;
-      const alive = ['requested', 'running'].includes(run?.status)
-        ? '<div class="pg-alive pg-green" data-testid="pa-alive">● Publish all in progress</div>'
-        : st.finished
-          ? ''
+      const fail = st.halted;
+      const cur = st.finished || fail ? null : st.queue[st.index];
+      const eta = st.finished ? 'done' : fail
+        ? `stopped at stage ${fail.id}`
+        : `stage ${doneN + 1} of ${total}${cur ? ` (${cur})` : ''}`;
+      const alive = fail || st.finished
+        ? ''
+        : ['requested', 'running'].includes(run?.status)
+          ? '<div class="pg-alive pg-green" data-testid="pa-alive">● Publish all in progress</div>'
           : '<div class="pg-alive pg-amber" data-testid="pa-alive">Waiting for the next stage…</div>';
       const rows = ids.map((id) => {
         const status = paStatusOf(st, id);
         return `<li data-stage="${esc(id)}" data-status="${status}" data-testid="pa-stage-${esc(id)}">${esc(id)} · ${paLabel(status, id, st)}</li>`;
       }).join('');
-      const fail = st.halted;
       const summary = st.finished
         ? `<p class="pg-result ${fail ? 'pg-fail' : 'pg-ok'}" data-testid="pa-summary">${fail ? '❌ Publish all stopped' : '✅ Publish all finished'}</p>
            <div class="muted" data-testid="pa-audit-note">${st.auditStarted ? 'Full audit ① started in the background.' : (st.auditSkipped || 'Full audit ① not started.')}</div>
@@ -1212,16 +1216,18 @@
       }
 
       if (st.lastRunId) return;
+      const nextId = st.queue[st.index];
+      if (!nextId) { setPaState(null); return; }
       st.busy = true; setPaState(st);
-      $('actionMsg').textContent = `Publish all: stage ${id} (${st.index + 1} of ${st.queue.length})…`;
+      $('actionMsg').textContent = `Publish all: stage ${nextId} (${st.index + 1} of ${st.queue.length})…`;
       renderPaProgress(run);
       try {
-        await api('/api/update-all', { method: 'POST', body: { action: 'start', mode: 'live', stages: [id] } });
+        await api('/api/update-all', { method: 'POST', body: { action: 'start', mode: 'live', stages: [nextId], checked_build: st.checkAllId || undefined } });
         st.busy = false; setPaState(st);
         refresh();
       } catch (e) {
         st.busy = false;
-        st.halted = { id, status: 'failed', error: e.message };
+        st.halted = { id: nextId, status: 'failed', error: e.message };
         setPaState(st);
         renderPaProgress(run);
       }

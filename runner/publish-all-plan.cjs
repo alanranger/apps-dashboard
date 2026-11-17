@@ -43,14 +43,42 @@ function checkAllStale(checkAll, { liveDone = {}, repoHeads = {} } = {}) {
   return { stale: false, tip: null, detail: null };
 }
 
-function stageCheckStale(id, dry, live, repoHeads = {}) {
+/** Commits this Check all's own live publishes already made (same promoted build). */
+function ownPublishShas(checkId, runs = []) {
+  const shas = [];
+  if (!checkId) return shas;
+  for (const run of runs) {
+    if (run.mode !== 'live' || !['succeeded', 'warned'].includes(run.status)) continue;
+    for (const r of Object.values(run.stage_results || {})) {
+      if (!r || r.promoted_from !== checkId || !['ok', 'warn'].includes(r.status)) continue;
+      if (r.commit) shas.push(r.commit);
+      if (r.export_commit) shas.push(r.export_commit);
+      if (r.manifest_commit) shas.push(r.manifest_commit);
+    }
+  }
+  return shas;
+}
+
+function headIsOwn(head, ownShas) {
+  const sha = String(head?.sha || '');
+  if (!sha || !ownShas?.length) return false;
+  return ownShas.some((s) => {
+    const o = String(s || '');
+    return o.length >= 7 && (sha === o || sha.startsWith(o) || o.startsWith(sha));
+  });
+}
+
+/** Per-stage staleness. ownShas are this Check all's own live commits and do not count. */
+function stageCheckStale(id, dry, live, repoHeads = {}, ownShas = null) {
   if (!dry?.finished_at || !['ok', 'warn'].includes(dry.status)) return { stale: false, tip: null };
   const at = Date.parse(dry.finished_at);
   if (liveAfter(live, at) && live.promoted_from !== dry.run_id) {
     return { stale: true, tip: STALE_TIP };
   }
-  const head = repoHeadFor(id, repoHeads)?.committed_at;
-  if (head && Date.parse(head) > at) return { stale: true, tip: STALE_TIP };
+  const head = repoHeadFor(id, repoHeads);
+  if (head?.committed_at && Date.parse(head.committed_at) > at && !headIsOwn(head, ownShas)) {
+    return { stale: true, tip: STALE_TIP };
+  }
   return { stale: false, tip: null };
 }
 
@@ -101,5 +129,5 @@ function publishAllPlan(checkAll, opts = {}) {
 
 module.exports = {
   PUBLISH_ALL_STAGES, SHARED_STAGES, STALE_TIP, isCheckAllRun, latestCheckAll, stagePublishable,
-  liveAfter, repoHeadFor, checkAllStale, stageCheckStale, publishAllPlan
+  liveAfter, repoHeadFor, checkAllStale, stageCheckStale, ownPublishShas, publishAllPlan
 };

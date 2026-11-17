@@ -79,3 +79,13 @@ test('stageCheckStale: repo newer than dry check; already-live same promote is n
   assert.equal(stageCheckStale('E', dry, live, { schema: { committed_at: '2026-11-14T23:25:54Z' } }).stale, true);
   assert.equal(stageCheckStale('E', dry, { finished_at: '2026-11-14T23:01:00Z', promoted_from: 'other' }, {}).stale, true);
 });
+
+test('stageCheckStale: this Check all’s own publish commits are not an outside change', () => {
+  const dry = { status: 'ok', finished_at: '2026-11-17T11:14:13Z', run_id: '2482245b-7a50-4962-8f54-ef459a014f2b' };
+  const heads = { shared: { committed_at: '2026-11-17T11:37:40Z', sha: 'ef2bea0d9e6918c486082a3c89f076df5b932905' } };
+  assert.equal(stageCheckStale('C', dry, null, heads).stale, true);
+  assert.equal(stageCheckStale('C', dry, null, heads, ['ef2bea0d9e6918c486082a3c89f076df5b932905']).stale, false);
+  assert.equal(stageCheckStale('C', dry, null, heads, ['709143108a099e3594521896434cefdde7edaaf9']).stale, true);
+  const outside = { shared: { committed_at: '2026-11-17T12:00:00Z', sha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' } };
+  assert.equal(stageCheckStale('C', dry, null, outside, ['ef2bea0d9e6918c486082a3c89f076df5b932905']).stale, true);
+});

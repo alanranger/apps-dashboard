@@ -61,14 +61,46 @@ export function checkAllStale(checkAll, { liveDone = {}, repoHeads = {} } = {}) 
  * Per-stage: checked build is older than that stage's last live (and not the same promoted build) or older than repo HEAD.
  * @returns {{ stale: boolean, tip: string|null }}
  */
-export function stageCheckStale(id, dry, live, repoHeads = {}) {
+/** Commits this Check all's own live publishes already made (same promoted build). */
+export function ownPublishShas(checkId, runs = []) {
+  const shas = [];
+  if (!checkId) return shas;
+  for (const run of runs) {
+    if (run.mode !== 'live' || !['succeeded', 'warned'].includes(run.status)) continue;
+    for (const r of Object.values(run.stage_results || {})) {
+      if (!r || r.promoted_from !== checkId || !['ok', 'warn'].includes(r.status)) continue;
+      if (r.commit) shas.push(r.commit);
+      if (r.export_commit) shas.push(r.export_commit);
+      if (r.manifest_commit) shas.push(r.manifest_commit);
+    }
+  }
+  return shas;
+}
+
+function headIsOwn(head, ownShas) {
+  const sha = String(head?.sha || '');
+  if (!sha || !ownShas?.length) return false;
+  return ownShas.some((s) => {
+    const o = String(s || '');
+    return o.length >= 7 && (sha === o || sha.startsWith(o) || o.startsWith(sha));
+  });
+}
+
+/**
+ * Per-stage: checked build is older than that stage's last live (and not the same promoted build) or older than repo HEAD.
+ * ownShas: commits from this same Check all's live publishes. Those must not count as an outside change.
+ * @returns {{ stale: boolean, tip: string|null }}
+ */
+export function stageCheckStale(id, dry, live, repoHeads = {}, ownShas = null) {
   if (!dry?.finished_at || !['ok', 'warn'].includes(dry.status)) return { stale: false, tip: null };
   const at = Date.parse(dry.finished_at);
   if (liveAfter(live, at) && live.promoted_from !== dry.run_id) {
     return { stale: true, tip: STALE_TIP };
   }
-  const head = repoHeadFor(id, repoHeads)?.committed_at;
-  if (head && Date.parse(head) > at) return { stale: true, tip: STALE_TIP };
+  const head = repoHeadFor(id, repoHeads);
+  if (head?.committed_at && Date.parse(head.committed_at) > at && !headIsOwn(head, ownShas)) {
+    return { stale: true, tip: STALE_TIP };
+  }
   return { stale: false, tip: null };
 }
 
