@@ -246,9 +246,49 @@ async function undo(session, body) {
   return undoRequest(session, body, await historyNow(), active);
 }
 
+const SHARED = 'G:/Dropbox/alan ranger photography/Website Code/alan-shared-resources';
+
+/** After a live publish: resubmit the sitemap when new public URLs went live. A failure stays a warning. */
+async function tellGoogle(session, body) {
+  if (session.role !== 'alan') return [403, { error: 'Alan only' }];
+  const nudge = await import('../runner/sitemap-nudge.mjs');
+  const { refreshGoogleAccessToken } = await import('../../AI GEO Audit/lib/google-token.js');
+  const commits = (body.commits || []).map((c) => c && c.commit).filter(Boolean);
+  const added = body.manual ? (body.urls || []) : nudge.addedInCommits(SHARED, commits);
+  const lastRows = await sb('sitemap_submits?select=submitted_at,new_urls,outcome&outcome=eq.ok&order=submitted_at.desc&limit=1');
+  const last = lastRows[0] ? { submitted_at: lastRows[0].submitted_at, new_urls: lastRows[0].new_urls || [] } : null;
+  const decision = nudge.sitemapDecision({ added, last, now: new Date().toISOString() });
+  let result = decision;
+  if (decision.submit) {
+    const env = nudge.loadGoogleEnv();
+    try {
+      const token = await refreshGoogleAccessToken({
+        clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET,
+        refreshToken: env.GOOGLE_REFRESH_TOKEN, label: 'gsc', delays: []
+      });
+      if (!nudge.scopeAllowsSubmit(token.scope)) {
+        result = { ...decision, submit: false, status: 'warn', text: `Tell Google about new pages needs scope ${nudge.WRITE_SCOPE}. The current Search Console connection does not include it.` };
+      } else {
+        const api = await nudge.submitSitemap(token.accessToken);
+        result = api.ok ? decision : { ...decision, status: 'warn', text: `Tell Google about new pages failed (HTTP ${api.status}). The publish still stands.`, api_status: api.status, api_body: api.body };
+      }
+    } catch (e) {
+      result = { ...decision, status: 'warn', text: `Tell Google about new pages failed (${e.code || 'error'}). The publish still stands.` };
+    }
+  }
+  if (result.submit || result.status === 'warn') {
+    await sb('sitemap_submits', { method: 'POST', body: {
+      property_url: nudge.SITE, outcome: result.status, new_count: (result.urls || []).length,
+      new_urls: result.urls || [], api_status: result.api_status || null, api_body: result.api_body || result.text
+    }, prefer: 'return=minimal' });
+  }
+  return [200, { status: result.status, text: result.text, new_count: (result.urls || []).length }];
+}
+
 const ACTIONS = { start, resume, cancel: (s, b) => cancel(b), cancel_audit: (s, b) => cancelAudit(b),
   page_choice: pageChoice, page_choice_clear_test: () => clearTestChoices(),
-  review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices(), undo };
+  review_choice: reviewChoice, review_choice_clear_test: () => clearTestReviewChoices(), undo,
+  tell_google: tellGoogle };
 
 module.exports = async function handler(req, res) {
   if (cors(req, res)) return;

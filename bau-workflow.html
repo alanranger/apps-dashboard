@@ -898,6 +898,7 @@
       }).join('');
       const summary = st.finished
         ? `<p class="pg-result ${fail ? 'pg-fail' : 'pg-ok'}" data-testid="pa-summary">${fail ? '❌ Publish all stopped' : '✅ Publish all finished'}</p>
+           <div class="muted" data-testid="pa-google" data-status="${esc(st.google?.status || 'skipped')}">${esc(st.google?.text || 'skipped: no new pages')}</div>
            <div class="muted" data-testid="pa-audit-note">${st.auditStarted ? 'Full audit ① started in the background.' : (st.auditSkipped || 'Full audit ① not started.')}</div>
            <div class="pg-actions"><button class="small secondary" id="paDoneClose" data-testid="pa-close">Close</button></div>`
         : fail
@@ -1106,6 +1107,7 @@
         $('stepsPanel').style.display = 'block';
         renderSteps(data.steps || [], data.registry || []);
         renderRun(data);
+        maybeTellGoogle(data.run);
       } catch (e) { $('actionMsg').textContent = e.message; }
     }
 
@@ -1142,10 +1144,30 @@
       };
     }
 
+    let googleTold = '';
+    async function maybeTellGoogle(run) {
+      if (!run || paState() || run.mode !== 'live' || !['succeeded', 'warned'].includes(run.status)) return;
+      if (googleTold === run.id) return;
+      googleTold = run.id;
+      const stage = (run.stages || [])[0];
+      const commit = run.stage_results?.[stage]?.commit || null;
+      const note = await tellGoogleAbout(commit ? [{ commit }] : []);
+      if ($('actionMsg')) $('actionMsg').textContent = note.text || '';
+    }
+
+    async function tellGoogleAbout(commits) {
+      try {
+        return await api('/api/update-all', { method: 'POST', body: { action: 'tell_google', commits: commits || [] } });
+      } catch (e) {
+        return { status: 'warn', text: `Tell Google about new pages failed (${e.message}). The publish still stands.` };
+      }
+    }
+
     async function finishPublishAll(st, auditNote) {
-      const next = { ...st, finished: true, auditStarted: !!auditNote?.started, auditSkipped: auditNote?.skipped || null };
+      const google = await tellGoogleAbout((st.results || []).map((r) => ({ commit: r.commit })));
+      const next = { ...st, finished: true, google, auditStarted: !!auditNote?.started, auditSkipped: auditNote?.skipped || null };
       setPaState(next);
-      $('actionMsg').textContent = `Publish all finished: ${(st.results || []).map((r) => r.id).join(', ')} published.`;
+      $('actionMsg').textContent = `Publish all finished: ${(st.results || []).map((r) => r.id).join(', ')} published. ${google.text || ''}`;
       renderPaProgress(current);
       if ($('includeAudit')?.checked) maybeStartAuditAfterPublish();
     }
